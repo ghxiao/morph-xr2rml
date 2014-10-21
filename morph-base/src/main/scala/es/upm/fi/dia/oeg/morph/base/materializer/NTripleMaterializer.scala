@@ -11,50 +11,50 @@ import java.io.OutputStream
 import java.io.PrintWriter
 import java.io.BufferedOutputStream
 import java.io.BufferedWriter
+import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.util.FileManager
+import java.io.FileReader
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.FileWriter
 
-class NTripleMaterializer(model:Model,ntOutputStream:Writer) 
-extends MorphBaseMaterializer(model,ntOutputStream) {
-	//THIS IS IMPORTANT, SCALA PASSES PARAMETER BY VALUE!
-	this.outputStream = ntOutputStream;
-	
-	override val logger = Logger.getLogger(this.getClass().getName());
+class NTripleMaterializer(model: Model, ntOutputStream: Writer)
+  extends MorphBaseMaterializer(model, ntOutputStream) {
+  //THIS IS IMPORTANT, SCALA PASSES PARAMETER BY VALUE!
+  this.outputStream = ntOutputStream;
 
-	def write(triple:String ) = {
-		this.outputStream.write(triple)
-		this.outputStream.flush();
-	}
+  override val logger = Logger.getLogger(this.getClass().getName());
 
+  def write(triple: String) = {
+    this.outputStream.write(triple)
+    this.outputStream.flush();
 
-	override def materialize() {
-		//nothing to do, the triples were added during the data translation process
-		this.outputStream.flush();
-//		this.outputStream.close();
-	}
-	
-	override def materializeQuad(subject:RDFNode , predicate:RDFNode ,
-			obj:RDFNode , graph:RDFNode ) {
-		if(subject != null && predicate != null && obj!= null) {
-			try {
-				val subjectString = GeneralUtility.nodeToString(subject);
-				val predicateString = GeneralUtility.nodeToString(predicate);
-				val objectString = GeneralUtility.nodeToString(obj);
-				val graphString = GeneralUtility.nodeToString(graph);
-				
-				val triple = GeneralUtility.createQuad(subjectString, predicateString, objectString, graphString);
-				this.write(triple);
-			} catch {
-			  case e:Exception => {
-			    e.printStackTrace()
-			    logger.error("unable to serialize triple, subjectURI=" + subject);
-			  }
-			}
-		}
-	}
+  }
 
-//	override def postMaterialize() = {
-////		if(this.writer != null) {
-////			this.writer.flush();
-////			this.writer.close();
-////		}
-//	}
+  override def materialize() {
+    //nothing to do, the triples were added during the data translation process
+    this.outputStream.flush();
+    //		this.outputStream.close();
+  }
+
+  override def materializeQuad(subject: RDFNode, predicate: RDFNode,
+    obj: RDFNode, graph: RDFNode) {
+    if (subject != null && predicate != null && obj != null) {
+      try {
+        val subjectString = GeneralUtility.nodeToString(subject);
+        val predicateString = GeneralUtility.nodeToString(predicate);
+        val objectString = GeneralUtility.nodeToString(obj);
+        val graphString = GeneralUtility.nodeToString(graph);
+
+        val triple = GeneralUtility.createQuad(subjectString, predicateString, objectString, graphString);
+        this.write(triple);
+      } catch {
+        case e: Exception => {
+          e.printStackTrace()
+          logger.error("unable to serialize triple, subjectURI=" + subject);
+        }
+      }
+    }
+  }
+
 }

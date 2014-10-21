@@ -6,9 +6,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslatorFactory
 
 class DefaultQueryResultTranslatorFactory extends AbstractQueryResultTranslatorFactory {
 
-  def createQueryResultTranslator(dataSourceReader:MorphBaseDataSourceReader 
-			, queryResultWriter:MorphBaseQueryResultWriter ) = {
-	  new QueryResultTranslator(dataSourceReader, queryResultWriter);
-	}
+  def createQueryResultTranslator(dataSourceReader: MorphBaseDataSourceReader, queryResultWriter: MorphBaseQueryResultWriter) = {
+    new QueryResultTranslator(dataSourceReader, queryResultWriter);
+  }
 
 }

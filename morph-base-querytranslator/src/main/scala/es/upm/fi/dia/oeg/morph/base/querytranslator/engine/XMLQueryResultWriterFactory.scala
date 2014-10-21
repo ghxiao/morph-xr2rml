@@ -6,15 +6,13 @@ import es.upm.fi.dia.oeg.morph.base.engine.QueryResultWriterFactory
 import java.io.OutputStream
 import java.io.Writer
 
-class XMLQueryResultWriterFactory extends QueryResultWriterFactory{
-	
-  override def createQueryResultWriter(queryTranslator:IQueryTranslator
-      , outputStream:Writer) 
-  : MorphBaseQueryResultWriter = {
-    if(queryTranslator == null) {
+class XMLQueryResultWriterFactory extends QueryResultWriterFactory {
+
+  override def createQueryResultWriter(queryTranslator: IQueryTranslator, outputStream: Writer): MorphBaseQueryResultWriter = {
+    if (queryTranslator == null) {
       throw new Exception("Query Translator is not set yet!");
     }
-	val result = new MorphXMLQueryResultWriter(queryTranslator, outputStream);
-		result
-	} 
+    val result = new MorphXMLQueryResultWriter(queryTranslator, outputStream);
+    result
+  }
 }
