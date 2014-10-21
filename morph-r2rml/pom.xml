@@ -1,14 +1,13 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>es.upm.fi.dia.oeg.morph</groupId>
-  <artifactId>morph-r2rml</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
-  <parent>
-    <groupId>es.upm.fi.dia.oeg.morph</groupId>
-    <artifactId>morph-rdb</artifactId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>morph-r2rml</artifactId>
+	<packaging>jar</packaging>
+	<parent>
+		<groupId>es.upm.fi.dia.oeg.morph</groupId>
+		<artifactId>morph-rdb</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
 
 	<dependencies>
 		<dependency>
@@ -18,57 +17,28 @@
 		</dependency>
 	</dependencies>
 
-   <build>
-      <sourceDirectory>src/main/scala</sourceDirectory>
-      <testSourceDirectory>src/test/scala</testSourceDirectory>
-      <plugins>
-         <plugin>
-            <groupId>org.scala-tools</groupId>
-            <artifactId>maven-scala-plugin</artifactId>
-            <executions>
-               <execution>
-                  <goals>
-                     <goal>compile</goal>
-                     <goal>testCompile</goal>
-                  </goals>
-               </execution>
-            </executions>
-            <configuration>
-               <scalaVersion>${scala.version}</scalaVersion>
-            </configuration>
-         </plugin>
-      </plugins>
-   </build>
+	<build>
+		<sourceDirectory>src/main/scala</sourceDirectory>
+		<testSourceDirectory>src/test/scala</testSourceDirectory>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.scala-tools</groupId>
+					<artifactId>maven-scala-plugin</artifactId>
+					<executions>
+						<execution>
+							<goals>
+								<goal>compile</goal>
+								<goal>testCompile</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<scalaVersion>${scala.version}</scalaVersion>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 
-	<distributionManagement>
- 		<repository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>aldebaran-releases</id>
-			<name>Aldebaran Releases</name>
-			<url>http://aldebaran.dia.fi.upm.es/artifactory/sstreams-releases-local</url>
-		</repository>
-		<snapshotRepository>
-			<uniqueVersion>true</uniqueVersion>
-			<id>aldebaran-snapshots</id>
-			<name>Aldebaran Snapshots</name>
-			<url>http://aldebaran.dia.fi.upm.es/artifactory/sstreams-snapshots-local</url>
-		</snapshotRepository>
-
-	</distributionManagement>
-
-	<repositories>
-		<repository>
-			<id>aldebaran-external-libs</id>
-			<name>Aldebaran External Libraries</name>
-			<url>http://aldebaran.dia.fi.upm.es/artifactory/sstreams-external-libs-local</url>
-		</repository>
-		
-		<repository>
-			<id>aldebaran-snapshots</id>
-			<name>Aldebaran Snapshots</name>
-			<url>http://aldebaran.dia.fi.upm.es/artifactory/sstreams-snapshots-local</url>
-		</repository>
-
-	</repositories>
-	
 </project>
