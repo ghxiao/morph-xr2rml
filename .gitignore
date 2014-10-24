@@ -1,7 +1,10 @@
 bin
 target/
 log/
+rdf_result.ttl
+
+# Eclipse:
 .cache
 .classpath
 .project
-.settings
+.settings/

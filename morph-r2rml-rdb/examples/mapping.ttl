@@ -1,0 +1,51 @@
+@prefix xrr: <http://i3s.modalis.xr2Rml#> .
+@prefix rr: <http://www.w3.org/ns/r2rml#> .
+@prefix ex: <http://example.com/> .
+    
+<#SportBsk>
+    a rr:TriplesMap;
+    rr:logicalTable [
+        rr:sqlQuery "select * from sport where id = 0"; 
+    ];
+    rr:subjectMap [ 
+    	rr:template "http://xr2rml/sport/{id}";
+		rr:class ex:Sport;
+    ];
+
+    rr:predicateObjectMap [
+    	rr:predicate ex:name;
+    	rr:objectMap [ rr:column "name"; ];
+    ];
+
+    rr:predicateObjectMap [
+    	rr:predicate ex:colors;
+    	rr:objectMap [
+    		rr:column "shirt_colors";
+    	];
+    ].
+    
+
+# <#StudentB3>
+    # a rr:TriplesMap;
+    # rr:logicalTable [ rr:sqlQuery "select * from student where sport = 300"; ];
+    # rr:subjectMap [ 
+    	# rr:template "http://xr2rml/student/{id}";
+		# rr:class ex:Student;
+    # ];
+    # rr:predicateObjectMap [
+    	# rr:predicate ex:comments;
+    	# rr:objectMap [
+    		# rr:column "comments";
+    		# xrr:parseType xrr:listOrMap; 
+	    	# xrr:format xrr:XML;
+    		# xrr:parse [
+      			# xrr:parseType xrr:listOrMap;
+	      		# xrr:parse [
+    	  			# xrr:parseType xrr:listOrMap; 
+        	  		# rr:termType xrr:RdfList;     
+          		# ];  
+          		# rr:termType xrr:RdfBag;
+          	# ]; 
+    	# ];
+    # ].
+    
