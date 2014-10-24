@@ -51,6 +51,25 @@
 			<url>https://code.lds.org/nexus/content/groups/main-repo</url>
 		</repository>
 
+		<repository>
+			<name>Third-party libraries</name>
+			<id>dropbox</id>
+			<url>https://dl.dropboxusercontent.com/u/23485314/m2</url>
+		</repository>
 	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+			<version>1.1.0</version>
+		</dependency>
+	</dependencies>
 
 </project>

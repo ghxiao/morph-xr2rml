@@ -30,18 +30,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>ant</groupId>
-			<artifactId>ant-apache-log4j</artifactId>
-			<version>1.6.5</version>
-		</dependency>
-
-		<dependency>
-			<groupId>zql</groupId>
-			<artifactId>zql</artifactId>
-			<version>0.1</version>
-		</dependency>
-
-		<dependency>
 			<groupId>com.hp.hpl.jena</groupId>
 			<artifactId>jena</artifactId>
 			<version>2.6.4</version>
@@ -57,6 +45,18 @@
 			<groupId>org.apache.jena</groupId>
 			<artifactId>jena-core</artifactId>
 			<version>2.11.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>zql</groupId>
+			<artifactId>zql</artifactId>
+			<version>0.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>json2xml</groupId>
+			<artifactId>json2xml</artifactId>
+			<version>unknown</version>
 		</dependency>
 
 	</dependencies>
