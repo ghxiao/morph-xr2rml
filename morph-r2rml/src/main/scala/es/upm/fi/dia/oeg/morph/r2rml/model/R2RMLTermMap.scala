@@ -18,63 +18,66 @@ import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import com.hp.hpl.jena.rdf.model.Statement
 
-/**
- * @note xR2RML: add support of parseType and recursiveParse
- */
 abstract class R2RMLTermMap(
     val termMapType: Constants.MorphTermMapType.Value,
-    termType: Option[String],
+    val termType: Option[String],
     val datatype: Option[String],
     val languageTag: Option[String],
-    var format: Option[String],
-    parseType: Option[String],
-    recursive_parse: xR2RMLRecursiveParse)
-        extends MorphR2RMLElement with IConstantTermMap with IColumnTermMap with ITemplateTermMap {
+    val nestedTermMap: Option[xR2RMLNestedTermMap])
+
+        extends MorphR2RMLElement with IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap {
 
     def this(rdfNode: RDFNode) = {
-        this(R2RMLTermMap.extractTermMapType(rdfNode), R2RMLTermMap.extractTermType(rdfNode), R2RMLTermMap.extractDatatype(rdfNode), R2RMLTermMap.extractLanguageTag(rdfNode), R2RMLTermMap.extractFomatType(rdfNode), R2RMLTermMap.extractParseType(rdfNode), R2RMLTermMap.extractRecursiveParse(rdfNode));
+        this(R2RMLTermMap.extractTermMapType(rdfNode),
+            R2RMLTermMap.extractTermType(rdfNode),
+            R2RMLTermMap.extractDatatype(rdfNode),
+            R2RMLTermMap.extractLanguageTag(rdfNode),
+            R2RMLTermMap.extractNestedTermMap(rdfNode));
         this.rdfNode = rdfNode;
         this.parse(rdfNode);
     }
 
-    val logger = Logger.getLogger(this.getClass().getName());
+    /** Jena resource corresponding to that term map */
     var rdfNode: RDFNode = null;
 
+    val logger = Logger.getLogger(this.getClass().getName());
+
     def accept(visitor: MorphR2RMLElementVisitor): Object = {
-        val result = visitor.visit(this);
-        result;
+        visitor.visit(this);
     }
 
-    def hasRecursiveParse(): Boolean = {
-        return (this.recursive_parse != null)
-    }
-
+    /**
+     * Decide the type of the term map (constant, column, reference, template) based on its properties,
+     * and assign the value of the appropriate trait member: IConstantTermMap.constantValue, IColumnTermMap.columnName etc.
+     *
+     * @param rdfNode the term map node
+     * @throws exception in case the term map type cannot be decided
+     */
     def parse(rdfNode: RDFNode) = {
         this.rdfNode = rdfNode;
         if (rdfNode.isAnon()) {
             val resourceNode = rdfNode.asResource();
+
             val constantStatement = resourceNode.getProperty(Constants.R2RML_CONSTANT_PROPERTY);
-            if (constantStatement != null) {
+            if (resourceNode.getProperty(Constants.R2RML_CONSTANT_PROPERTY) != null)
                 this.constantValue = constantStatement.getObject().toString();
-            } else {
+            else {
                 val columnStatement = resourceNode.getProperty(Constants.R2RML_COLUMN_PROPERTY);
-                if (columnStatement != null) {
+                if (columnStatement != null)
                     this.columnName = columnStatement.getObject().toString();
-                } else {
+                else {
                     val templateStatement = resourceNode.getProperty(Constants.R2RML_TEMPLATE_PROPERTY);
-                    if (templateStatement != null) {
+                    if (templateStatement != null)
                         this.templateString = templateStatement.getObject().toString();
-                    } else {
-                        val termMapType = this match {
-                            case _: R2RMLSubjectMap => { "SubjectMap"; }
-                            case _: R2RMLPredicateMap => { "PredicateMap"; }
-                            case _: R2RMLObjectMap => { "ObjectMap"; }
-                            case _: R2RMLGraphMap => { "GraphMap"; }
-                            case _ => { "TermMap"; }
+                    else {
+                        val refStmt = resourceNode.getProperty(xR2RML_Constants.xR2RML_REFERENCE_PROPERTY);
+                        if (refStmt != null)
+                            this.reference = refStmt.getObject().toString();
+                        else {
+                            val errorMessage = "Invalid term map " + resourceNode.getLocalName() + ". Should have one of rr:constant, rr:column, rr:template or xrr:reference.";
+                            logger.error(errorMessage);
+                            throw new Exception(errorMessage);
                         }
-                        val errorMessage = "Invalid mapping for " + resourceNode.getLocalName();
-                        logger.error(errorMessage);
-                        throw new Exception(errorMessage);
                     }
                 }
             }
@@ -83,6 +86,9 @@ abstract class R2RMLTermMap(
         }
     }
 
+    /**
+     * Return the term type mentioned by property rr:termType or the default term type otherwise
+     */
     def inferTermType(): String = {
         if (this.termType.isDefined) {
             this.termType.get
@@ -91,77 +97,30 @@ abstract class R2RMLTermMap(
         }
     }
 
-    // xR2RML
-    // xR2RML methods
-
-    def getFomatType() = {
-        if (this.format.isDefined) {
-            this.format.get
-        } else {
-            xR2RML_Constants.xR2RML_RRXDEFAULTFORMAT_URI
-        }
-    }
-
-    def setFomatType(data: String) = {
-
-        this.format = Some(data)
-
-    }
-
-    def getParseType() = {
-        if (this.parseType.isDefined) {
-            this.parseType.get
-        } else {
-            Constants.R2RML_LITERAL_URI
-        }
-    }
-
-    def getRecursiveParse() = {
-        var rr = recursive_parse;
-        recursive_parse
-    }
-
     def getDefaultTermType(): String = {
         val result = this match {
             case _: R2RMLObjectMap => {
-                // in case parseType is listOrMap => return rdfTriples, else return  
-                if (this.parseType.isDefined && this.parseType.get == xR2RML_Constants.xR2RML_RRXLISTORMAP_URI) {
-
-                    xR2RML_Constants.xR2RML_RDFTRIPLES_URI;
-                } else {
-                    if (this.termMapType == Constants.MorphTermMapType.ColumnTermMap
-                        || this.languageTag.isDefined || this.datatype.isDefined) {
-                        Constants.R2RML_LITERAL_URI;
-                    } else {
-                        Constants.R2RML_IRI_URI;
-                    }
-                }
+                if (termMapType == Constants.MorphTermMapType.ColumnTermMap
+                    || termMapType == Constants.MorphTermMapType.ReferenceTermMap
+                    || languageTag.isDefined
+                    || datatype.isDefined) {
+                    Constants.R2RML_LITERAL_URI;
+                } else
+                    Constants.R2RML_IRI_URI;
             }
 
             case _: R2RMLPredicateMap => {
-                if (this.parseType.isDefined && this.parseType.get == xR2RML_Constants.xR2RML_RRXLISTORMAP_URI) {
-                    xR2RML_Constants.xR2RML_RDFTRIPLES_URI;
+                if (termType.isDefined && !termType.get.equals(Constants.R2RML_IRI_URI)) {
+                    throw new Exception("Illegal termtype in predicateMap: " + termType.get);
+                } else
+                    Constants.R2RML_IRI_URI;
+            }
 
-                } else if (this.termType.isDefined && !this.termType.get.equals(Constants.R2RML_IRI_URI)) {
-                    throw new Exception("Illegal termtype in predicateMap ");
-                } else {
-                    Constants.R2RML_IRI_URI;
-                }
-            }
-            case _: R2RMLSubjectMap => {
-                if (this.parseType.isDefined && this.parseType.get == xR2RML_Constants.xR2RML_RRXLISTORMAP_URI) {
-                    xR2RML_Constants.xR2RML_RDFTRIPLES_URI;
-                } else {
-                    Constants.R2RML_IRI_URI;
-                }
-            }
+            case _: R2RMLSubjectMap => { Constants.R2RML_IRI_URI; }
             case _ => { Constants.R2RML_IRI_URI; }
         }
-
         result;
     }
-
-    // end of xR2RML
 
     /**
      * Return the list of column names (strings) referenced by the term map.
@@ -171,16 +130,13 @@ abstract class R2RMLTermMap(
      * @return list of strings representing column names
      */
     def getReferencedColumns(): List[String] = {
-        val result: List[String] =
-            if (this.termMapType == Constants.MorphTermMapType.ColumnTermMap) {
-                List(this.columnName);
-            } else if (this.termMapType == Constants.MorphTermMapType.TemplateTermMap) {
-                val template = this.getOriginalValue();
-                RegexUtility.getTemplateColumns(template, true).toList;
-            } else {
-                Nil
-            }
-
+        val result = this.termMapType match {
+            case Constants.MorphTermMapType.ConstantTermMap => { Nil }
+            case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
+            case Constants.MorphTermMapType.TemplateTermMap => { RegexUtility.getTemplateColumns(this.getOriginalValue(), true).toList }
+            case Constants.MorphTermMapType.ReferenceTermMap => { List(this.reference) }
+            case _ => { null; }
+        }
         result;
     }
 
@@ -189,18 +145,14 @@ abstract class R2RMLTermMap(
             case Constants.MorphTermMapType.ConstantTermMap => { this.constantValue; }
             case Constants.MorphTermMapType.ColumnTermMap => { this.columnName; }
             case Constants.MorphTermMapType.TemplateTermMap => { this.templateString; }
+            case Constants.MorphTermMapType.ReferenceTermMap => { this.reference; }
             case _ => { null; }
         }
-
         result
     }
 
     def isBlankNode(): Boolean = {
-        if (Constants.R2RML_BLANKNODE_URI.equals(this.termType)) {
-            true;
-        } else {
-            false;
-        }
+        Constants.R2RML_BLANKNODE_URI.equals(this.termType)
     }
 
     override def toString(): String = {
@@ -208,66 +160,55 @@ abstract class R2RMLTermMap(
             case Constants.MorphTermMapType.ConstantTermMap => { "rr:constant"; }
             case Constants.MorphTermMapType.ColumnTermMap => { "rr:column"; }
             case Constants.MorphTermMapType.TemplateTermMap => { "rr:template"; }
+            case Constants.MorphTermMapType.ReferenceTermMap => { "xrr:reference"; }
             case _ => "";
         }
-
         result += "::" + this.getOriginalValue();
-
         return result;
     }
-
 }
 
 object R2RMLTermMap {
     val logger = Logger.getLogger(this.getClass().getName());
-
     def determineTermMapType(resource: Resource) = {}
 
+    /**
+     * Extract the value of the rr:termpType property, returns None is no property found
+     * => means that it shall be deduced
+     */
     def extractTermType(rdfNode: RDFNode) = {
-
         rdfNode match {
             case resource: Resource => {
                 val termTypeStatement = resource.getProperty(Constants.R2RML_TERMTYPE_PROPERTY);
                 if (termTypeStatement != null) {
                     Some(termTypeStatement.getObject().toString());
-                } else {
+                } else
                     None
-                }
             }
-            case _ => {
-                None
-            }
+            case _ => None
         }
-
     }
 
+    /**
+     * Deduces the type of the term map (constant, column, reference, template) based on its properties
+     * @param rdfNode the term map node
+     * @throws exception in case the term map type cannot be decided
+     */
     def extractTermMapType(rdfNode: RDFNode) = {
-
         rdfNode match {
             case resource: Resource => {
-                val constantStatement = resource.getProperty(Constants.R2RML_CONSTANT_PROPERTY);
-                if (constantStatement != null) {
+                if (resource.getProperty(Constants.R2RML_CONSTANT_PROPERTY) != null)
                     Constants.MorphTermMapType.ConstantTermMap;
-                } else {
-                    val columnStatement = resource.getProperty(Constants.R2RML_COLUMN_PROPERTY);
-                    if (columnStatement != null) {
-                        Constants.MorphTermMapType.ColumnTermMap;
-                    } else {
-                        val templateStatement = resource.getProperty(Constants.R2RML_TEMPLATE_PROPERTY);
-                        if (templateStatement != null) {
-                            Constants.MorphTermMapType.TemplateTermMap;
-                        } else {
-                            /** @note xR2RML */
-                            val referenceStatement = resource.getProperty(xR2RML_Constants.xR2RML_REFERENCE_PROPERTY);
-                            if (referenceStatement != null) {
-                                Constants.MorphTermMapType.ReferenceTermMap;
-                            } else {
-                                val errorMessage = "Invalid mapping for " + resource.getLocalName();
-                                logger.error(errorMessage);
-                                throw new Exception(errorMessage);
-                            }
-                        }
-                    }
+                else if (resource.getProperty(Constants.R2RML_COLUMN_PROPERTY) != null)
+                    Constants.MorphTermMapType.ColumnTermMap;
+                else if (resource.getProperty(Constants.R2RML_TEMPLATE_PROPERTY) != null)
+                    Constants.MorphTermMapType.TemplateTermMap;
+                else if (resource.getProperty(xR2RML_Constants.xR2RML_REFERENCE_PROPERTY) != null)
+                    Constants.MorphTermMapType.ReferenceTermMap;
+                else {
+                    val errorMessage = "Invalid term map " + resource.getLocalName() + ". Should have one of rr:constant, rr:column, rr:template or xrr:reference.";
+                    logger.error(errorMessage);
+                    throw new Exception(errorMessage);
                 }
             }
             case _ => {
@@ -277,259 +218,218 @@ object R2RMLTermMap {
     }
 
     def extractDatatype(rdfNode: RDFNode) = {
-
         rdfNode match {
             case resource: Resource => {
                 val datatypeStatement = resource.getProperty(Constants.R2RML_DATATYPE_PROPERTY);
                 if (datatypeStatement != null) {
                     Some(datatypeStatement.getObject().toString());
-                } else {
+                } else
                     None
-                }
             }
-            case _ => {
-                None
-            }
+            case _ => None
         }
-
     }
 
     def extractLanguageTag(rdfNode: RDFNode) = {
-
         rdfNode match {
             case resource: Resource => {
                 val languageStatement = resource.getProperty(Constants.R2RML_LANGUAGE_PROPERTY);
                 if (languageStatement != null) {
                     Some(languageStatement.getObject().toString());
-                } else {
+                } else
                     None
-                }
             }
-            case _ => {
-                None
-            }
-        }
-
-    }
-
-    // xR2RML methods
-
-    def extractFomatType(rdfNode: RDFNode) = {
-
-        rdfNode match {
-            case resource: Resource => {
-                val xformatStatement = resource.getProperty(xR2RML_Constants.xR2RML_FORMAT_PROPERTY);
-                if (xformatStatement != null) {
-                    Some(xformatStatement.getObject().toString());
-                } else {
-                    None
-                }
-            }
-            case _ => {
-                None
-            }
+            case _ => None
         }
     }
 
-    /** @note xR2RML */
-    def extractParseType(rdfNode: RDFNode) = {
+    def extractNestedTermMap(rdfNode: RDFNode): Option[xR2RMLNestedTermMap] = {
+        None
 
-        rdfNode match {
-            case resource: Resource => {
-                val xParseTypeStatement = resource.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY);
-                if (xParseTypeStatement != null) {
-                    Some(xParseTypeStatement.getObject().toString());
-                } else {
-                    None
-                }
-            }
-            case _ => {
-                None
-            }
-        }
-    }
-
-    /** @note xR2RML */
-    def extractRecursiveParse(rdfNode: RDFNode): xR2RMLRecursiveParse = {
-        var recurs = rdfNode match {
-            case resource: Resource => {
-                var hasParse: Statement = null
-                try {
-                    hasParse = resource.getProperty(xR2RML_Constants.xR2RML_PARSE_PROPERTY)
-                } catch { case e: Exception => logger.error(" No more property \"parse\" "); }
-
-                if (hasParse == null) { null }
-                else {
-                    // if it has a parse
-                    var termt: String = null;
-                    var parset: String = null;
-                    var language: String = null;
-                    var datatype: String = null;
-                    try {
-                        language = hasParse.getProperty(Constants.R2RML_LANGUAGE_PROPERTY).getObject().toString();
-                        datatype = hasParse.getProperty(Constants.R2RML_DATATYPE_PROPERTY).getObject().toString();
-                    } catch { case e: Exception => logger.error(" Missing property datatype or languague "); }
-
-                    try {
-                        termt = hasParse.getProperty(Constants.R2RML_TERMTYPE_PROPERTY).getObject().toString();
-                        parset = hasParse.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY).getObject().toString();
-                    } catch { case e: Exception => logger.error(" Missing property in property \"parse\" "); System.exit(0); }
-                    if (termt == null) { logger.error("parse property without termType property"); System.exit(0); }
-                    if (parset == null) { logger.error("parse property without parseType property"); System.exit(0) }
-
-                    if (parset == xR2RML_Constants.xR2RML_RRXLISTORMAP_URI) {
-
-                        if (termt == xR2RML_Constants.xR2RML_RDFALT_URI || termt == xR2RML_Constants.xR2RML_RDFBAG_URI
-                            || termt == xR2RML_Constants.xR2RML_RDFSEQ_URI || termt == xR2RML_Constants.xR2RML_RDFLIST_URI) {
-                            var recursive_parse = new xR2RMLRecursiveParse(
-                                Some(hasParse.getProperty(Constants.R2RML_TERMTYPE_PROPERTY).getObject().toString()),
-                                Some(hasParse.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY).getObject().toString()),
-                                extractRecursiveParse(resource.getProperty(xR2RML_Constants.xR2RML_PARSE_PROPERTY).getObject()),
-                                Some(datatype), Some(language))
-                            recursive_parse
-                        } else {
-                            logger.error("non concordance between propeties in  \"parse\" ");
-                            System.exit(0);
-                            null
-                        }
-                    } else if (parset == Constants.R2RML_LITERAL_URI) {
-
-                        if (termt == Constants.R2RML_BLANKNODE_URI || termt == Constants.R2RML_LITERAL_URI || termt == Constants.R2RML_IRI_URI
-                            || termt == xR2RML_Constants.xR2RML_RDFALT_URI || termt == xR2RML_Constants.xR2RML_RDFBAG_URI
-                            || termt == xR2RML_Constants.xR2RML_RDFSEQ_URI || termt == xR2RML_Constants.xR2RML_RDFLIST_URI) {
-                            var recursive_parse = new xR2RMLRecursiveParse(
-                                Some(hasParse.getProperty(Constants.R2RML_TERMTYPE_PROPERTY).getObject().toString()),
-                                Some(hasParse.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY).getObject().toString()),
-                                extractRecursiveParse(resource.getProperty(xR2RML_Constants.xR2RML_PARSE_PROPERTY).getObject()),
-                                Some(datatype), Some(language))
-                            recursive_parse
-                        } else {
-                            logger.error("non concordance between propeties in  \"parse\" ");
-                            System.exit(0);
-                            null
-                        }
-                    } else {
-                        logger.error("non concordance between propeties in  \"parse\" ");
-                        System.exit(0);
-                        null
-                    }
-                    //   }
-                }
-            }
-            case _ => {
-                null
-            }
-        }
-
-        recurs
+        //        var recurs = rdfNode match {
+        //            case resource: Resource => {
+        //                var hasParse: Statement = null
+        //                try {
+        //                    hasParse = resource.getProperty(xR2RML_Constants.xR2RML_PARSE_PROPERTY)
+        //                } catch { case e: Exception => logger.error(" No more property \"parse\" "); }
+        //
+        //                if (hasParse == null) { null }
+        //                else {
+        //                    // if it has a parse
+        //                    var termt: String = null;
+        //                    var parset: String = null;
+        //                    var language: String = null;
+        //                    var datatype: String = null;
+        //                    try {
+        //                        language = hasParse.getProperty(Constants.R2RML_LANGUAGE_PROPERTY).getObject().toString();
+        //                        datatype = hasParse.getProperty(Constants.R2RML_DATATYPE_PROPERTY).getObject().toString();
+        //                    } catch { case e: Exception => logger.error(" Missing property datatype or languague "); }
+        //
+        //                    try {
+        //                        termt = hasParse.getProperty(Constants.R2RML_TERMTYPE_PROPERTY).getObject().toString();
+        //                        parset = hasParse.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY).getObject().toString();
+        //                    } catch { case e: Exception => logger.error(" Missing property in property \"parse\" "); System.exit(0); }
+        //                    if (termt == null) { logger.error("parse property without termType property"); System.exit(0); }
+        //                    if (parset == null) { logger.error("parse property without parseType property"); System.exit(0) }
+        //
+        //                    if (parset == xR2RML_Constants.xR2RML_RRXLISTORMAP_URI) {
+        //
+        //                        if (termt == xR2RML_Constants.xR2RML_RDFALT_URI || termt == xR2RML_Constants.xR2RML_RDFBAG_URI
+        //                            || termt == xR2RML_Constants.xR2RML_RDFSEQ_URI || termt == xR2RML_Constants.xR2RML_RDFLIST_URI) {
+        //                            var recursive_parse = new xR2RMLRecursiveParse(
+        //                                Some(hasParse.getProperty(Constants.R2RML_TERMTYPE_PROPERTY).getObject().toString()),
+        //                                Some(hasParse.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY).getObject().toString()),
+        //                                extractRecursiveParse(resource.getProperty(xR2RML_Constants.xR2RML_PARSE_PROPERTY).getObject()),
+        //                                Some(datatype), Some(language))
+        //                            recursive_parse
+        //                        } else {
+        //                            logger.error("non concordance between propeties in  \"parse\" ");
+        //                            System.exit(0);
+        //                            null
+        //                        }
+        //                    } else if (parset == Constants.R2RML_LITERAL_URI) {
+        //
+        //                        if (termt == Constants.R2RML_BLANKNODE_URI || termt == Constants.R2RML_LITERAL_URI || termt == Constants.R2RML_IRI_URI
+        //                            || termt == xR2RML_Constants.xR2RML_RDFALT_URI || termt == xR2RML_Constants.xR2RML_RDFBAG_URI
+        //                            || termt == xR2RML_Constants.xR2RML_RDFSEQ_URI || termt == xR2RML_Constants.xR2RML_RDFLIST_URI) {
+        //                            var recursive_parse = new xR2RMLRecursiveParse(
+        //                                Some(hasParse.getProperty(Constants.R2RML_TERMTYPE_PROPERTY).getObject().toString()),
+        //                                Some(hasParse.getProperty(xR2RML_Constants.xR2RML_PARSETYPE_PROPERTY).getObject().toString()),
+        //                                extractRecursiveParse(resource.getProperty(xR2RML_Constants.xR2RML_PARSE_PROPERTY).getObject()),
+        //                                Some(datatype), Some(language))
+        //                            recursive_parse
+        //                        } else {
+        //                            logger.error("non concordance between propeties in  \"parse\" ");
+        //                            System.exit(0);
+        //                            null
+        //                        }
+        //                    } else {
+        //                        logger.error("non concordance between propeties in  \"parse\" ");
+        //                        System.exit(0);
+        //                        null
+        //                    }
+        //                    //   }
+        //                }
+        //            }
+        //            case _ => {
+        //                null
+        //            }
+        //        }
+        //
+        //        recurs
     }
     /////////////////////////////////////////////// 
 
+    /**
+     * From a term map, return a list with the following elements:
+     * - type of term map (constant, column, reference, template),
+     * - term type (as a Jena resource)
+     * - optional data type
+     * - optional language tag
+     * - optional nested term map
+     */
     def extractCoreProperties(rdfNode: RDFNode) = {
         val termMapType = R2RMLTermMap.extractTermMapType(rdfNode);
+        val termType = R2RMLTermMap.extractTermType(rdfNode);
         val datatype = R2RMLTermMap.extractDatatype(rdfNode);
         val languageTag = R2RMLTermMap.extractLanguageTag(rdfNode);
-        val termType = R2RMLTermMap.extractTermType(rdfNode);
+        val nestedTM = R2RMLTermMap.extractNestedTermMap(rdfNode);
 
-        /** @note xR2RML */
-        val format = R2RMLTermMap.extractFomatType(rdfNode);
-        val parseType = R2RMLTermMap.extractParseType(rdfNode);
-        val recursiveParse = R2RMLTermMap.extractRecursiveParse(rdfNode);
+        logger.trace("Extracted term map core properties: termMapType: " + termMapType + ". termType: "
+            + termType + ". datatype: " + datatype + ". languageTag: " + languageTag
+            + ". nestedTermMap: " + nestedTM)
 
-        val coreProperties = (termMapType, termType, datatype, languageTag, format, parseType, recursiveParse)
+        val coreProperties = (termMapType, termType, datatype, languageTag, nestedTM)
         coreProperties;
     }
 
-    def extractTermMaps(resource: Resource, termMapType: Constants.MorphPOS.Value, formatFromLogicalTable: String): Set[R2RMLTermMap] = {
-        val mapProperties1 = termMapType match {
-            case Constants.MorphPOS.sub => { List(Constants.R2RML_SUBJECTMAP_PROPERTY); }
-            case Constants.MorphPOS.pre => { List(Constants.R2RML_PREDICATEMAP_PROPERTY); }
-            case Constants.MorphPOS.obj => { List(Constants.R2RML_OBJECTMAP_PROPERTY); }
-            case Constants.MorphPOS.graph => { List(Constants.R2RML_GRAPHMAP_PROPERTY); }
-            case _ => { Nil }
-        }
+    /**
+     * Find term maps of the given triples map by term position (subject, object, predicate) by looking for
+     * constant (e.g.g rr:subject) and non-constant (e.g. rr:subjectMap) properties
+     *
+     * @param resource instance of R2RMLTriplesMap
+     * @param termPos what to extract: subject, predicate, object or graph
+     * @param refFormulation the reference formulation of the current triples map's logical source
+     */
+    def extractTermMaps(resource: Resource, termPos: Constants.MorphPOS.Value, refFormulation: String): Set[R2RMLTermMap] = {
 
-        val maps1 = mapProperties1.map(mapProperty => {
-            val mapStatements = resource.listProperties(mapProperty);
-            if (mapStatements != null) {
-                mapStatements.toList().flatMap(mapStatement => {
-                    if (mapStatement != null) {
-                        val mapStatementObject = mapStatement.getObject();
-                        termMapType match {
-                            case Constants.MorphPOS.sub => {
-                                val sm = R2RMLSubjectMap(mapStatementObject, formatFromLogicalTable);
-                                Some(sm)
-                            }
-                            case Constants.MorphPOS.pre => {
-                                val pm = R2RMLPredicateMap(mapStatementObject, formatFromLogicalTable);
-                                Some(pm);
-                            }
-                            case Constants.MorphPOS.obj => {
-                                val mapStatementObjectResource = mapStatementObject.asInstanceOf[Resource];
-                                if (!R2RMLRefObjectMap.isRefObjectMap(mapStatementObjectResource)) {
-                                    val om = R2RMLObjectMap(mapStatementObject, formatFromLogicalTable);
-                                    om.parse(mapStatementObject)
-                                    Some(om);
-                                } else { None; }
-                            }
-                            case Constants.MorphPOS.graph => {
-                                val gm = R2RMLGraphMap(mapStatementObject);
-                                if (Constants.R2RML_DEFAULT_GRAPH_URI.equals(gm.getOriginalValue)) {
-                                    None
-                                } else { Some(gm) }
-                            }
-                            case _ => { None }
-                        }
-                    } else { None }
-                });
-            } else { Nil }
-        }).flatten
-
-        val mapProperties2 = termMapType match {
-            case Constants.MorphPOS.sub => { List(Constants.R2RML_SUBJECT_PROPERTY); }
-            case Constants.MorphPOS.pre => { List(Constants.R2RML_PREDICATE_PROPERTY); }
-            case Constants.MorphPOS.obj => { List(Constants.R2RML_OBJECT_PROPERTY); }
-            case Constants.MorphPOS.graph => { List(Constants.R2RML_GRAPH_PROPERTY); }
-            case _ => { Nil }
+        // Extract term map introduced with non-constant properties rr:subjectMap, rr:predicateMap, rr:objectMap and rr:graphMap
+        var mapProperty = termPos match {
+            case Constants.MorphPOS.sub => Constants.R2RML_SUBJECTMAP_PROPERTY
+            case Constants.MorphPOS.pre => Constants.R2RML_PREDICATEMAP_PROPERTY
+            case Constants.MorphPOS.obj => Constants.R2RML_OBJECTMAP_PROPERTY
+            case Constants.MorphPOS.graph => Constants.R2RML_GRAPHMAP_PROPERTY
         }
-        val maps2 = mapProperties2.map(mapProperty => {
-            val mapStatements = resource.listProperties(mapProperty);
-            if (mapStatements != null) {
-                mapStatements.toList().flatMap(mapStatement => {
-                    if (mapStatement != null) {
-                        val mapStatementObject = mapStatement.getObject();
-                        termMapType match {
-                            case Constants.MorphPOS.sub => {
-                                val sm = new R2RMLSubjectMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, Set.empty, Set.empty, None, None, null);
-                                sm.parse(mapStatementObject)
-                                Some(sm)
-                            }
-                            case Constants.MorphPOS.pre => {
-                                val pm = new R2RMLPredicateMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, None, None, null);
-                                pm.parse(mapStatementObject)
-                                Some(pm);
-                            }
-                            case Constants.MorphPOS.obj => {
-                                val om = new R2RMLObjectMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, None, None, new xR2RMLRecursiveParse(null, null, null, None, None));
-                                om.parse(mapStatementObject)
-                                Some(om)
-                            }
-                            case Constants.MorphPOS.graph => {
-                                val gm = new R2RMLGraphMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, None, None, None);
-                                gm.parse(mapStatementObject)
-                                if (Constants.R2RML_DEFAULT_GRAPH_URI.equals(gm.getOriginalValue)) {
-                                    None
-                                } else { Some(gm) }
-                            }
-                            case _ => { None }
+        var stmts = resource.listProperties(mapProperty);
+        val maps1 =
+            if (stmts != null) {
+                stmts.toList().flatMap(mapStatement => {
+
+                    val stmtObject = mapStatement.getObject();
+                    termPos match {
+                        case Constants.MorphPOS.sub => Some(R2RMLSubjectMap(stmtObject, refFormulation))
+                        case Constants.MorphPOS.pre => Some(R2RMLPredicateMap(stmtObject, refFormulation))
+                        case Constants.MorphPOS.obj => {
+                            val stmtObjectResource = stmtObject.asInstanceOf[Resource]
+                            if (!R2RMLRefObjectMap.isRefObjectMap(stmtObjectResource)) {
+                                Some(R2RMLObjectMap(stmtObject, refFormulation))
+                            } else None
                         }
-                    } else { None }
-                });
+                        case Constants.MorphPOS.graph => {
+                            val gm = R2RMLGraphMap(stmtObject);
+                            if (Constants.R2RML_DEFAULT_GRAPH_URI.equals(gm.getOriginalValue)) {
+                                None
+                            } else { Some(gm) }
+                        }
+                        case _ => { None }
+                    }
+                })
             } else { Nil }
-        }).flatten
+
+        // Extract term map introduced with constant properties rr:subject, rr:predicate, rr:object and rr:graph
+        mapProperty = termPos match {
+            case Constants.MorphPOS.sub => Constants.R2RML_SUBJECT_PROPERTY
+            case Constants.MorphPOS.pre => Constants.R2RML_PREDICATE_PROPERTY
+            case Constants.MorphPOS.obj => Constants.R2RML_OBJECT_PROPERTY
+            case Constants.MorphPOS.graph => Constants.R2RML_GRAPH_PROPERTY
+        }
+        stmts = resource.listProperties(mapProperty)
+        val maps2 =
+            if (stmts != null) {
+                stmts.toList().flatMap(mapStatement => {
+                    val stmtObject = mapStatement.getObject()
+                    termPos match {
+                        case Constants.MorphPOS.sub => {
+                            val sm = new R2RMLSubjectMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, Set.empty, Set.empty);
+                            sm.parse(stmtObject)
+                            Some(sm)
+                        }
+                        case Constants.MorphPOS.pre => {
+                            val pm = new R2RMLPredicateMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None);
+                            pm.parse(stmtObject)
+                            Some(pm);
+                        }
+                        case Constants.MorphPOS.obj => {
+                            val om = new R2RMLObjectMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_LITERAL_URI), None, None, None);
+                            om.parse(stmtObject)
+                            Some(om)
+                        }
+                        case Constants.MorphPOS.graph => {
+                            val gm = new R2RMLGraphMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None);
+                            gm.parse(stmtObject)
+                            if (Constants.R2RML_DEFAULT_GRAPH_URI.equals(gm.getOriginalValue)) {
+                                None
+                            } else { Some(gm) }
+                        }
+                        case _ => { None }
+                    }
+                })
+            } else { Nil }
 
         val maps = maps1 ++ maps2
-        maps.toSet
+        val mapsSet = maps.toSet
+        logger.trace("Extracted term maps: " + mapsSet)
+        mapsSet
     }
 
 }

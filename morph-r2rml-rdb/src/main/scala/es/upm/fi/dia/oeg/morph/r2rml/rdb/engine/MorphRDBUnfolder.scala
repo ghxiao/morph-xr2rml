@@ -1,39 +1,40 @@
 package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
-import scala.collection.JavaConversions._
 import java.util.Collection
+
+import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.base.Constants
-import java.util.HashSet
+
+import Zql.ZConstant
+import Zql.ZExpression
 import Zql.ZQuery
-import Zql.ZSelectItem
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
+import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
+import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
+import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
+import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
+import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLLogicalTable
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSQLQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
-import Zql.ZExpression
-import Zql.ZConstant
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
-import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
-import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -63,7 +64,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * SQLFromItem in case of a logical table with a table name,
      * or an SQLQuery in case of a logical table with a query string
      */
-    def unfoldLogicalTable(logicalTable: R2RMLLogicalTable): SQLLogicalTable = {
+    def unfoldLogicalTable(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
         val logicalTableType = logicalTable.logicalTableType;
 
@@ -74,7 +75,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 resultAux.databaseType = this.dbType;
                 resultAux
             }
-            case Constants.LogicalTableType.QUERY_STRING => {
+            case Constants.LogicalTableType.SQL_QUERY => {
                 val sqlString = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
                 val sqlString2 = if (!sqlString.endsWith(";")) {
                     sqlString + ";";
@@ -86,7 +87,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 } catch {
                     case e: Exception => {
                         logger.warn("Not able to parse the query, string will be used.");
-                        val resultAux = new SQLFromItem(sqlString, Constants.LogicalTableType.QUERY_STRING);
+                        val resultAux = new SQLFromItem(sqlString, Constants.LogicalTableType.SQL_QUERY);
                         resultAux.databaseType = this.dbType;
                         resultAux
                     }
@@ -178,7 +179,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      */
     def unfoldTriplesMap(
         triplesMapId: String,
-        logicalTable: R2RMLLogicalTable,
+        logicalTable: xR2RMLLogicalSource,
         subjectMap: R2RMLSubjectMap,
         poms: Collection[R2RMLPredicateObjectMap]): IQuery = {
 
@@ -195,7 +196,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 logicalTableAux match {
                     case _: SQLQuery => {
                         val zQuery = this.unfoldLogicalTable(logicalTable).asInstanceOf[ZQuery];
-                        val resultAux = new SQLFromItem(zQuery.toString(), Constants.LogicalTableType.QUERY_STRING);
+                        val resultAux = new SQLFromItem(zQuery.toString(), Constants.LogicalTableType.SQL_QUERY);
                         resultAux.databaseType = this.dbType
                         resultAux
                     }
@@ -243,7 +244,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                             val errorMessage = "Parent logical table is not found for RefObjectMap : " + pom.getMappedPredicateName(0);
                             throw new Exception(errorMessage);
                         }
-                        val sqlParentLogicalTable = this.unfoldLogicalTable(parentLogicalTable.asInstanceOf[R2RMLLogicalTable]);
+                        val sqlParentLogicalTable = this.unfoldLogicalTable(parentLogicalTable.asInstanceOf[xR2RMLLogicalSource]);
                         val joinQueryAlias = sqlParentLogicalTable.generateAlias();
 
                         sqlParentLogicalTable.setAlias(joinQueryAlias);
@@ -339,7 +340,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     }
 
     def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): IQuery = {
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[R2RMLLogicalTable];
+        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
         val subjectMap = triplesMap.subjectMap;
         val predicateObjectMaps = triplesMap.predicateObjectMaps;
         val triplesMapId = triplesMap.id;
@@ -394,7 +395,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
     override def unfoldSubject(cm: MorphBaseClassMapping): IQuery = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[R2RMLLogicalTable];
+        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
         val subjectMap = triplesMap.subjectMap;
         val predicateObjectMaps = triplesMap.predicateObjectMaps;
         val id = triplesMap.id;
@@ -402,7 +403,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         return result;
     }
 
-    def visit(logicalTable: R2RMLLogicalTable): SQLLogicalTable = {
+    def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val result = this.unfoldLogicalTable(logicalTable);
         result;
     }
@@ -436,7 +437,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 object MorphRDBUnfolder {
     def unfoldJoinConditions(
         pJoinConditions: Iterable[R2RMLJoinCondition],
-        parentTableAlias: String,
+        childTableAlias: String,
         joinQueryAlias: String,
         dbType: String): ZExpression = {
 
@@ -451,7 +452,7 @@ object MorphRDBUnfolder {
             joinCondition => {
                 var childColumnName = joinCondition.childColumnName
                 childColumnName = childColumnName.replaceAll("\"", enclosedCharacter);
-                childColumnName = parentTableAlias + "." + childColumnName;
+                childColumnName = childTableAlias + "." + childColumnName;
                 val childColumn = new ZConstant(childColumnName, ZConstant.COLUMNNAME);
                 
                 var parentColumnName = joinCondition.parentColumnName;

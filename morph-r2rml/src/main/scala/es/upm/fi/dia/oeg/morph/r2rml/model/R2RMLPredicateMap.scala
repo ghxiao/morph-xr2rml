@@ -5,49 +5,36 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.rdf.model.RDFNode
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import org.apache.log4j.Logger
 
-class R2RMLPredicateMap(termMapType: Constants.MorphTermMapType.Value, termType: Option[String], datatype: Option[String], languageTag: Option[String], format: Option[String], parseType: Option[String], recursive_parse: xR2RMLRecursiveParse)
-  extends R2RMLTermMap(termMapType, termType, datatype, languageTag, format, parseType, recursive_parse) {
+class R2RMLPredicateMap(
+    termMapType: Constants.MorphTermMapType.Value,
+    termType: Option[String],
+    datatype: Option[String],
+    languageTag: Option[String])
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None) {
 
-  var parset = this.getParseType
-  var termtype = this.inferTermType
-
-  if (termtype != null && !termtype.equals(Constants.R2RML_IRI_URI) && !termtype.equals(xR2RML_Constants.xR2RML_RDFTRIPLES_URI)) {
-    throw new Exception("Illegal termtype in predicateMap ");
-  }
-
-  if (parset != null) {
-    if (!parset.equals(Constants.R2RML_LITERAL_URI) && !parset.equals(xR2RML_Constants.xR2RML_RRXLISTORMAP_URI)) {
-      throw new Exception("Illegal parsetype value in predicateMap ");
-    }
-  }
-
-  val pars = this.getRecursiveParse
-  if (pars != null) { throw new Exception("Illegal parse in predicateMap "); }
+    var termtype = this.inferTermType
 }
 
 object R2RMLPredicateMap {
-  def apply(rdfNode: RDFNode, formatFromLogicalTable: String): R2RMLPredicateMap = {
-    val coreProperties = R2RMLTermMap.extractCoreProperties(rdfNode);
-    //coreProperties = (termMapType, termType, datatype, languageTag)
-    val termMapType = coreProperties._1;
-    val termType = coreProperties._2;
-    val datatype = coreProperties._3;
-    val languageTag = coreProperties._4;
-    var format = coreProperties._5;
-    val parseType = coreProperties._6;
-    val recursive_parse = coreProperties._7;
-    if (!format.isDefined || format == null) {
-      format = Some(formatFromLogicalTable)
-    }
-    val pm = new R2RMLPredicateMap(termMapType, termType, datatype, languageTag, format, parseType, recursive_parse);
-    pm.parse(rdfNode);
-    pm;
-  }
+    val logger = Logger.getLogger(this.getClass().getName());
 
-  def extractPredicateMaps(resource: Resource, formatFromLogicalTable: String): Set[R2RMLPredicateMap] = {
-    val tms = R2RMLTermMap.extractTermMaps(resource, Constants.MorphPOS.pre, formatFromLogicalTable);
-    val result = tms.map(tm => tm.asInstanceOf[R2RMLPredicateMap]);
-    result;
-  }
+    def apply(rdfNode: RDFNode, formatFromLogicalTable: String): R2RMLPredicateMap = {
+        val coreProperties = R2RMLTermMap.extractCoreProperties(rdfNode);
+        val termMapType = coreProperties._1;
+        val termType = coreProperties._2;
+        val datatype = coreProperties._3;
+        val languageTag = coreProperties._4;
+        val pm = new R2RMLPredicateMap(termMapType, termType, datatype, languageTag);
+        pm.parse(rdfNode);
+        pm;
+    }
+
+    def extractPredicateMaps(resource: Resource, formatFromLogicalTable: String): Set[R2RMLPredicateMap] = {
+        logger.trace("Looking for predicate maps")
+        val tms = R2RMLTermMap.extractTermMaps(resource, Constants.MorphPOS.pre, formatFromLogicalTable);
+        val result = tms.map(tm => tm.asInstanceOf[R2RMLPredicateMap]);
+        result;
+    }
 }

@@ -1,67 +1,50 @@
 package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
-import scala.collection.JavaConversions._
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import org.apache.log4j.Logger
-import java.util.Collection
-import es.upm.fi.dia.oeg.morph.base.DBUtility
-import java.sql.ResultSet
-import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import java.sql.ResultSetMetaData
 import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.RegexUtility
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import Zql.ZConstant
-import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLLogicalTable
-import com.hp.hpl.jena.rdf.model.RDFNode
+import java.sql.ResultSet
+import java.sql.ResultSetMetaData
+
+import scala.collection.JavaConversions._
+
+import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
-import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.rdf.model.Literal
+import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.rdf.model.RDFList
+import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.vocabulary.RDF
+
+import Zql.ZConstant
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.DBUtility
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.RegexUtility
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
+import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
+import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import com.hp.hpl.jena.rdf.model.RDFList
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.rdf.model.ModelFactoryBase
+import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
-import java.io.BufferedWriter
-import java.io.FileWriter
-import javax.json.Json
-import java.io.FileReader
-import javax.json.JsonReader
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLRecursiveParse
-import javax.json.JsonValue
-import javax.json.JsonObject
-import javax.json.JsonString
-import javax.json.JsonNumber
-import javax.json.JsonArray
-import java.io.File
-import java.io.PrintStream
-import java.io.IOException
-import java.io.PrintWriter
-import java.io.BufferedReader
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
-import javax.json.JsonStructure
-import es.upm.fi.dia.oeg.morph.base.xR2RML_CSV_to_JSON
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphRDBUnfolder,
@@ -106,7 +89,7 @@ class MorphRDBDataTranslator(
         }
     }
 
-    def visit(logicalTable: R2RMLLogicalTable): Object = {
+    def visit(logicalTable: xR2RMLLogicalSource): Object = {
         // TODO Auto-generated method stub
         null;
     }
@@ -152,7 +135,7 @@ class MorphRDBDataTranslator(
      * and a list of resources representing target graphs mentioned in the predicate-object map.
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
-    def generateRDFTriples(logicalTable: R2RMLLogicalTable, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery, defaultFormt: String) = {
+    def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
 
         logger.debug("generateRDFTriples: starting translating RDB data into RDF instances...");
         if (sm == null) {
@@ -195,7 +178,7 @@ class MorphRDBDataTranslator(
             logger.trace("Row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
                 // Create the subject resource
-                val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype, defaultFormt);
+                val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
                 if (subject == null) {
                     val errorMessage = "null value in the subject triple!";
                     logger.warn(errorMessage);
@@ -205,7 +188,7 @@ class MorphRDBDataTranslator(
 
                 // Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.map(sgmElement => {
-                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalTable.alias, mapXMLDatatype, defaultFormt)
+                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalTable.alias, mapXMLDatatype)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
                         case Constants.R2RML_IRI_URI => {
@@ -249,13 +232,13 @@ class MorphRDBDataTranslator(
 
                     // Make a list of resources for the predicate maps of this predicate-object map
                     val predicates = pom.predicateMaps.map(predicateMap => {
-                        this.translateData(predicateMap, rows, logicalTable.alias, mapXMLDatatype, defaultFormt)
+                        this.translateData(predicateMap, rows, logicalTable.alias, mapXMLDatatype)
                     });
                     logger.trace("Row " + i + " predicates: " + predicates)
 
                     // Make a list of resources for the object maps of this predicate-object map
                     val objects = pom.objectMaps.map(objectMap => {
-                        this.translateData(objectMap, rows, alias, mapXMLDatatype, defaultFormt)
+                        this.translateData(objectMap, rows, alias, mapXMLDatatype)
                     });
                     logger.trace("Row " + i + " objects: " + objects)
 
@@ -264,7 +247,7 @@ class MorphRDBDataTranslator(
                         val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap)
                         val parentSubjectMap = parentTriplesMap.subjectMap;
                         val parentTableAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
-                        val parentSubjects = this.translateData(parentSubjectMap, rows, parentTableAlias, mapXMLDatatype, defaultFormt)
+                        val parentSubjects = this.translateData(parentSubjectMap, rows, parentTableAlias, mapXMLDatatype)
                         parentSubjects
 
                         /* if (xR2RMLDataTranslator.checkJoinParseCondition(refObjectMap, rows, this.properties.databaseType, parentTableAlias, logicalTable.alias)) {
@@ -282,7 +265,7 @@ class MorphRDBDataTranslator(
                     // Create the list of resources representing target graphs mentioned in the predicate-object map
                     val pogm = pom.graphMaps;
                     val predicateObjectGraphs = pogm.map(pogmElement => {
-                        val poGraphValue = this.translateData(pogmElement, rows, null, mapXMLDatatype, defaultFormt)
+                        val poGraphValue = this.translateData(pogmElement, rows, null, mapXMLDatatype)
                         poGraphValue
                     });
                     if (!predicateObjectGraphs.isEmpty)
@@ -368,23 +351,17 @@ class MorphRDBDataTranslator(
 
     override def generateRDFTriples(cm: MorphBaseClassMapping, iQuery: IQuery) = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[R2RMLLogicalTable];
+        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
-        // xR2RML
-        val defaultF = logicalTable.getFormat
-        // end of xR2RML
-        this.generateRDFTriples(logicalTable, sm, poms, iQuery, defaultF);
+        this.generateRDFTriples(logicalTable, sm, poms, iQuery);
     }
 
     override def generateSubjects(cm: MorphBaseClassMapping, iQuery: IQuery) = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[R2RMLLogicalTable];
+        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
         val sm = triplesMap.subjectMap;
-        // xR2RML
-        val defaultF = logicalTable.getFormat
-        // end of xR2RML
-        this.generateRDFTriples(logicalTable, sm, Nil, iQuery, defaultF);
+        this.generateRDFTriples(logicalTable, sm, Nil, iQuery);
     }
 
     /**
@@ -466,7 +443,7 @@ class MorphRDBDataTranslator(
      * depending on the term type specified in the term map.
      * For the R2RML case, the list contains only one RDF term.
      */
-    def translateData(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String], defaultF: String): List[RDFNode] = {
+    def translateData(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
 
         var resultat: List[RDFNode] = List(null);
         resultat = termMap.inferTermType match {
@@ -499,74 +476,44 @@ class MorphRDBDataTranslator(
             /** @note xR2RML */
             case xR2RML_Constants.xR2RML_RDFLIST_URI => {
                 if (dbValue != null) {
-                    if (termMap.getParseType != null && termMap.getParseType.equals(xR2RML_Constants.xR2RML_RRXLISTORMAP_URI)) {
-                        // call the recursive parser
-                        xR2RMLDataTranslator.recursive_parser(this.properties, this.materializer, termMap, dbValue, datatype, termMap.languageTag, false, defaultF)
-                    } else {
-                        var tab = Array.ofDim[RDFNode](1);
-                        tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                        val list = ModelFactory.createDefaultModel().createList(tab)
-                        var result = List(list)
-                        //for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                        result
-                    }
+                    var tab = Array.ofDim[RDFNode](1);
+                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
+                    val list = ModelFactory.createDefaultModel().createList(tab)
+                    var result = List(list)
+                    result
                 } else { null }
             }
 
             case xR2RML_Constants.xR2RML_RDFBAG_URI => {
                 if (dbValue != null) {
-                    if (termMap.getParseType != null && termMap.getParseType.equals(xR2RML_Constants.xR2RML_RRXLISTORMAP_URI)) {
-                        // call the recursive parser
-                        xR2RMLDataTranslator.recursive_parser(this.properties, this.materializer, termMap, dbValue, datatype, termMap.languageTag, false, defaultF)
-                    } else {
-                        var tab = Array.ofDim[RDFNode](1);
-                        tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                        val bag = ModelFactory.createDefaultModel().createBag()
-                        bag.add(tab(0))
-                        var result = List(bag)
-                        //for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                        result
-
-                    }
+                    var tab = Array.ofDim[RDFNode](1);
+                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
+                    val bag = ModelFactory.createDefaultModel().createBag()
+                    bag.add(tab(0))
+                    var result = List(bag)
+                    result
                 } else { null }
             }
 
             case xR2RML_Constants.xR2RML_RDFALT_URI => {
                 if (dbValue != null) {
-                    if (termMap.getParseType != null && termMap.getParseType.equals(xR2RML_Constants.xR2RML_RRXLISTORMAP_URI)) {
-                        // call the recursive parser
-                        xR2RMLDataTranslator.recursive_parser(this.properties, this.materializer, termMap, dbValue, datatype, termMap.languageTag, false, defaultF)
-                    } else {
-                        var tab = Array.ofDim[RDFNode](1);
-                        tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                        val alt = ModelFactory.createDefaultModel().createAlt()
-                        alt.add(tab(0))
-                        var result = List(alt)
-                        //for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                        result
-                    }
+                    var tab = Array.ofDim[RDFNode](1);
+                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
+                    val alt = ModelFactory.createDefaultModel().createAlt()
+                    alt.add(tab(0))
+                    var result = List(alt)
+                    result
                 } else { null }
             }
 
             case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
                 if (dbValue != null) {
-                    if (termMap.getParseType != null && termMap.getParseType.equals(xR2RML_Constants.xR2RML_RRXLISTORMAP_URI)) {
-                        // call the recursive parser
-                        xR2RMLDataTranslator.recursive_parser(this.properties, this.materializer, termMap, dbValue, datatype, termMap.languageTag, false, defaultF)
-                    } else {
-                        var tab = Array.ofDim[RDFNode](1);
-                        tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                        val seq = ModelFactory.createDefaultModel().createSeq()
-                        seq.add(tab(0))
-                        var result = List(seq)
-                        // for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                        result
-                    }
-                } else { null }
-            }
-            case xR2RML_Constants.xR2RML_RDFTRIPLES_URI => {
-                if (dbValue != null) {
-                    xR2RMLDataTranslator.recursive_parser(this.properties, this.materializer, termMap, dbValue, datatype, termMap.languageTag, true, defaultF)
+                    var tab = Array.ofDim[RDFNode](1);
+                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
+                    val seq = ModelFactory.createDefaultModel().createSeq()
+                    seq.add(tab(0))
+                    var result = List(seq)
+                    result
                 } else { null }
             }
             // end of  xR2RML 
@@ -581,11 +528,11 @@ class MorphRDBDataTranslator(
 
     /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:
-     * for each column reference in the term map (column or template), read cell values from the current row, 
+     * for each column reference in the term map (column or template), read cell values from the current row,
      * translate them into one RDF term.
      * In the R2RML case, the result list should contain only one term.
      */
-    def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String], defaultFormat: String): List[RDFNode] = {
+    def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
 
         var result: List[RDFNode] = List(null);
 
@@ -615,12 +562,12 @@ class MorphRDBDataTranslator(
                     }
 
                 // Generate the RDF terms
-                this.translateData(termMap, dbValue, datatype, defaultFormat);
+                this.translateData(termMap, dbValue, datatype);
             }
 
             case Constants.MorphTermMapType.ConstantTermMap => {
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-                this.translateData(termMap, termMap.constantValue, datatype, defaultFormat);
+                this.translateData(termMap, termMap.constantValue, datatype);
             }
 
             case Constants.MorphTermMapType.TemplateTermMap => {
@@ -681,7 +628,7 @@ class MorphRDBDataTranslator(
                 else {
                     val templateWithDBValue = RegexUtility.replaceTokens(termMap.templateString, replacements);
                     if (templateWithDBValue != null) {
-                        this.translateData(termMap, templateWithDBValue, datatype, defaultFormat);
+                        this.translateData(termMap, templateWithDBValue, datatype);
                     } else { null }
                 }
             }

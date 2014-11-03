@@ -62,7 +62,7 @@ object MorphRDBRunner {
             logger.info("properties Directory = " + configDir);
             logger.info("properties File      = " + configFile);
             
-            // Create the runner, parse the mapping document, create the unfolder, data materializer, data traenslator etc.
+            // Create the runner, parse the mapping document, create the unfolder, data materializer, data translator etc.
             val runner = MorphRDBRunner(configDir, configFile);
             
             // Start the translation process
@@ -81,7 +81,7 @@ object MorphRDBRunner {
             // Display the result on the std output
             model.write(System.out, outputFormat, null);
 
-            // Save the result in the outpuut file again but with the requested format (in case it is different)
+            // Save the result in the output file again but with the requested format (in case it is different)
             erasefile(outputFilepath);
             model.write(new FileWriter(outputFilepath), outputFormat);
         } catch {

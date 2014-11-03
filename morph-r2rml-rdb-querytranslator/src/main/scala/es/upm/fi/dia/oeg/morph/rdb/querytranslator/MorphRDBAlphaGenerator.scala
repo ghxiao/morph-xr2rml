@@ -1,26 +1,28 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import scala.collection.JavaConversions._
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
-import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLLogicalTable
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
-import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
 
 class MorphRDBAlphaGenerator(md:R2RMLMappingDocument,unfolder:MorphRDBUnfolder)
 extends MorphBaseAlphaGenerator(md,unfolder)
@@ -92,7 +94,7 @@ extends MorphBaseAlphaGenerator(md,unfolder)
 //				val parentLogicalTable = refObjectMap.getParentLogicalTable().asInstanceOf[R2RMLLogicalTable];
 				//val md = this.owner.getMappingDocument().asInstanceOf[R2RMLMappingDocument];
 				val parentTriplesMap = md.getParentTriplesMap(refObjectMap);
-				val parentLogicalTable = parentTriplesMap.getLogicalTable.asInstanceOf[R2RMLLogicalTable];
+				val parentLogicalTable = parentTriplesMap.getLogicalTable.asInstanceOf[xR2RMLLogicalSource];
 				
 				if(parentLogicalTable == null) {
 					val errorMessage = "Parent logical table is not found for RefObjectMap : " + refObjectMap;
@@ -129,7 +131,7 @@ extends MorphBaseAlphaGenerator(md,unfolder)
 	override def calculateAlphaSubject(subject:Node, abstractConceptMapping:MorphBaseClassMapping ) 
 		: SQLLogicalTable = {
 		val cm = abstractConceptMapping.asInstanceOf[R2RMLTriplesMap];
-		val r2rmlLogicalTable = cm.getLogicalTable().asInstanceOf[R2RMLLogicalTable];
+		val r2rmlLogicalTable = cm.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
 		//val unfolder = this.owner.getUnfolder().asInstanceOf[R2RMLUnfolder];
 		val sqlLogicalTable = r2rmlLogicalTable.accept(unfolder).asInstanceOf[SQLLogicalTable]
 		

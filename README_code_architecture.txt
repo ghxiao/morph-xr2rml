@@ -35,6 +35,7 @@ Materialization process (MorphBaseRunner.materializeMappingDocuments):
       - for each column in the parent triples map of each referencing object map, create items of the SELECT clause
       - for each join condition, add an SQL WHERE condition and an alias in the FROM clause for the parent table
       - xR2RML: for each column of each join condition, add items to the SELECT clause
+      !! Restriction: only the first predicate and object of a predicate-object map are considered. !!
     - Then the data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) runs the query against 
       the database and builds triples from the results. For each row of the result set:
       (1) Create a subject resource, and optionally a graph resource if the subject map contains a rr:graph/rr:graphMap property.

@@ -334,7 +334,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 				sqlFromItem;
 			} else {
 				val sqlFromItem = new SQLFromItem(subOpSQL.toString()
-				    , Constants.LogicalTableType.QUERY_STRING);
+				    , Constants.LogicalTableType.SQL_QUERY);
 				sqlFromItem.databaseType = this.databaseType;
 				sqlFromItem
 			}		  
@@ -1175,7 +1175,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 					DBUtility.execute(conn, createViewSQL, 0);
 					SQLFromItem(subQueryViewName, Constants.LogicalTableType.TABLE_NAME, this.databaseType);
 				} else {
-					SQLFromItem(transGP1SQL.toString(), Constants.LogicalTableType.QUERY_STRING, this.databaseType);
+					SQLFromItem(transGP1SQL.toString(), Constants.LogicalTableType.SQL_QUERY, this.databaseType);
 				}			  
 			} 
 			transGP1FromItem.setAlias(transGP1Alias);
@@ -1194,7 +1194,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 					SQLFromItem(subQueryViewName, Constants.LogicalTableType.TABLE_NAME
 					    , this.databaseType);
 				} else {
-					SQLFromItem(transGP2SQL.toString(), Constants.LogicalTableType.QUERY_STRING, this.databaseType);
+					SQLFromItem(transGP2SQL.toString(), Constants.LogicalTableType.SQL_QUERY, this.databaseType);
 				}			  
 			}
 			transGP2FromItem.setAlias(transGP2Alias);

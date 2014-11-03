@@ -18,7 +18,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 
 class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         extends MorphBaseMappingDocument(classMappings) with MorphR2RMLElement {
-    
+
     override val logger = Logger.getLogger(this.getClass());
 
     def buildMetaData(conn: Connection, databaseName: String, databaseType: String) = {

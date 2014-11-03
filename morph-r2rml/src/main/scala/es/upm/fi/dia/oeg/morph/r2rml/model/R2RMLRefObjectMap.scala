@@ -14,12 +14,6 @@ class R2RMLRefObjectMap(val parentTriplesMapResource: Resource, val joinConditio
 
   val termt = getReftermType;
 
-  if (termt != xR2RML_Constants.xR2RML_RDFALT_URI && termt != xR2RML_Constants.xR2RML_RDFSEQ_URI
-    && termt != xR2RML_Constants.xR2RML_RDFBAG_URI && termt != xR2RML_Constants.xR2RML_RDFLIST_URI
-    && termt != xR2RML_Constants.xR2RML_RDFTRIPLES_URI) {
-    throw new Exception("Illegal termtype in refObjectMap ");
-  }
-
   def getRelationName() = this.rdfNode.asResource().getLocalName();
   def getRangeClassMapping() = this.getParentTripleMapName;
 
@@ -35,7 +29,7 @@ class R2RMLRefObjectMap(val parentTriplesMapResource: Resource, val joinConditio
     if (this.termType.isDefined) {
       this.termType.get
     } else {
-      xR2RML_Constants.xR2RML_RDFTRIPLES_URI
+      null
     }
 
   }

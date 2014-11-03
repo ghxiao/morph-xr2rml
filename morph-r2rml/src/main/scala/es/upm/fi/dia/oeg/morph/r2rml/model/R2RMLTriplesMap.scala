@@ -1,20 +1,25 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
-import scala.collection.JavaConversions._
-import com.hp.hpl.jena.rdf.model.Resource
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConversions.setAsJavaSet
+
 import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.rdf.model.Resource
+
 import es.upm.fi.dia.oeg.morph.base.Constants
-import java.sql.DatabaseMetaData
+import es.upm.fi.dia.oeg.morph.base.model.IConceptMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseLogicalTable
-import es.upm.fi.dia.oeg.morph.base.model.IConceptMapping
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 
-class R2RMLTriplesMap(val logicalTable: R2RMLLogicalTable, val subjectMap: R2RMLSubjectMap, val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
+class R2RMLTriplesMap(val logicalTable: xR2RMLLogicalSource, val subjectMap: R2RMLSubjectMap, val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
         extends MorphBaseClassMapping(predicateObjectMaps) with MorphR2RMLElement with IConceptMapping {
 
     val logger = Logger.getLogger(this.getClass());
@@ -94,35 +99,41 @@ class R2RMLTriplesMap(val logicalTable: R2RMLLogicalTable, val subjectMap: R2RML
         this.logicalTable.tableMetaData;
     }
 
-    def getLogicalTable(): R2RMLLogicalTable = {
+    def getLogicalTable(): xR2RMLLogicalSource = {
         this.logicalTable;
     }
 
     override def getSubjectReferencedColumns(): List[String] = {
         this.subjectMap.getReferencedColumns();
     }
-
 }
 
 object R2RMLTriplesMap {
     val logger = Logger.getLogger(this.getClass().getName());
 
     def apply(tmResource: Resource): R2RMLTriplesMap = {
+        logger.debug("Parsing triples map: " + tmResource.getLocalName())
 
-        // LOGICAL TABLE
+        // --- Look for Logical table (rr:logicalTable) or Logical source (xrr:logicalSource) definition
         val logTabStmt = tmResource.getProperty(Constants.R2RML_LOGICALTABLE_PROPERTY);
-        if (logTabStmt == null) {
-            val errorMessage = "Missing rr:logicalTable";
-            logger.error(errorMessage);
-            throw new Exception(errorMessage);
+        val logSrcStmt = tmResource.getProperty(xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY);
+        var logSource: xR2RMLLogicalSource = {
+            if (logTabStmt != null) {
+                val res = logTabStmt.getObject().asInstanceOf[Resource]
+                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI)
+            } else if (logSrcStmt != null) {
+                val res = logSrcStmt.getObject().asInstanceOf[Resource]
+                xR2RMLLogicalSource.parse(res, xR2RML_Constants.xR2RML_LOGICALSOURCE_URI)
+            } else {
+                val errorMessage = "Missing rr:logicalTable and xrr:logicalSource"
+                logger.error(errorMessage)
+                throw new Exception(errorMessage)
+            }
         }
+        logger.trace("Parsed logical table/source. " + logSource.toString)
 
-        val logTabStmtObject = logTabStmt.getObject();
-        val logTabStmtObjectResource = logTabStmtObject.asInstanceOf[Resource];
-        val logTab = R2RMLLogicalTable.parse(logTabStmtObjectResource);
-
-        // SUBJECT MAP
-        val subjectMaps = R2RMLSubjectMap.extractSubjectMaps(tmResource, logTab.getFormat);
+        // --- Subject map
+        val subjectMaps = R2RMLSubjectMap.extractSubjectMaps(tmResource, logSource.refFormulation)
         if (subjectMaps == null) {
             val errorMessage = "Missing rr:subjectMap";
             logger.error(errorMessage);
@@ -135,25 +146,24 @@ object R2RMLTriplesMap {
         }
         val subjectMap = subjectMaps.iterator.next;
 
-        //rr:predicateObjectMap SET
-        val predicateObjectMapStatements = tmResource.listProperties(
-            Constants.R2RML_PREDICATEOBJECTMAP_PROPERTY);
-        val predicateObjectMaps = if (predicateObjectMapStatements != null) {
-            predicateObjectMapStatements.toList().map(predicateObjectMapStatement => {
-                val predicateObjectMapStatementObjectResource =
-                    predicateObjectMapStatement.getObject().asInstanceOf[Resource];
-                val predicateObjectMap = R2RMLPredicateObjectMap(predicateObjectMapStatementObjectResource, logTab.getFormat);
-                predicateObjectMap;
+        // --- Predicate-Object Maps
+        logger.trace("Parsing predicate-object maps")
+        val pomStmts = tmResource.listProperties(Constants.R2RML_PREDICATEOBJECTMAP_PROPERTY);
+        val predicateObjectMaps = if (pomStmts != null) {
+            pomStmts.toList().map(pomStmt => {
+                val pomObjectRes = pomStmt.getObject().asInstanceOf[Resource]
+                val predicateObjectMap = R2RMLPredicateObjectMap(pomObjectRes, logSource.refFormulation)
+                predicateObjectMap
             });
         } else {
-            Set.empty;
+            Set.empty
         };
 
-        val tm = new R2RMLTriplesMap(logTab, subjectMap, predicateObjectMaps.toSet);
+        val tm = new R2RMLTriplesMap(logSource, subjectMap, predicateObjectMaps.toSet);
         tm.resource = tmResource
         tm.name = tmResource.getLocalName();
+        logger.debug("Completed parsing triples map: " + tmResource.getLocalName())
         tm;
     }
-
 }
 
