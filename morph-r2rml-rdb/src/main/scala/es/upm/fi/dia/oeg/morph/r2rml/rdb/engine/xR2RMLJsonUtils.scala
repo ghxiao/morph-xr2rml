@@ -23,7 +23,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
 
 object xR2RMLJsonUtils {
     val logger = Logger.getLogger(this.getClass().getName());

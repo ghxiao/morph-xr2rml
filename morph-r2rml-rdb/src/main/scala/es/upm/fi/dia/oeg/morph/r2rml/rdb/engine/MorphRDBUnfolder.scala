@@ -66,28 +66,30 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * Build an instance of SQLLogicalTable, that may be either an
      * SQLFromItem in case of a logical table with a table name,
      * or an SQLQuery in case of a logical table with a query string
+     *
+     * @return instance of SQLFromItem or SQLQuery
      */
-    def unfoldLogicalTable(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
-        val logicalTableType = logicalTable.logicalTableType;
 
-        val result = logicalTableType match {
+        val result = logicalTable.logicalTableType match {
+
             case Constants.LogicalTableType.TABLE_NAME => {
-                val logicalTableValueWithEnclosedChar = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
-                val resultAux = new SQLFromItem(logicalTableValueWithEnclosedChar, Constants.LogicalTableType.TABLE_NAME);
+                val logTableValWithEnclosedChar = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
+                val resultAux = new SQLFromItem(logTableValWithEnclosedChar, Constants.LogicalTableType.TABLE_NAME);
                 resultAux.databaseType = this.dbType;
                 resultAux
             }
             case Constants.LogicalTableType.QUERY => {
                 val sqlString = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
-                val sqlString2 = if (!sqlString.endsWith(";")) {
-                    sqlString + ";";
-                } else {
-                    sqlString
-                }
-                try {
-                    MorphRDBUtility.toSQLQuery(sqlString2);
-                } catch {
+                // Add tailing ';' if not already there
+                val sqlString2 =
+                    if (!sqlString.endsWith(";"))
+                        sqlString + ";"
+                    else sqlString
+
+                try { MorphRDBUtility.toSQLQuery(sqlString2) }
+                catch {
                     case e: Exception => {
                         logger.warn("Not able to parse the query, string will be used.");
                         val resultAux = new SQLFromItem(sqlString, Constants.LogicalTableType.QUERY);
@@ -96,10 +98,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     }
                 }
             }
-            case _ => {
-                logger.warn("Invalid logical table type");
-                null;
-            }
+            case _ => { throw new Exception("Invalid logical table type" + logicalTable.logicalTableType) }
         }
         result;
     }
@@ -111,13 +110,17 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      */
     def unfoldTermMap(termMap: R2RMLTermMap, logicalTableAlias: String): List[MorphSQLSelectItem] = {
 
-        val result = if (termMap != null) {
-            termMap.termMapType match {
-                case Constants.MorphTermMapType.TemplateTermMap => {
-                    val columns = termMap.getReferencedColumns();
-                    if (columns != null) {
-                        columns.map(
-                            column => {
+        val result =
+            if (termMap != null) {
+                termMap.termMapType match {
+
+                    case Constants.MorphTermMapType.ConstantTermMap => { Nil }
+
+                    case Constants.MorphTermMapType.TemplateTermMap => {
+                        val columns = termMap.getReferencedColumns();
+                        if (columns.isEmpty) { Nil }
+                        else {
+                            columns.map(column => {
                                 val selectItem = MorphSQLSelectItem.apply(column, logicalTableAlias, dbType);
                                 if (selectItem != null) {
                                     if (selectItem.getAlias() == null) {
@@ -127,54 +130,68 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                                             val oldColumnAliases = this.mapTermMapColumnsAliases(termMap);
                                             val newColumnAliases = oldColumnAliases ::: List(alias);
                                             this.mapTermMapColumnsAliases += (termMap -> newColumnAliases);
-                                        } else {
+                                        } else
                                             this.mapTermMapColumnsAliases += (termMap -> List(alias));
-                                        }
                                     }
                                 }
                                 selectItem
-                            });
-                    } else { Nil }
-                }
-                case Constants.MorphTermMapType.ColumnTermMap => {
-                    val termColumnName = termMap.columnName;
-                    val selectItem = MorphSQLSelectItem.apply(termColumnName, logicalTableAlias, dbType);
+                            })
+                        };
+                    }
 
-                    if (selectItem != null) {
-                        if (selectItem.getAlias() == null) {
-                            val alias = selectItem.getTable() + "_" + selectItem.getColumn();
-                            selectItem.setAlias(alias);
-                            if (this.mapTermMapColumnsAliases.containsKey(termMap)) {
-                                val oldColumnAliases = this.mapTermMapColumnsAliases(termMap);
-                                val newColumnAliases = oldColumnAliases ::: List(alias);
-                                this.mapTermMapColumnsAliases += (termMap -> newColumnAliases);
-                            } else {
-                                this.mapTermMapColumnsAliases += (termMap -> List(alias));
+                    case Constants.MorphTermMapType.ColumnTermMap => {
+                        val selectItem = MorphSQLSelectItem.apply(termMap.columnName, logicalTableAlias, dbType);
+                        if (selectItem != null) {
+                            if (selectItem.getAlias() == null) {
+                                val alias = selectItem.getTable() + "_" + selectItem.getColumn();
+                                selectItem.setAlias(alias);
+                                if (this.mapTermMapColumnsAliases.containsKey(termMap)) {
+                                    val oldColumnAliases = this.mapTermMapColumnsAliases(termMap);
+                                    val newColumnAliases = oldColumnAliases ::: List(alias);
+                                    this.mapTermMapColumnsAliases += (termMap -> newColumnAliases);
+                                } else {
+                                    this.mapTermMapColumnsAliases += (termMap -> List(alias));
+                                }
                             }
                         }
+                        List(selectItem)
                     }
-                    List(selectItem)
-                }
-                case Constants.MorphTermMapType.ConstantTermMap => {
-                    Nil;
-                }
-                case _ => {
-                    throw new Exception("Invalid term map type!");
-                }
-            }
 
-        } else {
-            Nil
-        }
+                    case Constants.MorphTermMapType.ReferenceTermMap => {
+                        val columns = termMap.getReferencedColumns();
+                        if (columns.isEmpty) { Nil }
+                        else {
+                            columns.map(column => {
+                                val selectItem = MorphSQLSelectItem.apply(column, logicalTableAlias, dbType);
+                                if (selectItem != null) {
+                                    if (selectItem.getAlias() == null) {
+                                        val alias = selectItem.getTable() + "_" + selectItem.getColumn();
+                                        selectItem.setAlias(alias);
+                                        if (this.mapTermMapColumnsAliases.containsKey(termMap)) {
+                                            val oldColumnAliases = this.mapTermMapColumnsAliases(termMap);
+                                            val newColumnAliases = oldColumnAliases ::: List(alias);
+                                            this.mapTermMapColumnsAliases += (termMap -> newColumnAliases);
+                                        } else
+                                            this.mapTermMapColumnsAliases += (termMap -> List(alias));
+                                    }
+                                }
+                                selectItem
+                            })
+                        };
+                    }
+
+                    case _ => { throw new Exception("Invalid term map type") }
+                }
+            } else { Nil }
 
         result
     }
 
     /**
      * Unfolding a triples map means to progressively build an SQL query by accumulating pieces:
-     * (1) create the FROM clause with the logical table,
+     * (1) create the FROM clause from the logical table,
      * (2) for each column in the subject predicate and object maps, add items to the SELECT clause
-     * (3) for each column in the parent triples map of each referencing object map, create items of the SELECT clause
+     * (3) for each column in the parent triples map of each referencing object map, add items of the SELECT clause
      * (4) for each join condition, add an SQL WHERE condition and an alias in the FROM clause for the parent table
      * (5) xR2RML: for each column of each join condition, add items to the SELECT clause
      *
@@ -182,23 +199,23 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      */
     def unfoldTriplesMap(
         triplesMapId: String,
-        logicalTable: xR2RMLLogicalSource,
+        logicalSrc: xR2RMLLogicalSource,
         subjectMap: R2RMLSubjectMap,
         poms: Collection[R2RMLPredicateObjectMap]): IQuery = {
 
         val result = new SQLQuery();
         result.setDatabaseType(this.dbType);
 
-        // UNFOLD LOGICAL TABLE: build an SQL query that represents the logical table
-        val logicalTableUnfolded: SQLFromItem = logicalTable match {
+        // UNFOLD LOGICAL SOURCE: build an SQL from item with all tables in the logical source
+        val logicalSrcUnfolded: SQLFromItem = logicalSrc match {
             case _: xR2RMLTable => {
-                this.unfoldLogicalTable(logicalTable).asInstanceOf[SQLFromItem];
+                this.unfoldLogicalSource(logicalSrc).asInstanceOf[SQLFromItem];
             }
             case _: xR2RMLQuery => {
-                val logicalTableAux = this.unfoldLogicalTable(logicalTable)
+                val logicalTableAux = this.unfoldLogicalSource(logicalSrc)
                 logicalTableAux match {
                     case _: SQLQuery => {
-                        val zQuery = this.unfoldLogicalTable(logicalTable).asInstanceOf[ZQuery];
+                        val zQuery = this.unfoldLogicalSource(logicalSrc).asInstanceOf[ZQuery];
                         val resultAux = new SQLFromItem(zQuery.toString(), Constants.LogicalTableType.QUERY);
                         resultAux.databaseType = this.dbType
                         resultAux
@@ -207,42 +224,44 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     case _ => { null }
                 }
             }
-            case _ => {
-                val msg = "Unknown logical table/source type: " + logicalTable
-                logger.error(msg)
-                throw new Exception(msg)
-            }
+            case _ => { throw new Exception("Unknown logical table/source type: " + logicalSrc) }
         }
-        val logicalTableAlias = logicalTableUnfolded.generateAlias();
-        logicalTable.alias = logicalTableAlias;
-        val logicalTableUnfoldedJoinTable = new SQLJoinTable(logicalTableUnfolded, null, null);
-        result.addFromItem(logicalTableUnfoldedJoinTable);
+
+        // Create an alias for the sub-query in the FROM clause
+        val logicalTableAlias = logicalSrcUnfolded.generateAlias()
+        logicalSrc.alias = logicalTableAlias
+        val logicalTableUnfoldedJoinTable = new SQLJoinTable(logicalSrcUnfolded)
+        result.addFromItem(logicalTableUnfoldedJoinTable)
 
         // Unfold subject map
         val subjectMapSelectItems = this.unfoldTermMap(subjectMap, logicalTableAlias);
         result.addSelectItems(subjectMapSelectItems);
 
+        // Unfold predicate-object maps
         if (poms != null) {
             for (pom <- poms) {
-                //UNFOLD PREDICATEMAP
+                // Unfold all predicateMaps of the current predicate-object map 
                 val predicateMaps = pom.predicateMaps;
                 if (predicateMaps != null && !predicateMaps.isEmpty()) {
-                    val predicateMap = pom.getPredicateMap(0);
-                    val predicateMapSelectItems = this.unfoldTermMap(predicateMap, logicalTableAlias);
-                    result.addSelectItems(predicateMapSelectItems);
+                    for (pm <- pom.predicateMaps) {
+                        val selectItems = this.unfoldTermMap(pm, logicalTableAlias);
+                        result.addSelectItems(selectItems);
+                    }
                 }
 
-                //UNFOLD OBJECTMAP
+                // Unfold all objectMaps of the current predicate-object map 
                 val objectMaps = pom.objectMaps;
                 if (objectMaps != null && !objectMaps.isEmpty()) {
-                    val objectMap = pom.getObjectMap(0);
-                    val objectMapSelectItems = this.unfoldTermMap(objectMap, logicalTableAlias);
-                    result.addSelectItems(objectMapSelectItems);
+                    for (om <- pom.objectMaps) {
+                        val selectItems = this.unfoldTermMap(om, logicalTableAlias);
+                        result.addSelectItems(selectItems);
+                    }
                 }
 
-                //UNFOLD REFOBJECTMAP
+                // Unfold RefObjectMaps
                 val refObjectMaps = pom.refObjectMaps;
                 if (refObjectMaps != null && !refObjectMaps.isEmpty()) {
+                    // ############ @TODO Limitation here: only the first RefObjectMap is considered
                     val refObjectMap = pom.getRefObjectMap(0);
                     if (refObjectMap != null) {
                         val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap);
@@ -251,7 +270,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                             val errorMessage = "Parent logical table is not found for RefObjectMap : " + pom.getMappedPredicateName(0);
                             throw new Exception(errorMessage);
                         }
-                        val sqlParentLogicalTable = this.unfoldLogicalTable(parentLogicalTable.asInstanceOf[xR2RMLLogicalSource]);
+                        val sqlParentLogicalTable = this.unfoldLogicalSource(parentLogicalTable.asInstanceOf[xR2RMLLogicalSource]);
                         val joinQueryAlias = sqlParentLogicalTable.generateAlias();
 
                         sqlParentLogicalTable.setAlias(joinQueryAlias);
@@ -291,7 +310,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                          *  structured values (e.g. an XML value that must be evaluated by an XPath expression), then
                          *  the join operation cannot be done by the database itself (in the SQL query) but afterwards in
                          *  the code. Therefore we add the joined columns in the select clause to have those values in case
-                         *  we must make the join
+                         *  we have to make the join afterwards
                          */
                         for (join <- joinConditions) {
                             var selectItem = MorphSQLSelectItem(join.childColumnName, logicalTableAlias, dbType, null);
@@ -342,31 +361,24 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
         } catch {
             case e: Exception => {
-                logger.error("errors parsing LIMIT from properties file!")
+                logger.error("Errors parsing LIMIT from properties file!")
             }
         }
         result;
     }
 
     def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): IQuery = {
-        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val subjectMap = triplesMap.subjectMap;
-        val predicateObjectMaps = triplesMap.predicateObjectMaps;
-        val triplesMapId = triplesMap.id;
 
-        val resultAux = this.unfoldTriplesMap(triplesMapId, logicalTable, subjectMap, predicateObjectMaps);
+        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
+        val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
         val result = if (subjectURI != null) {
-            val whereExpression = MorphRDBUtility.generateCondForWellDefinedURI(subjectMap, triplesMap, subjectURI, logicalTable.alias);
+            val whereExpression = MorphRDBUtility.generateCondForWellDefinedURI(triplesMap.subjectMap, triplesMap, subjectURI, logicalTable.alias);
             if (whereExpression != null) {
-                resultAux.addWhere(whereExpression);
-                resultAux;
-            } else {
-                null;
-            }
-        } else {
-            resultAux;
-        }
-        result;
+                resultAux.addWhere(whereExpression)
+                resultAux
+            } else { null }
+        } else { resultAux }
+        result
     }
 
     def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): IQuery = {
@@ -413,7 +425,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
-        val result = this.unfoldLogicalTable(logicalTable);
+        val result = this.unfoldLogicalSource(logicalTable);
         result;
     }
 

@@ -46,8 +46,12 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
 
 class MorphRDBDataTranslator(
-    md: R2RMLMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphRDBUnfolder,
-    dataSourceReader: MorphRDBDataSourceReader, connection: Connection, properties: MorphProperties)
+    md: R2RMLMappingDocument,
+    materializer: MorphBaseMaterializer,
+    unfolder: MorphRDBUnfolder,
+    dataSourceReader: MorphRDBDataSourceReader,
+    connection: Connection, properties: MorphProperties)
+
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
         with MorphR2RMLElementVisitor {
 
@@ -128,7 +132,7 @@ class MorphRDBDataTranslator(
 
     /**
      * Query the database and build triples from the result. For each row of the result set,
-     * (1) create a subject resource and a graph resource if the subject map contains a rr:graph/rr:graphMap property,
+     * (1) create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,
      * (2) loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
      * a list of resources from the subject map of a parent object map in case there are referencing object maps,
      * and a list of resources representing target graphs mentioned in the predicate-object map.
@@ -178,11 +182,7 @@ class MorphRDBDataTranslator(
             try {
                 // Create the subject resource
                 val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
-                if (subject == null) {
-                    val errorMessage = "null value in the subject triple!";
-                    logger.warn(errorMessage);
-                    throw new Exception(errorMessage);
-                }
+                if (subject == null) { throw new Exception("null value in the subject triple") }
                 logger.trace("Row " + i + " subjects: " + subject)
 
                 // Create the list of resources representing subject target graphs
@@ -204,7 +204,7 @@ class MorphRDBDataTranslator(
                 if (!subjectGraphs.isEmpty)
                     logger.trace("Row " + i + " subject graphs: " + subjectGraphs)
 
-                // Add subject resource to the JENA model with their class (rdf:type) and target graphs
+                // Add subject resource to the JENA model with its class (rdf:type) and target graphs
                 sm.classURIs.foreach(classURI => {
                     val statementObject = this.materializer.model.createResource(classURI);
                     if (subjectGraphs == null || subjectGraphs.isEmpty) {
@@ -338,8 +338,8 @@ class MorphRDBDataTranslator(
 
             } catch {
                 case e: Exception => {
-                    e.printStackTrace();
                     logger.error("error while translating data: " + e.getMessage());
+                    throw e
                 }
             }
         }
@@ -472,7 +472,6 @@ class MorphRDBDataTranslator(
                 } else { null }
             }
 
-            /** @note xR2RML */
             case xR2RML_Constants.xR2RML_RDFLIST_URI => {
                 if (dbValue != null) {
                     var tab = Array.ofDim[RDFNode](1);
@@ -515,10 +514,8 @@ class MorphRDBDataTranslator(
                     result
                 } else { null }
             }
-            // end of  xR2RML 
-            case _ => {
-                null
-            }
+
+            case _ => { throw new Exception("Unkown term type: " + termMap.inferTermType) }
         }
 
         logger.trace("    Translated value [" + dbValue + " ] into [" + resultat + "]")
@@ -527,7 +524,7 @@ class MorphRDBDataTranslator(
 
     /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:
-     * for each column reference in the term map (column or template), read cell values from the current row,
+     * for each column reference in the term map (column, reference or template), read cell values from the current row,
      * translate them into one RDF term.
      * In the R2RML case, the result list should contain only one term.
      */
@@ -540,6 +537,11 @@ class MorphRDBDataTranslator(
         val inferedTermType = termMap.inferTermType;
 
         result = termMap.termMapType match {
+
+            case Constants.MorphTermMapType.ConstantTermMap => {
+                val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
+                this.translateData(termMap, termMap.constantValue, datatype);
+            }
 
             case Constants.MorphTermMapType.ColumnTermMap => {
                 // Match the column name in the term map definition with the column name in the result set  
@@ -564,9 +566,31 @@ class MorphRDBDataTranslator(
                 this.translateData(termMap, dbValue, datatype);
             }
 
-            case Constants.MorphTermMapType.ConstantTermMap => {
-                val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-                this.translateData(termMap, termMap.constantValue, datatype);
+            case Constants.MorphTermMapType.ReferenceTermMap => {
+                // ######################### TODO TODO #########################
+                // mettre a jour avec le traitement des mixed syntax paths
+                // ######################### TODO TODO #########################
+
+                // Match the column name in the term map definition with the column name in the result set  
+                val columnTermMapValue =
+                    if (logicalTableAlias != null && !logicalTableAlias.equals("")) {
+                        val termMapColumnValueSplit = termMap.reference.split("\\.");
+                        val columnName = termMapColumnValueSplit(termMapColumnValueSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
+                        logicalTableAlias + "_" + columnName;
+                    } else { termMap.reference }
+
+                // Read the value from the result set and get its XML datatype
+                val dbValue = this.getResultSetValue(termMap, rs, columnTermMapValue);
+                val datatype =
+                    if (termMap.datatype.isDefined) { termMap.datatype }
+                    else {
+                        val columnNameAux = termMap.reference.replaceAll("\"", "");
+                        val datatypeAux = mapXMLDatatype.get(columnNameAux)
+                        datatypeAux
+                    }
+
+                // Generate the RDF terms
+                this.translateData(termMap, dbValue, datatype);
             }
 
             case Constants.MorphTermMapType.TemplateTermMap => {
@@ -631,6 +655,8 @@ class MorphRDBDataTranslator(
                     } else { null }
                 }
             }
+
+            case _ => { throw new Exception("Invalid term map type " + termMap.termMapType) }
         }
         result
     }

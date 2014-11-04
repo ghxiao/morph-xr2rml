@@ -1,14 +1,39 @@
-@prefix xrr: <http://i3s.modalis.xr2Rml#> .
-@prefix rr: <http://www.w3.org/ns/r2rml#> .
-@prefix ex: <http://example.com/> .
-    
+@prefix xrr: <http://i3s.unice.fr/xr2rml#> .
+@prefix rr:  <http://www.w3.org/ns/r2rml#> .
+@prefix ex:  <http://example.com/> .
+@prefix rml: <http://semweb.mmlab.be/ns/rml#> .
+@prefix ql:	 <http://semweb.mmlab.be/ns/ql#> .
+
+
+<#TMWithTableName>
+    a rr:TriplesMap;
+    xrr:logicalSource [
+        rr:tableName "student";
+        xrr:referenceFormulation xrr:Column;
+    ];
+    rr:subjectMap [ 
+    	rr:template "http://example.org/student/{id}";
+		rr:class ex:Student;
+    ];
+    rr:predicateObjectMap [
+    	rr:predicate ex:name;
+    	rr:objectMap [
+    		xrr:reference "name";
+		];    	
+    	rr:objectMap [ 
+    		xrr:reference "name";
+    		rr:termType xrr:RdfBag;
+		];    	
+    ].
+
+
 <#SportBsk>
     a rr:TriplesMap;
     rr:logicalTable [
-        rr:sqlQuery "select * from sport where id = 0"; 
+        rr:sqlQuery "select * from sport where id = 0";
     ];
     rr:subjectMap [ 
-    	rr:template "http://xr2rml/sport/{id}";
+    	rr:template "http://example.org/sport/{id}";
 		rr:class ex:Sport;
     ];
 
@@ -19,17 +44,23 @@
 
     rr:predicateObjectMap [
     	rr:predicate ex:colors;
-    	rr:objectMap [
-    		rr:column "shirt_colors";
-    	];
+    	rr:objectMap [ rr:column "shirt_colors"; ];
     ].
+
+   # rr:predicateObjectMap [
+   #	rr:predicateMap <#Pred>;
+   #	rr:predicateMap [ rr:constant <ex:colors2> ];
+   #	rr:objectMap [ rr:column "name"; ];
+   # ].
+    
+# <#Pred> rr:constant <ex:colors2> .
     
 
 # <#StudentB3>
     # a rr:TriplesMap;
     # rr:logicalTable [ rr:sqlQuery "select * from student where sport = 300"; ];
     # rr:subjectMap [ 
-    	# rr:template "http://xr2rml/student/{id}";
+    	# rr:template "http://example.org/student/{id}";
 		# rr:class ex:Student;
     # ];
     # rr:predicateObjectMap [

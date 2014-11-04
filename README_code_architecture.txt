@@ -32,7 +32,7 @@ Materialization process (MorphBaseRunner.materializeMappingDocuments):
       build an SQL query by accumulating pieces from different components of the triples map:
       - create the FROM clause with the logical table
       - for each column in the subject, predicate and object maps, add items to the SELECT clause
-      - for each column in the parent triples map of each referencing object map, create items of the SELECT clause
+      - for each column in the parent triples map of each referencing object map, add items of the SELECT clause
       - for each join condition, add an SQL WHERE condition and an alias in the FROM clause for the parent table
       - xR2RML: for each column of each join condition, add items to the SELECT clause
       !! Restriction: only the first predicate and object of a predicate-object map are considered. !!

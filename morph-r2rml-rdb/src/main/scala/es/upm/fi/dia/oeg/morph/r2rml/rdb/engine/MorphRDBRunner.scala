@@ -26,6 +26,7 @@ class MorphRDBRunner(
     queryTranslator: Option[IQueryTranslator],
     resultProcessor: Option[AbstractQueryResultTranslator],
     outputStream: Writer)
+    
         extends MorphBaseRunner(mappingDocument, unfolder, dataTranslator, queryTranslator, resultProcessor, outputStream) {
 }
 

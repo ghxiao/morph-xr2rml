@@ -127,17 +127,21 @@ abstract class R2RMLTermMap(
      * Nil in case of a constant-valued term-map, a list of one string for a column-valued term map,
      * and a list of several strings for a template-valued term map.
      *
-     * @return list of strings representing column names
+     * @return list of strings representing column names. Cannot return null
      */
     def getReferencedColumns(): List[String] = {
         val result = this.termMapType match {
             case Constants.MorphTermMapType.ConstantTermMap => { Nil }
             case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
             case Constants.MorphTermMapType.TemplateTermMap => { RegexUtility.getTemplateColumns(this.getOriginalValue(), true).toList }
+            
+            // ######################### TODO TODO #########################
+            // update case ReferenceTermMap with management of mixed syntax paths
+            // ######################### TODO TODO #########################
             case Constants.MorphTermMapType.ReferenceTermMap => { List(this.reference) }
-            case _ => { null; }
+            case _ => { throw new Exception("Invalid term map type") }
         }
-        result;
+        result
     }
 
     def getOriginalValue(): String = {
