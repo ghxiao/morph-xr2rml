@@ -32,23 +32,34 @@ abstract class xR2RMLLogicalSource(
     var alias: String = null;
 
     def buildMetaData(dbMetaData: Option[MorphDatabaseMetaData]) = {
-        val tableName = this match {
-            case r2rmlTable: R2RMLTable => {
-                val dbType = if (dbMetaData.isDefined) { dbMetaData.get.dbType; }
-                else { Constants.DATABASE_DEFAULT }
 
+        val source = this match {
+            case _: xR2RMLTable => this.asInstanceOf[xR2RMLTable]
+            case _: xR2RMLQuery => this.asInstanceOf[xR2RMLQuery]
+        }
+
+        val tableName = this match {
+            case xr2rmlTable: xR2RMLTable => {
+                val dbType =
+                    if (dbMetaData.isDefined) { dbMetaData.get.dbType; }
+                    else { Constants.DATABASE_DEFAULT }
                 val enclosedChar = Constants.getEnclosedCharacter(dbType);
-                val tableNameAux = r2rmlTable.getValue().replaceAll("\"", enclosedChar);
+                val tableNameAux = xr2rmlTable.getValue().replaceAll("\"", enclosedChar);
                 tableNameAux
             }
-            case r2rmlSQLQuery: R2RMLSQLQuery => {
-                val queryStringAux = r2rmlSQLQuery.getValue().trim();
+            case xr2rmlQuery: xR2RMLQuery => {
+                val queryStringAux = xr2rmlQuery.getValue().trim()
                 val queryString = {
-                    if (queryStringAux.endsWith(";")) {
-                        queryStringAux.substring(0, queryStringAux.length() - 1);
-                    } else { queryStringAux }
+                    // Remove tailing ';' if any
+                    if (queryStringAux.endsWith(";")) { queryStringAux.substring(0, queryStringAux.length() - 1) }
+                    else { queryStringAux }
                 }
                 "(" + queryString + ")";
+            }
+            case _ => {
+                val msg = "Unknown logical table/source type: " + this
+                logger.error(msg)
+                throw new Exception(msg)
             }
         }
 
@@ -67,9 +78,7 @@ abstract class xR2RMLLogicalSource(
 
     override def toString(): String = {
         val result = this match {
-            case _: R2RMLTable => { "R2RMLTable"; }
             case _: xR2RMLTable => { "xR2RMLTable"; }
-            case _: R2RMLSQLQuery => { "R2RMLSQLQuery"; }
             case _: xR2RMLQuery => { "xR2RMLQuery"; }
             case _ => throw new Exception("Unkown type of logical source or logical table")
         }
@@ -100,19 +109,48 @@ object xR2RMLLogicalSource {
                 val sqlQueryStmt = resource.getProperty(Constants.R2RML_SQLQUERY_PROPERTY)
                 val queryStmt = resource.getProperty(xR2RML_Constants.xR2RML_QUERY_PROPERTY)
 
+                val source: String =
+                    if (tableNameStmt != null)
+                        "Table name: " + tableNameStmt.getObject().toString()
+                    else if (sqlQueryStmt != null)
+                        "SQL query: " + sqlQueryStmt.getObject().toString().trim()
+                    else if (queryStmt != null)
+                        "Query: " + queryStmt.getObject().toString().trim()
+                    else
+                        "Undefined property tableName, sqlQuery or query."
+
+                // Check compliance with R2RML
+                if (isLogicalTable(logResType)) {
+                    if (queryStmt != null) {
+                        val msg = "Logical Table cannot have an xrr:query property. " + source;
+                        logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                    if (hasReferenceFormulation(resource)) {
+                        val msg = "Logical Table cannot have an xrr:referenceFormulation property. " + source;
+                        logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                    if (hasIterator(resource)) {
+                        val msg = "Logical Table cannot have an rml:iterator property. " + source;
+                        logger.error(msg);
+                        throw new Exception(msg);
+                    }
+                }
+
                 if (tableNameStmt != null) {
                     val tableName = tableNameStmt.getObject().toString()
 
                     // Check validity of optional properties iterator and referenceFormulation
-                    if (readIterator(resource).isDefined)
+                    if (hasIterator(resource))
                         logger.warn("Ignoring iterator with rr:tableName " + tableName)
-                    if (!isDefaultReferenceFormulation(resource))
-                        logger.warn("Ignoring reference formulation: " + readReferenceFormulation(resource) + ". Cannot be used with rr:tableName " + tableName)
+                    if (!isDefaultReferenceFormulation(resource)) {
+                        val msg = "Invalid reference formulation: " + readReferenceFormulation(resource) + " with rr:tableName " + tableName
+                        logger.error(msg);
+                        throw new Exception(msg);
+                    }
 
-                    if (isLogicalSource(logResType))
-                        new R2RMLTable(tableName)
-                    else
-                        new xR2RMLTable(tableName, readReferenceFormulation(resource))
+                    new xR2RMLTable(tableName)
 
                 } else if (sqlQueryStmt != null) {
 
@@ -126,27 +164,20 @@ object xR2RMLLogicalSource {
                         }
 
                     // Check validity of optional properties iterator and referenceFormulation
-                    if (isLogicalSource(logResType)) {
-                        val errorMessage = "Property rr:sqlQuery is not allowed in a xrr:logicalSource";
-                        logger.error(errorMessage);
-                        throw new Exception(errorMessage);
-                    }
-                    if (readIterator(resource).isDefined)
+                    if (hasIterator(resource))
                         logger.warn("Ignoring iterator \"" + readIterator(resource).get + "\" with rr:sqlQuery \"" + queryStr + "\"")
-                    if (!isDefaultReferenceFormulation(resource))
-                        logger.warn("Ignoring reference formulation \"" + readReferenceFormulation(resource) + "\". Cannot be used with rr:sqlQuery \"" + queryStr + "\"")
+                    if (!isDefaultReferenceFormulation(resource)) {
+                        val msg = "Invalid reference formulation: " + readReferenceFormulation(resource) + "\". Cannot be used with rr:sqlQuery \"" + queryStr + "\""
+                        logger.error(msg);
+                        throw new Exception(msg);
+                    }
 
-                    new R2RMLSQLQuery(queryStr)
+                    new xR2RMLQuery(queryStr, readReferenceFormulation(resource), readIterator(resource))
 
                 } else if (queryStmt != null) {
                     // xR2RML query
-                    if (isLogicalTable(logResType)) {
-                        val errorMessage = "Property xrr:query is not allowed in the context of a rr:logicalTable";
-                        logger.error(errorMessage);
-                        throw new Exception(errorMessage);
-                    }
                     val queryStr = queryStmt.getObject().toString().trim();
-                    new xR2RMLQuery(queryStr, readReferenceFormulation(resource), readIterator(resource))
+                    new xR2RMLQuery(queryStr, xR2RML_Constants.xR2RML_COLUMN_URI, None)
 
                 } else {
                     val errorMessage = "Missing logical source property: rr:tableName, rr:sqlQuery or xrr:query";
@@ -157,7 +188,23 @@ object xR2RMLLogicalSource {
         logSrc;
     }
 
-    /** Read the rml:iterator property, return None if undefined */
+    /**
+     * Return true is the resource has an xrr:referenceFormulation property
+     */
+    private def hasReferenceFormulation(resource: Resource): Boolean = {
+        (resource.getProperty(xR2RML_Constants.xR2RML_REFFORMULATION_PROPERTY) != null)
+    }
+
+    /**
+     * Return true is the resource has an rml:iterator property
+     */
+    private def hasIterator(resource: Resource): Boolean = {
+        (resource.getProperty(xR2RML_Constants.RML_ITERATOR_PROPERTY) != null)
+    }
+
+    /**
+     *  Read the rml:iterator property, return None if undefined
+     */
     private def readIterator(resource: Resource): Option[String] = {
         val iterStmt = resource.getProperty(xR2RML_Constants.RML_ITERATOR_PROPERTY)
         val iter: Option[String] =

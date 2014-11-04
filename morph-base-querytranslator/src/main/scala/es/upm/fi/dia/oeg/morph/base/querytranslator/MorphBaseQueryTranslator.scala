@@ -1,23 +1,20 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asJavaCollection
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions.asScalaSet
+import scala.collection.JavaConversions.mutableSetAsJavaSet
+import scala.collection.JavaConversions.seqAsJavaList
+import scala.collection.JavaConversions.setAsJavaSet
 import scala.collection.mutable.LinkedHashSet
+
 import org.apache.log4j.Logger
-import java.sql.Connection
-import Zql.ZConstant
-import Zql.ZExp
-import Zql.ZExpression
-import Zql.ZGroupBy
-import Zql.ZOrderBy
-import Zql.ZSelectItem
-import Zql.ZUpdate
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.query.QueryFactory
-import com.hp.hpl.jena.query.SortCondition
-import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
@@ -34,7 +31,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
 import com.hp.hpl.jena.sparql.core.BasicPattern
 import com.hp.hpl.jena.sparql.core.Var
-import com.hp.hpl.jena.sparql.core.VarExprList
 import com.hp.hpl.jena.sparql.expr.E_Bound
 import com.hp.hpl.jena.sparql.expr.E_Function
 import com.hp.hpl.jena.sparql.expr.E_LogicalAnd
@@ -44,7 +40,6 @@ import com.hp.hpl.jena.sparql.expr.E_NotEquals
 import com.hp.hpl.jena.sparql.expr.E_OneOf
 import com.hp.hpl.jena.sparql.expr.E_Regex
 import com.hp.hpl.jena.sparql.expr.Expr
-import com.hp.hpl.jena.sparql.expr.ExprAggregator
 import com.hp.hpl.jena.sparql.expr.ExprFunction
 import com.hp.hpl.jena.sparql.expr.ExprFunction1
 import com.hp.hpl.jena.sparql.expr.ExprFunction2
@@ -55,34 +50,34 @@ import com.hp.hpl.jena.sparql.expr.aggregate.AggCount
 import com.hp.hpl.jena.sparql.expr.aggregate.AggMax
 import com.hp.hpl.jena.sparql.expr.aggregate.AggMin
 import com.hp.hpl.jena.sparql.expr.aggregate.AggSum
-import com.hp.hpl.jena.sparql.expr.aggregate.Aggregator
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.XSD
+
+import Zql.ZConstant
+import Zql.ZExp
+import Zql.ZExpression
+import Zql.ZGroupBy
+import Zql.ZOrderBy
+import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
 import es.upm.fi.dia.oeg.morph.base.TriplePatternPredicateBounder
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.DBUtility
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
-import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
-import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.engine.QueryTranslationOptimizer
+import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
+import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryTranslatorUtility
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphSQLSelectItemGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
-import Zql.ZInsert
+import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
+import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
+import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
+import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
+import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
 
 abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
     , alphaGenerator:MorphBaseAlphaGenerator, betaGenerator:MorphBaseBetaGenerator
@@ -334,7 +329,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 				sqlFromItem;
 			} else {
 				val sqlFromItem = new SQLFromItem(subOpSQL.toString()
-				    , Constants.LogicalTableType.SQL_QUERY);
+				    , Constants.LogicalTableType.QUERY);
 				sqlFromItem.databaseType = this.databaseType;
 				sqlFromItem
 			}		  
@@ -779,7 +774,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 				val mappingDocumentURL = this.getMappingDocumentURL();
 				val triplesMapResource = cm.resource;
 				//val columnsMetaData = cm.getLogicalTable().getColumnsMetaData();
-				val tableMetaData = cm.getLogicalTable().tableMetaData;
+				val tableMetaData = cm.getLogicalSource().tableMetaData;
 				val tpBounder = new TriplePatternPredicateBounder(mappingDocumentURL, tableMetaData);
 				val boundedTriplePatterns = tpBounder.expandUnboundedPredicateTriplePattern(tp, triplesMapResource);
 				logger.debug("boundedTriplePatterns = " + boundedTriplePatterns);
@@ -1175,7 +1170,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 					DBUtility.execute(conn, createViewSQL, 0);
 					SQLFromItem(subQueryViewName, Constants.LogicalTableType.TABLE_NAME, this.databaseType);
 				} else {
-					SQLFromItem(transGP1SQL.toString(), Constants.LogicalTableType.SQL_QUERY, this.databaseType);
+					SQLFromItem(transGP1SQL.toString(), Constants.LogicalTableType.QUERY, this.databaseType);
 				}			  
 			} 
 			transGP1FromItem.setAlias(transGP1Alias);
@@ -1194,7 +1189,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 					SQLFromItem(subQueryViewName, Constants.LogicalTableType.TABLE_NAME
 					    , this.databaseType);
 				} else {
-					SQLFromItem(transGP2SQL.toString(), Constants.LogicalTableType.SQL_QUERY, this.databaseType);
+					SQLFromItem(transGP2SQL.toString(), Constants.LogicalTableType.QUERY, this.databaseType);
 				}			  
 			}
 			transGP2FromItem.setAlias(transGP2Alias);

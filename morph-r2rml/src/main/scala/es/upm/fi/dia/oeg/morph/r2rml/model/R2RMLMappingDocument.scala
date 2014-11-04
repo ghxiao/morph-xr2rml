@@ -22,7 +22,7 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
     override val logger = Logger.getLogger(this.getClass());
 
     def buildMetaData(conn: Connection, databaseName: String, databaseType: String) = {
-        logger.info("building database MetaData ");
+        logger.info("Building database MetaData ");
         if (conn != null && this.dbMetaData == None) {
             val newMetaData = MorphDatabaseMetaData(conn, databaseName, databaseType);
             this.dbMetaData = Some(newMetaData);
@@ -231,11 +231,7 @@ object R2RMLMappingDocument {
 
         if (connection != null) {
             //BUILDING METADATA
-            try {
-                md.buildMetaData(connection, props.databaseName, props.databaseType);
-            } catch {
-                case e: Exception => { logger.warn("Error while building metadata.") }
-            }
+            md.buildMetaData(connection, props.databaseName, props.databaseType);
         }
 
         md.mappingDocumentPrefixMap = model.getNsPrefixMap().toMap;

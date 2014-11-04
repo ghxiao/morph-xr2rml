@@ -102,6 +102,7 @@ abstract class MorphBaseRunner(
      * Entry point for the data materialization process
      */
     def materializeMappingDocuments(md: MorphBaseMappingDocument) {
+        
         if (!this.dataTranslator.isDefined) {
             val errorMessage = "Data Translator has not been defined yet!";
             logger.error(errorMessage);

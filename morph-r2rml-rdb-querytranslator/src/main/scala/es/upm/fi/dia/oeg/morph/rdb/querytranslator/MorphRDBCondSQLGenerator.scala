@@ -109,7 +109,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfol
           //val refObjectMapAlias = this.owner.getTripleAlias(tp);
           val parentTriplesMap = md.getParentTriplesMap(refObjectMap);
           val parentSubjectMap = parentTriplesMap.subjectMap;
-          val parentLogicalTable = parentTriplesMap.logicalTable;
+          val parentLogicalTable = parentTriplesMap.logicalSource;
           val refObjectMapAlias = parentLogicalTable.alias;
 
           val uriCondition = MorphRDBUtility.generateCondForWellDefinedURI(

@@ -29,12 +29,15 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSQLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -75,7 +78,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 resultAux.databaseType = this.dbType;
                 resultAux
             }
-            case Constants.LogicalTableType.SQL_QUERY => {
+            case Constants.LogicalTableType.QUERY => {
                 val sqlString = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
                 val sqlString2 = if (!sqlString.endsWith(";")) {
                     sqlString + ";";
@@ -87,7 +90,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 } catch {
                     case e: Exception => {
                         logger.warn("Not able to parse the query, string will be used.");
-                        val resultAux = new SQLFromItem(sqlString, Constants.LogicalTableType.SQL_QUERY);
+                        val resultAux = new SQLFromItem(sqlString, Constants.LogicalTableType.QUERY);
                         resultAux.databaseType = this.dbType;
                         resultAux
                     }
@@ -174,7 +177,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * (3) for each column in the parent triples map of each referencing object map, create items of the SELECT clause
      * (4) for each join condition, add an SQL WHERE condition and an alias in the FROM clause for the parent table
      * (5) xR2RML: for each column of each join condition, add items to the SELECT clause
-     * 
+     *
      * @return an SQLQuery (IQuery) describing the actual SQL query to be run against the RDB
      */
     def unfoldTriplesMap(
@@ -188,15 +191,15 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
         // UNFOLD LOGICAL TABLE: build an SQL query that represents the logical table
         val logicalTableUnfolded: SQLFromItem = logicalTable match {
-            case _: R2RMLTable => {
+            case _: xR2RMLTable => {
                 this.unfoldLogicalTable(logicalTable).asInstanceOf[SQLFromItem];
             }
-            case _: R2RMLSQLQuery => {
+            case _: xR2RMLQuery => {
                 val logicalTableAux = this.unfoldLogicalTable(logicalTable)
                 logicalTableAux match {
                     case _: SQLQuery => {
                         val zQuery = this.unfoldLogicalTable(logicalTable).asInstanceOf[ZQuery];
-                        val resultAux = new SQLFromItem(zQuery.toString(), Constants.LogicalTableType.SQL_QUERY);
+                        val resultAux = new SQLFromItem(zQuery.toString(), Constants.LogicalTableType.QUERY);
                         resultAux.databaseType = this.dbType
                         resultAux
                     }
@@ -204,7 +207,11 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     case _ => { null }
                 }
             }
-            case _ => { null }
+            case _ => {
+                val msg = "Unknown logical table/source type: " + logicalTable
+                logger.error(msg)
+                throw new Exception(msg)
+            }
         }
         val logicalTableAlias = logicalTableUnfolded.generateAlias();
         logicalTable.alias = logicalTableAlias;
@@ -239,7 +246,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     val refObjectMap = pom.getRefObjectMap(0);
                     if (refObjectMap != null) {
                         val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap);
-                        val parentLogicalTable = parentTriplesMap.getLogicalTable();
+                        val parentLogicalTable = parentTriplesMap.logicalSource
                         if (parentLogicalTable == null) {
                             val errorMessage = "Parent logical table is not found for RefObjectMap : " + pom.getMappedPredicateName(0);
                             throw new Exception(errorMessage);
@@ -277,13 +284,15 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                         val joinQuery = new SQLJoinTable(sqlParentLogicalTable, Constants.JOINS_TYPE_LEFT, onExpression);
                         result.addFromItem(joinQuery);
 
-                        /** @note XR2RML:
-                         *  The joined columns are not necessarily referenced in the term maps. 
-                         *  However in the case of xR2RML, if the joined columns do not contain simple values but 
+                        /**
+                         * @note XR2RML:
+                         *  The joined columns are not necessarily referenced in the term maps.
+                         *  However in the case of xR2RML, if the joined columns do not contain simple values but
                          *  structured values (e.g. an XML value that must be evaluated by an XPath expression), then
                          *  the join operation cannot be done by the database itself (in the SQL query) but afterwards in
                          *  the code. Therefore we add the joined columns in the select clause to have those values in case
-                         *  we must make the join */
+                         *  we must make the join
+                         */
                         for (join <- joinConditions) {
                             var selectItem = MorphSQLSelectItem(join.childColumnName, logicalTableAlias, dbType, null);
                             if (selectItem.getAlias() == null) {
@@ -340,7 +349,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     }
 
     def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): IQuery = {
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
+        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val subjectMap = triplesMap.subjectMap;
         val predicateObjectMaps = triplesMap.predicateObjectMaps;
         val triplesMapId = triplesMap.id;
@@ -395,7 +404,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
     override def unfoldSubject(cm: MorphBaseClassMapping): IQuery = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
+        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val subjectMap = triplesMap.subjectMap;
         val predicateObjectMaps = triplesMap.predicateObjectMaps;
         val id = triplesMap.id;
@@ -454,7 +463,7 @@ object MorphRDBUnfolder {
                 childColumnName = childColumnName.replaceAll("\"", enclosedCharacter);
                 childColumnName = childTableAlias + "." + childColumnName;
                 val childColumn = new ZConstant(childColumnName, ZConstant.COLUMNNAME);
-                
+
                 var parentColumnName = joinCondition.parentColumnName;
                 parentColumnName = parentColumnName.replaceAll("\"", enclosedCharacter);
                 parentColumnName = joinQueryAlias + "." + parentColumnName;

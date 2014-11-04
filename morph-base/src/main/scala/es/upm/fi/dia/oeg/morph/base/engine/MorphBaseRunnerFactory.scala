@@ -68,11 +68,10 @@ abstract class MorphBaseRunnerFactory {
             val qtAux = this.buildQueryTranslator(queryTranslatorFactoryClassName, mappingDocument, connection, properties);
             Some(qtAux);
         } catch {
-            case e: Exception =>
-                {
-                    logger.warn("Error building query translator: " + e.getMessage());
-                }
+            case e: Exception => {
+                logger.warn("Error building query translator: " + e.getMessage());
                 None
+            }
         }
 
         //BUILDING QUERY RESULT WRITER

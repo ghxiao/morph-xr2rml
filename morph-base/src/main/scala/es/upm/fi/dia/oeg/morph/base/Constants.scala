@@ -23,7 +23,7 @@ object Constants {
 
     object LogicalTableType extends Enumeration {
         type LogicalTableType = Value
-        val TABLE_NAME, SQL_QUERY, QUERY = Value
+        val TABLE_NAME, QUERY = Value
     }
 
     // SQL Vocabulary

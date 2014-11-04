@@ -63,7 +63,7 @@ abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:M
 		//var exps : Set[ZExpression] = Set.empty;
 		
 		//val mapColumnMetaData = cm.getLogicalTable().getColumnsMetaData();
-		val tableMetaData = cm.getLogicalTable().tableMetaData;
+		val tableMetaData = cm.getLogicalSource().tableMetaData;
 		
 		val isRDFTypeStatement = RDF.`type`.getURI().equals(predicateURI);
 

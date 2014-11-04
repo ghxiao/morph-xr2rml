@@ -48,7 +48,7 @@ extends MorphBaseBetaGenerator(md, unfolder) {
 				}
 			} else {
 				val parentTriplesMap = md.getParentTriplesMap(refObjectMap);
-				val parentLogicalTable = parentTriplesMap.logicalTable;
+				val parentLogicalTable = parentTriplesMap.logicalSource;
 				val parentSubjectMap = parentTriplesMap.subjectMap;
 				val parentColumns = parentSubjectMap.getReferencedColumns;
 				

@@ -24,7 +24,7 @@ object MorphRDBUtility {
     val logger = Logger.getLogger(this.getClass().getName());
 
     def generateCondForWellDefinedURI(termMap: R2RMLTermMap, ownerTriplesMap: MorphBaseClassMapping, uri: String, alias: String): ZExpression = {
-        val logicalTable = ownerTriplesMap.getLogicalTable();
+        val logicalTable = ownerTriplesMap.getLogicalSource();
         val logicalTableMetaData = logicalTable.tableMetaData;
         val dbType = if (logicalTableMetaData.isDefined) { logicalTableMetaData.get.dbType }
         else { Constants.DATABASE_DEFAULT }

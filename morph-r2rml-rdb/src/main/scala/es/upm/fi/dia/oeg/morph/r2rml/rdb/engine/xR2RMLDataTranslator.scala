@@ -29,7 +29,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
 import javax.json.JsonNumber
 import javax.json.JsonString
 import javax.json.JsonValue

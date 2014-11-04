@@ -19,15 +19,18 @@ import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
-class R2RMLTriplesMap(val logicalTable: xR2RMLLogicalSource, val subjectMap: R2RMLSubjectMap, val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
+class R2RMLTriplesMap(
+    val logicalSource: xR2RMLLogicalSource,
+    val subjectMap: R2RMLSubjectMap,
+    val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
+
         extends MorphBaseClassMapping(predicateObjectMaps) with MorphR2RMLElement with IConceptMapping {
 
     val logger = Logger.getLogger(this.getClass());
 
     def buildMetaData(dbMetadata: Option[MorphDatabaseMetaData]) = {
         logger.debug("Building metadata for TriplesMap: " + this.name);
-
-        this.logicalTable.buildMetaData(dbMetadata);
+        this.logicalSource.buildMetaData(dbMetadata);
     }
 
     def accept(visitor: MorphR2RMLElementVisitor): Object = { return visitor.visit(this); }
@@ -88,7 +91,7 @@ class R2RMLTriplesMap(val logicalTable: xR2RMLLogicalSource, val subjectMap: R2R
     }
 
     override def getLogicalTableSize(): Long = {
-        this.logicalTable.getLogicalTableSize();
+        this.logicalSource.getLogicalTableSize();
     }
 
     override def getMappedClassURIs(): Iterable[String] = {
@@ -96,11 +99,11 @@ class R2RMLTriplesMap(val logicalTable: xR2RMLLogicalSource, val subjectMap: R2R
     }
 
     override def getTableMetaData(): Option[MorphTableMetaData] = {
-        this.logicalTable.tableMetaData;
+        this.logicalSource.tableMetaData;
     }
 
-    def getLogicalTable(): xR2RMLLogicalSource = {
-        this.logicalTable;
+    def getLogicalSource(): xR2RMLLogicalSource = {
+        this.logicalSource;
     }
 
     override def getSubjectReferencedColumns(): List[String] = {

@@ -39,7 +39,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTable
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
@@ -351,7 +350,7 @@ class MorphRDBDataTranslator(
 
     override def generateRDFTriples(cm: MorphBaseClassMapping, iQuery: IQuery) = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
+        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
         this.generateRDFTriples(logicalTable, sm, poms, iQuery);
@@ -359,7 +358,7 @@ class MorphRDBDataTranslator(
 
     override def generateSubjects(cm: MorphBaseClassMapping, iQuery: IQuery) = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
+        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val sm = triplesMap.subjectMap;
         this.generateRDFTriples(logicalTable, sm, Nil, iQuery);
     }

@@ -94,7 +94,7 @@ extends MorphBaseAlphaGenerator(md,unfolder)
 //				val parentLogicalTable = refObjectMap.getParentLogicalTable().asInstanceOf[R2RMLLogicalTable];
 				//val md = this.owner.getMappingDocument().asInstanceOf[R2RMLMappingDocument];
 				val parentTriplesMap = md.getParentTriplesMap(refObjectMap);
-				val parentLogicalTable = parentTriplesMap.getLogicalTable.asInstanceOf[xR2RMLLogicalSource];
+				val parentLogicalTable = parentTriplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
 				
 				if(parentLogicalTable == null) {
 					val errorMessage = "Parent logical table is not found for RefObjectMap : " + refObjectMap;
@@ -131,7 +131,7 @@ extends MorphBaseAlphaGenerator(md,unfolder)
 	override def calculateAlphaSubject(subject:Node, abstractConceptMapping:MorphBaseClassMapping ) 
 		: SQLLogicalTable = {
 		val cm = abstractConceptMapping.asInstanceOf[R2RMLTriplesMap];
-		val r2rmlLogicalTable = cm.getLogicalTable().asInstanceOf[xR2RMLLogicalSource];
+		val r2rmlLogicalTable = cm.logicalSource.asInstanceOf[xR2RMLLogicalSource];
 		//val unfolder = this.owner.getUnfolder().asInstanceOf[R2RMLUnfolder];
 		val sqlLogicalTable = r2rmlLogicalTable.accept(unfolder).asInstanceOf[SQLLogicalTable]
 		

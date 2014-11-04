@@ -17,7 +17,7 @@ abstract class MorphBaseClassMapping(val propertyMappings: Iterable[MorphBasePro
   def getPropertyMappings(propertyURI: String): Iterable[MorphBasePropertyMapping];
   def getPropertyMappings(): Iterable[MorphBasePropertyMapping];
   def isPossibleInstance(uri: String): Boolean;
-  def getLogicalTable(): MorphBaseLogicalTable;
+  def getLogicalSource(): MorphBaseLogicalTable;
   def getLogicalTableSize(): Long;
   def getTableMetaData(): Option[MorphTableMetaData];
   def getMappedClassURIs(): Iterable[String];
