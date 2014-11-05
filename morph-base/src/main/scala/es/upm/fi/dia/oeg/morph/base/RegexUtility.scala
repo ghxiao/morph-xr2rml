@@ -10,7 +10,7 @@ object RegexUtility {
     val TemplatePattern1 = patternString1.r;
 
     def main(args: Array[String]) = {
-        val template = "Hello \\{ {Name} \\} Please find attached {Invoice Number} which is due on {Due Date}";
+        var template = "Hello \\{ {Name} \\} Please find attached {Invoice Number} which is due on {Due Date}";
 
         val replacements = Map("Name" -> "Freddy", "Invoice Number" -> "INV0001")
 
@@ -19,11 +19,19 @@ object RegexUtility {
 
         val template2 = RegexUtility.replaceTokens(template, replacements);
         System.out.println("template2 = " + template2);
-        
-        
-        val _TEMPLATE_PATTERN = "\\{\\w+\\}";
-        val columnsFromTemplate = _TEMPLATE_PATTERN.r.findAllIn("http://example.org/{abc}#{def}").toList;
+
+        template = """\{\w+\}""";
+        val columnsFromTemplate = template.r.findAllIn("http://example.org/{abc}#{def}").toList;
         System.out.println("columnsFromTemplate = " + columnsFromTemplate);
+
+        val date = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
+        val dates = "Important dates in history: 2004-01-20, 1958-09-05, 2010-10-06, 2011-07-15"
+
+        val firstDate = date findFirstIn dates getOrElse "No date found."
+        System.out.println("firstDate: " + firstDate)
+
+        val firstYear = for (m <- date findAllMatchIn dates) yield m group 1
+        System.out.println("firstYear: " + firstYear.toList)
     }
 
     def getTemplateMatching(inputTemplateString: String, inputURIString: String): Map[String, String] = {

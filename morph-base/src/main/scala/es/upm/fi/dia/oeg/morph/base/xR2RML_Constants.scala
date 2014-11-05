@@ -64,9 +64,30 @@ object xR2RML_Constants {
     val xR2RML_RDFALT_URI = xR2RML_NS + "RdfAlt";
     val xR2RML_RDFALT_CLASS = ResourceFactory.createResource(xR2RML_RDFALT_URI);
 
-    val xR2RML_TEMPLATE_PATTERN = "\\{\"*\\w+(\\s\\w+)*\\\"*}";
-
     // Nested Term Map
     val xR2RML_NESTEDTM_URI = xR2RML_NS + "nestedTermMap";
     val xR2RML_NESTEDTM_PROPERTY = ResourceFactory.createProperty(xR2RML_NESTEDTM_URI);
+
+    // Mixed-syntax paths
+    val xR2RML_PATH_CONSTR_COLUMN = "Column";
+    val xR2RML_PATH_CONSTR_XPATH = "XPath";
+    val xR2RML_PATH_CONSTR_JSONPATH = "JSONPath";
+    val xR2RML_PATH_CONSTR_CSV = "CSV";
+    val xR2RML_PATH_CONSTR_TSV = "TSV";
+
+    val xR2RML_PATH_CONSTRUCTORS = "(" + xR2RML_PATH_CONSTR_COLUMN + "|" + xR2RML_PATH_CONSTR_XPATH + "|" + xR2RML_PATH_CONSTR_JSONPATH + "|" + xR2RML_PATH_CONSTR_CSV + "|" + xR2RML_PATH_CONSTR_TSV + ")"
+
+    // In the path expressions, characters '/', '(' and ')' must be escaped with a '\'.
+    // In the regex, these will appear as groups (\\\/), (\\\() and (\\\)): escaped '\' + escaped char '/', '(' or ')'.  
+    // Other characters must not be escaped: alpha numerical chars, as well as: !#%&,-./:;<=>?@_`|~[]"'*+^${}
+    val xR2RML_PATH_EXPR_CHARS = """([\p{Alnum}\p{Space}!#%&,-.:;<=>?(\\@)_`\|~\[\]\"\'\*\+\^\$\{\}]|(\\/)|(\\\()|(\\\)))+"""
+
+    val xR2RML_MIXED_SYNTX_PATH_REGEX = (xR2RML_PATH_CONSTRUCTORS + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+
+    val xR2RML_PATH_COLUMN_REGEX = (xR2RML_PATH_CONSTR_COLUMN + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_XPATH_REGEX = (xR2RML_PATH_CONSTR_XPATH + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_JSONPATH_REGEX = (xR2RML_PATH_CONSTR_JSONPATH + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_CSV_REGEX = (xR2RML_PATH_CONSTR_CSV + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_TSV_REGEX = (xR2RML_PATH_CONSTR_TSV + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+
 }
