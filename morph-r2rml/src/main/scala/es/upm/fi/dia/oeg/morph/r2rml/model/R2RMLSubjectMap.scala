@@ -18,9 +18,12 @@ class R2RMLSubjectMap(
     val classURIs: Set[String],
 
     /** IRIs of target graphs defined in the subject map with the rr:graph or rr:graphMap properties */
-    val graphMaps: Set[R2RMLGraphMap])
+    val graphMaps: Set[R2RMLGraphMap],
 
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None) {
+    /** Reference formulation from the logical source */
+    refFormulaion: String)
+
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulaion) {
 
     override val logger = Logger.getLogger(this.getClass().getName());
     var termtype = this.inferTermType
@@ -63,7 +66,7 @@ object R2RMLSubjectMap {
             case _ => { Set.empty }
         }
 
-        val sm = new R2RMLSubjectMap(termMapType, termType, datatype, languageTag, classURIs, graphMaps);
+        val sm = new R2RMLSubjectMap(termMapType, termType, datatype, languageTag, classURIs, graphMaps, refFormulation);
         sm.rdfNode = rdfNode;
 
         sm.parse(rdfNode)

@@ -10,8 +10,11 @@ class R2RMLGraphMap(
     termMapType: Constants.MorphTermMapType.Value,
     termType: Option[String],
     datatype: Option[String],
-    languageTag: Option[String])
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None) {
+    languageTag: Option[String],
+    /** Reference formulation from the logical source */
+    refFormulation: String)
+
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulation) {
 
     val inferredTermType = this.inferTermType;
     if (inferredTermType != null && !inferredTermType.equals(Constants.R2RML_IRI_URI)) {
@@ -22,13 +25,13 @@ class R2RMLGraphMap(
 object R2RMLGraphMap {
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def apply(rdfNode: RDFNode): R2RMLGraphMap = {
+    def apply(rdfNode: RDFNode, refFormulation: String): R2RMLGraphMap = {
         val coreProperties = R2RMLTermMap.extractCoreProperties(rdfNode);
         val termMapType = coreProperties._1;
         val termType = coreProperties._2;
         val datatype = coreProperties._3;
         val languageTag = coreProperties._4;
-        val gm = new R2RMLGraphMap(termMapType, termType, datatype, languageTag);
+        val gm = new R2RMLGraphMap(termMapType, termType, datatype, languageTag, refFormulation);
         gm.parse(rdfNode)
         gm;
     }

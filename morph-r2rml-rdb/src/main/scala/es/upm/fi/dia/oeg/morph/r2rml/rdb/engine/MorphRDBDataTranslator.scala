@@ -567,10 +567,14 @@ class MorphRDBDataTranslator(
             }
 
             case Constants.MorphTermMapType.ReferenceTermMap => {
+                
+                
                 // ######################### TODO TODO #########################
                 // mettre a jour avec le traitement des mixed syntax paths
                 // ######################### TODO TODO #########################
 
+                
+                
                 // Match the column name in the term map definition with the column name in the result set  
                 val columnTermMapValue =
                     if (logicalTableAlias != null && !logicalTableAlias.equals("")) {

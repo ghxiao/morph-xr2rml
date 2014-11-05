@@ -12,8 +12,11 @@ class R2RMLObjectMap(
     termType: Option[String],
     datatype: Option[String],
     languageTag: Option[String],
-    nestedTermMap: Option[xR2RMLNestedTermMap])
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap) {
+    nestedTermMap: Option[xR2RMLNestedTermMap],
+    /** Reference formulation from the logical source */
+    refFormulation: String)
+
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation) {
 
     override val logger = Logger.getLogger(this.getClass().getName());
     var termtype = this.inferTermType
@@ -22,7 +25,7 @@ class R2RMLObjectMap(
 object R2RMLObjectMap {
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def apply(rdfNode: RDFNode, formatFromLogicalTable: String): R2RMLObjectMap = {
+    def apply(rdfNode: RDFNode, refFormulation: String): R2RMLObjectMap = {
         val coreProperties = R2RMLTermMap.extractCoreProperties(rdfNode);
         val termMapType = coreProperties._1;
         val termType = coreProperties._2;
@@ -30,7 +33,7 @@ object R2RMLObjectMap {
         val languageTag = coreProperties._4;
         val nestedTermMap = coreProperties._5;
 
-        val om = new R2RMLObjectMap(termMapType, termType, datatype, languageTag, nestedTermMap);
+        val om = new R2RMLObjectMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation);
         om.parse(rdfNode);
         om;
     }
