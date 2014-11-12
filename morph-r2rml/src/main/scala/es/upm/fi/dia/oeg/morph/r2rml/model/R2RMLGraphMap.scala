@@ -40,6 +40,8 @@ object R2RMLGraphMap {
         logger.trace("Looking for graph maps")
         val tms = R2RMLTermMap.extractTermMaps(resource, Constants.MorphPOS.graph, refFormulation);
         val result = tms.map(tm => tm.asInstanceOf[R2RMLGraphMap]);
+        if (result.isEmpty)
+            logger.trace("No graph map found.")
         result;
     }
 }

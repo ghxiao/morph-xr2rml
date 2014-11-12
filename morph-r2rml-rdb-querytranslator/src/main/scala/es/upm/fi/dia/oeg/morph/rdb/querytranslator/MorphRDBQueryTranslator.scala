@@ -42,7 +42,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 	this.betaGenerator.owner = this;
 	
 	var mapTemplateMatcher:Map[String, Matcher] = Map.empty;
-	var mapTemplateAttributes:Map[String, java.util.List[String]] = Map.empty;
+	var mapTemplateAttributes:Map[String, List[String]] = Map.empty;
 
 	override def transIRI(node:Node) : List[ZExp] = {
 		val cms = mapInferredTypes(node);
@@ -161,7 +161,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 										if(this.mapTemplateAttributes.contains(templateString)) {
 											this.mapTemplateAttributes(templateString);  
 										} else {
-											val templateAttributesAux = RegexUtility.getTemplateColumns(templateString, true);
+											val templateAttributesAux = RegexUtility.getTemplateColumns(templateString);
 											this.mapTemplateAttributes += (templateString -> templateAttributesAux);
 											templateAttributesAux;
 										}							  
@@ -184,7 +184,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 									val replacements = replaceMentAux.toMap;
 									
 									val templateResult = if(replacements.size() > 0) {
-										RegexUtility.replaceTokens(templateString, replacements);	
+										RegexUtility.replaceTemplateTokens(templateString, replacements)
 									} else {
 										logger.debug("no replacements found for the R2RML template!");
 										null;

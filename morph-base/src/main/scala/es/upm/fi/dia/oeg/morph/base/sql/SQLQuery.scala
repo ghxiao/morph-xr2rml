@@ -124,7 +124,7 @@ class SQLQuery extends ZQuery with IQuery {
       if (selectItemAlias != null && !selectItemAlias.equals("")) {
         if (selectItemAlias.equalsIgnoreCase(newSelectItemAlias)) {
           alreadySelected = true;
-          logger.info(selectItemAlias + " already selected");
+          logger.trace(selectItemAlias + " already selected");
         }
         selectItem.setAlias(selectItemAlias);
       }

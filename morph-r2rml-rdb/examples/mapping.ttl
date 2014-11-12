@@ -12,18 +12,23 @@
         xrr:referenceFormulation xrr:Column;
     ];
     rr:subjectMap [ 
-    	rr:template "http://example.org/student/{id}";
+    	rr:template "http://example.org/student/{Column(id)}/{Column(name)}";
+    	
 		rr:class ex:Student;
     ];
     rr:predicateObjectMap [
     	rr:predicate ex:name;
-    	rr:objectMap [
-    		xrr:reference "name";
-		];    	
     	rr:objectMap [ 
-    		xrr:reference "name";
+    	    rr:template "{name}-{Column(id)}";
+    	    rr:termType rr:Literal;
+    	];
+    ];
+    rr:predicateObjectMap [
+    	rr:predicate ex:nameBag;
+    	rr:objectMap [ 
+    		xrr:reference "Column(name)";
     		rr:termType xrr:RdfBag;
-		];    	
+		];
     ].
 
 

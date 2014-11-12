@@ -17,6 +17,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import com.hp.hpl.jena.rdf.model.Statement
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 abstract class R2RMLTermMap(
     val termMapType: Constants.MorphTermMapType.Value,
@@ -29,6 +30,11 @@ abstract class R2RMLTermMap(
 
         extends MorphR2RMLElement with IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap {
 
+    /** Jena resource corresponding to that term map */
+    var rdfNode: RDFNode = null;
+
+    val logger = Logger.getLogger(this.getClass().getName());
+
     def this(rdfNode: RDFNode, refForm: String) = {
         this(R2RMLTermMap.extractTermMapType(rdfNode),
             R2RMLTermMap.extractTermType(rdfNode),
@@ -40,11 +46,6 @@ abstract class R2RMLTermMap(
         this.parse(rdfNode);
     }
 
-    /** Jena resource corresponding to that term map */
-    var rdfNode: RDFNode = null;
-
-    val logger = Logger.getLogger(this.getClass().getName());
-
     def accept(visitor: MorphR2RMLElementVisitor): Object = {
         visitor.visit(this);
     }
@@ -53,16 +54,25 @@ abstract class R2RMLTermMap(
      * Decide the type of the term map (constant, column, reference, template) based on its properties,
      * and assign the value of the appropriate trait member: IConstantTermMap.constantValue, IColumnTermMap.columnName etc.
      *
-     * @param rdfNode the term map node
-     * @throws exception in case the term map type cannot be decided
+     * If the term map resource has no property (constant, column, reference, template) then it means that this is a
+     * constant term map like "[] rr:predicate ex:name".
+     *
+     * If the node passed in not a resource but a literal, then it means that we have a constant property wich object
+     * is a literal and not an IRI or blank node, like in: "[] rr:object 'any string';"
+     *
+     * @param rdfNode the term map Jena resource
      */
     def parse(rdfNode: RDFNode) = {
         this.rdfNode = rdfNode;
-        if (rdfNode.isAnon()) {
+
+        if (rdfNode.isLiteral) {
+            // We are in the case of a constant property with a literal object, like "[] rr:object 'NAME'",
+            this.constantValue = rdfNode.toString()
+        } else {
             val resourceNode = rdfNode.asResource();
 
             val constantStatement = resourceNode.getProperty(Constants.R2RML_CONSTANT_PROPERTY);
-            if (resourceNode.getProperty(Constants.R2RML_CONSTANT_PROPERTY) != null)
+            if (constantStatement != null)
                 this.constantValue = constantStatement.getObject().toString();
             else {
                 val columnStatement = resourceNode.getProperty(Constants.R2RML_COLUMN_PROPERTY);
@@ -77,15 +87,12 @@ abstract class R2RMLTermMap(
                         if (refStmt != null)
                             this.reference = refStmt.getObject().toString();
                         else {
-                            val errorMessage = "Invalid term map " + resourceNode.getLocalName() + ". Should have one of rr:constant, rr:column, rr:template or xrr:reference.";
-                            logger.error(errorMessage);
-                            throw new Exception(errorMessage);
+                            // We are in the case of a constant property, like "[] rr:predicate ex:name",
+                            this.constantValue = rdfNode.toString()
                         }
                     }
                 }
             }
-        } else {
-            this.constantValue = rdfNode.toString();
         }
     }
 
@@ -136,12 +143,17 @@ abstract class R2RMLTermMap(
         val result = this.termMapType match {
             case Constants.MorphTermMapType.ConstantTermMap => { Nil }
             case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
-            case Constants.MorphTermMapType.TemplateTermMap => { RegexUtility.getTemplateColumns(this.templateString, true).toList }
-            
-            // ######################### TODO TODO #########################
-            // update case ReferenceTermMap with management of mixed syntax paths
-            // ######################### TODO TODO #########################
-            case Constants.MorphTermMapType.ReferenceTermMap => { List(this.reference) }
+            case Constants.MorphTermMapType.ReferenceTermMap => {
+                // Parse reference as a mixed syntax path and return the column referenced in the first path "Column()" 
+                List(MixedSyntaxPath(this.reference, refFormulaion).getReferencedColumn.get)
+            }
+            case Constants.MorphTermMapType.TemplateTermMap => {
+                // Get the list of template strings
+                val tplStrings = RegexUtility.getTemplateColumns(this.templateString)
+                
+                // For each one, parse it as a mixed syntax path and return the column referenced in the first path "Column()" 
+                tplStrings.map(tplString => MixedSyntaxPath(tplString, refFormulaion).getReferencedColumn.get)
+            }
             case _ => { throw new Exception("Invalid term map type") }
         }
         result
@@ -361,13 +373,13 @@ object R2RMLTermMap {
     def extractTermMaps(resource: Resource, termPos: Constants.MorphPOS.Value, refFormulation: String): Set[R2RMLTermMap] = {
 
         // Extract term map introduced with non-constant properties rr:subjectMap, rr:predicateMap, rr:objectMap and rr:graphMap
-        var mapProperty = termPos match {
+        val nonConstProperties = termPos match {
             case Constants.MorphPOS.sub => Constants.R2RML_SUBJECTMAP_PROPERTY
             case Constants.MorphPOS.pre => Constants.R2RML_PREDICATEMAP_PROPERTY
             case Constants.MorphPOS.obj => Constants.R2RML_OBJECTMAP_PROPERTY
             case Constants.MorphPOS.graph => Constants.R2RML_GRAPHMAP_PROPERTY
         }
-        var stmts = resource.listProperties(mapProperty);
+        var stmts = resource.listProperties(nonConstProperties);
         val maps1 =
             if (stmts != null) {
                 stmts.toList().flatMap(mapStatement => {
@@ -394,13 +406,13 @@ object R2RMLTermMap {
             } else { Nil }
 
         // Extract term map introduced with constant properties rr:subject, rr:predicate, rr:object and rr:graph
-        mapProperty = termPos match {
+        val constProperties = termPos match {
             case Constants.MorphPOS.sub => Constants.R2RML_SUBJECT_PROPERTY
             case Constants.MorphPOS.pre => Constants.R2RML_PREDICATE_PROPERTY
             case Constants.MorphPOS.obj => Constants.R2RML_OBJECT_PROPERTY
             case Constants.MorphPOS.graph => Constants.R2RML_GRAPH_PROPERTY
         }
-        stmts = resource.listProperties(mapProperty)
+        stmts = resource.listProperties(constProperties)
         val maps2 =
             if (stmts != null) {
                 stmts.toList().flatMap(mapStatement => {
@@ -428,7 +440,7 @@ object R2RMLTermMap {
                                 None
                             } else { Some(gm) }
                         }
-                        case _ => { None }
+                        case _ => { throw new Exception("Invalid triple term position: " + termPos) }
                     }
                 })
             } else { Nil }

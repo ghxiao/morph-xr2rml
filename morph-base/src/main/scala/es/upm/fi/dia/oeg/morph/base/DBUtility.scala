@@ -45,7 +45,7 @@ object DBUtility {
 	}*/
 
     def execute(conn: Connection, query: String, timeout: Integer): ResultSet = {
-        logger.info("Executing query: " + query);
+        logger.info("Executing query: " + query.replaceAll("\n", " "));
 
         if (conn == null) {
             val errorMessage = "No connection defined!";

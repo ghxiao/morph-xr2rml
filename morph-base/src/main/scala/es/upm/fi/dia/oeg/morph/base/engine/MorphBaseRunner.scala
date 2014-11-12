@@ -116,7 +116,7 @@ abstract class MorphBaseRunner(
             
             // Create the SQL query to retrieve all columns needed from the logical table
             val sqlQuery = this.unfolder.unfoldConceptMapping(cm);
-            logger.debug("SQL query for triples map " + cm.id + ": " + sqlQuery.print(true))
+            logger.debug("SQL query for triples map " + cm.id + ": " + sqlQuery.print(true).replaceAll("\n", " "))
 
             // Run the query and generate triples
             this.dataTranslator.get.generateRDFTriples(cm, sqlQuery);

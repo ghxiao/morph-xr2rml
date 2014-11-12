@@ -51,7 +51,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfol
         val objectLiteralValue = tpObject.getLiteral().getValue();
 
         if (objectMap != null) {
-          val columnName = objectMap.getColumnName();
+          val columnName = objectMap.columnName;
           if (columnName != null) {
             val columnNameWithAlias = {
               if (logicalTableAlias != null && !logicalTableAlias.equals("")) {
@@ -84,7 +84,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfol
                 objectMap, cm, uri, logicalTableAlias)
             }
             case Constants.MorphTermMapType.ColumnTermMap => {
-              val columnName = objectMap.getColumnName();
+              val columnName = objectMap.columnName;
               val columnNameWithAlias = {
                 if (logicalTableAlias != null) {
                   logicalTableAlias + "." + columnName;
@@ -151,7 +151,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfol
           }
         }
         case Constants.MorphTermMapType.ColumnTermMap => {
-          val subjectMapColumn = new ZConstant(tm.subjectMap.getColumnName(), ZConstant.COLUMNNAME);
+          val subjectMapColumn = new ZConstant(tm.subjectMap.columnName, ZConstant.COLUMNNAME);
           new ZExpression("=", subjectMapColumn, subjectURIConstant);
         }
         case Constants.MorphTermMapType.ConstantTermMap => {

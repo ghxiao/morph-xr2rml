@@ -9,7 +9,7 @@ trait ITemplateTermMap {
     def getTemplateString(): String = { this.templateString };
 
     def getTemplateColumns(): Iterable[String] = {
-        RegexUtility.getTemplateColumns(this.templateString, true);
+        RegexUtility.getTemplateColumns(this.templateString);
     };
 
     def getTemplateValues(uri: String): Map[String, String] = {

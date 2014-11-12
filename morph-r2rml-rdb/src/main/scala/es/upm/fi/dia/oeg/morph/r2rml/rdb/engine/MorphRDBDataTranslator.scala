@@ -3,11 +3,8 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
-
 import scala.collection.JavaConversions._
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
@@ -16,7 +13,6 @@ import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary.RDF
-
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -44,6 +40,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -178,8 +175,9 @@ class MorphRDBDataTranslator(
         var i = 0;
         while (rows.next()) { // put current cursor on the new row
             i = i + 1;
-            logger.trace("Row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
+            logger.debug("Generating triples for row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
+
                 // Create the subject resource
                 val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
                 if (subject == null) { throw new Exception("null value in the subject triple") }
@@ -278,7 +276,7 @@ class MorphRDBDataTranslator(
                                     for (predEl <- predicatesElement) {
                                         for (obj <- objectsElement) {
                                             this.materializer.materializeQuad(sub, predEl, obj, null)
-                                            logger.trace("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
+                                            logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
                                         }
                                     }
                                 }
@@ -290,7 +288,7 @@ class MorphRDBDataTranslator(
                                         for (obj <- refObjectsElement) {
                                             if (obj != null) {
                                                 this.materializer.materializeQuad(sub, predEl, obj, null)
-                                                logger.trace("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
+                                                logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
                                             }
                                         }
                                     }
@@ -308,7 +306,7 @@ class MorphRDBDataTranslator(
                                                 for (obj <- objectsElement) {
                                                     for (un <- unionGraph) {
                                                         this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                        logger.trace("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
+                                                        logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
                                                     }
                                                 }
                                             }
@@ -323,7 +321,7 @@ class MorphRDBDataTranslator(
                                                 for (un <- unionGraph) {
                                                     if (obj != null) {
                                                         this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                        logger.trace("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
+                                                        logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
                                                     }
                                                 }
                                             }
@@ -393,7 +391,7 @@ class MorphRDBDataTranslator(
             //val encodedValueAux = GeneralUtility.encodeLiteral(value.toString());
 
             val encodedValue = value.toString();
-            val data: String = datatype.get
+            val data: String = datatype.getOrElse(null)
             val valueWithDataType = if (data != null) {
                 val xsdDateTimeURI = XSDDatatype.XSDdateTime.getURI().toString();
                 val xsdBooleanURI = XSDDatatype.XSDboolean.getURI().toString();
@@ -538,11 +536,13 @@ class MorphRDBDataTranslator(
 
         result = termMap.termMapType match {
 
+            // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
                 this.translateData(termMap, termMap.constantValue, datatype);
             }
 
+            // --- Column-valued term map
             case Constants.MorphTermMapType.ColumnTermMap => {
                 // Match the column name in the term map definition with the column name in the result set  
                 val columnTermMapValue =
@@ -566,22 +566,21 @@ class MorphRDBDataTranslator(
                 this.translateData(termMap, dbValue, datatype);
             }
 
+            // --- Reference-valued term map
             case Constants.MorphTermMapType.ReferenceTermMap => {
-                
-                
-                // ######################### TODO TODO #########################
-                // mettre a jour avec le traitement des mixed syntax paths
-                // ######################### TODO TODO #########################
 
-                
-                
                 // Match the column name in the term map definition with the column name in the result set  
-                val columnTermMapValue =
-                    if (logicalTableAlias != null && !logicalTableAlias.equals("")) {
-                        val termMapColumnValueSplit = termMap.reference.split("\\.");
+                val columnTermMapValue = {
+                    // Parse reference as a mixed syntax path and return the column referenced in the first path "Column()"
+                    val colRef = termMap.getReferencedColumns().get(0)
+
+                    if (logicalTableAlias != null && !"".equals(logicalTableAlias)) {
+                        val termMapColumnValueSplit = colRef.split("\\.");
                         val columnName = termMapColumnValueSplit(termMapColumnValueSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
                         logicalTableAlias + "_" + columnName;
-                    } else { termMap.reference }
+                    } else
+                        colRef
+                }
 
                 // Read the value from the result set and get its XML datatype
                 val dbValue = this.getResultSetValue(termMap, rs, columnTermMapValue);
@@ -597,30 +596,31 @@ class MorphRDBDataTranslator(
                 this.translateData(termMap, dbValue, datatype);
             }
 
+            // --- Template-valued term map
             case Constants.MorphTermMapType.TemplateTermMap => {
+
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
 
-                // Get the list of column references in the template
-                val attributes = RegexUtility.getTemplateColumns(termMap.templateString, true);
+                // Process each column referenced in the template: compute a list of replacements, 
+                // namely the values to replace with 'column' groups in the template string
+                val colNames = termMap.getReferencedColumns()
 
-                // Process each column reference: compute a list of replacements, namely the values to replace
-                // with {} groups in the template string
-                val replacements: Map[String, String] =
-                    attributes.flatMap(attribute => {
-
+                val replacements: Map[String, String] = colNames.map(colName =>
+                    {
                         // Match the column name in the term map definition with the column name in the result set  
                         val databaseColumn =
                             if (logicalTableAlias != null) {
-                                val attributeSplit = attribute.split("\\.");
+                                val attributeSplit = colName.split("\\.");
                                 if (attributeSplit.length >= 1) {
                                     val columnName = attributeSplit(attributeSplit.length - 1).replaceAll("\"", dbEnclosedCharacter);
                                     logicalTableAlias + "_" + columnName;
-                                } else { logicalTableAlias + "_" + attribute; }
-                            } else { attribute; }
+                                } else { logicalTableAlias + "_" + colName; }
+                            } else { colName; }
 
                         // Read the value from the result set
                         val dbValueAux = this.getResultSetValue(termMap, rs, databaseColumn);
                         val dbValue = dbValueAux match {
+                            // If the value read from the DB is a string, then optionally transform it as configured
                             case dbValueAuxString: String => {
                                 if (this.properties.transformString.isDefined) {
                                     this.properties.transformString.get match {
@@ -646,17 +646,18 @@ class MorphRDBDataTranslator(
                                     }
                                 }
                             }
-                            Some(attribute -> databaseValueString);
-                        } else { None }
+                            (colName -> databaseValueString)
+                        } else (colName -> "")
                     }).toMap
+                logger.trace("Template replacements: " + replacements)
 
-                // Replace {} groups with corresponding values in the template string
-                if (replacements.isEmpty) { null }
-                else {
-                    val templateWithDBValue = RegexUtility.replaceTokens(termMap.templateString, replacements);
-                    if (templateWithDBValue != null) {
-                        this.translateData(termMap, templateWithDBValue, datatype);
-                    } else { null }
+                // Replace {} groups in the template string with corresponding values from the db
+                if (replacements.isEmpty) {
+                    logger.warn("Template " + termMap.templateString + ": no group to replace with values from the DB.")
+                    null
+                } else {
+                    val templateWithDBValue = RegexUtility.replaceTemplateTokens(termMap.templateString, replacements);
+                    this.translateData(termMap, templateWithDBValue, datatype);
                 }
             }
 

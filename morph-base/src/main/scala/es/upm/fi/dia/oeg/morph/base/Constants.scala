@@ -208,8 +208,12 @@ object Constants {
     val R2RML_TEMPLATE_URI = R2RML_NS + "template";
     val R2RML_TEMPLATE_PROPERTY = ResourceFactory.createProperty(R2RML_TEMPLATE_URI);
 
-    val R2RML_TEMPLATE_PATTERN = "\\{\"*\\w+(\\s\\w+)*\\\"*}"; // \{"*w+(\s\w+)*\"*}
+    //val R2RML_TEMPLATE_PATTERN = "\\{\"*\\w+(\\s\\w+)*\\\"*}"; // \{"*\w+(\s\w+)*\"*}
+    val R2RML_TEMPLATE_PATTERN = """\{"*\w+\s*\"*}"""
 
+    val R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP = """\{(.+?)\}"""
+        
+        
     //TriplesMap
     val R2RML_LOGICALTABLE_URI = R2RML_NS + "logicalTable";
     val R2RML_LOGICALTABLE_PROPERTY = ResourceFactory.createProperty(R2RML_LOGICALTABLE_URI);
