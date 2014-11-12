@@ -8,7 +8,7 @@ import scala.collection.mutable.Queue
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import org.apache.log4j.Logger
 
-object RegexUtility {
+object TemplateUtility {
 
     val logger = Logger.getLogger(this.getClass().getName())
 
@@ -21,10 +21,10 @@ object RegexUtility {
 
         val replacements = Map("Name" -> "Freddy", "Invoice Number" -> "INV0001")
 
-        val attributes = RegexUtility.getTemplateColumns(template);
+        val attributes = TemplateUtility.getTemplateColumns(template);
         System.out.println("attributes = " + attributes);
 
-        val template2 = RegexUtility.replaceTemplateTokens(template, replacements);
+        val template2 = TemplateUtility.replaceTemplateTokens(template, replacements);
         System.out.println("template2 = " + template2);
 
         template = """\{\w+\}""";
@@ -41,8 +41,13 @@ object RegexUtility {
         System.out.println("firstYear: " + firstYear.toList)
     }
 
+    /**
+     * CAUTION ### This method was not updated to support Mixed-syntax paths ###
+     * Unused (at least in data materialization)
+     */
     def getTemplateMatching(inputTemplateString: String, inputURIString: String): Map[String, String] = {
 
+        println("#################### inputTemplateString " + inputTemplateString)
         var newTemplateString = inputTemplateString;
         if (!newTemplateString.startsWith("<"))
             newTemplateString = "<" + newTemplateString;

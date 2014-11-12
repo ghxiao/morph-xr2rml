@@ -1,23 +1,19 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.Constants
-import com.hp.hpl.jena.rdf.model.Resource
-import es.upm.fi.dia.oeg.morph.base.RegexUtility
 import scala.collection.JavaConversions._
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import java.sql.ResultSet
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import Zql.ZConstant
-import java.util.HashMap
-import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.rdf.model.Statement
+
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.TemplateUtility
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import com.hp.hpl.jena.rdf.model.Statement
-import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 abstract class R2RMLTermMap(
     val termMapType: Constants.MorphTermMapType.Value,
@@ -149,7 +145,7 @@ abstract class R2RMLTermMap(
             }
             case Constants.MorphTermMapType.TemplateTermMap => {
                 // Get the list of template strings
-                val tplStrings = RegexUtility.getTemplateColumns(this.templateString)
+                val tplStrings = TemplateUtility.getTemplateColumns(this.templateString)
                 
                 // For each one, parse it as a mixed syntax path and return the column referenced in the first path "Column()" 
                 tplStrings.map(tplString => MixedSyntaxPath(tplString, refFormulaion).getReferencedColumn.get)

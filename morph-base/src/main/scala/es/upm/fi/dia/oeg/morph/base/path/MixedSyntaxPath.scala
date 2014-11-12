@@ -29,7 +29,7 @@ class MixedSyntaxPath(
     val logger = Logger.getLogger(this.getClass().getName())
 
     /**
-     * This method <b>only</b> applies in the context of a row-based database, that is which a	mixed-syntax path
+     * This method <b>only</b> applies in the context of a row-based database, i.e. in which a mixed-syntax path
      * MUST start with a "Column(...)" path constructor.
      * It returns the column name referenced in the first path constructor if this is a "Column()",
      * otherwise None is returned.

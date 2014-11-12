@@ -1,34 +1,36 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
-import scala.collection.JavaConversions._
-import java.sql.Connection
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
+import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.graph.Node
+
 import Zql.ZConstant
 import Zql.ZExp
-import com.hp.hpl.jena.graph.Node
-import com.hp.hpl.jena.graph.Triple
 import es.upm.fi.dia.oeg.morph.base.CollectionUtility
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.RegexUtility
-import es.upm.fi.dia.oeg.morph.base.TermMapResult
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseBetaGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseCondSQLGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
+import es.upm.fi.dia.oeg.morph.base.TemplateUtility
+import es.upm.fi.dia.oeg.morph.base.TermMapResult
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseBetaGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseCondSQLGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphRDBQueryTranslator(nameGenerator:NameGenerator
     , alphaGenerator:MorphBaseAlphaGenerator, betaGenerator:MorphBaseBetaGenerator
@@ -161,7 +163,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 										if(this.mapTemplateAttributes.contains(templateString)) {
 											this.mapTemplateAttributes(templateString);  
 										} else {
-											val templateAttributesAux = RegexUtility.getTemplateColumns(templateString);
+											val templateAttributesAux = TemplateUtility.getTemplateColumns(templateString);
 											this.mapTemplateAttributes += (templateString -> templateAttributesAux);
 											templateAttributesAux;
 										}							  
@@ -184,7 +186,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 									val replacements = replaceMentAux.toMap;
 									
 									val templateResult = if(replacements.size() > 0) {
-										RegexUtility.replaceTemplateTokens(templateString, replacements)
+										TemplateUtility.replaceTemplateTokens(templateString, replacements)
 									} else {
 										logger.debug("no replacements found for the R2RML template!");
 										null;

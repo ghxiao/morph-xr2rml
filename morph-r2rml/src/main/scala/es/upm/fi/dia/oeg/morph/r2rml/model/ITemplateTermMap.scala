@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
-import es.upm.fi.dia.oeg.morph.base.RegexUtility
+import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import scala.collection.JavaConversions._
 
 trait ITemplateTermMap {
@@ -9,10 +9,10 @@ trait ITemplateTermMap {
     def getTemplateString(): String = { this.templateString };
 
     def getTemplateColumns(): Iterable[String] = {
-        RegexUtility.getTemplateColumns(this.templateString);
+        TemplateUtility.getTemplateColumns(this.templateString);
     };
 
     def getTemplateValues(uri: String): Map[String, String] = {
-        RegexUtility.getTemplateMatching(this.templateString, uri);
+        TemplateUtility.getTemplateMatching(this.templateString, uri);
     }
 }

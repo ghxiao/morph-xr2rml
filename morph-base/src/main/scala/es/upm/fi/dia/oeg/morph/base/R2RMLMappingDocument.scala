@@ -198,7 +198,7 @@ class R2RMLMappingDocument(mappingFile: String) {
         val result: Map[String, String] = {
             if (termMapValueType == Constants.MorphTermMapType.TemplateTermMap) {
                 val templateString = this.getRRTemplateResource(termMapResource).asLiteral().getValue().toString();
-                val matchedTemplate = RegexUtility.getTemplateMatching(templateString, uri);
+                val matchedTemplate = TemplateUtility.getTemplateMatching(templateString, uri);
                 matchedTemplate.toMap;
             } else {
                 Map();

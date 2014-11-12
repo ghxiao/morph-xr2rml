@@ -3,8 +3,11 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
@@ -13,12 +16,13 @@ import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.RegexUtility
+import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
@@ -40,7 +44,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
-import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -656,7 +659,7 @@ class MorphRDBDataTranslator(
                     logger.warn("Template " + termMap.templateString + ": no group to replace with values from the DB.")
                     null
                 } else {
-                    val templateWithDBValue = RegexUtility.replaceTemplateTokens(termMap.templateString, replacements);
+                    val templateWithDBValue = TemplateUtility.replaceTemplateTokens(termMap.templateString, replacements);
                     this.translateData(termMap, templateWithDBValue, datatype);
                 }
             }
