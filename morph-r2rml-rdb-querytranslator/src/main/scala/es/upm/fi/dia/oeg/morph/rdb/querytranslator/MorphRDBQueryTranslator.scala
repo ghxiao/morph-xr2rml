@@ -186,7 +186,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 									val replacements = replaceMentAux.toMap;
 									
 									val templateResult = if(replacements.size() > 0) {
-										TemplateUtility.replaceTemplateTokens(templateString, replacements)
+										TemplateUtility.replaceTemplateGroups(templateString, List(List(replacements)))
 									} else {
 										logger.debug("no replacements found for the R2RML template!");
 										null;

@@ -19,12 +19,12 @@ object TemplateUtility {
     def main(args: Array[String]) = {
         var template = "Hello {Name} Please find attached {Invoice Number} which is due on {Due Date}";
 
-        val replacements = Map("Name" -> "Freddy", "Invoice Number" -> "INV0001")
+        val replacements = List(List("Freddy"), List("INV0001"))
 
         val attributes = TemplateUtility.getTemplateColumns(template);
         System.out.println("attributes = " + attributes);
 
-        val template2 = TemplateUtility.replaceTemplateTokens(template, replacements);
+        val template2 = TemplateUtility.replaceTemplateGroups(template, replacements);
         System.out.println("template2 = " + template2);
 
         template = """\{\w+\}""";
@@ -91,22 +91,21 @@ object TemplateUtility {
     }
 
     /**
-     * Get the list of columns referenced in a template string.
+     * Get the list of capturing groups between '{' and '}' in a template string.
      * This method applies to R2RML templates as well as xR2RML templates including
      * mixed-syntax paths like: "http://example.org/{Column(NAME)/JSONPath(...)}/...
      *
      * Extracting encapsulating groups at once with a regex is quite complicated due to mixed syntax paths
      * since they can contain '{' and '}'. As a result this method does this in several steps. We examplify this
      * on template string http://example.org/{ID}/{Column(NAME)/JSONPath(...)}
-     * (1) Save all mixed-syntax paths from the template string to a list => List("Column(NAME)/JSONPath(...)").
-     * (2) Replace each path expression with a place holder "xR2RML_replacer" => "http://example.org/{ID}/{xR2RML_replacer}".
-     * (3) Extract all template groups between '{' and '}' to a list => List("{ID}", "{xR2RML_replacer}").
+     * (1) Save all mixed-syntax paths from the template string to a list => List("Column(NAME)", "JSONPath(...)").
+     * (2) Replace each path expression with a place holder "xR2RML_replacer" => "http://example.org/{ID}/{xR2RML_replacer/xR2RML_replacer}".
+     * (3) Extract all template groups between '{' and '}' to a list => List("{ID}", "{xR2RML_replacer/xR2RML_replacer}").
      * (4) Then, in this last list, we replace place holders with original mixed syntax path
-     * expressions saved in step 1: List("{ID}", "{List("Column(NAME)/JSONPath(...)}").
-     * (5) Finally, we extract the column name from each element of the list using the
-     * MixedSyntaxPath construct => List("ID", "NAME")
+     * expressions saved in step 1: List("{ID}", "{"Column(NAME)/JSONPath(...)}").
+     * (5) Finally, remove the first '{' and last '}' characters => List("ID", "Column(NAME)/JSONPath(...)")
      */
-    def getTemplateColumns(tplStr: String): List[String] = {
+    def getTemplateGroups(tplStr: String): List[String] = {
 
         // (1) Save all mixed-syntax path expressions in the template string
         val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
@@ -122,22 +121,41 @@ object TemplateUtility {
         val listReplaced = MixedSyntaxPath.replaceTplPlaceholder(listPattern, mixedSntxPaths)
 
         // Extract the column references of each template group between '{' and '}'
-        val columnsFromTemplate = listReplaced.map(group =>
+        val groupsFromTpl = listReplaced.map(group =>
             {
-                val col = MixedSyntaxPath(group, xR2RML_Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
-                // For simple columns there has been no parsing at all so they still have the '{' and '}'
-                if (col.startsWith("{") && col.endsWith("}"))
-                    col.substring(1, col.length() - 1)
-                else col
+                // For non mixed-syntax paths (like simple column name), there has been no parsing 
+                // at all above so they still have the '{' and '}'
+                if (group.startsWith("{") && group.endsWith("}"))
+                    group.substring(1, group.length() - 1)
+                else group
             }
         )
-        logger.trace("Extracted referenced columns: " + columnsFromTemplate + " from template " + tplStr)
+        logger.trace("Extracted groups: " + groupsFromTpl + " from template " + tplStr)
+        groupsFromTpl;
+    }
+
+    /**
+     * Get the list of columns referenced in a template string.
+     * This method applies to R2RML templates as well as xR2RML templates including
+     * mixed-syntax paths like: "http://example.org/{Column(NAME)/JSONPath(...)}/...
+     *
+     * Example: on template string "http://example.org/{ID}/{Column(NAME)/JSONPath(...)}"
+     * this method returns "List("ID", "NAME")"
+     */
+    def getTemplateColumns(tplStr: String): List[String] = {
+
+        val groups = getTemplateGroups(tplStr)
+
+        // Extract the column references of each template group between
+        val columnsFromTemplate = groups.map(group =>
+            MixedSyntaxPath(group, xR2RML_Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
+        )
+        logger.trace("Extracted columns: " + columnsFromTemplate + " from template " + tplStr)
         columnsFromTemplate;
     }
 
-
     /**
-     * Replace template capturing groups (tokens i.e. groups in { and }) with values
+     * Replace template tokens ( i.e. capturing groups in { and }) with replacement values.
      * This method applies to R2RML templates as well as xR2RML templates including
      * mixed-syntax paths like: "http://example.org/{Column(NAME)/JSONPath(...)}/...
      *
@@ -146,13 +164,14 @@ object TemplateUtility {
      * (1) Save all mixed-syntax paths from the template string to a list => List("Column(NAME)/JSONPath(...)").
      * (2) Replace each path expression with a place holder "xR2RML_replacer" => "http://example.org/{ID}/{xR2RML_replacer}".
      * (3) Apply a pattern matcher to extract all template groups between '{' and '}'
-     * (4) Then, in the template string, replace each token with its replacement value:
-     * If a token equals "xR2RML_replacer", then we use the list saved in step 1 to get the mixed syntax
-     * path and extract the column name from it.
+     * (4) Then, in the template string, replace each group with its replacement value.
+     *
+     * Replacement values come as N lists for N groups. Values are produced by doing
+     * a Cartesian product, i.e. replace each group with all possible values.
      */
-    def replaceTemplateTokens(tplStr: String, replacements: Map[String, Object]): String = {
+    def replaceTemplateGroups(tplStr: String, replacements: List[List[Object]]): String = {
 
-        if (replacements.isEmpty) { tplStr }
+        if (replacements.isEmpty) { return tplStr }
 
         // (1) Save all mixed-syntax path expressions in the template string
         val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
@@ -166,26 +185,26 @@ object TemplateUtility {
 
         var buffer: StringBuffer = new StringBuffer()
         var i = 0
-        while (matcher.find()) {
 
+        while (matcher.find()) {
             val path = matcher.group(1)
-            val replacement =
-                if (path.equals("xR2RML_replacer")) {
-                    // If the current group is "xR2RML_replacer" then we have to take the original value
-                    // that we saved in mixedSntxPaths,
-                    val col = MixedSyntaxPath(mixedSntxPaths.get(i).toString, xR2RML_Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
-                    i = i + 1
-                    replacements.get(col)
-                } else {
-                    // Otherwise, we are in the regular R2RML case with no mixed-syntax path
-                    replacements.get(path)
-                }
-            if (!replacement.isDefined)
-                logger.warn("In template " + tplStr + ", group " + path + " has no replacement.")
-            else
-                matcher.appendReplacement(buffer, replacement.get.toString)
+            val replacement = replacements.get(i)
+            matcher.appendReplacement(buffer, replacement.toString)
+            i = i + 1
         }
         matcher.appendTail(buffer);
         buffer.toString()
+    }
+
+    private def cartesianProduct(lst: List[List[Object]]): List[List[Object]] = {
+
+        val nbLists = lst.length
+        var indexes = Array.fill[Int](nbLists)(0)
+        
+        val r = for (i <- 0 to nbLists-1) yield {
+        	lst(i)(indexes(i))
+        }
+        
+        null
     }
 }

@@ -13,9 +13,8 @@ r2rml.rdb.engine.MorphRDBRunnerFactory < base.engine.MorphBaseRunnerFactory
       that consists of a set of classMappings, namely triples maps (R2RMLTriplesMap).
     - an unfolder (MorphRDBUnfolder < MorphBaseUnfolder) to create SQL queries using a table name or query
     - a data materializer (MorphBaseMaterializer) basically consists of a proper JENA model (either in mem or db)
-      initialized with an RDF output syntax (N3, Turtle...), a name space etc. The model is used
-      to create resources subject, predicate, object and graphs, then each triples is materialized to the output 
-      file immediately.
+      initialized with a name space etc. The model is used to create statements from subject, predicate, objects read
+      from the database.
     - a data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) that actually makes the translation: it runs
       SQL queries created by the unfolder, then generates RDF triples from the results.
     - a query translator, query result writer and query result processor
@@ -37,7 +36,6 @@ Materialization process (MorphBaseRunner.materializeMappingDocuments):
       - for each column in the parent triples map of each referencing object map, add items of the SELECT clause
       - for each join condition, add an SQL WHERE condition and an alias in the FROM clause for the parent table
       - xR2RML: for each column of each join condition, add items to the SELECT clause
-      !! Restriction: only the first predicate and object of a predicate-object map are considered. !!
     - Then the data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) runs the query against 
       the database and builds triples from the results. For each row of the result set:
       (1) Create a subject resource, and optionally a graph resource if the subject map contains a rr:graph/rr:graphMap property.
@@ -45,3 +43,4 @@ Materialization process (MorphBaseRunner.materializeMappingDocuments):
           a list of resources from the subject map of a parent object map in case there are referencing object maps,
           and a list of resources representing target graphs mentioned in the predicate-object map.
       (3) Finally combine all subject, graph, predicate and object resources to generate triples.
+      Once all triples have been created in the model, the materializer is used to write them to the output file.

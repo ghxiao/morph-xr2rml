@@ -183,11 +183,14 @@ abstract class R2RMLTermMap(
     }
 
     /**
-     *  Parse the mixed syntax path value read from properties xrr:reference or rr:template
-     *  and create corresponding PathExpression instances.
+     *  Parse the mixed syntax path values read from properties xrr:reference or rr:template
+     *  and create corresponding MixedSyntaxPath instances.
+     *  A non mixed-syntax path is returned as a mixed syntax path with only one PathExpression,
+     *  the type of that PathExpression depends on the logical source reference formulation.
      *
      *  @return a list of MixedSyntaxPath instances. The list contains one element in case
-     *  of a reference-valued term map, zero or more in case of a template-valued term map
+     *  of a reference-valued term map, zero or more in case of a template-valued term map.
+     *  Cannot return null but may return an empty list.
      */
     def getMixedSyntaxPaths(): List[MixedSyntaxPath] = {
 
@@ -197,7 +200,7 @@ abstract class R2RMLTermMap(
             }
             case Constants.MorphTermMapType.TemplateTermMap => {
                 // Get the list of template strings
-                val tplStrings = TemplateUtility.getTemplateColumns(this.templateString)
+                val tplStrings = TemplateUtility.getTemplateGroups(this.templateString)
 
                 // For each one, parse it as a mixed syntax path and return the column referenced in the first path "Column()" 
                 tplStrings.map(tplString => MixedSyntaxPath(tplString, refFormulaion))

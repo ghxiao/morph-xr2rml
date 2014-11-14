@@ -124,9 +124,6 @@ object Constants {
     val ENCODE_UNSAFE_CHARS_IN_URI_COLUMN = "uricolumn.encodeunsafecharacters";
     val ENCODE_RESERVED_CHARS_IN_URI_COLUMN = "uricolumn.encodereserveccharacters";
 
-    val TRANSFORMATION_STRING_TOLOWERCASE = "toLowerCase";
-    val TRANSFORMATION_STRING_TOUPPERCASE = "toUpperCase";
-
     val URI_ENCODE = "uri.encode";
 
     //aliases
@@ -283,8 +280,4 @@ object Constants {
     }
 
     val MAP_DEFAULT_URI_ENCODING_CHARS = Map(" " -> "%20", "," -> "%2C", "\\(" -> "%28", "\\)" -> "%29");
-
-    val URI_TRANSFORM_TOLOWERCASE = "toLowercase";
-    val URI_TRANSFORM_TOUPPERCASE = "toUppercase";
-    val URI_TRANSFORM_REMOVEACCENT = "removeAccent";
 }

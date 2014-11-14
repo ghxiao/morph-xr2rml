@@ -436,32 +436,32 @@ class MorphRDBDataTranslator(
     }
 
     /**
-     * Create a list of RDF terms (as JENA resources) from one value read from the database,
-     * depending on the term type specified in the term map.
-     * For the R2RML case, the list contains only one RDF term.
+     * Create a list of one RDF term (as JENA resource) from one value read from the database,
+     * according to the term type specified in the term map.
+     * Although there will be always one RDF node, the method still returns a list;
+     * this is a convenience as, in xR2RML, all references are potentially multi-valued.
+     *
+     * @param termMap current term map
+     * @param dbValue value to translate, this may be a string, integer, boolean etc.
+     * @param datatype URI of the data type
+     * @return a list of RDF nodes
      */
-    def translateData(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
-        translateData(termMap, dbValue, datatype, null)
+    def translateSingleValue(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
+        translateMultipleValues(termMap, List(dbValue), datatype)
     }
 
     /**
-     * Create a list of RDF terms (as JENA resources) from one value read from the database
-     * that is evaluated against a mixed-syntax path.
+     * Create a list of RDF terms (as JENA resources) from a list of values
+     * according to the term type specified in the term map.
+     * In case of RDF collection or container, the list returned contains one RDF node that
+     * is the head of the collection or container.
+     *
      * @param termMap current term map
-     * @param dbValue the value retrieved from the database: this may be a string, integer, boolean etc.
+     * @param values list of values: these may be strings, integers, booleans etc.,
      * @param datatype URI of the data type
-     * @param paths: a MixedSyntaxPath instance, can be null
      * @return a list of RDF nodes
      */
-    def translateData(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String], paths: MixedSyntaxPath): List[RDFNode] = {
-
-        val values: List[Object] =
-            if (paths != null)
-                // Evaluate the value against the mixed-syntax path
-                paths.evaluate(dbValue)
-            else
-                // Otherwise this is a simple value
-                List(dbValue)
+    def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
 
         val result: List[RDFNode] =
             // If the term type is one of R2RML term types then create one RDF term for each of the values
@@ -485,8 +485,8 @@ class MorphRDBDataTranslator(
                 val translated: RDFNode = termMap.inferTermType match {
                     case xR2RML_Constants.xR2RML_RDFLIST_URI => {
                         val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, termMap.languageTag))
-                        val node  = this.materializer.model.createList(valuesAsRdfNodes.iterator)
-                        node 
+                        val node = this.materializer.model.createList(valuesAsRdfNodes.iterator)
+                        node
                     }
                     case xR2RML_Constants.xR2RML_RDFBAG_URI => {
                         var list = this.materializer.model.createBag()
@@ -511,7 +511,7 @@ class MorphRDBDataTranslator(
                 List(translated)
             }
 
-        logger.trace("    Translated value [" + dbValue + " ] into [" + result + "]")
+        logger.trace("    Translated values [" + values + " ] into [" + result + "]")
         result
     }
 
@@ -534,7 +534,7 @@ class MorphRDBDataTranslator(
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-                this.translateData(termMap, termMap.constantValue, datatype);
+                this.translateSingleValue(termMap, termMap.constantValue, datatype)
             }
 
             // --- Column-valued term map
@@ -558,40 +558,39 @@ class MorphRDBDataTranslator(
                     }
 
                 // Generate the RDF terms
-                this.translateData(termMap, dbValue, datatype);
+                this.translateSingleValue(termMap, dbValue, datatype)
             }
 
             // --- Reference-valued term map
             case Constants.MorphTermMapType.ReferenceTermMap => {
 
-                // Match the column name in the term map definition with the column name in the result set  
+                // Parse reference as a mixed syntax path and return the column referenced in the first "Column()" path
                 val colRef = termMap.getReferencedColumns().get(0)
-                val columnResultSet = {
-                    // Parse reference as a mixed syntax path and return the column referenced in the first path "Column()"
 
+                val colFromResultSet = {
+                    // Match the column name in the term map definition with the column name in the result set  
                     if (logicalTableAlias != null && !"".equals(logicalTableAlias)) {
-                        val termMapColumnValueSplit = colRef.split("\\.");
-                        val columnName = termMapColumnValueSplit(termMapColumnValueSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
+                        val termMapColSplit = colRef.split("\\.");
+                        val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
                         logicalTableAlias + "_" + columnName;
                     } else
                         colRef
                 }
 
-                // Read the value from the result set and get its XML datatype
-                val dbValue = this.getResultSetValue(termMap, rs, columnResultSet);
+                // Read the value from the result set
+                val dbValue = this.getResultSetValue(termMap, rs, colFromResultSet);
 
+                // Evaluate the value against the mixed syntax path
+                val msPath = termMap.getMixedSyntaxPaths()(0)
+                val values: List[Object] = msPath.evaluate(dbValue)
+
+                // Generate RDF terms from the values
                 val datatype =
-                    if (termMap.datatype.isDefined) { termMap.datatype }
-                    else {
-                        val columnNameAux = colRef.replaceAll("\"", "");
-                        mapXMLDatatype.get(columnNameAux)
-                    }
-
-                // ##############################################################################################
-                // Generate the RDF terms
-                // ##############################################################################################
-                val msPaths = termMap.getMixedSyntaxPaths()
-                this.translateData(termMap, dbValue, datatype, msPaths(0));
+                    if (termMap.datatype.isDefined)
+                        termMap.datatype
+                    else
+                        mapXMLDatatype.get(colRef.replaceAll("\"", ""))
+                this.translateMultipleValues(termMap, values, datatype);
             }
 
             // --- Template-valued term map
@@ -599,54 +598,35 @@ class MorphRDBDataTranslator(
 
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
 
-                // Process each column referenced in the template: compute a list of replacements, 
-                // namely the values to replace with 'column' groups in the template string
-                val colNames = termMap.getReferencedColumns()
+                // Process each reference of the template: compute a list of replacements, 
+                // namely the set of values to replace with each capturing group in the template string
+                
+                val colRefs = termMap.getReferencedColumns()
+                val msPaths = termMap.getMixedSyntaxPaths()
 
-                val replacements: Map[String, String] = colNames.map(colName =>
-                    {
-                        // Match the column name in the term map definition with the column name in the result set  
-                        val databaseColumn =
-                            if (logicalTableAlias != null) {
-                                val attributeSplit = colName.split("\\.");
-                                if (attributeSplit.length >= 1) {
-                                    val columnName = attributeSplit(attributeSplit.length - 1).replaceAll("\"", dbEnclosedCharacter);
-                                    logicalTableAlias + "_" + columnName;
-                                } else { logicalTableAlias + "_" + colName; }
-                            } else { colName; }
+                val listReplace = for (i <- 0 to (colRefs.length - 1)) yield {
 
-                        // Read the value from the result set
-                        val dbValueAux = this.getResultSetValue(termMap, rs, databaseColumn);
-                        val dbValue = dbValueAux match {
-                            // If the value read from the DB is a string, then optionally transform it as configured
-                            case dbValueAuxString: String => {
-                                if (this.properties.transformString.isDefined) {
-                                    this.properties.transformString.get match {
-                                        case Constants.TRANSFORMATION_STRING_TOLOWERCASE => { dbValueAuxString.toLowerCase(); }
-                                        case Constants.TRANSFORMATION_STRING_TOUPPERCASE => { dbValueAuxString.toUpperCase(); }
-                                        case _ => { dbValueAuxString }
-                                    }
-                                } else { dbValueAuxString }
-                            }
-                            case _ => { dbValueAux }
-                        }
+                    // Match the column name in the term map definition with the column name in the result set  
+                    val colRef = colRefs(i)
+                    val colFromResultSet =
+                        if (logicalTableAlias != null) {
+                            val termMapColSplit = colRef.split("\\.");
+                            val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter);
+                            logicalTableAlias + "_" + columnName;
+                        } else
+                            colRef
 
-                        // Optionally, it the term map term type is IRI, then transform URI characters (lowercase, uppercase)
-                        if (dbValue != null) {
-                            var databaseValueString = dbValue.toString();
-                            if (termMap.inferTermType.equals(Constants.R2RML_IRI_URI)) {
-                                val uriTransformationOperations = this.properties.uriTransformationOperation;
-                                if (uriTransformationOperations != null) {
-                                    uriTransformationOperations.foreach {
-                                        case Constants.URI_TRANSFORM_TOLOWERCASE => { databaseValueString = databaseValueString.toLowerCase(); }
-                                        case Constants.URI_TRANSFORM_TOUPPERCASE => { databaseValueString = databaseValueString.toUpperCase(); }
-                                        case _ => {}
-                                    }
-                                }
-                            }
-                            (colName -> databaseValueString)
-                        } else (colName -> "")
-                    }).toMap
+                    // Read the value from the result set
+                    val dbValueRaw = this.getResultSetValue(termMap, rs, colFromResultSet)
+
+                    // Evaluate the raw value against the mixed-syntax path.
+                    // If the reference is not a mixed-syntax path this simply returns the value in a List()
+                    val valuesRaw: List[Object] = msPaths(i).evaluate(dbValueRaw)
+                    
+                    valuesRaw.filter(_ != null)
+                }
+
+                val replacements: List[List[Object]] = listReplace.toList
                 logger.trace("Template replacements: " + replacements)
 
                 // Replace {} groups in the template string with corresponding values from the db
@@ -654,8 +634,8 @@ class MorphRDBDataTranslator(
                     logger.warn("Template " + termMap.templateString + ": no group to replace with values from the DB.")
                     null
                 } else {
-                    val templateWithDBValue = TemplateUtility.replaceTemplateTokens(termMap.templateString, replacements);
-                    this.translateData(termMap, templateWithDBValue, datatype);
+                    val templateWithDBValue = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
+                    this.translateMultipleValues(termMap, List(templateWithDBValue), datatype);
                 }
             }
 

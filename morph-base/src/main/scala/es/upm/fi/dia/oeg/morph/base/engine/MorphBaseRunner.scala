@@ -118,10 +118,11 @@ abstract class MorphBaseRunner(
             val sqlQuery = this.unfolder.unfoldConceptMapping(cm);
             logger.debug("SQL query for triples map " + cm.id + ": " + sqlQuery.print(true).replaceAll("\n", " "))
 
-            // Run the query, generate triples and write them to the file
+            // Run the query and generate triples
             this.dataTranslator.get.generateRDFTriples(cm, sqlQuery);
         })
 
+        // Write the result to the output file
         this.dataTranslator.get.materializer.materialize();
 
         val durationGeneratingModel = (System.currentTimeMillis() - startGeneratingModel);

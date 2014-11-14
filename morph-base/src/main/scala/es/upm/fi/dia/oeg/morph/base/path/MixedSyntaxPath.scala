@@ -39,6 +39,10 @@ class MixedSyntaxPath(
 
     val logger = Logger.getLogger(this.getClass().getName())
 
+    override def toString: String = {
+        "MixedSyntaxPath - refFormulation: " + refFormulation + ", paths: " + paths
+    }
+
     /**
      * This method <b>only</b> applies in the context of a row-based database, i.e. in which a mixed-syntax path
      * MUST start with a "Column(...)" path constructor.
@@ -83,7 +87,9 @@ class MixedSyntaxPath(
     /**
      * Reconstruct the mixed-syntax path from the list of paths.
      * The result is returned with un-escaped characters '/', '(', ')', '{', '}'
-     * thus it may not equal the mixed syntax path passed in the constructor (apply)
+     * thus it may not equal the mixed syntax path passed in the constructor (apply).
+     * Example: if the MixedSyntaxPath was constructed with "NAME", this method
+     * return "Column(NAME)".
      */
     def reconstructMixedSyntaxPath(): String = {
         val reconstruct = paths.map(path =>
@@ -156,7 +162,6 @@ object MixedSyntaxPath {
                 )
             }
 
-        logger.trace("Created MixedSyntaxPath, PathExpression's: " + result)
         new MixedSyntaxPath(rawValue, refFormulation, result)
     }
 
@@ -248,6 +253,9 @@ object MixedSyntaxPath {
         // Stop condition: this case happens when the mixed syntax path is a single Column() 
         if (paths == Nil) return List(value)
 
+        if (value == null) return List()
+        if (value.toString.isEmpty()) return List()
+
         // Evaluate the value against the first path in the list of paths
         val currentEval = paths.head match {
             case p: Column_PathExpression => { throw new Exception("Path constructor Column() only allowed as first path of a mixed syntax path") }
@@ -268,6 +276,36 @@ object MixedSyntaxPath {
 
     /** For debug purpose only */
     def main(args: Array[String]) = {
-    }
 
+        val lst = List(List(1, 2, 3), List(3, 4), List())
+
+        val nbLists = lst.length
+        var indexes = Array.fill[Int](nbLists)(0)
+
+        var stillToGo = true
+        while (stillToGo) {
+
+            val r = for (j <- 0 to (nbLists - 1)) yield {
+                if (lst(j).isEmpty)
+                    ""
+                else
+                    lst(j)(indexes(j))
+            }
+            println(r.toList)
+
+            var continue = true
+            var i = nbLists - 1
+            while (continue && i >= 0) {
+                if (indexes(i) < lst(i).length - 1) {
+                    indexes(i) = indexes(i) + 1
+                    continue = false
+                } else {
+                    indexes(i) = 0
+                    i = i - 1
+                }
+            }
+            if (i == -1)
+                stillToGo = false
+        }
+    }
 }
