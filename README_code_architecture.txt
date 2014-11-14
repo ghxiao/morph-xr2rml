@@ -13,7 +13,9 @@ r2rml.rdb.engine.MorphRDBRunnerFactory < base.engine.MorphBaseRunnerFactory
       that consists of a set of classMappings, namely triples maps (R2RMLTriplesMap).
     - an unfolder (MorphRDBUnfolder < MorphBaseUnfolder) to create SQL queries using a table name or query
     - a data materializer (MorphBaseMaterializer) basically consists of a proper JENA model (either in mem or db)
-      initialized with an RDF output syntax (N3, Turtle...), a name space etc.
+      initialized with an RDF output syntax (N3, Turtle...), a name space etc. The model is used
+      to create resources subject, predicate, object and graphs, then each triples is materialized to the output 
+      file immediately.
     - a data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) that actually makes the translation: it runs
       SQL queries created by the unfolder, then generates RDF triples from the results.
     - a query translator, query result writer and query result processor

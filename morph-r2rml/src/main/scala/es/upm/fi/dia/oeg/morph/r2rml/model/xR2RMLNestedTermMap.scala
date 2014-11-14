@@ -1,20 +1,13 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.Constants
-import com.hp.hpl.jena.rdf.model.Resource
-import es.upm.fi.dia.oeg.morph.base.RegexUtility
+
 import scala.collection.JavaConversions._
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import java.sql.ResultSet
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import Zql.ZConstant
-import java.util.HashMap
-import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
-import com.hp.hpl.jena.rdf.model.RDFNode
+
+import org.apache.log4j.Logger
+
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 class xR2RMLNestedTermMap(
         termType: Option[String],

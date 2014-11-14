@@ -1,10 +1,17 @@
 package es.upm.fi.dia.oeg.morph.base.path
 
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import scala.util.matching.Regex.Match
-import com.hp.hpl.jena.sparql.pfunction.library.str
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.immutable.List
 import scala.collection.mutable.Queue
+import org.apache.log4j.Logger
+import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.InvalidPathException
+import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.ParseContext
+import com.jayway.jsonpath.ReadContext
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import net.minidev.json.JSONObject
+import com.sun.xml.internal.ws.api.config.management.Reconfigurable
 
 /**
  * A mixed syntax path consists of a sequence of path constructors each containing a path expression, example:
@@ -17,7 +24,11 @@ import scala.collection.mutable.Queue
  * The implicit path constructor is figured out from the reference formulation of the logical source.
  */
 class MixedSyntaxPath(
-        /** Reference value as provided by the mapping file */
+        /**
+         *  Raw value of the mixed-syntax path as provided by the mapping file.
+         *  This is either the value of property xrr:reference, or the value of one
+         *  capturing group {...} in a rr:template property
+         */
         val rawValue: String,
 
         /** Reference formulation from the triples map logical source */
@@ -49,11 +60,61 @@ class MixedSyntaxPath(
             None
         }
     }
+
+    /**
+     * Evaluate an expression against the mixed-syntax path represented by this instance.
+     * The expression is evaluated against the first path, then results are evaluated against the second path, etc.
+     * until there is no more path to evaluate against.
+     *
+     * @return a list of objects representing the result of the evaluation (string, boolean, integer...)
+     */
+    def evaluate(value: Object): List[Object] = {
+
+        // If the first path is a Column() path, then it has been evaluated by the database:
+        // the value passed in not a row but the cell value itself. Thus, we continue straight to the
+        // evaluation of the subsequent paths
+        var pathsToProcess = this.paths
+        if (paths.head.isInstanceOf[Column_PathExpression])
+            pathsToProcess = paths.tail
+
+        MixedSyntaxPath.recursiveEval(value, pathsToProcess)
+    }
+
+    /**
+     * Reconstruct the mixed-syntax path from the list of paths.
+     * The result is returned with un-escaped characters '/', '(', ')', '{', '}'
+     * thus it may not equal the mixed syntax path passed in the constructor (apply)
+     */
+    def reconstructMixedSyntaxPath(): String = {
+        val reconstruct = paths.map(path =>
+            path match {
+                case p: Column_PathExpression => "Column(" + p.pathExpression + ")"
+                case p: XPath_PathExpression => "XPath(" + p.pathExpression + ")"
+                case p: JSONPath_PathExpression => "JSONPath(" + p.pathExpression + ")"
+                case p: CSV_PathExpression => "CSV(" + p.pathExpression + ")"
+                case p: TSV_PathExpression => "TSV(" + p.pathExpression + ")"
+                case _ => throw new Exception("Unknown type of path: " + path)
+            }
+        )
+        var pathStr: String = ""
+        for (p <- reconstruct)
+            pathStr = if (pathStr.isEmpty()) p else pathStr + "/" + p
+
+        pathStr
+    }
 }
 
 object MixedSyntaxPath {
 
     val logger = Logger.getLogger(this.getClass().getName())
+
+    /** JSON parse configuration */
+    val jsonConf: Configuration = Configuration.defaultConfiguration()
+        .addOptions(com.jayway.jsonpath.Option.ALWAYS_RETURN_LIST)
+        .addOptions(com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS);
+
+    /** JSON parse context */
+    val jsonParseCtx: ParseContext = JsonPath.using(jsonConf)
 
     /**
      *  Parse the mixed syntax path value read from the mapping (properties xrr:reference or rr:template)
@@ -106,81 +167,11 @@ object MixedSyntaxPath {
         expr.replaceAll("""\\/""", "/").replaceAll("""\\\(""", "(").replaceAll("""\\\)""", ")").replaceAll("""\\\}""", "}").replaceAll("""\\\{""", "{")
     }
 
-    def main(args: Array[String]) = {
-        // Following characters must be escaped: /() => (\/) (\() (\)) (\{) (\})
-        // Following characters must not be escaped: !#%&,-./:;<=>?@_`|~[]"'*+^$
-
-        val pathConstructors = "(Column|XPath|JSONPath|CSV|TSV)"
-        val pathChars = """([\p{Alnum}\p{Space}!#%&,-.:;<=>?(\\@)_`\|~\[\]\"\'\*\+\^\$]|(\\/)|(\\\()|(\\\)|(\\\{)|(\\\})))+"""
-        val pathRegex = "(" + pathConstructors + """\(""" + pathChars + """\))""";
-
-        val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
-        val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
-        val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
-
-        //println("Parse XPath: " + pathRegex.r.findAllMatchIn(xPath).toList)
-        //println("Parse JSONPath: " + pathRegex.r.findAllMatchIn(jsonPath).toList)
-
-        //println("Parse mixed syntax path: " + pathRegex.r.findAllMatchIn(mixedPath).toList);
-        //println("Parse mixed syntax path: " + xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX.findAllMatchIn(mixedPath).toList);
-        //println("Parse XPath with XPath regex: " + xR2RML_Constants.xR2RML_PATH_XPATH_REGEX.findAllMatchIn(xPath).toList);
-        //println("Parse expr without path constructor: " + pathRegex.r.findAllMatchIn("NAME").toList);
-
-        var isOk = xPath match {
-            case pathRegex.r(_*) => " is a mixed syntax path"
-            case _ => " is not a mixed syntax path"
-        }
-        //println(xPath + isOk)
-
-        isOk = "NAME" match {
-            case pathRegex.r(_*) => " is a mixed syntax path"
-            case _ => " is not a mixed syntax path"
-        }
-        //println("NAME" + isOk)
-
-        // Construct MixedSyntaxPath and test getReferencedColumn
-        val msp = MixedSyntaxPath(mixedPath, xR2RML_Constants.xR2RML_COLUMN_URI)
-        //println("List of PathExpression instances: " + msp.paths)
-        //println("Column reference: " + msp.getReferencedColumn)
-
-        // ------------------------------------------------------------------------------------------
-
-        //val tpl2 = "http://example.org/student/{id}"
-        var tpl2 = "http://example.org/student/{ID}/{" + mixedPath + "}"
-
-        val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
-
-        // Save all path expressions in the template string
-        val mixedSntxPaths: Queue[String] = Queue(mixedSntxRegex.findAllMatchIn(tpl2).toList.map(item => item.toString): _*)
-        println("mixedSntxPaths: " + mixedSntxPaths)
-
-        // Replace each path expression with a place holder "xR2RML_replacer"
-        tpl2 = mixedSntxRegex.replaceAllIn(tpl2, "xR2RML_replacer")
-        println(tpl2)
-
-        // Make a list of the R2RML template groups between '{' '}'
-        val tplPattern = """\{"*\w+\s*[\s\w/]*\"*}"""
-        val listPattern = tplPattern.r.findAllIn(tpl2).toList
-        println(listPattern)
-
-        // Restore the path expressions in each of the place holders
-        val listReplaced = MixedSyntaxPath.replaceTplPlaceholder(listPattern, mixedSntxPaths)
-        println("Liste finale: " + listReplaced)
-
-        // Extract the column references of each template group between '{' and '}'
-        val colRefs = listReplaced.map(group =>
-            MixedSyntaxPath(group, xR2RML_Constants.xR2RML_COLUMN_URI).getReferencedColumn
-        )
-        println("Column references: " + colRefs)
-
-    }
-
-    def replaceStrRec(template: String, replacers: Queue[String]): String = {
+    private def replaceStrRec(template: String, replacers: Queue[String]): String = {
         if (replacers == Nil || template == Nil || !template.contains("xR2RML_replacer")) {
             template
         } else {
             val hd = replacers.dequeue
-
             val idx = template.indexOf("xR2RML_replacer")
             val str = template.substring(0, idx) + hd.toString + template.substring(idx + "xR2RML_replacer".length)
             replaceStrRec(str, replacers)
@@ -192,7 +183,7 @@ object MixedSyntaxPath {
      * its original value that is a mixed-syntax path.
      * This method is used to deal with templates including mixed syntax path.
      * Those are quite complicated to parse at once with a regular expression, thus
-     * this method.
+     * the need for this method.
      */
     def replaceTplPlaceholder(tplList: List[String], replacers: Queue[String]): List[String] = {
         if (tplList == Nil)
@@ -201,6 +192,82 @@ object MixedSyntaxPath {
             val str = replaceStrRec(tplList.head.toString, replacers)
             str :: replaceTplPlaceholder(tplList.tail, replacers)
         }
+    }
+
+    /**
+     * Evaluate a JSONPath expression against a JSON value and return a list of values.
+     * If a value selected by the JSONPath is not a literal (dictionary or array), the method returns
+     * a serialization of the value, like "["a","b"] for an array.
+     * If the JSONPath expression is invalid, an error is logged and the method returns an empty list.
+     */
+    def evalJSONPath(jsonValue: String, jsonPath: String): List[Object] = {
+        try {
+            val ctx: ReadContext = jsonParseCtx.parse(jsonValue);
+            var result: java.util.List[Object] = ctx.read(jsonPath)
+
+            result.toList.map(
+                item => {
+                    // Jayway JSONPath returns either a net.minidev.json.JSONArray,
+                    // a java.util.LinkedHashMap for a JSON dictionary, 
+                    // or any other simple type for literals: String, integer etc.
+                    item match {
+                        case arr: net.minidev.json.JSONArray => { arr.toJSONString }
+                        case dic: java.util.LinkedHashMap[String, Object] => { JSONObject.toJSONString(dic) }
+                        case _ => { item }
+                    }
+                }
+            )
+        } catch {
+            case e: InvalidPathException => {
+                logger.error("Invalid JSONPath expression: " + jsonPath + ". Exception: " + e.getMessage())
+                List()
+            }
+        }
+    }
+
+    def evalXPath(jsonValue: String, jsonPath: String): List[Object] = {
+        throw new Exception("Unsupported operation evalXPath")
+    }
+
+    def evalCSV(jsonValue: String, jsonPath: String): List[Object] = {
+        throw new Exception("Unsupported operation evalCSV")
+    }
+
+    def evalTSV(jsonValue: String, jsonPath: String): List[Object] = {
+        throw new Exception("Unsupported operation evalTSV")
+    }
+
+    /**
+     * Recursively evaluate an expression against a list of paths.
+     * This method should be called by an instance of class MixedSyntaxPath.
+     *
+     * @return a list of objects representing the result of the evaluation (string, boolean, integer...)
+     */
+    private def recursiveEval(value: Object, paths: List[PathExpression]): List[Object] = {
+
+        // Stop condition: this case happens when the mixed syntax path is a single Column() 
+        if (paths == Nil) return List(value)
+
+        // Evaluate the value against the first path in the list of paths
+        val currentEval = paths.head match {
+            case p: Column_PathExpression => { throw new Exception("Path constructor Column() only allowed as first path of a mixed syntax path") }
+            case p: XPath_PathExpression => { evalXPath(value.toString, p.pathExpression) }
+            case p: JSONPath_PathExpression => { evalJSONPath(value.toString, p.pathExpression) }
+            case p: CSV_PathExpression => { evalCSV(value.toString, p.pathExpression) }
+            case p: TSV_PathExpression => { evalTSV(value.toString, p.pathExpression) }
+            case _ => throw new Exception("Unknown type of path: " + paths.head)
+        }
+
+        if (paths.tail == Nil)
+            // If there is no more path, then we have finished
+            currentEval
+        else
+            // For each value produced by the evaluation above, run the evaluation with the next path in the list
+            currentEval.flatMap(value => recursiveEval(value.toString(), paths.tail))
+    }
+
+    /** For debug purpose only */
+    def main(args: Array[String]) = {
     }
 
 }

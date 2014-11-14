@@ -93,7 +93,7 @@ abstract class MorphBaseRunner(
         }
 
         val end = System.currentTimeMillis();
-        logger.info("Running time = " + (end - start) + " ms.");
+        logger.info("Running time = " + (end - start) + "ms.");
         logger.info("**********************DONE****************************");
         return status;
     }
@@ -118,15 +118,14 @@ abstract class MorphBaseRunner(
             val sqlQuery = this.unfolder.unfoldConceptMapping(cm);
             logger.debug("SQL query for triples map " + cm.id + ": " + sqlQuery.print(true).replaceAll("\n", " "))
 
-            // Run the query and generate triples
+            // Run the query, generate triples and write them to the file
             this.dataTranslator.get.generateRDFTriples(cm, sqlQuery);
         })
 
         this.dataTranslator.get.materializer.materialize();
 
-        val endGeneratingModel = System.currentTimeMillis();
-        val durationGeneratingModel = (endGeneratingModel - startGeneratingModel) / 1000;
-        logger.info("Materializing Mapping Document lasted " + (durationGeneratingModel) + " s.");
+        val durationGeneratingModel = (System.currentTimeMillis() - startGeneratingModel);
+        logger.info("Data materialization process lasted " + (durationGeneratingModel) + "ms.");
     }
 
     def readSPARQLFile(sparqQueryFileURL: String) {

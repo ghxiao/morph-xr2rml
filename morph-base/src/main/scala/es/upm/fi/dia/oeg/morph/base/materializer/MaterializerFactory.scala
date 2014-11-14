@@ -14,11 +14,10 @@ object MaterializerFactory {
         logger.info("Creating MorphBaseMaterializer. RDF language: " + pRDFLanguage + ", Jena mode: " + jenaMode + ", Output stream: " + outputStream)
 
         val model = MorphBaseMaterializer.createJenaModel(jenaMode);
-        val rdfLanguage = if (pRDFLanguage == null) {
+        val rdfLanguage = if (pRDFLanguage == null)
             Constants.OUTPUT_FORMAT_NTRIPLE;
-        } else {
+        else
             pRDFLanguage
-        }
 
         if (rdfLanguage.equalsIgnoreCase(Constants.OUTPUT_FORMAT_NTRIPLE)) {
             val materializer = new NTripleMaterializer(model, outputStream);

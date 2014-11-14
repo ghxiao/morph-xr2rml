@@ -146,7 +146,7 @@ abstract class R2RMLTermMap(
             case Constants.MorphTermMapType.TemplateTermMap => {
                 // Get the list of template strings
                 val tplStrings = TemplateUtility.getTemplateColumns(this.templateString)
-                
+
                 // For each one, parse it as a mixed syntax path and return the column referenced in the first path "Column()" 
                 tplStrings.map(tplString => MixedSyntaxPath(tplString, refFormulaion).getReferencedColumn.get)
             }
@@ -181,8 +181,35 @@ abstract class R2RMLTermMap(
         result += "::" + this.getOriginalValue();
         return result;
     }
+
+    /**
+     *  Parse the mixed syntax path value read from properties xrr:reference or rr:template
+     *  and create corresponding PathExpression instances.
+     *
+     *  @return a list of MixedSyntaxPath instances. The list contains one element in case
+     *  of a reference-valued term map, zero or more in case of a template-valued term map
+     */
+    def getMixedSyntaxPaths(): List[MixedSyntaxPath] = {
+
+        this.termMapType match {
+            case Constants.MorphTermMapType.ReferenceTermMap => {
+                List(MixedSyntaxPath(this.reference, refFormulaion))
+            }
+            case Constants.MorphTermMapType.TemplateTermMap => {
+                // Get the list of template strings
+                val tplStrings = TemplateUtility.getTemplateColumns(this.templateString)
+
+                // For each one, parse it as a mixed syntax path and return the column referenced in the first path "Column()" 
+                tplStrings.map(tplString => MixedSyntaxPath(tplString, refFormulaion))
+            }
+            case _ => { throw new Exception("Cannot build a MixedSyntaxPath with a term map of type " + this.termMapType) }
+        }
+    }
 }
 
+/**
+ * Utility methods
+ */
 object R2RMLTermMap {
     val logger = Logger.getLogger(this.getClass().getName());
     def determineTermMapType(resource: Resource) = {}
@@ -446,5 +473,4 @@ object R2RMLTermMap {
         logger.trace("Extracted term maps: " + mapsSet)
         mapsSet
     }
-
 }

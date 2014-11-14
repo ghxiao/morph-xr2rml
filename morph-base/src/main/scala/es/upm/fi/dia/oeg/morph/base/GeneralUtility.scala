@@ -1,15 +1,16 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import scala.collection.JavaConversions._
-import org.apache.log4j.Logger
-import java.net.URL
-import com.hp.hpl.jena.shared.CannotEncodeCharacterException
-import java.util.regex.Pattern
-import com.hp.hpl.jena.rdf.model.RDFNode
 import java.io._
-import com.hp.hpl.jena.sparql.pfunction.library.blankNode
-import com.hp.hpl.jena.rdf.model.ModelFactory
+import java.net.URL
+import java.util.regex.Pattern
+
+import scala.collection.JavaConversions._
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.AnonId
+import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.shared.CannotEncodeCharacterException
 
 class GeneralUtility {
 
@@ -46,10 +47,8 @@ object GeneralUtility {
         try {
             if (mapURIEncodingChars != null) {
                 mapURIEncodingChars.foreach {
-                    case (key, value) => {
-                        result = result.replaceAll(key, value)
-                    }
-                };
+                    case (key, value) => result = result.replaceAll(key, value)
+                }
             }
         } catch {
             case e: Exception => {
@@ -60,16 +59,18 @@ object GeneralUtility {
         result;
     }
 
-    //Creates a quad
     def createQuad(subject: String, predicate: String, obj: String, graph: String) = {
-        val graphString = if (graph != null) {
-            " " + graph;
-        } else {
-            ""
-        }
+        val graphString =
+            if (graph != null) { " " + graph }
+            else ""
+        val quad = subject + " " + predicate + " " + obj + graphString
 
-		val result = subject + " " + predicate + " " + obj + graphString + " .\n";    
-        result;
+        // When an RDF collection or container is generated Jena already add a tailing '.' and CR
+        val result = if (quad.substring(quad.length - 2, quad.length - 1).equals("."))
+            quad
+        else
+            quad + " .\n"
+        result
     }
 
     def isNetResource(resourceAddress: String): Boolean = {
@@ -102,23 +103,7 @@ object GeneralUtility {
         }
     }
 
-    /** @note xR2RML */
-    def trim_and_get_first_node(node: RDFNode): String = {
-
-        node.getModel().write(new PrintStream(new File(xR2RML_Constants.utilFilesaveTrash)), "N-TRIPLE", null)
-        var data = "";
-        val br = new BufferedReader(new FileReader(xR2RML_Constants.utilFilesaveTrash));
-        var bool = true
-        while (bool) {
-            val line = br.readLine()
-            if (line == null) { bool = false; }
-            else { data = data + line + ""; }
-        }
-        br.close()
-        data.split(" ")(0) + " ."
-
-    }
-
+    /*
     def fixCharacters(path: String) {
         try {
             var br = new BufferedReader(new FileReader(path));
@@ -134,7 +119,7 @@ object GeneralUtility {
             out.close()
 
             var brs = new BufferedReader(new FileReader(xR2RML_Constants.utilFilesaveTrash));
-            var outs = new PrintWriter(new BufferedWriter(new FileWriter(path, false)))
+            var outs = new PrintWriter(new BufferedWriter(new FileWriter(path + ".fix", false)))
             var bools = true
             while (bools) {
                 val line = brs.readLine()
@@ -146,8 +131,9 @@ object GeneralUtility {
         } catch {
             case e: IOException => { logger.info() }
         }
-    }
+    } */
 
+    /*
     def nodeToString(rdfNode: RDFNode): String = {
         if (rdfNode == null) {
             null
@@ -155,21 +141,9 @@ object GeneralUtility {
             if (rdfNode.isURIResource()) {
                 this.createURIref(rdfNode.asResource().getURI())
             } else if (rdfNode.isAnon()) {
-                /** @note xR2RML */
                 val id = rdfNode.asResource().getId();
-                var nod = GeneralUtility.createBlankNode(id.getLabelString());
-                if (rdfNode.getModel().isEmpty()) {
-                    // rdfNode is not the root of an RDF container/collection
-                    nod
-                } else {
-                    // rdfNode is either an RDF container/collection.
-                    // Serialize the RDF collection/container into a file
-                    var out: StringWriter = new StringWriter()
-                    rdfNode.getModel().write(out, "N-TRIPLE", null)
-                    trim_and_get_first_node(rdfNode) + "\n" + out.toString()
-                }
-                // end of xR2RML
-
+                var nod = GeneralUtility.createBlankNode(id.getLabelString())
+                nod
             } else if (rdfNode.isLiteral()) {
                 val literalNode = rdfNode.asLiteral();
                 val datatype = literalNode.getDatatype();
@@ -190,10 +164,9 @@ object GeneralUtility {
                 literalString
             } else { rdfNode.toString() }
         }
+    } */
 
-    }
-
-    //Create typed literal
+    // Create typed literal
     def createDataTypeLiteral(pvalue: String, datatypeURI: String): String = {
         val value = GeneralUtility.encodeLiteral(pvalue);
         val result = "\"" + value + "\"^^" + "<" + datatypeURI + ">";

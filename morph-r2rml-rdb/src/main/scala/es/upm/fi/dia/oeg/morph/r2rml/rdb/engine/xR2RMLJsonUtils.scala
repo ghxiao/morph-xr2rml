@@ -27,6 +27,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 object xR2RMLJsonUtils {
     val logger = Logger.getLogger(this.getClass().getName());
 
+    val utilFilesavegraph = "savegraph.xrr"
+    val utilFilesaveTrash = "savegraphTrash.xrr"
+
+
     // check if the array tab contains the string data
     def containsString(tab: Array[String], data: String): Boolean = {
         var bool = false
@@ -52,11 +56,11 @@ object xR2RMLJsonUtils {
     def saveNode(node: RDFNode) {
         if (node != null) {
             // Write the model to a file
-            node.getModel().write(new PrintStream(new File(xR2RML_Constants.utilFilesaveTrash)), "N-TRIPLE", null)
+            node.getModel().write(new PrintStream(new File(utilFilesaveTrash)), "N-TRIPLE", null)
             
             // Read the file to a buffered reader and copy lines to a string "data"
             var data = "";
-            val br = new BufferedReader(new FileReader(xR2RML_Constants.utilFilesaveTrash));
+            val br = new BufferedReader(new FileReader(utilFilesaveTrash));
             var bool = true
             while (bool) {
                 val line = br.readLine()
@@ -67,7 +71,7 @@ object xR2RMLJsonUtils {
 
             // And then write it again to another file.... ?!!??#?@?!?!?
             try {
-                var out = new PrintWriter(new BufferedWriter(new FileWriter(xR2RML_Constants.utilFilesavegraph, true)))
+                var out = new PrintWriter(new BufferedWriter(new FileWriter(utilFilesavegraph, true)))
                 out.println(data + "\n")
                 out.flush()
                 out.close()

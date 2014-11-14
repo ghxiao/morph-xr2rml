@@ -209,7 +209,7 @@ object Constants {
     val R2RML_TEMPLATE_PROPERTY = ResourceFactory.createProperty(R2RML_TEMPLATE_URI);
 
     //val R2RML_TEMPLATE_PATTERN = "\\{\"*\\w+(\\s\\w+)*\\\"*}"; // \{"*\w+(\s\w+)*\"*}
-    val R2RML_TEMPLATE_PATTERN = """\{"*\w+\s*\"*}"""
+    val R2RML_TEMPLATE_PATTERN = """\{"*\w+\s*[\s\w/]*\"*}"""
 
     val R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP = """\{(.+?)\}"""
         

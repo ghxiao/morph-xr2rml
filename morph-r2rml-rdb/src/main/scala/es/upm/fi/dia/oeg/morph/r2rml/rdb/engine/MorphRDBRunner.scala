@@ -59,7 +59,6 @@ object MorphRDBRunner {
             val configDir = "examples";
             val configFile = "morph.properties";
 
-            erasefile(xR2RML_Constants.utilFilesavegraph);
             logger.info("properties Directory = " + configDir);
             logger.info("properties File      = " + configFile);
             
@@ -73,18 +72,15 @@ object MorphRDBRunner {
             val properties = MorphProperties(configDir, configFile)
             var outputFilepath = properties.outputFilePath.get
             var outputFormat = properties.rdfLanguageForResult
-            // @TODO This is a weird bug workaround: for some reason we create an empty triple, line is only " .". 
-            // We should find why instead of fixing this afterwards...
-            GeneralUtility.fixCharacters(outputFilepath)
 
-            var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, "N-TRIPLE");
+            var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, "TURTLE")
 
             // Display the result on the std output
-            model.write(System.out, outputFormat, null);
+            model.write(System.out, outputFormat, null)
 
             // Save the result in the output file again but with the requested format (in case it is different)
-            erasefile(outputFilepath);
-            model.write(new FileWriter(outputFilepath), outputFormat);
+            erasefile(outputFilepath)
+            model.write(new FileWriter(outputFilepath), outputFormat)
         } catch {
             case e: Exception => {
                 logger.error("Exception occured: " + e.getMessage());

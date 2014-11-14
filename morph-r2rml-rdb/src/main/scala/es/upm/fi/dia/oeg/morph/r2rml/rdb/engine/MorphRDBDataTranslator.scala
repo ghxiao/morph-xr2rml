@@ -3,11 +3,8 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
-
 import scala.collection.JavaConversions._
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
@@ -16,7 +13,6 @@ import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary.RDF
-
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -44,6 +40,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -207,17 +204,17 @@ class MorphRDBDataTranslator(
 
                 // Add subject resource to the JENA model with its class (rdf:type) and target graphs
                 sm.classURIs.foreach(classURI => {
-                    val statementObject = this.materializer.model.createResource(classURI);
+                    val classRes = this.materializer.model.createResource(classURI);
                     if (subjectGraphs == null || subjectGraphs.isEmpty) {
                         for (sub <- subject) {
-                            this.materializer.materializeQuad(sub, RDF.`type`, statementObject, null);
+                            this.materializer.materializeQuad(sub, RDF.`type`, classRes, null);
                             this.materializer.outputStream.flush();
                         }
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
                             for (sub <- subject) {
                                 for (subG <- subjectGraph) {
-                                    this.materializer.materializeQuad(sub, RDF.`type`, statementObject, subG);
+                                    this.materializer.materializeQuad(sub, RDF.`type`, classRes, subG);
                                 }
                             }
                         });
@@ -439,88 +436,83 @@ class MorphRDBDataTranslator(
     }
 
     /**
-     * Create a list of RDF terms (as JENA resources) from a value read from the database,
+     * Create a list of RDF terms (as JENA resources) from one value read from the database,
      * depending on the term type specified in the term map.
      * For the R2RML case, the list contains only one RDF term.
      */
     def translateData(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
+        translateData(termMap, dbValue, datatype, null)
+    }
 
-        var resultat: List[RDFNode] = List(null);
-        resultat = termMap.inferTermType match {
+    /**
+     * Create a list of RDF terms (as JENA resources) from one value read from the database
+     * that is evaluated against a mixed-syntax path.
+     * @param termMap current term map
+     * @param dbValue the value retrieved from the database: this may be a string, integer, boolean etc.
+     * @param datatype URI of the data type
+     * @param paths: a MixedSyntaxPath instance, can be null
+     * @return a list of RDF nodes
+     */
+    def translateData(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String], paths: MixedSyntaxPath): List[RDFNode] = {
 
-            case Constants.R2RML_IRI_URI => {
-                if (dbValue != null) {
-                    var result = List(this.createIRI(dbValue.toString()));
-                    //for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                    result
-                } else { null }
+        val values: List[Object] =
+            if (paths != null)
+                // Evaluate the value against the mixed-syntax path
+                paths.evaluate(dbValue)
+            else
+                // Otherwise this is a simple value
+                List(dbValue)
+
+        val result: List[RDFNode] =
+            // If the term type is one of R2RML term types then create one RDF term for each of the values
+            if (termMap.inferTermType == Constants.R2RML_IRI_URI ||
+                termMap.inferTermType == Constants.R2RML_LITERAL_URI ||
+                termMap.inferTermType == Constants.R2RML_BLANKNODE_URI) {
+                values.filter(_ != null).map(value => {
+                    termMap.inferTermType match {
+                        case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
+                        case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, termMap.languageTag)
+                        case Constants.R2RML_BLANKNODE_URI => {
+                            var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
+                            this.materializer.model.createResource(new AnonId(rep))
+                        }
+                    }
+                })
+            } else {
+
+                // If the term type is one of xR2RML collection/container term types,
+                // then create one single RDF term that gathers all the values
+                val translated: RDFNode = termMap.inferTermType match {
+                    case xR2RML_Constants.xR2RML_RDFLIST_URI => {
+                        val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, termMap.languageTag))
+                        val node  = this.materializer.model.createList(valuesAsRdfNodes.iterator)
+                        node 
+                    }
+                    case xR2RML_Constants.xR2RML_RDFBAG_URI => {
+                        var list = this.materializer.model.createBag()
+                        for (value <- values)
+                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
+                        list
+                    }
+                    case xR2RML_Constants.xR2RML_RDFALT_URI => {
+                        val list = this.materializer.model.createAlt()
+                        for (value <- values)
+                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
+                        list
+                    }
+                    case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
+                        val list = this.materializer.model.createSeq()
+                        for (value <- values)
+                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
+                        list
+                    }
+                    case _ => { throw new Exception("Unkown term type: " + termMap.inferTermType) }
+                }
+                List(translated)
             }
 
-            case Constants.R2RML_LITERAL_URI => {
-                if (dbValue != null) {
-                    var result = List(this.createLiteral(dbValue, datatype, termMap.languageTag));
-                    //for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                    result
-                } else { null }
-            }
-
-            case Constants.R2RML_BLANKNODE_URI => {
-                if (dbValue != null) {
-                    var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(dbValue.toString()))
-                    var result = List(this.materializer.model.createResource(new AnonId(rep)));
-                    //for (un <- result) { xR2RMLJsonUtils.saveNode(un) }
-                    result
-                } else { null }
-            }
-
-            case xR2RML_Constants.xR2RML_RDFLIST_URI => {
-                if (dbValue != null) {
-                    var tab = Array.ofDim[RDFNode](1);
-                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                    val list = ModelFactory.createDefaultModel().createList(tab)
-                    var result = List(list)
-                    result
-                } else { null }
-            }
-
-            case xR2RML_Constants.xR2RML_RDFBAG_URI => {
-                if (dbValue != null) {
-                    var tab = Array.ofDim[RDFNode](1);
-                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                    val bag = ModelFactory.createDefaultModel().createBag()
-                    bag.add(tab(0))
-                    var result = List(bag)
-                    result
-                } else { null }
-            }
-
-            case xR2RML_Constants.xR2RML_RDFALT_URI => {
-                if (dbValue != null) {
-                    var tab = Array.ofDim[RDFNode](1);
-                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                    val alt = ModelFactory.createDefaultModel().createAlt()
-                    alt.add(tab(0))
-                    var result = List(alt)
-                    result
-                } else { null }
-            }
-
-            case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
-                if (dbValue != null) {
-                    var tab = Array.ofDim[RDFNode](1);
-                    tab(0) = this.createLiteral(dbValue, datatype, termMap.languageTag);
-                    val seq = ModelFactory.createDefaultModel().createSeq()
-                    seq.add(tab(0))
-                    var result = List(seq)
-                    result
-                } else { null }
-            }
-
-            case _ => { throw new Exception("Unkown term type: " + termMap.inferTermType) }
-        }
-
-        logger.trace("    Translated value [" + dbValue + " ] into [" + resultat + "]")
-        resultat
+        logger.trace("    Translated value [" + dbValue + " ] into [" + result + "]")
+        result
     }
 
     /**
@@ -573,9 +565,9 @@ class MorphRDBDataTranslator(
             case Constants.MorphTermMapType.ReferenceTermMap => {
 
                 // Match the column name in the term map definition with the column name in the result set  
-                val columnTermMapValue = {
+                val colRef = termMap.getReferencedColumns().get(0)
+                val columnResultSet = {
                     // Parse reference as a mixed syntax path and return the column referenced in the first path "Column()"
-                    val colRef = termMap.getReferencedColumns().get(0)
 
                     if (logicalTableAlias != null && !"".equals(logicalTableAlias)) {
                         val termMapColumnValueSplit = colRef.split("\\.");
@@ -586,17 +578,20 @@ class MorphRDBDataTranslator(
                 }
 
                 // Read the value from the result set and get its XML datatype
-                val dbValue = this.getResultSetValue(termMap, rs, columnTermMapValue);
+                val dbValue = this.getResultSetValue(termMap, rs, columnResultSet);
+
                 val datatype =
                     if (termMap.datatype.isDefined) { termMap.datatype }
                     else {
-                        val columnNameAux = termMap.reference.replaceAll("\"", "");
-                        val datatypeAux = mapXMLDatatype.get(columnNameAux)
-                        datatypeAux
+                        val columnNameAux = colRef.replaceAll("\"", "");
+                        mapXMLDatatype.get(columnNameAux)
                     }
 
+                // ##############################################################################################
                 // Generate the RDF terms
-                this.translateData(termMap, dbValue, datatype);
+                // ##############################################################################################
+                val msPaths = termMap.getMixedSyntaxPaths()
+                this.translateData(termMap, dbValue, datatype, msPaths(0));
             }
 
             // --- Template-valued term map

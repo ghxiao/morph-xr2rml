@@ -1,60 +1,45 @@
 package es.upm.fi.dia.oeg.morph.base.materializer
 
-import com.hp.hpl.jena.rdf.model.Model
-import org.apache.log4j.Logger
 import java.io.Writer
-import java.io.OutputStreamWriter
-import java.io.FileOutputStream
+
+import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.ontology.DatatypeProperty
+import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.RDFNode
+
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import java.io.OutputStream
-import java.io.PrintWriter
-import java.io.BufferedOutputStream
-import java.io.BufferedWriter
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
-import java.io.FileReader
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.FileWriter
 
 class NTripleMaterializer(model: Model, ntOutputStream: Writer)
-  extends MorphBaseMaterializer(model, ntOutputStream) {
-  //THIS IS IMPORTANT, SCALA PASSES PARAMETER BY VALUE!
-  this.outputStream = ntOutputStream;
+        extends MorphBaseMaterializer(model, ntOutputStream) {
 
-  override val logger = Logger.getLogger(this.getClass().getName());
+    //THIS IS IMPORTANT, SCALA PASSES PARAMETER BY VALUE!
+    this.outputStream = ntOutputStream;
 
-  def write(triple: String) = {
-    this.outputStream.write(triple)
-    this.outputStream.flush();
+    override val logger = Logger.getLogger(this.getClass().getName());
 
-  }
-
-  override def materialize() {
-    //nothing to do, the triples were added during the data translation process
-    this.outputStream.flush();
-    //		this.outputStream.close();
-  }
-
-  override def materializeQuad(subject: RDFNode, predicate: RDFNode,
-    obj: RDFNode, graph: RDFNode) {
-    if (subject != null && predicate != null && obj != null) {
-      try {
-        val subjectString = GeneralUtility.nodeToString(subject);
-        val predicateString = GeneralUtility.nodeToString(predicate);
-        val objectString = GeneralUtility.nodeToString(obj);
-        val graphString = GeneralUtility.nodeToString(graph);
-
-        val triple = GeneralUtility.createQuad(subjectString, predicateString, objectString, graphString);
-        this.write(triple);
-      } catch {
-        case e: Exception => {
-          e.printStackTrace()
-          logger.error("unable to serialize triple, subjectURI=" + subject);
-        }
-      }
+    override def materialize() {
+        this.model.write(this.outputStream, "TURTLE", null)
+        this.outputStream.flush();
     }
-  }
 
+    override def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode) {
+
+        if (graph != null)
+            throw new Exception("Named graphs not supported in this version")
+        
+        if (subject != null && predicate != null && obj != null) {
+            try {
+                // Create and add the triple in the Jena model
+                val pred = this.model.createProperty(predicate.asResource().getURI())
+                val stmt = this.model.createStatement(subject.asResource(), pred, obj)
+                this.model.add(stmt)
+            } catch {
+                case e: Exception => {
+                    e.printStackTrace()
+                    logger.error("Unable to serialize triple, subject: " + subject);
+                }
+            }
+        }
+    }
 }

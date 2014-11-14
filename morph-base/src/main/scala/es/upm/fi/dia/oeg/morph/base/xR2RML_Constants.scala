@@ -9,10 +9,6 @@ class xR2RML_Constants {
 /** xR2RML vocabulary definitions */
 object xR2RML_Constants {
 
-    val utilFilesavegraph = "savegraph.xrr"
-    val utilFilesave = "save.xrr"
-    val utilFilesaveTrash = "savegraphTrash.xrr"
-
     // Name spaces
     val xR2RML_NS = "http://i3s.unice.fr/xr2rml#";
     val RML_NS = "http://semweb.mmlab.be/ns/rml#";
