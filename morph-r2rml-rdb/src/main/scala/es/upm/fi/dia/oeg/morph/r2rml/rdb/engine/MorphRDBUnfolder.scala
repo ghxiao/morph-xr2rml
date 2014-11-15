@@ -238,7 +238,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         // Unfold subject map
         val subjectMapSelectItems = this.unfoldTermMap(subjectMap, logicalTableAlias);
         result.addSelectItems(subjectMapSelectItems);
-        logger.trace("Unfolded subject map: " + result.toString.replaceAll("\n", ""))
+        logger.debug("Unfolded subject map: " + result.toString.replaceAll("\n", ""))
 
         // Unfold predicate-object maps
         if (poms != null) {
@@ -347,7 +347,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     }
                 }
             }
-            logger.trace("Unfolded predicate-object map: " + result.toString.replaceAll("\n", " "))
+            logger.debug("Unfolded predicate-object map: " + result.toString.replaceAll("\n", " "))
         }
 
         try {

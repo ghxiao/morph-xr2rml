@@ -18,7 +18,7 @@
     rr:predicateObjectMap [
     	rr:predicate ex:name;
     	rr:objectMap [ 
-    	    rr:template "{name}-{Column(id)/JSONPath($.*)}";
+    	    rr:template "{id}-{Column(name)}-{Column(comments)/JSONPath($.*.hobby)}";
     	    rr:termType rr:Literal;
     	];
     ];

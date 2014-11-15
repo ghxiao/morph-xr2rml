@@ -277,35 +277,46 @@ object MixedSyntaxPath {
     /** For debug purpose only */
     def main(args: Array[String]) = {
 
-        val lst = List(List(1, 2, 3), List(3, 4), List())
+        val lists: List[List[Object]] = List(List("1", "2", "3"), List("4", "5"), List(""))
 
-        val nbLists = lst.length
+        val combinations = new Queue[List[Object]]
+
+        val nbLists = lists.length
+
+        // Current index in each list
         var indexes = Array.fill[Int](nbLists)(0)
 
         var stillToGo = true
         while (stillToGo) {
 
-            val r = for (j <- 0 to (nbLists - 1)) yield {
-                if (lst(j).isEmpty)
-                    ""
-                else
-                    lst(j)(indexes(j))
+            // Build a list (combination) from the current elements of each list 
+            val combination = for (j <- 0 to (nbLists - 1)) yield {
+                if (lists(j).isEmpty) ""
+                else lists(j)(indexes(j))
             }
-            println(r.toList)
+            combinations += combination.toList
 
+            // Search in which list we can increase the index, starting with the last one, then last but one etc.
             var continue = true
-            var i = nbLists - 1
-            while (continue && i >= 0) {
-                if (indexes(i) < lst(i).length - 1) {
-                    indexes(i) = indexes(i) + 1
+            var lstIdx = nbLists - 1
+            while (continue && lstIdx >= 0) {
+                if (indexes(lstIdx) < lists(lstIdx).length - 1) {
+                    // Found one list to increment the index: increment it and stop for now
+                    indexes(lstIdx) = indexes(lstIdx) + 1
                     continue = false
                 } else {
-                    indexes(i) = 0
-                    i = i - 1
+                    // Not possible to increment this list anymore, so reset its index
+                    // and check if we can decrement the index of another list
+                    indexes(lstIdx) = 0
+                    lstIdx = lstIdx - 1
                 }
             }
-            if (i == -1)
+            // If we exist the loop without being able to increment the index of any list,
+            // that means we have reached the last possible combination => the end
+            if (lstIdx == -1)
                 stillToGo = false
         }
+
+        println(combinations.toList)
     }
 }

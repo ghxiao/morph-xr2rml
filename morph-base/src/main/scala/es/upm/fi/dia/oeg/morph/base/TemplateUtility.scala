@@ -155,56 +155,97 @@ object TemplateUtility {
     }
 
     /**
-     * Replace template tokens ( i.e. capturing groups in { and }) with replacement values.
+     * Replace template tokens ( i.e. capturing groups between { and }) with replacement values.
      * This method applies to R2RML templates as well as xR2RML templates including
      * mixed-syntax paths like: "http://example.org/{Column(NAME)/JSONPath(...)}/...
      *
-     * Extracting encapsulating groups at once with a regex is quite complicated due to mixed syntax paths
-     * since they can contain '{' and '}'. As a result this method does this in several steps:
-     * (1) Save all mixed-syntax paths from the template string to a list => List("Column(NAME)/JSONPath(...)").
-     * (2) Replace each path expression with a place holder "xR2RML_replacer" => "http://example.org/{ID}/{xR2RML_replacer}".
-     * (3) Apply a pattern matcher to extract all template groups between '{' and '}'
-     * (4) Then, in the template string, replace each group with its replacement value.
-     *
-     * Replacement values come as N lists for N groups. Values are produced by doing
-     * a Cartesian product, i.e. replace each group with all possible values.
+     * Replacement values come as N lists corresponding to the N groups. Values are produced by doing
+     * a Cartesian product, that is by making all the possible combinations between all possible values
+     * of each group.
      */
-    def replaceTemplateGroups(tplStr: String, replacements: List[List[Object]]): String = {
+    def replaceTemplateGroups(tplStr: String, replacements: List[List[Object]]): List[String] = {
 
-        if (replacements.isEmpty) { return tplStr }
+        if (replacements.isEmpty) { return List(tplStr) }
 
-        // (1) Save all mixed-syntax path expressions in the template string
+        // Save all mixed-syntax path expressions in the template string
         val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
         val mixedSntxPaths = mixedSntxRegex.findAllMatchIn(tplStr).toList
 
-        // (2) Replace each path expression with a place holder "xR2RML_replacer"
+        // Replace each path expression with a place holder "xR2RML_replacer"
         val tpl2 = mixedSntxRegex.replaceAllIn(tplStr, "xR2RML_replacer")
 
-        // (3) Make a list of the template groups between '{' '}'
-        val matcher = TemplatePatternCapGrp.matcher(tpl2)
+        // Compute all possible combinations between all values of the groups
+        val combinations = cartesianProduct(replacements)
+        logger.trace("Template replacement combinations: " + combinations)
 
-        var buffer: StringBuffer = new StringBuffer()
-        var i = 0
+        val templateResults = new Queue[String]
 
-        while (matcher.find()) {
-            val path = matcher.group(1)
-            val replacement = replacements.get(i)
-            matcher.appendReplacement(buffer, replacement.toString)
-            i = i + 1
+        for (combination <- combinations) {
+            var buffer: StringBuffer = new StringBuffer()
+            var grpIdx = 0
+
+            // Make a list of the template groups between '{' '}'
+            val matcher = TemplatePatternCapGrp.matcher(tpl2)
+            while (matcher.find()) {
+                val path = matcher.group(1)
+                val replacement = combination.get(grpIdx)
+                matcher.appendReplacement(buffer, replacement.toString)
+                grpIdx = grpIdx + 1
+            }
+            matcher.appendTail(buffer)
+            templateResults += buffer.toString
         }
-        matcher.appendTail(buffer);
-        buffer.toString()
+
+        val result = templateResults.toList
+        logger.trace("Generated templates: " + result)
+        result
     }
 
-    private def cartesianProduct(lst: List[List[Object]]): List[List[Object]] = {
+    /**
+     * Make the Cartesian product between any number of lists: from a set of lists l1 to lN,
+     * compute a new set containing all the combinations of elements of lists l1, l2... lN.
+     * This is used in the production of all template strings when one or several groups
+     * of the template are multi-valued.
+     */
+     def cartesianProduct(lists: List[List[Object]]): List[List[Object]] = {
 
-        val nbLists = lst.length
+        val combinations = new Queue[List[Object]]
+        val nbLists = lists.length
+
+        // Initialize the index to browse each list
         var indexes = Array.fill[Int](nbLists)(0)
-        
-        val r = for (i <- 0 to nbLists-1) yield {
-        	lst(i)(indexes(i))
+
+        var stillToGo = true
+        while (stillToGo) {
+
+            // Build a list (combination) from the current elements of each list 
+            val combination = for (j <- 0 to (nbLists - 1)) yield {
+                if (lists(j).isEmpty) ""
+                else lists(j)(indexes(j))
+            }
+            combinations += combination.toList
+
+            // Search in which list we can increase the index, starting with the last one, then last but one etc.
+            var continue = true
+            var lstIdx = nbLists - 1
+            while (continue && lstIdx >= 0) {
+                if (indexes(lstIdx) < lists(lstIdx).length - 1) {
+                    // Found one list to increment the index: increment it and stop for now
+                    indexes(lstIdx) = indexes(lstIdx) + 1
+                    continue = false
+                } else {
+                    // Not possible to increment this list anymore, so reset its index
+                    // and check if we can decrement the index of another list
+                    indexes(lstIdx) = 0
+                    lstIdx = lstIdx - 1
+                }
+            }
+            // If we exist the loop without being able to increment the index of any list,
+            // that means we have reached the last possible combination => the end
+            if (lstIdx == -1)
+                stillToGo = false
         }
-        
-        null
+
+        combinations.toList
     }
 }

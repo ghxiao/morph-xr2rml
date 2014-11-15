@@ -1,7 +1,5 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import scala.util.matching.Regex
-import scala.collection.mutable.HashMap
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -47,5 +45,29 @@ class TemplateUtilityTest {
         assertEquals("NAME", colRefs(1))
         assertEquals("ID2", colRefs(2))
         assertEquals("NAME", colRefs(3))
+    }
+
+    @Test def TestCartesianProduct() {
+        println("------------------ TestCartesianProduct ------------------")
+        val lists: List[List[Object]] = List(List("1", "2", "3"), List("4"), List("5", "6"))
+        val combinations = TemplateUtility.cartesianProduct(lists)
+        println(combinations)
+        assertEquals(6, combinations.length)
+        assertEquals(List(
+            List("1", "4", "5"),
+            List("1", "4", "6"),
+            List("2", "4", "5"),
+            List("2", "4", "6"),
+            List("3", "4", "5"),
+            List("3", "4", "6")), combinations)
+
+        val lists2: List[List[Object]] = List(List("1", "2", "3"), List())
+        val combinations2 = TemplateUtility.cartesianProduct(lists2)
+        println(combinations2)
+        assertEquals(3, combinations2.length)
+        assertEquals(List(
+            List("1", ""),
+            List("2", ""),
+            List("3", "")), combinations2)
     }
 }
