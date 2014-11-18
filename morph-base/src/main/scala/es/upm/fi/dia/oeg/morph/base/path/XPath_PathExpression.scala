@@ -100,36 +100,4 @@ object XPath_PathExpression {
                 node.getTextContent
         }
     }
-
-    /** For debug purpose only */
-    def main(args: Array[String]) = {
-
-        val xmlStr = """
-            <Employees>
-            <Employee emplid="1111" type="admin">
-        		<firstname>John</firstname>
-        		<lastname>Watson</lastname>
-        		<age>30</age>
-        		<email>johnwatson@sh.com</email>
-    		</Employee>            
-            <Employee emplid="2222">
-        		<firstname>Paul</firstname>
-        		<email>boo@foo.com</email>
-        		<age>40</age>
-    		</Employee>"
-            </Employees>"""
-
-        // Result = 2 XML elements
-        println(new XPath_PathExpression("""//Employee/age""").evaluate(xmlStr))
-        // Result = values of attribute
-        println(new XPath_PathExpression("""//Employee/@emplid""").evaluate(xmlStr))
-        // Result = serialized XML subtree
-        println(new XPath_PathExpression("""//Employee""").evaluate(xmlStr))
-        // Result = nothing
-        println(new XPath_PathExpression("""//foo""").evaluate(xmlStr))
-        // Error in the XPath
-        println(new XPath_PathExpression("""/dsff/[dfsf}/foo""").evaluate(xmlStr))
-        // Error in the XML
-        println(new XPath_PathExpression("""//foo""").evaluate(xmlStr + "<ggdf"))
-    }
 }
