@@ -12,24 +12,23 @@
         xrr:referenceFormulation xrr:Column;
     ];
     rr:subjectMap [ 
-    	rr:template "http://example.org/student/{Column(id)}/{name}";
+    	rr:template "http://example.org/student/{Column(id)}";
 		rr:class ex:Student;
     ];
     rr:predicateObjectMap [
-    	rr:predicate ex:name;
+    	rr:predicate ex:activity;
     	rr:objectMap [ 
-    	    rr:template "{id}-{Column(name)}-{Column(comments)/JSONPath($.*.hobby)}";
+    	    xrr:reference "Column(comments)/JSONPath($.*.hobby)";
     	    rr:termType rr:Literal;
     	];
     ];
     rr:predicateObjectMap [
-    	rr:predicate ex:nameBag;
-    	rr:objectMap [ 
-    		xrr:reference "Column(name)";
-    		rr:termType xrr:RdfBag;
+    	rr:predicate ex:names;
+    	rr:objectMap [
+    		rr:template "{Column(name)/XPath(\\/\\/FirstName)} {Column(name)/XPath(\\/\\/LastName)}";
+    		rr:termType xrr:RdfList;
 		];
     ].
-
 
 <#SportBsk>
     a rr:TriplesMap;
@@ -46,9 +45,9 @@
     ];
     rr:predicateObjectMap [
     	rr:predicate ex:colors;
-    	rr:objectMap [ 
+    	rr:objectMap [
             xrr:reference "Column(shirt_colors)/JSONPath($.*)" ;
-            rr:termType xrr:RdfList;
+            rr:termType xrr:RdfBag;
         ];
     ].
 

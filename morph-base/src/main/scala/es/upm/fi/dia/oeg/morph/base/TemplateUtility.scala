@@ -16,31 +16,6 @@ object TemplateUtility {
 
     val TemplatePatternCapGrp = Pattern.compile(Constants.R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP);
 
-    def main(args: Array[String]) = {
-        var template = "Hello {Name} Please find attached {Invoice Number} which is due on {Due Date}";
-
-        val replacements = List(List("Freddy"), List("INV0001"))
-
-        val attributes = TemplateUtility.getTemplateColumns(template);
-        System.out.println("attributes = " + attributes);
-
-        val template2 = TemplateUtility.replaceTemplateGroups(template, replacements);
-        System.out.println("template2 = " + template2);
-
-        template = """\{\w+\}""";
-        val columnsFromTemplate = template.r.findAllIn("http://example.org/{abc}#{def}").toList;
-        System.out.println("columnsFromTemplate = " + columnsFromTemplate);
-
-        val date = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
-        val dates = "Important dates in history: 2004-01-20, 1958-09-05, 2010-10-06, 2011-07-15"
-
-        val firstDate = date findFirstIn dates getOrElse "No date found."
-        System.out.println("firstDate: " + firstDate)
-
-        val firstYear = for (m <- date findAllMatchIn dates) yield m group 1
-        System.out.println("firstYear: " + firstYear.toList)
-    }
-
     /**
      * CAUTION ### This method was not updated to support Mixed-syntax paths ###
      * Unused (at least in data materialization)
@@ -167,6 +142,12 @@ object TemplateUtility {
 
         if (replacements.isEmpty) { return List(tplStr) }
 
+        if (getTemplateGroups(tplStr).length > replacements.length) {
+            logger.error("Unexpected error: there are more template groups than replacement values. Template: " + tplStr + ". Replacements: " + replacements)
+            // Return the template as is, not to raise an exception... not sure that's the best behavior
+            return List(tplStr)
+        }
+
         // Save all mixed-syntax path expressions in the template string
         val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
         val mixedSntxPaths = mixedSntxRegex.findAllMatchIn(tplStr).toList
@@ -207,7 +188,7 @@ object TemplateUtility {
      * This is used in the production of all template strings when one or several groups
      * of the template are multi-valued.
      */
-     def cartesianProduct(lists: List[List[Object]]): List[List[Object]] = {
+    def cartesianProduct(lists: List[List[Object]]): List[List[Object]] = {
 
         val combinations = new Queue[List[Object]]
         val nbLists = lists.length
@@ -248,4 +229,30 @@ object TemplateUtility {
 
         combinations.toList
     }
+
+    def main(args: Array[String]) = {
+        var template = "Hello {Name} Please find attached {Invoice Number} which is due on {Due Date}";
+
+        val replacements = List(List("Freddy"), List("INV0001"))
+
+        val attributes = TemplateUtility.getTemplateColumns(template);
+        System.out.println("attributes = " + attributes);
+
+        val template2 = TemplateUtility.replaceTemplateGroups(template, replacements);
+        System.out.println("template2 = " + template2);
+
+        template = """\{\w+\}""";
+        val columnsFromTemplate = template.r.findAllIn("http://example.org/{abc}#{def}").toList;
+        System.out.println("columnsFromTemplate = " + columnsFromTemplate);
+
+        val date = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
+        val dates = "Important dates in history: 2004-01-20, 1958-09-05, 2010-10-06, 2011-07-15"
+
+        val firstDate = date findFirstIn dates getOrElse "No date found."
+        System.out.println("firstDate: " + firstDate)
+
+        val firstYear = for (m <- date findAllMatchIn dates) yield m group 1
+        System.out.println("firstYear: " + firstYear.toList)
+    }
+
 }

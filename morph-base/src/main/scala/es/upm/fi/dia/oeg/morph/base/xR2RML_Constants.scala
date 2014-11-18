@@ -76,7 +76,7 @@ object xR2RML_Constants {
     // In the path expressions, characters '/', '(', ')', '{' and '}' must be escaped with a '\'.
     // In the regex, these will appear as groups (\\\/), (\\\(), (\\\)), (\\\{) or (\\\}): escaped '\' + escaped char '/', '(', ')', '{' or '}'
     // Other characters must not be escaped: alpha numerical chars, as well as: !#%&,-./:;<=>?@_`|~[]"'*+^$
-    val xR2RML_PATH_EXPR_CHARS = """([\p{Alnum}\p{Space}!#%&,-.:;<=>?(\\@)_`\|~\[\]\"\'\*\+\^\$]|(\\/)|(\\\()|(\\\)|(\\\{)|(\\\})))+"""
+    val xR2RML_PATH_EXPR_CHARS = """([\p{Alnum}\p{Space}!#%&,-.:;<=>?(\\@)_`\|~\[\]\"\'\*\+\^\$]|(\\/)|(\\\()|(\\\))|(\\\{)|(\\\}))+"""
 
     val xR2RML_MIXED_SYNTX_PATH_REGEX = (xR2RML_PATH_CONSTRUCTORS + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
 

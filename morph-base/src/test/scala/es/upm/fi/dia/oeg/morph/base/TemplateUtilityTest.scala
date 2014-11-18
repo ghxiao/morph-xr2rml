@@ -70,4 +70,52 @@ class TemplateUtilityTest {
             List("2", ""),
             List("3", "")), combinations2)
     }
+
+    @Test def TestReplaceTemplateTokens_StraightCase() {
+        println("------------------ TestReplaceTemplateTokens_StraightCase ------------------")
+
+        val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
+        val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
+        val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
+
+        var tpl = "http://example.org/student/{ID}/{" + mixedPath + "}/{ID2}/{" + mixedPath + "}"
+
+        val replacements: List[List[Object]] = List(List("A"), List("12", "34"), List("B", "C"), List("D"))
+        val values = TemplateUtility.replaceTemplateGroups(tpl, replacements)
+        println("values: " + values)
+
+        assertEquals(4, values.length)
+        assertEquals("http://example.org/student/A/12/B/D", values(0))
+        assertEquals("http://example.org/student/A/12/C/D", values(1))
+        assertEquals("http://example.org/student/A/34/B/D", values(2))
+        assertEquals("http://example.org/student/A/34/C/D", values(3))
+    }
+
+    @Test def TestReplaceTemplateTokens_LessStraightCases() {
+        println("------------------ TestReplaceTemplateTokens_ErrorCases ------------------")
+
+        // One empty replacement
+        var tpl = "{A}-{B}-{C}"
+        var replacements: List[List[Object]] = List(List("A"), List(), List("D"))
+        var values = TemplateUtility.replaceTemplateGroups(tpl, replacements)
+        println("values: " + values)
+        assertEquals(1, values.length)
+        assertEquals("A--D", values(0))
+
+        // More values than template groups
+        tpl = "{A}-{B}"
+        replacements = List(List("a"), List("b"), List("c"))
+        values = TemplateUtility.replaceTemplateGroups(tpl, replacements)
+        println("values: " + values)
+        assertEquals(1, values.length)
+        assertEquals("a-b", values(0))
+
+        // More groups than values => the method return the template with no change
+        tpl = "{A}-{B}-{C}"
+        replacements = List(List("a"), List("b"))
+        values = TemplateUtility.replaceTemplateGroups(tpl, replacements)
+        println("values: " + values)
+        assertEquals(1, values.length)
+        assertEquals(tpl, values(0))
+    }
 }

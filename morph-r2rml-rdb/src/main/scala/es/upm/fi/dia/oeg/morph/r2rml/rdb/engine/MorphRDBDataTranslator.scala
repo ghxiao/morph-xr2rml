@@ -388,9 +388,13 @@ class MorphRDBDataTranslator(
      */
     def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
-            //val encodedValueAux = GeneralUtility.encodeLiteral(value.toString());
+            val encodedValueAux =
+                if (value == null) // case when the database returned NULL
+                    ""
+                else
+                    GeneralUtility.encodeLiteral(value.toString())
 
-            val encodedValue = value.toString();
+            val encodedValue = encodedValueAux.toString();
             val data: String = datatype.getOrElse(null)
             val valueWithDataType = if (data != null) {
                 val xsdDateTimeURI = XSDDatatype.XSDdateTime.getURI().toString();
@@ -463,18 +467,23 @@ class MorphRDBDataTranslator(
      */
     def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
 
+        println(values)
         val result: List[RDFNode] =
             // If the term type is one of R2RML term types then create one RDF term for each of the values
             if (termMap.inferTermType == Constants.R2RML_IRI_URI ||
                 termMap.inferTermType == Constants.R2RML_LITERAL_URI ||
                 termMap.inferTermType == Constants.R2RML_BLANKNODE_URI) {
-                values.filter(_ != null).map(value => {
-                    termMap.inferTermType match {
-                        case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
-                        case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, termMap.languageTag)
-                        case Constants.R2RML_BLANKNODE_URI => {
-                            var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
-                            this.materializer.model.createResource(new AnonId(rep))
+                values.map(value => {
+                    if (value == null) // case when the database returned NULL
+                        this.createLiteral("", datatype, termMap.languageTag)
+                    else {
+                        termMap.inferTermType match {
+                            case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
+                            case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, termMap.languageTag)
+                            case Constants.R2RML_BLANKNODE_URI => {
+                                var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
+                                this.materializer.model.createResource(new AnonId(rep))
+                            }
                         }
                     }
                 })

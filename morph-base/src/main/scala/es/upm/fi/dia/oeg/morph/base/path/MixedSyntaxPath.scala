@@ -1,17 +1,15 @@
 package es.upm.fi.dia.oeg.morph.base.path
 
-import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.immutable.List
 import scala.collection.mutable.Queue
+
 import org.apache.log4j.Logger
+
 import com.jayway.jsonpath.Configuration
-import com.jayway.jsonpath.InvalidPathException
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.ParseContext
-import com.jayway.jsonpath.ReadContext
+
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import net.minidev.json.JSONObject
-import com.sun.xml.internal.ws.api.config.management.Reconfigurable
 
 /**
  * A mixed syntax path consists of a sequence of path constructors each containing a path expression, example:
@@ -136,7 +134,6 @@ object MixedSyntaxPath {
 
         // Split the mixed syntax path into individual path construct expressions, like "Column(NAME)"  
         val rawPathList = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX.findAllMatchIn(rawValue).toList
-
         val result =
             if (rawPathList.isEmpty) {
                 // The value is a simple path expression without any path construct
@@ -162,7 +159,9 @@ object MixedSyntaxPath {
                 )
             }
 
-        new MixedSyntaxPath(rawValue, refFormulation, result)
+        val mxp = new MixedSyntaxPath(rawValue, refFormulation, result)
+        logger.trace("Built " + mxp.toString + " from " + rawValue)
+        mxp
     }
 
     /**
@@ -200,49 +199,6 @@ object MixedSyntaxPath {
     }
 
     /**
-     * Evaluate a JSONPath expression against a JSON value and return a list of values.
-     * If a value selected by the JSONPath is not a literal (dictionary or array), the method returns
-     * a serialization of the value, like "["a","b"] for an array.
-     * If the JSONPath expression is invalid, an error is logged and the method returns an empty list.
-     */
-    def evalJSONPath(jsonValue: String, jsonPath: String): List[Object] = {
-        try {
-            val ctx: ReadContext = jsonParseCtx.parse(jsonValue);
-            var result: java.util.List[Object] = ctx.read(jsonPath)
-
-            result.toList.map(
-                item => {
-                    // Jayway JSONPath returns either a net.minidev.json.JSONArray,
-                    // a java.util.LinkedHashMap for a JSON dictionary, 
-                    // or any other simple type for literals: String, integer etc.
-                    item match {
-                        case arr: net.minidev.json.JSONArray => { arr.toJSONString }
-                        case dic: java.util.LinkedHashMap[String, Object] => { JSONObject.toJSONString(dic) }
-                        case _ => { item }
-                    }
-                }
-            )
-        } catch {
-            case e: InvalidPathException => {
-                logger.error("Invalid JSONPath expression: " + jsonPath + ". Exception: " + e.getMessage())
-                List()
-            }
-        }
-    }
-
-    def evalXPath(jsonValue: String, jsonPath: String): List[Object] = {
-        throw new Exception("Unsupported operation evalXPath")
-    }
-
-    def evalCSV(jsonValue: String, jsonPath: String): List[Object] = {
-        throw new Exception("Unsupported operation evalCSV")
-    }
-
-    def evalTSV(jsonValue: String, jsonPath: String): List[Object] = {
-        throw new Exception("Unsupported operation evalTSV")
-    }
-
-    /**
      * Recursively evaluate an expression against a list of paths.
      * This method should be called by an instance of class MixedSyntaxPath.
      *
@@ -257,14 +213,7 @@ object MixedSyntaxPath {
         if (value.toString.isEmpty()) return List()
 
         // Evaluate the value against the first path in the list of paths
-        val currentEval = paths.head match {
-            case p: Column_PathExpression => { throw new Exception("Path constructor Column() only allowed as first path of a mixed syntax path") }
-            case p: XPath_PathExpression => { evalXPath(value.toString, p.pathExpression) }
-            case p: JSONPath_PathExpression => { evalJSONPath(value.toString, p.pathExpression) }
-            case p: CSV_PathExpression => { evalCSV(value.toString, p.pathExpression) }
-            case p: TSV_PathExpression => { evalTSV(value.toString, p.pathExpression) }
-            case _ => throw new Exception("Unknown type of path: " + paths.head)
-        }
+        val currentEval = paths.head.evaluate(value.toString)
 
         if (paths.tail == Nil)
             // If there is no more path, then we have finished
@@ -276,47 +225,5 @@ object MixedSyntaxPath {
 
     /** For debug purpose only */
     def main(args: Array[String]) = {
-
-        val lists: List[List[Object]] = List(List("1", "2", "3"), List("4", "5"), List(""))
-
-        val combinations = new Queue[List[Object]]
-
-        val nbLists = lists.length
-
-        // Current index in each list
-        var indexes = Array.fill[Int](nbLists)(0)
-
-        var stillToGo = true
-        while (stillToGo) {
-
-            // Build a list (combination) from the current elements of each list 
-            val combination = for (j <- 0 to (nbLists - 1)) yield {
-                if (lists(j).isEmpty) ""
-                else lists(j)(indexes(j))
-            }
-            combinations += combination.toList
-
-            // Search in which list we can increase the index, starting with the last one, then last but one etc.
-            var continue = true
-            var lstIdx = nbLists - 1
-            while (continue && lstIdx >= 0) {
-                if (indexes(lstIdx) < lists(lstIdx).length - 1) {
-                    // Found one list to increment the index: increment it and stop for now
-                    indexes(lstIdx) = indexes(lstIdx) + 1
-                    continue = false
-                } else {
-                    // Not possible to increment this list anymore, so reset its index
-                    // and check if we can decrement the index of another list
-                    indexes(lstIdx) = 0
-                    lstIdx = lstIdx - 1
-                }
-            }
-            // If we exist the loop without being able to increment the index of any list,
-            // that means we have reached the last possible combination => the end
-            if (lstIdx == -1)
-                stillToGo = false
-        }
-
-        println(combinations.toList)
     }
 }

@@ -66,8 +66,8 @@ class MixedSyntaxPathTest {
         assertEquals(isOk, " is not a mixed syntax path")
     }
 
-    @Test def TestRegex3() {
-        println("------------------ TestRegex3 ------------------")
+    @Test def TestReferencedColumn() {
+        println("------------------ TestReferencedColumn ------------------")
         val pathRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
 
         val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
@@ -82,52 +82,6 @@ class MixedSyntaxPathTest {
     /**
      * This test actually tests the code of method TemplateUtil.replaceTemplateTokens()
      */
-    @Test def TestRegex4() {
-        println("------------------ TestRegex4 ------------------")
-
-        val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
-        val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
-        val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
-
-        // ------------------------------------------------------------------------------------------
-
-        var tpl = "http://example.org/student/{ID}/{" + mixedPath + "}/{ID2}/{" + mixedPath + "}"
-
-        val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
-
-        // Save all path expressions in the template string
-        val mixedSntxPaths: Queue[String] = Queue(mixedSntxRegex.findAllMatchIn(tpl).toList.map(item => item.toString): _*)
-        println("mixedSntxPaths: " + mixedSntxPaths)
-
-        // Replace each path expression with a place holder "xR2RML_replacer"
-        tpl = mixedSntxRegex.replaceAllIn(tpl, "xR2RML_replacer")
-        println("tpl: " + tpl)
-
-        // Make a list of the R2RML template groups between '{' '}'
-        val listPattern = Constants.R2RML_TEMPLATE_PATTERN.r.findAllIn(tpl).toList
-        println("listPattern: " + listPattern)
-
-        // Restore the path expressions in each of the place holders
-        val listReplaced = MixedSyntaxPath.replaceTplPlaceholder(listPattern, mixedSntxPaths)
-        println("Liste finale: " + listReplaced)
-
-        // Extract the column references of each template group between '{' and '}'
-        val colRefs = listReplaced.map(group =>
-            {
-                val col = MixedSyntaxPath(group, xR2RML_Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
-                // For simple columns there has been no parsing at all so they still have the '{' and '}'
-                if (col.startsWith("{") && col.endsWith("}"))
-                    col.substring(1, col.length() - 1)
-                else col
-            }
-        )
-
-        println("Column references: " + colRefs)
-        assertEquals("ID", colRefs(0))
-        assertEquals("NAME", colRefs(1))
-        assertEquals("ID2", colRefs(2))
-        assertEquals("NAME", colRefs(3))
-    }
 
     @Test def TestReplaceTplPlaceholder() {
         println("------------------ TestReplaceTplPlaceholder ------------------")
@@ -139,38 +93,6 @@ class MixedSyntaxPathTest {
         assertEquals("{Column(A)}", repl(1))
         assertEquals("{ID2}", repl(2))
         assertEquals("{JSONPath($.store.book[0].title.['title'])}", repl(3))
-    }
-
-    @Test def TestEvalJsonPath() {
-        println("------------------ TestEvalJsonPath ------------------")
-        val json: String = """[ 
-            { "name" : "john", "gender" : "male", "age": 28},
-            [ 10, "ben" ],
-            { "name" : "lucie", "gender": "female"},
-            ]"""
-
-        var gender = MixedSyntaxPath.evalJSONPath(json, "$[*]['gender']")
-        println(gender)
-        assertEquals("male", gender(0))
-        assertEquals("female", gender(1))
-
-        val age = MixedSyntaxPath.evalJSONPath(json, "$[*].age")
-        println(age)
-        assertEquals(28, age(0))
-
-        var dic = MixedSyntaxPath.evalJSONPath(json, "$[0]")
-        assertEquals(1, dic.length)
-        assertEquals("""{"name":"john","gender":"male","age":28}""", dic(0))
-        println(dic)
-
-        var arr = MixedSyntaxPath.evalJSONPath(json, "$[1]")
-        assertEquals(1, arr.length)
-        assertEquals("""[10,"ben"]""", arr(0))
-        println(arr)
-
-        var lst = MixedSyntaxPath.evalJSONPath(json, "$[0")
-        println(lst)
-        assertTrue(lst.isEmpty)
     }
 
     @Test def TestReconstructMixedSyntaxPath() {
@@ -188,19 +110,80 @@ class MixedSyntaxPathTest {
         assertEquals(MixedSyntaxPath.unescapeChars(mixedPath), pathToStr)
     }
 
-    @Test def TestEvaluate() {
-        println("------------------ TestEvaluate ------------------")
-        
+    @Test def TestEvaluateColJson() {
+        println("------------------ TestEvaluateColJson ------------------")
+
         var paths = MixedSyntaxPath("NAME", xR2RML_Constants.xR2RML_COLUMN_URI)
-        var result = paths.evaluate("one simple value") 
+        var result = paths.evaluate("one simple value")
         println("Eval: " + result)
         assertEquals("one simple value", result(0))
 
-        var jsonValue: String = """[{ "name" : "john", "age": 28},{ "name" : "lucie", "isMale": false}]"""
+        // JSON value read from an RDB
+        var jsonValue: String = """[{ "name" : "john", "age": 28}, { "name" : "lucie", "isMale": false}]"""
         var mixedPath = "Column(NAME)/JSONPath($.*.*)"
         paths = MixedSyntaxPath(mixedPath, xR2RML_Constants.xR2RML_COLUMN_URI)
         result = paths.evaluate(jsonValue)
         println("Eval: " + result)
         assertEquals(List("john", 28, "lucie", false), result)
+    }
+
+    @Test def TestEvaluateColXpath() {
+        println("------------------ TestEvaluateColXpath ------------------")
+
+        // XML value read from an RDB
+        //var value: String = """[{ "name" : "john", "age": 28}, { "name" : "lucie", "isMale": false}]"""
+
+        val value = """
+            <People>
+	            <Person id="John1" type="admin">
+	        		<firstname>John</firstname>
+	        		<lastname>Watson</lastname>
+	        		<age>30</age>
+	        		<email>johnwatson@sh.com</email>
+	    		</Person>            
+	            <Person id="2222">
+	        		<firstname>Paul</firstname>
+	        		<email>boo@foo.com</email>
+	        		<age>40</age>
+	    		</Person>"
+	            <Person id="Abou">
+	        		<firstname>Abou</firstname>
+	    		</Person>"
+            </People>"""
+
+        var mixedPath = """Column(NAME)/XPath(\/\/Person[email]\/firstname)"""
+        val paths = MixedSyntaxPath(mixedPath, xR2RML_Constants.xR2RML_COLUMN_URI)
+        println(paths.toString)
+        val result = paths.evaluate(value)
+        println("Eval: " + result)
+        assertEquals(List("John", "Paul"), result)
+    }
+
+    @Test def TestEvaluateJsonXpath() {
+        println("------------------ TestEvaluateJsonXpath ------------------")
+
+        // JSON value embedded in a XML value
+        val value = """
+            <People>
+	            <Person id="John1" type="admin">
+	        		<details>
+            			{ "firstname" : "John", "lastname": "Watson", "age": 28}
+            		</details>
+	        		<email>johnwatson@sh.com</email>
+	    		</Person>
+	            <Person id="2222">
+	        		<details>
+            			{ "firstname" : "Lucie", "gender": "female", "age": 34}
+            		</details>
+	        		<email>boo@foo.com</email>
+	    		</Person>"
+            </People>"""
+
+        var mixedPath = """XPath(\/\/Person\/details)/JSONPath($.firstname)"""
+        val paths = MixedSyntaxPath(mixedPath, xR2RML_Constants.QL_XPATH_URI)
+        println(paths.toString)
+        val result = paths.evaluate(value)
+        println("Eval: " + result)
+        assertEquals(List("John", "Lucie"), result)
     }
 }

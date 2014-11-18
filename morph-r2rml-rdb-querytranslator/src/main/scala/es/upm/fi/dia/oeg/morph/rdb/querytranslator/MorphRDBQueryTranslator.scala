@@ -191,7 +191,9 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 										logger.debug("no replacements found for the R2RML template!");
 										null;
 									}
-									templateResult;
+									// Changed this from templateResult to templateResult(0) because I changed return type of replaceTemplateGroups
+									// Side effects not guaranteed!
+									templateResult(0);
 								} 
 							  case Constants.MorphTermMapType.ColumnTermMap => {
 									//String columnName = termMap.getColumnName();

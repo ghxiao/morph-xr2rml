@@ -1,14 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.materializer
 
 import java.io.Writer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.ontology.DatatypeProperty
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.RDFNode
-
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import com.hp.hpl.jena.rdf.model.ModelFactory
 
 class NTripleMaterializer(model: Model, ntOutputStream: Writer)
         extends MorphBaseMaterializer(model, ntOutputStream) {
@@ -19,6 +17,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
     override val logger = Logger.getLogger(this.getClass().getName());
 
     override def materialize() {
+        logger.info("Writing serialization to output stream to " + outputStream)
         this.model.write(this.outputStream, "TURTLE", null)
         this.outputStream.flush();
     }
@@ -27,7 +26,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
 
         if (graph != null)
             throw new Exception("Named graphs not supported in this version")
-        
+
         if (subject != null && predicate != null && obj != null) {
             try {
                 // Create and add the triple in the Jena model
@@ -40,6 +39,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
                     logger.error("Unable to serialize triple, subject: " + subject);
                 }
             }
-        }
+        } else
+            logger.error("Unable to serialize triple, subject: " + subject + ", predicate: " + predicate + ", object: " + obj);
     }
 }
