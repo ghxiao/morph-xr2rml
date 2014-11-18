@@ -13,13 +13,23 @@ import javax.xml.transform.TransformerFactory
 import org.w3c.dom.Node
 import javax.xml.xpath.XPathExpressionException
 import org.apache.log4j.Logger
+import javax.xml.xpath.XPathExpression
 
 class XPath_PathExpression(pathExpression: String)
         extends PathExpression(pathExpression) {
 
-    val logger = Logger.getLogger(this.getClass().getName())
+    private val logger = Logger.getLogger(this.getClass().getName())
 
     private val xPath = XPathFactory.newInstance().newXPath()
+
+    private val compiledXPath: XPathExpression = try {
+        xPath.compile(pathExpression)
+    } catch {
+        case e: XPathExpressionException => {
+            logger.error("Invalid XPath expression: " + pathExpression)
+            xPath.compile("/")
+        }
+    }
 
     override def toString: String = { "XPath: " + pathExpression }
 
@@ -36,7 +46,7 @@ class XPath_PathExpression(pathExpression: String)
         try {
             // Run the XPath evaluation 
             val xmlDoc = new org.xml.sax.InputSource(new StringReader(value))
-            val res = xPath.compile(pathExpression).evaluate(xmlDoc, XPathConstants.NODESET)
+            val res = compiledXPath.evaluate(xmlDoc, XPathConstants.NODESET)
             val nodes = res.asInstanceOf[org.w3c.dom.NodeList]
 
             // Translate the resulting node set into a list of strings
@@ -45,9 +55,9 @@ class XPath_PathExpression(pathExpression: String)
 
         } catch {
             case e: XPathExpressionException => {
-                logger.error("Invalid XPath expression: " + pathExpression + ", or invalid XML input data: " + value)
+                logger.error("XPath expression failed, invalid XML input data: " + value + ". Returning the input data as is.")
                 // Value the original value as is, that's the best we can do here
-                List(value)
+                List(XPath_PathExpression.onOneLine(value))
             }
             case e: Exception => {
                 val errMsg = "Unexpected error when evaluating XPath expression: " + pathExpression + ", with XML data: " + value
@@ -95,9 +105,14 @@ object XPath_PathExpression {
             if (hasElementChildren) {
                 val writer = new StringWriter()
                 xmlTransformer.transform(new DOMSource(node), new StreamResult(writer));
-                writer.toString.replace("\n", "").replace("\r", "").replaceAll(">[ \t]+<", "><")
+                onOneLine(writer.toString)
             } else
                 node.getTextContent
         }
     }
+
+    def onOneLine(str: String): String = {
+        str.trim.replace("\n", "").replace("\r", "").replaceAll(">[ \t]+<", "><")
+    }
+
 }

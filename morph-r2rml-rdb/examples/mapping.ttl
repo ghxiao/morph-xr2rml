@@ -44,10 +44,6 @@
     	rr:objectMap [ rr:column "name"; ];
     ];
     rr:predicateObjectMap [
-    	rr:predicate ex:code0;
-    	rr:objectMap [ xrr:reference "Column(code)/CSV(0)"; ];
-    ];
-    rr:predicateObjectMap [
     	rr:predicate ex:code1;
     	rr:objectMap [ xrr:reference "Column(code)/CSV(1)"; ];
     ];
