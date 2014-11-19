@@ -29,9 +29,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import javax.json.JsonNumber
-import javax.json.JsonString
-import javax.json.JsonValue
 
 object xR2RMLDataTranslator {
 
@@ -623,6 +620,7 @@ object xR2RMLDataTranslator {
         }
     }
 
+    /*
     def translateJSONDataInRecursiveParseInLiteral(properties: MorphProperties, materializer: MorphBaseMaterializer, termT: Option[String],
                                                    jsonData: JsonValue, datatype: Option[String], languageTag: Option[String]): RDFNode = {
         var result = jsonData.getValueType match {
@@ -672,6 +670,7 @@ object xR2RMLDataTranslator {
         }
         result
     }
+    */
 
     def translateDataRecursiveParseTypeLiteral(properties: MorphProperties, materializer: MorphBaseMaterializer, termtype: Option[String],
                                                dbValue: String, datatype: Option[String], languageTag: Option[String]): RDFNode = {

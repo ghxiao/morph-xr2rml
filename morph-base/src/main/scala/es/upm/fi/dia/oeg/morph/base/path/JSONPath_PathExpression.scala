@@ -12,14 +12,13 @@ import com.jayway.jsonpath.ParseContext
 import com.jayway.jsonpath.ReadContext
 
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import net.minidev.json.JSONObject
 
 class JSONPath_PathExpression(
     pathExpression: String)
         extends PathExpression(pathExpression) {
 
     /** JSON parse configuration */
-    val jsonConf: Configuration = Configuration.defaultConfiguration()
+    val jsonConf: Configuration = com.jayway.jsonpath.Configuration.defaultConfiguration()
         .addOptions(com.jayway.jsonpath.Option.ALWAYS_RETURN_LIST)
         .addOptions(com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS);
 
@@ -35,7 +34,7 @@ class JSONPath_PathExpression(
      * If a value selected by the JSONPath is not a literal (dictionary or array), the method returns
      * a serialization of the value, like "["a","b"] for an array.
      * If the JSONPath expression or JSON value is invalid, an error is logged and the method returns the value as is.
-     * 
+     *
      * @value the JSON value to parse
      * @return list of values resulting from the evaluation
      */
@@ -46,12 +45,12 @@ class JSONPath_PathExpression(
 
             result.toList.map(
                 item => {
-                    // Jayway JSONPath returns either a net.minidev.json.JSONArray,
+                    // Jayway JSONPath evaluation returns either a net.minidev.json.JSONArray,
                     // a java.util.LinkedHashMap for a JSON dictionary, 
                     // or any other simple type for literals: String, integer etc.
                     item match {
                         case arr: net.minidev.json.JSONArray => { arr.toJSONString }
-                        case dic: java.util.LinkedHashMap[String, Object] => { JSONObject.toJSONString(dic) }
+                        case dic: java.util.LinkedHashMap[String, Object] => { net.minidev.json.JSONObject.toJSONString(dic) }
                         case _ => { item }
                     }
                 }
@@ -66,7 +65,6 @@ class JSONPath_PathExpression(
 }
 
 object JSONPath_PathExpression {
-
     /**
      * Make an instance from a path construct expression like JSONPath(expr)
      */

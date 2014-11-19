@@ -1781,7 +1781,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator:NameGenerator
 				val subOpRewritten = this.initializeMapVarIsNullable(subOp);
 			} 
 			case _ => {
-				op;
+				// op;
 			}
 		}
 

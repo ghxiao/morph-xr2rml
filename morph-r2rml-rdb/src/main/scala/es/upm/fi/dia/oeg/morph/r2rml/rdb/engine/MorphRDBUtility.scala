@@ -45,20 +45,7 @@ object MorphRDBUtility {
 
                             val pkColumnConstant = MorphSQLConstant.apply(alias + "." + pkColumnString, ZConstant.COLUMNNAME, dbType);
 
-                            val pkValueConstant = {
-                                if (columnTypeName != null) {
-
-                                    if (SQLDataType.isDatatypeNumber(columnTypeName)) {
-                                        new ZConstant(value, ZConstant.NUMBER);
-                                    } else if (SQLDataType.isDatatypeString(columnTypeName)) {
-                                        new ZConstant(value, ZConstant.STRING);
-                                    } else {
-                                        new ZConstant(value, ZConstant.STRING);
-                                    }
-                                } else {
-                                    new ZConstant(value, ZConstant.STRING);
-                                }
-                            }
+                            val pkValueConstant = new ZConstant(value, ZConstant.STRING)
 
                             val expr = new ZExpression("=", pkColumnConstant, pkValueConstant);
                             expr;
