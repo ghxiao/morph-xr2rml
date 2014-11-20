@@ -30,28 +30,26 @@ abstract class MorphBaseRunnerFactory {
 
         logger.info("Creating MorphBaseRunner")
 
-        //BUILDING CONNECTION
+        // Building CONNECTION
         val connection = this.createConnection(properties);
 
-        //BUILDING DATA SOURCE READER
-        val dataSourceReaderClassName = properties.queryEvaluatorClassName;
-        val dataSourceReader = MorphBaseDataSourceReader(dataSourceReaderClassName, connection, properties.databaseTimeout);
+        // Building MAPPING DOCUMENT
+        val mappingDocument = this.readMappingDocumentFile(properties.mappingDocumentFilePath, properties, connection);
 
-        //BUILDING MAPPING DOCUMENT
-        val mappingDocumentFile = properties.mappingDocumentFilePath;
-        val mappingDocument = this.readMappingDocumentFile(mappingDocumentFile, properties, connection);
-
-        //BUILDING UNFOLDER
+        // Building UNFOLDER
         val unfolder = this.createUnfolder(mappingDocument, properties);
 
         val outputStream: Writer = if (properties.outputFilePath.isDefined) {
             new FileWriter(properties.outputFilePath.get)
         } else { new StringWriter }
 
-        //BUILDING MATERIALIZER
+        // Building MATERIALIZER
         val materializer = this.buildMaterializer(properties, mappingDocument, outputStream);
 
-        //BUILDING DATA TRANSLATOR
+        // Building DATA SOURCE READER (query rewriting mode only)
+        val dataSourceReader = MorphBaseDataSourceReader(properties.queryEvaluatorClassName, connection, properties.databaseTimeout);
+
+        // Building DATA TRANSLATOR
         val dataTranslator = try {
             Some(this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, connection, properties))
         } catch {
@@ -61,7 +59,13 @@ abstract class MorphBaseRunnerFactory {
             }
         }
 
-        //BUILDING QUERY TRANSLATOR
+        // ---------------------------------------------------------------------------------
+        // The Query Translator, Query Result Writer, Result Processor, as well as the 
+        // Data Source Reader are only applicable in the case of query rewriting access mode, 
+        // i.e. not in data materialization.
+        // ---------------------------------------------------------------------------------
+
+        // Building QUERY TRANSLATOR
         logger.info("Building query translator...");
         val queryTranslatorFactoryClassName = properties.queryTranslatorFactoryClassName;
         val queryTranslator = try {
@@ -74,19 +78,20 @@ abstract class MorphBaseRunnerFactory {
             }
         }
 
-        //BUILDING QUERY RESULT WRITER
+        // Building QUERY RESULT WRITER
         val queryResultWriter = if (queryTranslator.isDefined) {
             val queryResultWriterFactoryClassName = properties.queryResultWriterFactoryClassName;
             val qrwAux = this.buildQueryResultWriter(queryResultWriterFactoryClassName, queryTranslator.get, outputStream);
             Some(qrwAux)
         } else { None }
 
-        //BUILDING RESULT PROCESSOR
+        // Building RESULT PROCESSOR
         val resultProcessor = if (queryResultWriter.isDefined) {
             val resultProcessorAux = this.buildQueryResultTranslator(dataSourceReader, queryResultWriter.get);
             Some(resultProcessorAux)
         } else { None }
 
+        // Creation of final runner object using the concrete class instance
         val runner = this.createRunner(mappingDocument, unfolder, dataTranslator, queryTranslator, resultProcessor, outputStream)
 
         runner.ontologyFilePath = properties.ontologyFilePath;
@@ -110,22 +115,9 @@ abstract class MorphBaseRunnerFactory {
 
     def createDataTranslator(md: MorphBaseMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, dataSourceReader: MorphBaseDataSourceReader, connection: Connection, properties: MorphProperties): MorphBaseDataTranslator;
 
-    def createConnection(configurationProperties: MorphProperties): Connection = {
-        val connection = if (configurationProperties.noOfDatabase > 0) {
-            val databaseUser = configurationProperties.databaseUser;
-            val databaseName = configurationProperties.databaseName;
-            val databasePassword = configurationProperties.databasePassword;
-            val databaseDriver = configurationProperties.databaseDriver;
-            val databaseURL = configurationProperties.databaseURL;
-            DBUtility.getLocalConnection(databaseUser, databaseName, databasePassword, databaseDriver, databaseURL, "Runner");
-        } else {
-            null
-        }
+    def createConnection(configurationProperties: MorphProperties): Connection;
 
-        connection;
-    }
-
-    def buildQueryTranslator(queryTranslatorFactoryClassName: String, md: MorphBaseMappingDocument, connection: Connection, properties: MorphProperties): IQueryTranslator = {
+    private def buildQueryTranslator(queryTranslatorFactoryClassName: String, md: MorphBaseMappingDocument, connection: Connection, properties: MorphProperties): IQueryTranslator = {
         val className = if (queryTranslatorFactoryClassName == null || queryTranslatorFactoryClassName.equals("")) {
             Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT;
         } else {
@@ -159,7 +151,7 @@ abstract class MorphBaseRunnerFactory {
         queryTranslator
     }
 
-    def buildQueryResultWriter(queryResultWriterFactoryClassName: String, queryTranslator: IQueryTranslator, pOutputStream: Writer): MorphBaseQueryResultWriter = {
+    private def buildQueryResultWriter(queryResultWriterFactoryClassName: String, queryTranslator: IQueryTranslator, pOutputStream: Writer): MorphBaseQueryResultWriter = {
         val className = if (queryResultWriterFactoryClassName == null
             || queryResultWriterFactoryClassName.equals("")) {
             Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME_DEFAULT;
@@ -174,11 +166,11 @@ abstract class MorphBaseRunnerFactory {
         queryResultWriter
     }
 
-    def buildQueryTranslationOptimizer(): QueryTranslationOptimizer = {
+    private def buildQueryTranslationOptimizer(): QueryTranslationOptimizer = {
         new QueryTranslationOptimizer();
     }
 
-    def buildQueryResultTranslator(dataSourceReader: MorphBaseDataSourceReader, queryResultWriter: MorphBaseQueryResultWriter): AbstractQueryResultTranslator = {
+    private def buildQueryResultTranslator(dataSourceReader: MorphBaseDataSourceReader, queryResultWriter: MorphBaseQueryResultWriter): AbstractQueryResultTranslator = {
         val className = Constants.QUERY_RESULT_TRANSLATOR_CLASSNAME_DEFAULT;
 
         val queryResultTranslatorFactory = Class.forName(className).newInstance().asInstanceOf[AbstractQueryResultTranslatorFactory];
@@ -188,7 +180,7 @@ abstract class MorphBaseRunnerFactory {
 
     }
 
-    def buildMaterializer(configurationProperties: MorphProperties, mappingDocument: MorphBaseMappingDocument, outputStream: Writer): MorphBaseMaterializer = {
+    private def buildMaterializer(configurationProperties: MorphProperties, mappingDocument: MorphBaseMappingDocument, outputStream: Writer): MorphBaseMaterializer = {
         val jenaMode = configurationProperties.jenaMode;
         val materializer = MaterializerFactory.create(outputStream, jenaMode);
         val mappingDocumentPrefixMap = mappingDocument.mappingDocumentPrefixMap;

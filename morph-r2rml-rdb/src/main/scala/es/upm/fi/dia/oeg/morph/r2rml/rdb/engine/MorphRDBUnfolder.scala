@@ -50,7 +50,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     /** List the SQL aliases of referencing object maps of the triples map */
     var mapRefObjectMapAlias: Map[R2RMLRefObjectMap, String] = Map.empty;
 
-    def getAliases(termMapOrRefObjectMap: Object): Collection[String] = {
+    private def getAliases(termMapOrRefObjectMap: Object): Collection[String] = {
         if (this.mapTermMapColumnsAliases.get(termMapOrRefObjectMap).isDefined) {
             this.mapTermMapColumnsAliases(termMapOrRefObjectMap);
         } else {
@@ -58,7 +58,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         }
     }
 
-    def getMapRefObjectMapAlias(): Map[R2RMLRefObjectMap, String] = {
+    private def getMapRefObjectMapAlias(): Map[R2RMLRefObjectMap, String] = {
         return mapRefObjectMapAlias;
     }
 
@@ -69,7 +69,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      *
      * @return instance of SQLFromItem or SQLQuery
      */
-    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+    private def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
 
         val result = logicalTable.logicalTableType match {
@@ -108,7 +108,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * Nil in case of a constant-valued term-map, a list of one select item for a column-valued term map,
      * and a list of several select items for a template-valued term map.
      */
-    def unfoldTermMap(termMap: R2RMLTermMap, logicalTableAlias: String): List[MorphSQLSelectItem] = {
+    private def unfoldTermMap(termMap: R2RMLTermMap, logicalTableAlias: String): List[MorphSQLSelectItem] = {
 
         val result =
             if (termMap != null) {
@@ -159,7 +159,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
                     case Constants.MorphTermMapType.TemplateTermMap => {
                         val columns = termMap.getReferencedColumns();
-                    	logger.trace("Columns referenced in the template: " + columns)
+                        logger.trace("Columns referenced in the template: " + columns)
                         if (columns.isEmpty) { Nil }
                         else {
                             columns.map(column => {
@@ -198,7 +198,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      *
      * @return an SQLQuery (IQuery) describing the actual SQL query to be run against the RDB
      */
-    def unfoldTriplesMap(
+    private def unfoldTriplesMap(
         triplesMapId: String,
         logicalSrc: xR2RMLLogicalSource,
         subjectMap: R2RMLSubjectMap,
@@ -371,31 +371,18 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         result;
     }
 
-    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): IQuery = {
-
-        logger.debug("Unfolding triples map " + triplesMap.toString + ", subjectURI: " + subjectURI)
+    private def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): IQuery = {
+        logger.debug("Unfolding triples map " + triplesMap.toString)
         val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
-        val result = if (subjectURI != null) {
-            val whereExpression = MorphRDBUtility.generateCondForWellDefinedURI(triplesMap.subjectMap, triplesMap, subjectURI, logicalTable.alias);
-            if (whereExpression != null) {
-                resultAux.addWhere(whereExpression)
-                resultAux
-            } else { null }
-        } else { resultAux }
-        result
+        resultAux
     }
 
-    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): IQuery = {
-        this.unfoldTriplesMap(triplesMap, null);
-    }
-
+    /**
+     * Entry point of the unfolder in the data materialization case
+     */
     override def unfoldConceptMapping(cm: MorphBaseClassMapping): IQuery = {
         this.unfoldTriplesMap(cm.asInstanceOf[R2RMLTriplesMap]);
-    }
-
-    override def unfoldConceptMapping(cm: MorphBaseClassMapping, subjectURI: String): IQuery = {
-        this.unfoldTriplesMap(cm.asInstanceOf[R2RMLTriplesMap], subjectURI);
     }
 
     override def unfoldMappingDocument() = {
@@ -417,16 +404,6 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             Nil
         }
         result;
-    }
-
-    override def unfoldSubject(cm: MorphBaseClassMapping): IQuery = {
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val subjectMap = triplesMap.subjectMap;
-        val predicateObjectMaps = triplesMap.predicateObjectMaps;
-        val id = triplesMap.id;
-        val result = this.unfoldTriplesMap(id, logicalTable, subjectMap, null);
-        return result;
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {

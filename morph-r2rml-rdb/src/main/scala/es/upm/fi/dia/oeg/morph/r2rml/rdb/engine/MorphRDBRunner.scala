@@ -86,7 +86,6 @@ object MorphRDBRunner {
                 logger.error("Exception occured: " + e.getMessage());
                 throw e;
             }
-
         }
     }
 }

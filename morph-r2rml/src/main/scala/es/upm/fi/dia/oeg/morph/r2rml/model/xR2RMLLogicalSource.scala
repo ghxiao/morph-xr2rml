@@ -50,7 +50,7 @@ abstract class xR2RMLLogicalSource(
             case xr2rmlQuery: xR2RMLQuery => {
                 val queryStringAux = xr2rmlQuery.getValue().trim()
                 val queryString = {
-                    // Remove tailing ';' if any
+                    // Remove trailing ';' if any
                     if (queryStringAux.endsWith(";")) { queryStringAux.substring(0, queryStringAux.length() - 1) }
                     else { queryStringAux }
                 }

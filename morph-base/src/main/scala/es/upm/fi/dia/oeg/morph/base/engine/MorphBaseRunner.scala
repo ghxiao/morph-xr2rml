@@ -102,7 +102,7 @@ abstract class MorphBaseRunner(
      * Entry point for the data materialization process
      */
     def materializeMappingDocuments(md: MorphBaseMappingDocument) {
-        
+
         if (!this.dataTranslator.isDefined) {
             val errorMessage = "Data Translator has not been defined yet!";
             logger.error(errorMessage);
@@ -113,13 +113,13 @@ abstract class MorphBaseRunner(
         val cms = md.classMappings;
         cms.foreach(cm => {
             logger.info("Starting data materialization of triples map " + cm.id);
-            
-            // Create the SQL query to retrieve all columns needed from the logical table
-            val sqlQuery = this.unfolder.unfoldConceptMapping(cm);
-            logger.info("SQL query for triples map " + cm.id + ": " + sqlQuery.print(true).replaceAll("\n", " "))
+
+            // Create the query to retrieve all needed data (SQL query to retrieve columns in the case of an RDB) from the logical table
+            val query = this.unfolder.unfoldConceptMapping(cm);
+            logger.info("Query for triples map " + cm.id + ": " + query.print(true).replaceAll("\n", " "))
 
             // Run the query and generate triples
-            this.dataTranslator.get.generateRDFTriples(cm, sqlQuery);
+            this.dataTranslator.get.generateRDFTriples(cm, query);
         })
 
         // Write the result to the output file
@@ -172,48 +172,6 @@ abstract class MorphBaseRunner(
         val endGeneratingModel = System.currentTimeMillis();
         val durationGeneratingModel = (endGeneratingModel - startGeneratingModel) / 1000;
         logger.info("Materializing Subjects time was " + (durationGeneratingModel) + " s.");
-    }
-
-    /**
-     * This methods seems no longer used.
-     */
-    def materializeInstanceDetails(subjectURI: String, cms: Iterable[MorphBaseClassMapping]): Unit = {
-        if (!this.dataTranslator.isDefined) {
-            val errorMessage = "Data Translator has not been defined yet!";
-            logger.error(errorMessage);
-            throw new Exception(errorMessage)
-        }
-
-        val startGeneratingModel = System.currentTimeMillis();
-        cms.foreach(cm => {
-            val sqlQuery = this.unfolder.unfoldConceptMapping(cm, subjectURI);
-            if (sqlQuery != null) {
-                this.dataTranslator.get.generateRDFTriples(cm, sqlQuery);
-            }
-        })
-        this.dataTranslator.get.materializer.materialize();
-
-        val endGeneratingModel = System.currentTimeMillis();
-        val durationGeneratingModel = (endGeneratingModel - startGeneratingModel) / 1000;
-        logger.info("Materializing Subjects time was " + (durationGeneratingModel) + " s.");
-
-    }
-
-    /**
-     * This methods seems no longer used.
-     */
-    def materializeInstanceDetails(subjectURI: String, classURI: String, outputStream: OutputStream): Unit = {
-        val startGeneratingModel = System.currentTimeMillis();
-        val cms = this.mappingDocument.getClassMappingsByClassURI(classURI);
-        this.materializeInstanceDetails(subjectURI, cms);
-    }
-
-    /**
-     * This methods seems no longer used.
-     */
-    def materializeSubjects(classURI: String) = {
-        val cms = this.mappingDocument.getClassMappingsByClassURI(classURI);
-        this.materializeClassMappings(cms);
     }
 
     def getQueryTranslator() = {

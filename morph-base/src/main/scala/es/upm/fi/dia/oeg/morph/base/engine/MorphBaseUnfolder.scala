@@ -15,10 +15,6 @@ abstract class MorphBaseUnfolder(md: MorphBaseMappingDocument, properties: Morph
 
   def unfoldConceptMapping(cm: MorphBaseClassMapping): IQuery;
 
-  def unfoldConceptMapping(cm: MorphBaseClassMapping, subjectURI: String): IQuery;
-
-  def unfoldSubject(cm: MorphBaseClassMapping): IQuery;
-
   def unfoldMappingDocument(): Iterable[IQuery];
 
 }
