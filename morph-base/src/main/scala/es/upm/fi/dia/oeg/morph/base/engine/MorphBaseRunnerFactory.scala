@@ -189,9 +189,8 @@ abstract class MorphBaseRunnerFactory {
     }
 
     def buildMaterializer(configurationProperties: MorphProperties, mappingDocument: MorphBaseMappingDocument, outputStream: Writer): MorphBaseMaterializer = {
-        val rdfLanguage = configurationProperties.rdfLanguage;
         val jenaMode = configurationProperties.jenaMode;
-        val materializer = MaterializerFactory.create(rdfLanguage, outputStream, jenaMode);
+        val materializer = MaterializerFactory.create(outputStream, jenaMode);
         val mappingDocumentPrefixMap = mappingDocument.mappingDocumentPrefixMap;
         if (mappingDocumentPrefixMap != null) {
             materializer.setModelPrefixMap(mappingDocumentPrefixMap);

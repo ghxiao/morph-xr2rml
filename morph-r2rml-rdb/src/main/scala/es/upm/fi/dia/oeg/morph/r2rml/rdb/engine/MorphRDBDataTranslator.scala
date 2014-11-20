@@ -239,6 +239,10 @@ class MorphRDBDataTranslator(
                     });
                     logger.debug("Row " + i + " objects: " + objects)
 
+                    /* ####################################################################################
+                     * Need to update treatment of ReferencingObjectMaps in xR2RML context
+                     * ####################################################################################
+                     */
                     // In case of a ReferencingObjectMaps, get the object IRI from the subject map of the parent triples map  
                     val refObjects = pom.refObjectMaps.map(refObjectMap => {
                         val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap)

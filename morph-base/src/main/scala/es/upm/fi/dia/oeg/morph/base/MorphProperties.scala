@@ -19,7 +19,6 @@ class MorphProperties extends java.util.Properties {
   var mappingDocumentFilePath: String = null;
   var outputFilePath: Option[String] = None;
   var queryFilePath: Option[String] = None;
-  var rdfLanguage: String = null;
   var rdfLanguageForResult: String = null;
   var jenaMode: String = null;
   var databaseType: String = null;
@@ -141,10 +140,7 @@ class MorphProperties extends java.util.Properties {
     if (this.rdfLanguageForResult == null) {
       this.rdfLanguageForResult = Constants.OUTPUT_FORMAT_NTRIPLE;
     }
-
-    this.rdfLanguage = Constants.OUTPUT_FORMAT_NTRIPLE;
-
-    logger.info("rdf language = " + this.rdfLanguageForResult);
+    logger.info("Output RDF syntax = " + this.rdfLanguageForResult);
 
     this.jenaMode = this.readString(Constants.JENA_MODE_TYPE, Constants.JENA_MODE_TYPE_MEMORY);
     logger.info("Jena mode = " + jenaMode);

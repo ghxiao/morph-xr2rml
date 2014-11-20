@@ -509,7 +509,7 @@ object xR2RMLDataTranslator {
 //            null
 //        }
 //    }
-
+/*
     def getResultSetValueforJoinParse(rs: ResultSet, pColumnName: String, databaseType: String): Object = {
         try {
             val dbType = databaseType;
@@ -619,7 +619,7 @@ object xR2RMLDataTranslator {
             }
         }
     }
-
+*/
     /*
     def translateJSONDataInRecursiveParseInLiteral(properties: MorphProperties, materializer: MorphBaseMaterializer, termT: Option[String],
                                                    jsonData: JsonValue, datatype: Option[String], languageTag: Option[String]): RDFNode = {
@@ -671,6 +671,7 @@ object xR2RMLDataTranslator {
         result
     }
     */
+    /*
 
     def translateDataRecursiveParseTypeLiteral(properties: MorphProperties, materializer: MorphBaseMaterializer, termtype: Option[String],
                                                dbValue: String, datatype: Option[String], languageTag: Option[String]): RDFNode = {
@@ -744,6 +745,8 @@ object xR2RMLDataTranslator {
 
         result
     }
+    
+    */
 
 //    def navigateJSONTree(properties: MorphProperties, materializer: MorphBaseMaterializer, recPar: xR2RMLRecursiveParse, parsT: Option[String],
 //                         jsonData: JsonValue, datatypetag: Option[String], language: Option[String], termT: Option[String]): RDFNode = {
