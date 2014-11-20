@@ -116,7 +116,6 @@ abstract class MorphBaseRunner(
 
             // Create the query to retrieve all needed data (SQL query to retrieve columns in the case of an RDB) from the logical table
             val query = this.unfolder.unfoldConceptMapping(cm);
-            logger.info("Query for triples map " + cm.id + ": " + query.print(true).replaceAll("\n", " "))
 
             // Run the query and generate triples
             this.dataTranslator.get.generateRDFTriples(cm, query);
@@ -150,28 +149,6 @@ abstract class MorphBaseRunner(
         })
 
         sqlQueries.toMap
-    }
-
-    /**
-     * This methods seems no longer used.
-     */
-    def materializeClassMappings(cms: Iterable[MorphBaseClassMapping]) = {
-        if (!this.dataTranslator.isDefined) {
-            val errorMessage = "Data Translator has not been defined yet!";
-            logger.error(errorMessage);
-            throw new Exception(errorMessage)
-        }
-
-        val startGeneratingModel = System.currentTimeMillis();
-        cms.foreach(cm => {
-            val sqlQuery = this.unfolder.unfoldConceptMapping(cm);
-            this.dataTranslator.get.generateSubjects(cm, sqlQuery);
-        })
-        this.dataTranslator.get.materializer.materialize();
-
-        val endGeneratingModel = System.currentTimeMillis();
-        val durationGeneratingModel = (endGeneratingModel - startGeneratingModel) / 1000;
-        logger.info("Materializing Subjects time was " + (durationGeneratingModel) + " s.");
     }
 
     def getQueryTranslator() = {

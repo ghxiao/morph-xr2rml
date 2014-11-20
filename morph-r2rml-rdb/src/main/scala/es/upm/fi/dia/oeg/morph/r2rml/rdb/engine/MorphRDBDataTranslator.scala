@@ -54,77 +54,17 @@ class MorphRDBDataTranslator(
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
-    override def processCustomFunctionTransformationExpression(argument: Object): Object = {
-        null;
-    }
-
     override def translateData(triplesMap: MorphBaseClassMapping): Unit = {
         val query = this.unfolder.unfoldConceptMapping(triplesMap);
         this.generateRDFTriples(triplesMap, query);
-        // null;
     }
 
-    override def translateData(triplesMaps: Iterable[MorphBaseClassMapping]): Unit = {
-        for (triplesMap <- triplesMaps) {
-            try {
-                this.visit(triplesMap.asInstanceOf[R2RMLTriplesMap]);
-            } catch {
-                case e: Exception => {
-                    logger.error("error while translating data of triplesMap : " + triplesMap);
-                    if (e.getMessage() != null) {
-                        logger.error("error message = " + e.getMessage());
-                    }
-                    throw new Exception(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    override def translateData(mappingDocument: MorphBaseMappingDocument) = {
-        val conn = this.connection
-        val triplesMaps = mappingDocument.classMappings
-        if (triplesMaps != null) {
-            this.translateData(triplesMaps);
-            //DBUtility.closeConnection(conn, "R2RMLDataTranslator");
-        }
-    }
-
-    def visit(logicalTable: xR2RMLLogicalSource): Object = {
-        // TODO Auto-generated method stub
-        null;
-    }
-
-    override def visit(mappingDocument: R2RMLMappingDocument): Object = {
-        try {
-            this.translateData(mappingDocument);
-        } catch {
-            case e: Exception => {
-                e.printStackTrace();
-                logger.error("error during data translation process : " + e.getMessage());
-                throw new Exception(e.getMessage());
-            }
-        }
-        null;
-    }
-
-    def visit(objectMap: R2RMLObjectMap): Object = {
-        // TODO Auto-generated method stub
-        null;
-    }
-
-    def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        // TODO Auto-generated method stub
-        null;
-    }
-
-    def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        // TODO Auto-generated method stub
-        null;
-    }
-
-    def visit(triplesMap: R2RMLTriplesMap): Object = {
-        this.translateData(triplesMap);
-        null;
+    override def generateRDFTriples(cm: MorphBaseClassMapping, query: Object) = {
+        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
+        val logicalTable = triplesMap.logicalSource;
+        val sm = triplesMap.subjectMap;
+        val poms = triplesMap.predicateObjectMaps;
+        this.generateRDFTriples(logicalTable, sm, poms, query.asInstanceOf[IQuery]);
     }
 
     /**
@@ -135,7 +75,7 @@ class MorphRDBDataTranslator(
      * and a list of resources representing target graphs mentioned in the predicate-object map.
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
-    def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
+    private def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
 
         logger.info("Starting translating RDB data into RDF instances...");
         if (sm == null) {
@@ -177,7 +117,6 @@ class MorphRDBDataTranslator(
             i = i + 1;
             logger.debug("Generating triples for row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
-
                 // Create the subject resource
                 val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
                 if (subject == null) { throw new Exception("null value in the subject triple") }
@@ -350,25 +289,10 @@ class MorphRDBDataTranslator(
         rows.close();
     }
 
-    override def generateRDFTriples(cm: MorphBaseClassMapping, iQuery: IQuery) = {
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val sm = triplesMap.subjectMap;
-        val poms = triplesMap.predicateObjectMaps;
-        this.generateRDFTriples(logicalTable, sm, poms, iQuery);
-    }
-
-    override def generateSubjects(cm: MorphBaseClassMapping, iQuery: IQuery) = {
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val sm = triplesMap.subjectMap;
-        this.generateRDFTriples(logicalTable, sm, Nil, iQuery);
-    }
-
     /**
      *  Create a JENA resource with an IRI after URL-encoding the string
      */
-    def createIRI(originalIRI: String) = {
+    private def createIRI(originalIRI: String) = {
         var resultIRI = originalIRI;
         try {
             resultIRI = GeneralUtility.encodeURI(resultIRI, properties.mapURIEncodingChars, properties.uriTransformationOperation);
@@ -390,7 +314,7 @@ class MorphRDBDataTranslator(
     /**
      * Create a JENA literal resource with optional datatype and language tag
      */
-    def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
+    private def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
             val encodedValueAux =
                 if (value == null) // case when the database returned NULL
@@ -429,11 +353,11 @@ class MorphRDBDataTranslator(
         }
     }
 
-    def translateDateTime(value: String) = {
+    private def translateDateTime(value: String) = {
         value.toString().trim().replaceAll(" ", "T");
     }
 
-    def translateBoolean(value: String) = {
+    private def translateBoolean(value: String) = {
         if (value.equalsIgnoreCase("T") || value.equalsIgnoreCase("True") || value.equalsIgnoreCase("1")) {
             "true";
         } else if (value.equalsIgnoreCase("F") || value.equalsIgnoreCase("False") || value.equalsIgnoreCase("0")) {
@@ -454,7 +378,7 @@ class MorphRDBDataTranslator(
      * @param datatype URI of the data type
      * @return a list of RDF nodes
      */
-    def translateSingleValue(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
+    private def translateSingleValue(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
         translateMultipleValues(termMap, List(dbValue), datatype)
     }
 
@@ -469,7 +393,7 @@ class MorphRDBDataTranslator(
      * @param datatype URI of the data type
      * @return a list of RDF nodes
      */
-    def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
+    private def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
 
         println(values)
         val result: List[RDFNode] =
@@ -534,7 +458,7 @@ class MorphRDBDataTranslator(
      * translate them into one RDF term.
      * In the R2RML case, the result list should contain only one term.
      */
-    def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
+    private def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
 
         var result: List[RDFNode] = List(null);
 
@@ -656,7 +580,7 @@ class MorphRDBDataTranslator(
         result
     }
 
-    def getResultSetValue(termMap: R2RMLTermMap, rs: ResultSet, pColumnName: String): Object = {
+    private def getResultSetValue(termMap: R2RMLTermMap, rs: ResultSet, pColumnName: String): Object = {
         try {
             val zConstant = MorphSQLConstant(pColumnName, ZConstant.COLUMNNAME);
             val tableName = zConstant.table;
@@ -682,5 +606,29 @@ class MorphRDBDataTranslator(
                 null
             }
         }
+    }
+
+    def visit(logicalTable: xR2RMLLogicalSource): Object = {
+        throw new Exception("Unsopported method.")
+    }
+
+    def visit(mappingDocument: R2RMLMappingDocument): Object = {
+        throw new Exception("Unsopported method.")
+    }
+
+    def visit(objectMap: R2RMLObjectMap): Object = {
+        throw new Exception("Unsopported method.")
+    }
+
+    def visit(refObjectMap: R2RMLRefObjectMap): Object = {
+        throw new Exception("Unsopported method.")
+    }
+
+    def visit(r2rmlTermMap: R2RMLTermMap): Object = {
+        throw new Exception("Unsopported method.")
+    }
+
+    def visit(triplesMap: R2RMLTriplesMap): Object = {
+        throw new Exception("Unsopported method.")
     }
 }

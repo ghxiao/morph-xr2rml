@@ -89,7 +89,6 @@ class MorphProperties extends java.util.Properties {
       if (timeoutPropertyString != null && !timeoutPropertyString.equals("")) {
         this.databaseTimeout = Integer.parseInt(timeoutPropertyString.trim());
       }
-
     }
 
     this.mappingDocumentFilePath = this.readString(Constants.MAPPINGDOCUMENT_FILE_PATH, null);

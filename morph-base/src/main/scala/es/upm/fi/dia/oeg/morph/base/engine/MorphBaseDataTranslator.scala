@@ -1,12 +1,13 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+
+import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -18,17 +19,10 @@ abstract class MorphBaseDataTranslator(
 
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def processCustomFunctionTransformationExpression(argument: Object): Object;
-
-    def translateData(mappingDocument: MorphBaseMappingDocument);
-
-    def translateData(triplesMaps: Iterable[MorphBaseClassMapping]);
-
     def translateData(triplesMap: MorphBaseClassMapping);
 
-    def generateRDFTriples(cm: MorphBaseClassMapping, iQuery: IQuery);
-
-    def generateSubjects(cm: MorphBaseClassMapping, iQuery: IQuery);
-
-    def getDataSourceReader = this.dataSourceReader;
+    /**
+     * @param query may be either an iQuery in the RDB case, or a simple string in case of non row-based nor SQL based databases
+     */
+    def generateRDFTriples(cm: MorphBaseClassMapping, query: Object);
 }

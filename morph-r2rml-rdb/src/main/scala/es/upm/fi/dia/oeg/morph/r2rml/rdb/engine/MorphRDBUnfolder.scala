@@ -371,73 +371,47 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         result;
     }
 
-    private def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): IQuery = {
-        logger.debug("Unfolding triples map " + triplesMap.toString)
-        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
-        resultAux
-    }
-
     /**
      * Entry point of the unfolder in the data materialization case
      */
-    override def unfoldConceptMapping(cm: MorphBaseClassMapping): IQuery = {
-        this.unfoldTriplesMap(cm.asInstanceOf[R2RMLTriplesMap]);
-    }
+    override def unfoldConceptMapping(cm: MorphBaseClassMapping): Object = {
+        
+        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
+        logger.debug("Unfolding triples map " + triplesMap.toString)
+        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
+        val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
 
-    override def unfoldMappingDocument() = {
-        val triplesMaps = this.md.classMappings
-        val result = if (triplesMaps != null) {
-            triplesMaps.flatMap(triplesMap => {
-                try {
-                    val triplesMapUnfolded = this.unfoldConceptMapping(triplesMap);
-                    Some(triplesMapUnfolded);
-                } catch {
-                    case e: Exception => {
-                        logger.error("error while unfolding triplesMap : " + triplesMap);
-                        logger.error("error message = " + e.getMessage());
-                        None
-                    }
-                }
-            })
-        } else {
-            Nil
-        }
-        result;
+        logger.info("Query for triples map " + cm.id + ": " + resultAux.print(true).replaceAll("\n", " "))
+        resultAux
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
-        val result = this.unfoldLogicalSource(logicalTable);
-        result;
+        throw new Exception("Unsopported method.")
     }
 
     def visit(md: R2RMLMappingDocument): Collection[IQuery] = {
-        val result = this.unfoldMappingDocument();
-        result;
+        throw new Exception("Unsopported method.")
     }
 
     def visit(objectMap: R2RMLObjectMap): Object = {
-        // TODO Auto-generated method stub
-        null;
+        throw new Exception("Unsopported method.")
     }
 
     def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        // TODO Auto-generated method stub
-        null;
+        throw new Exception("Unsopported method.")
     }
 
     def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        // TODO Auto-generated method stub
-        null;
+        throw new Exception("Unsopported method.")
     }
 
     def visit(triplesMap: R2RMLTriplesMap): IQuery = {
-        val result = this.unfoldTriplesMap(triplesMap);
-        result;
+        throw new Exception("Unsopported method.")
     }
 }
 
 object MorphRDBUnfolder {
+
     def unfoldJoinConditions(
         pJoinConditions: Iterable[R2RMLJoinCondition],
         childTableAlias: String,

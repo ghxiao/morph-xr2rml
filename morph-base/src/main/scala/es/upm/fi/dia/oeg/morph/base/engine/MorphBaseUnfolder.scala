@@ -9,12 +9,10 @@ import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 
 abstract class MorphBaseUnfolder(md: MorphBaseMappingDocument, properties: MorphProperties) {
-  Constants.MAP_ZSQL_CUSTOM_FUNCTIONS.foreach(f => { ZUtils.addCustomFunction(f._1, f._2); })
 
-  var dbType = Constants.DATABASE_MYSQL;
+    Constants.MAP_ZSQL_CUSTOM_FUNCTIONS.foreach(f => { ZUtils.addCustomFunction(f._1, f._2); })
 
-  def unfoldConceptMapping(cm: MorphBaseClassMapping): IQuery;
+    var dbType = Constants.DATABASE_MYSQL;
 
-  def unfoldMappingDocument(): Iterable[IQuery];
-
+    def unfoldConceptMapping(cm: MorphBaseClassMapping): Object;
 }
