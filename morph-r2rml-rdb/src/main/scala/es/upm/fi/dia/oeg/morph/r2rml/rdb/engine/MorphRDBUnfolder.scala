@@ -2,7 +2,10 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.util.Collection
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConversions.seqAsJavaList
+import scala.collection.JavaConversions.setAsJavaSet
 
 import org.apache.log4j.Logger
 
@@ -10,10 +13,10 @@ import Zql.ZConstant
 import Zql.ZExpression
 import Zql.ZQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
@@ -24,17 +27,12 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
@@ -374,7 +372,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     /**
      * Entry point of the unfolder in the data materialization case
      */
-    override def unfoldConceptMapping(cm: MorphBaseClassMapping): Object = {
+    override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
         
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)
@@ -382,7 +380,8 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
 
         logger.info("Query for triples map " + cm.id + ": " + resultAux.print(true).replaceAll("\n", " "))
-        resultAux
+        
+        new GenericQuery(Constants.DatabaseType.Relational, resultAux)
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {

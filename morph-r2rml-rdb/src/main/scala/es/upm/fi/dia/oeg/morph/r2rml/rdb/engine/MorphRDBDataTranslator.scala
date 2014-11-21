@@ -42,6 +42,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -65,12 +66,16 @@ class MorphRDBDataTranslator(
         this.generateRDFTriples(triplesMap, query);
     }
 
-    override def generateRDFTriples(cm: MorphBaseClassMapping, query: Object) = {
+    override def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery) = {
+        if (!query.isSqlQuery)
+            throw new Exception("Unsupported query type: should be an SQL query")
+
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
         val logicalTable = triplesMap.logicalSource;
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
-        this.generateRDFTriples(logicalTable, sm, poms, query.asInstanceOf[IQuery]);
+
+        this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery]);
     }
 
     /**

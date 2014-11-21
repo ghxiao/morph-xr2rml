@@ -7,6 +7,7 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -26,5 +27,5 @@ abstract class MorphBaseDataTranslator(
     /**
      * @param query may be either an iQuery in the RDB case, or a simple string in case of non row-based nor SQL based databases
      */
-    def generateRDFTriples(cm: MorphBaseClassMapping, query: Object);
+    def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery);
 }

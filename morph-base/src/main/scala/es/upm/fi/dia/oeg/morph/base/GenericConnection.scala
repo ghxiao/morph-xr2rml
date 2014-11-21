@@ -7,7 +7,7 @@ package es.upm.fi.dia.oeg.morph.base
 class GenericConnection(
         val dbType: Constants.DatabaseType.Value,
 
-        /** The concrete instance of connection object: java.sql.Connecrtion, com.mongodb.MongoClient, etc. */
+        /** The concrete instance of connection object: java.sql.Connection, com.mongodb.MongoClient, etc. */
         val concreteCnx: Object) {
 
     def isRelationalDB: Boolean = {

@@ -8,7 +8,6 @@ import org.apache.log4j.Logger
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
-import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
@@ -17,6 +16,7 @@ import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
@@ -24,6 +24,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
@@ -40,8 +41,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
-import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
@@ -65,12 +65,16 @@ class MorphJsondocDataTranslator(
         this.generateRDFTriples(triplesMap, query);
     }
 
-    override def generateRDFTriples(cm: MorphBaseClassMapping, query: Object) = {
+    override def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery) = {
+        if (!query.isSqlQuery)
+            throw new Exception("Unsupported query type: should be an SQL query")
+
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
         val logicalTable = triplesMap.logicalSource;
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
-        this.generateRDFTriples(logicalTable, sm, poms, query.asInstanceOf[IQuery]);
+
+        this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery]);
     }
 
     /**

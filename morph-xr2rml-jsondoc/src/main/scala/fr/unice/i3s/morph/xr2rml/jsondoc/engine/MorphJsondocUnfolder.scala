@@ -1,11 +1,8 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
 import java.util.Collection
-
 import scala.collection.JavaConversions._
-
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
@@ -29,6 +26,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -63,7 +61,7 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
     /**
      * Entry point of the unfolder in the data materialization case
      */
-    override def unfoldConceptMapping(cm: MorphBaseClassMapping): Object = {
+    override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)
@@ -71,7 +69,7 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
         val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
 
         logger.info("Query for triples map " + cm.id + ": " + resultAux.replaceAll("\n", " "))
-        resultAux
+        new GenericQuery(Constants.DatabaseType.MongoDB, resultAux)
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
