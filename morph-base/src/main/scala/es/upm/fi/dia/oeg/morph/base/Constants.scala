@@ -26,6 +26,11 @@ object Constants {
         val TABLE_NAME, QUERY = Value
     }
 
+    object DatabaseType extends Enumeration {
+        type DatabaseType = Value
+        val Relational, MongoDB = Value
+    }
+
     // SQL Vocabulary
     val JOINS_TYPE_INNER = "INNER";
     val JOINS_TYPE_LEFT = "LEFT";
@@ -209,8 +214,7 @@ object Constants {
     val R2RML_TEMPLATE_PATTERN = """\{"*\w+\s*[\s\w/]*\"*}"""
 
     val R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP = """\{(.+?)\}"""
-        
-        
+
     //TriplesMap
     val R2RML_LOGICALTABLE_URI = R2RML_NS + "logicalTable";
     val R2RML_LOGICALTABLE_PROPERTY = ResourceFactory.createProperty(R2RML_LOGICALTABLE_URI);

@@ -1,23 +1,23 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.QueryTranslationOptimizerFactory
-import java.io.OutputStream
 import java.io.Writer
+import java.sql.Connection
 import es.upm.fi.dia.oeg.morph.base.DBUtility
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -38,7 +38,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
             outputStream)
     }
 
-    override def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: Connection): MorphBaseMappingDocument = {
+    override def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: GenericConnection): MorphBaseMappingDocument = {
         val mappingDocument = R2RMLMappingDocument(mappingDocumentFile, props, connection);
         mappingDocument
     }
@@ -54,7 +54,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
         materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
         dataSourceReader: MorphBaseDataSourceReader,
-        connection: Connection,
+        connection: GenericConnection,
         properties: MorphProperties): MorphBaseDataTranslator = {
         new MorphJsondocDataTranslator(
             mappingDocument.asInstanceOf[R2RMLMappingDocument],
@@ -64,7 +64,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
             connection, properties);
     }
 
-    override def createConnection(configurationProperties: MorphProperties): Connection = {
+    override def createConnection(configurationProperties: MorphProperties): GenericConnection = {
         val connection = if (configurationProperties.noOfDatabase > 0) {
             val databaseUser = configurationProperties.databaseUser;
             val databaseName = configurationProperties.databaseName;
@@ -76,7 +76,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
             null
         }
 
-        connection;
+        new GenericConnection(Constants.DatabaseType.MongoDB, null);
     }
 }
 

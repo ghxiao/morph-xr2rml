@@ -15,16 +15,21 @@ import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         extends MorphBaseMappingDocument(classMappings) with MorphR2RMLElement {
 
     override val logger = Logger.getLogger(this.getClass());
 
-    def buildMetaData(conn: Connection, databaseName: String, databaseType: String) = {
+    def buildMetaData(conn: GenericConnection, databaseName: String, databaseType: String) = {
+        if (!conn.isRelationalDB)
+            throw new Exception("Method unsupported on a non-relational database")
+        
         logger.info("Building database MetaData ");
         if (conn != null && this.dbMetaData == None) {
-            val newMetaData = MorphDatabaseMetaData(conn, databaseName, databaseType);
+            val sqlCnx = conn.concreteCnx.asInstanceOf[Connection]
+            val newMetaData = MorphDatabaseMetaData(sqlCnx, databaseName, databaseType);
             this.dbMetaData = Some(newMetaData);
             this.classMappings.foreach(cm => cm.buildMetaData(this.dbMetaData));
         }
@@ -195,7 +200,7 @@ object R2RMLMappingDocument {
         R2RMLMappingDocument(mdPath, null, null);
     }
 
-    def apply(mdPath: String, props: MorphProperties, connection: Connection): R2RMLMappingDocument = {
+    def apply(mdPath: String, props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
         logger.info("Creating R2RMLMappingDocument ");
 
         val model = ModelFactory.createDefaultModel();

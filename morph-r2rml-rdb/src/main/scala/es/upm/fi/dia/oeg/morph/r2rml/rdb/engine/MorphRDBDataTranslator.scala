@@ -41,16 +41,22 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphRDBUnfolder,
     dataSourceReader: MorphRDBDataSourceReader,
-    connection: Connection, properties: MorphProperties)
+    genCnx: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
+        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties)
         with MorphR2RMLElementVisitor {
+
+    if (!genCnx.isRelationalDB)
+        throw new Exception("Database connection type does not mathc relational database")
+
+    private val connection = genCnx.concreteCnx.asInstanceOf[Connection]
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
@@ -84,7 +90,7 @@ class MorphRDBDataTranslator(
             throw new Exception(errorMessage);
         }
 
-        // Run the query against the database 
+        // Run the query against the database
         val rows = DBUtility.execute(this.connection, iQuery.toString(), this.properties.databaseTimeout);
         // logger.trace(DBUtility.resultSetToString(rows)) // debug only, can't be reset afterwards
 

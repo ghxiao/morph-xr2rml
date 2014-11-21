@@ -41,16 +41,22 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphJsondocUnfolder,
     dataSourceReader: MorphJsondocDataSourceReader,
-    connection: Connection, properties: MorphProperties)
+    genCnx: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
+        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties)
         with MorphR2RMLElementVisitor {
+
+    if (!genCnx.isRelationalDB)
+        throw new Exception("Database connection type does not mathc relational database")
+
+    private val connection = genCnx.concreteCnx.asInstanceOf[Connection]
 
     override val logger = Logger.getLogger(this.getClass().getName());
 

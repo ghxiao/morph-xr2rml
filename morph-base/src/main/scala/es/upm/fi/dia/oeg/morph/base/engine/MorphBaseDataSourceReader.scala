@@ -1,8 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
-import java.sql.Connection
-
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 /**
  * A data source reader is used in case of the query rewriting access method,
@@ -11,14 +10,14 @@ import es.upm.fi.dia.oeg.morph.base.Constants
  */
 abstract class MorphBaseDataSourceReader {
     def execute(query: String): MorphBaseResultSet;
-    def setConnection(obj: Object);
+    def setConnection(obj: GenericConnection);
     def setTimeout(timeout: Int);
     def closeConnection();
 }
 
 object MorphBaseDataSourceReader {
 
-    def apply(dataSourceReaderClassName: String, connection: Connection, timeout: Int): MorphBaseDataSourceReader = {
+    def apply(dataSourceReaderClassName: String, connection: GenericConnection, timeout: Int): MorphBaseDataSourceReader = {
         val className = if (dataSourceReaderClassName == null || dataSourceReaderClassName.equals("")) {
             Constants.DATASOURCE_READER_CLASSNAME_DEFAULT;
         } else {

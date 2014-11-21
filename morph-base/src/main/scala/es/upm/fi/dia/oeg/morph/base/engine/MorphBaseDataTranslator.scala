@@ -1,13 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import java.sql.Connection
-
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -16,7 +15,7 @@ abstract class MorphBaseDataTranslator(
         val dataSourceReader: MorphBaseDataSourceReader,
         
         /** The connection object can be anything: java.sql.Connection for an RDB, MongoDB context etc. */
-        connection: Connection,
+        connection: GenericConnection,
         
         properties: MorphProperties) {
 

@@ -1,21 +1,19 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
-import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.DBUtility
-import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import java.io.FileOutputStream
-import java.io.ObjectOutputStream
-import java.io.ByteArrayOutputStream
-import java.io.OutputStream
-import java.io.Writer
 import java.io.FileWriter
 import java.io.StringWriter
+import java.io.Writer
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.QueryFactory
+
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
+import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 
 abstract class MorphBaseRunnerFactory {
     val logger = Logger.getLogger(this.getClass());
@@ -54,8 +52,8 @@ abstract class MorphBaseRunnerFactory {
             Some(this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, connection, properties))
         } catch {
             case e: Exception => {
-                logger.warn("Error building data translator!");
-                None
+                logger.error("Error building data translator: " + e.getMessage());
+                throw e
             }
         }
 
@@ -109,15 +107,15 @@ abstract class MorphBaseRunnerFactory {
                      resultProcessor: Option[AbstractQueryResultTranslator],
                      outputStream: Writer): MorphBaseRunner;
 
-    def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: Connection): MorphBaseMappingDocument;
+    def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: GenericConnection): MorphBaseMappingDocument;
 
     def createUnfolder(md: MorphBaseMappingDocument, properties: MorphProperties): MorphBaseUnfolder;
 
-    def createDataTranslator(md: MorphBaseMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, dataSourceReader: MorphBaseDataSourceReader, connection: Connection, properties: MorphProperties): MorphBaseDataTranslator;
+    def createDataTranslator(md: MorphBaseMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, dataSourceReader: MorphBaseDataSourceReader, connection: GenericConnection, properties: MorphProperties): MorphBaseDataTranslator;
 
-    def createConnection(configurationProperties: MorphProperties): Connection;
+    def createConnection(configurationProperties: MorphProperties): GenericConnection;
 
-    private def buildQueryTranslator(queryTranslatorFactoryClassName: String, md: MorphBaseMappingDocument, connection: Connection, properties: MorphProperties): IQueryTranslator = {
+    private def buildQueryTranslator(queryTranslatorFactoryClassName: String, md: MorphBaseMappingDocument, connection: GenericConnection, properties: MorphProperties): IQueryTranslator = {
         val className =
             if (queryTranslatorFactoryClassName == null || queryTranslatorFactoryClassName.equals(""))
                 Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT;
