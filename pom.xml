@@ -14,7 +14,7 @@
 		<module>morph-r2rml</module>
 		<module>morph-r2rml-rdb</module>
 		<module>morph-r2rml-rdb-querytranslator</module>
-		<module>morph-xr2rml-mongo</module>
+		<module>morph-xr2rml-jsondoc</module>
 	</modules>
 
 	<distributionManagement>

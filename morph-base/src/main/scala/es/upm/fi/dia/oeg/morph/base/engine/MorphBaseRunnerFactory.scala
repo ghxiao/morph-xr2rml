@@ -118,15 +118,14 @@ abstract class MorphBaseRunnerFactory {
     def createConnection(configurationProperties: MorphProperties): Connection;
 
     private def buildQueryTranslator(queryTranslatorFactoryClassName: String, md: MorphBaseMappingDocument, connection: Connection, properties: MorphProperties): IQueryTranslator = {
-        val className = if (queryTranslatorFactoryClassName == null || queryTranslatorFactoryClassName.equals("")) {
-            Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT;
-        } else {
-            queryTranslatorFactoryClassName;
-        }
+        val className =
+            if (queryTranslatorFactoryClassName == null || queryTranslatorFactoryClassName.equals(""))
+                Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT;
+            else
+                queryTranslatorFactoryClassName;
 
         val queryTranslatorFactory = Class.forName(className).newInstance().asInstanceOf[IQueryTranslatorFactory];
-        val queryTranslator = queryTranslatorFactory.createQueryTranslator(
-            md, connection, properties);
+        val queryTranslator = queryTranslatorFactory.createQueryTranslator(md, connection, properties);
 
         //query translation optimizer
         val queryTranslationOptimizer = this.buildQueryTranslationOptimizer();

@@ -14,7 +14,10 @@ abstract class MorphBaseDataTranslator(
         val materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
         val dataSourceReader: MorphBaseDataSourceReader,
+        
+        /** The connection object can be anything: java.sql.Connection for an RDB, MongoDB context etc. */
         connection: Connection,
+        
         properties: MorphProperties) {
 
     val logger = Logger.getLogger(this.getClass().getName());

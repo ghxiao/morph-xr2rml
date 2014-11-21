@@ -8,7 +8,7 @@
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>morph-xr2rml-mongo</artifactId>
+	<artifactId>morph-xr2rml-jsondoc</artifactId>
 	<name>${project.artifactId}</name>
 
 	<dependencies>
