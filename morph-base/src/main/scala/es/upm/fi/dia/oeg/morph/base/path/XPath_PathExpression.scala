@@ -1,19 +1,20 @@
 package es.upm.fi.dia.oeg.morph.base.path
 
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import java.io.IOException
-import javax.xml.xpath.XPathFactory
 import java.io.StringReader
-import javax.xml.xpath.XPathConstants
-import javax.xml.transform.stream.StreamResult
-import javax.xml.transform.dom.DOMSource
 import java.io.StringWriter
+
+import org.apache.log4j.Logger
+import org.w3c.dom.Node
+
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import javax.xml.transform.Transformer
 import javax.xml.transform.TransformerFactory
-import org.w3c.dom.Node
-import javax.xml.xpath.XPathExpressionException
-import org.apache.log4j.Logger
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathExpression
+import javax.xml.xpath.XPathExpressionException
+import javax.xml.xpath.XPathFactory
 
 class XPath_PathExpression(pathExpression: String)
         extends PathExpression(pathExpression) {
