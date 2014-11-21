@@ -42,21 +42,19 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoDBQuery
+import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 
 class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphJsondocUnfolder,
-    dataSourceReader: MorphJsondocDataSourceReader,
-    genCnx: GenericConnection, properties: MorphProperties)
+    dataSourceReader: MorphBaseDataSourceReader,
+    connection: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties)
+        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
         with MorphR2RMLElementVisitor {
-
-    if (!genCnx.isRelationalDB)
-        throw new Exception("Database connection type does not mathc relational database")
-
-    private val connection = genCnx.concreteCnx.asInstanceOf[Connection]
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
@@ -66,15 +64,12 @@ class MorphJsondocDataTranslator(
     }
 
     override def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery) = {
-        if (!query.isSqlQuery)
-            throw new Exception("Unsupported query type: should be an SQL query")
-
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
         val logicalTable = triplesMap.logicalSource;
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
 
-        this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery]);
+        this.generateRDFTriples(logicalTable, sm, poms, query);
     }
 
     /**
@@ -85,18 +80,27 @@ class MorphJsondocDataTranslator(
      * and a list of resources representing target graphs mentioned in the predicate-object map.
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
-    private def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
+    private def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
 
-        logger.info("Starting translating RDB data into RDF instances...");
+        logger.info("Starting translating data into RDF instances...");
         if (sm == null) {
             val errorMessage = "No SubjectMap is defined";
             logger.error(errorMessage);
             throw new Exception(errorMessage);
         }
 
+        val resultSet = this.connection.dbType match {
+            case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query) }
+            case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
+        }
+
+for (res <- resultSet)
+    println("############# " + res)
+
+        throw new Exception("That's all folks!")
+
         // Run the query against the database 
-        val rows = DBUtility.execute(this.connection, iQuery.toString(), this.properties.databaseTimeout);
-        // logger.trace(DBUtility.resultSetToString(rows)) // debug only, can't be reset afterwards
+        val rows = DBUtility.execute(null, null, this.properties.databaseTimeout);
 
         // Make mappings of each column in the result set and its data type and equivalent XML data type
         var mapXMLDatatype: Map[String, String] = Map.empty;

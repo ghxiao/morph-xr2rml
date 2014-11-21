@@ -27,6 +27,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
 
 class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -34,42 +35,33 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
     val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Unfolding a triples map in the case of a NoSQL document database simply means to retrieve the query string
-     * @return query string provided in the logical source with possible replacements of enclosing characters
-     */
-    private def unfoldTriplesMap(
-        triplesMapId: String,
-        logicalSrc: xR2RMLLogicalSource,
-        subjectMap: R2RMLSubjectMap,
-        poms: Collection[R2RMLPredicateObjectMap]): String = {
-
-        val logicalSrcUnfolded: String = logicalSrc match {
-            case _: xR2RMLTable => {
-                logger.error("Table name not allowed in the context of a JSON document database: a query is expected")
-                null
-            }
-            case _: xR2RMLQuery => {
-                val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
-                val query = logicalSrc.getValue().replaceAll("\"", dbEnclosedCharacter);
-                query
-            }
-            case _ => { throw new Exception("Unknown logical table/source type: " + logicalSrc) }
-        }
-        logicalSrcUnfolded
-    }
-
-    /**
-     * Entry point of the unfolder in the data materialization case
+     * Parse the query string provided in the mapping and build an instance of GenericQuery containing
+     * a MongoDBQuery for the case of MongoDB, to be extended for other types of db.
+     * @return GenericQuery instance corresponding to the query provided in the logical source
      */
     override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)
-        val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
+        val logicalSrc = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
 
-        logger.info("Query for triples map " + cm.id + ": " + resultAux.replaceAll("\n", " "))
-        new GenericQuery(Constants.DatabaseType.MongoDB, resultAux)
+        val logicalSrcQuery: String = logicalSrc match {
+            case _: xR2RMLTable => {
+                logger.error("Logical source with table name not allowed in the context of a JSON document database: a query is expected")
+                null
+            }
+            case _: xR2RMLQuery => {
+                val encldChar = Constants.getEnclosedCharacter(dbType);
+                val query = logicalSrc.getValue().replaceAll("\"", encldChar);
+                query
+            }
+            case _ => { throw new Exception("Unknown logical table/source type: " + logicalSrc) }
+        }
+
+        val mongoQuery = MongoUtils.parseQueryString(logicalSrcQuery)
+
+        logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
+        new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {

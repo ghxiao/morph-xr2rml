@@ -1,25 +1,24 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
 import java.io.Writer
-import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.DBUtility
+import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
 import es.upm.fi.dia.oeg.morph.base.Constants
 
 class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
+
+    override val logger = Logger.getLogger(this.getClass().getName())
 
     override def createRunner(
         mappingDocument: MorphBaseMappingDocument,
@@ -64,22 +63,21 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
             connection, properties);
     }
 
+    /**
+     * Return a valid connection to the database or raises a run time exception if anything goes wrong
+     */
     override def createConnection(configurationProperties: MorphProperties): GenericConnection = {
-        val connection = if (configurationProperties.noOfDatabase > 0) {
-            val databaseUser = configurationProperties.databaseUser;
-            val databaseName = configurationProperties.databaseName;
-            val databasePassword = configurationProperties.databasePassword;
-            val databaseDriver = configurationProperties.databaseDriver;
-            val databaseURL = configurationProperties.databaseURL;
-            DBUtility.getLocalConnection(databaseUser, databaseName, databasePassword, databaseDriver, databaseURL, "Runner");
-        } else {
-            null
+
+        if (configurationProperties.noOfDatabase == 0)
+            throw new Exception("No database connection parameters found in the configuration.")
+
+        val dbType = configurationProperties.databaseType
+        val cnx = dbType match {
+            case Constants.DATABASE_MONGODB =>
+                MongoUtils.createConnection(configurationProperties)
+            case _ =>
+                throw new Exception("Database type not supported: " + dbType)
         }
-
-        new GenericConnection(Constants.DatabaseType.MongoDB, null);
+        cnx
     }
-}
-
-object MorphRDBRunnerFactory {
-
 }

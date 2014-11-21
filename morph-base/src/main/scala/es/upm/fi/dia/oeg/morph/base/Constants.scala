@@ -45,6 +45,9 @@ object Constants {
     val MAP_ZSQL_CUSTOM_FUNCTIONS = Map("CONCAT" -> 2, "SUBSTRING" -> 3, "CONVERT" -> 2, "COALESCE" -> 2, "ABS" -> 1, "LOWER" -> 1, "UPPER" -> 1, "REPLACE" -> 3, "TRIM" -> 1);
 
     // Relational databases
+    val DATABASE_MONGODB = "MongoDB";
+
+    // Relational databases
     val DATABASE_MYSQL = "MySQL";
     val DATABASE_DEFAULT = DATABASE_MYSQL;
     val DATABASE_MONETDB = "MonetDB";
@@ -117,7 +120,6 @@ object Constants {
     val QUERY_RESULT_TRANSLATOR_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.base.querytranslator.engine.DefaultQueryResultTranslatorFactory";
 
     val DATASOURCE_READER_CLASSNAME = "datasourcereader.class.name";
-    val DATASOURCE_READER_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBDataSourceReader";
     val QUERY_RESULT_WRITER_FACTORY_CLASSNAME = "queryresultwriterfactory.class.name";
     //val QUERY_RESULT_WRITER_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.obdi.core.engine.XMLQueryResultWriter";
     val QUERY_RESULT_WRITER_FACTORY_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.base.querytranslator.engine.XMLQueryResultWriterFactory";

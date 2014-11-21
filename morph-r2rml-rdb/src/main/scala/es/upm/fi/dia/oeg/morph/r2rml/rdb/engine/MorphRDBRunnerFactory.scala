@@ -78,7 +78,3 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
     }
 
 }
-
-object MorphRDBRunnerFactory {
-
-}

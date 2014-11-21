@@ -1,11 +1,9 @@
 package es.upm.fi.dia.oeg.morph.base.model
 
-import scala.collection.JavaConversions._
-import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 
 abstract class MorphBaseMappingDocument(val classMappings: Iterable[MorphBaseClassMapping]) {
   val logger = Logger.getLogger(this.getClass());
@@ -16,8 +14,6 @@ abstract class MorphBaseMappingDocument(val classMappings: Iterable[MorphBaseCla
   var purpose: String = null;
   var dbMetaData: Option[MorphDatabaseMetaData] = None;
   var mappingDocumentPath: String = null;
-
-  def buildMetaData(connection: GenericConnection, databaseName: String, databaseType: String);
 
   def getMappedClasses(): Iterable[String] = {
     this.classMappings.map(cm => cm.getConceptName());

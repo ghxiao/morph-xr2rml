@@ -17,4 +17,8 @@ class GenericConnection(
     def isMongoDB: Boolean = {
         dbType == Constants.DatabaseType.MongoDB
     }
+
+    override def toString: String = {
+        "GenericConnection[" + dbType + ". " + concreteCnx + "]"
+    }
 }

@@ -22,16 +22,15 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
 
     override val logger = Logger.getLogger(this.getClass());
 
-    def buildMetaData(conn: GenericConnection, databaseName: String, databaseType: String) = {
-        if (!conn.isRelationalDB)
-            throw new Exception("Method unsupported on a non-relational database")
-        
-        logger.info("Building database MetaData ");
-        if (conn != null && this.dbMetaData == None) {
-            val sqlCnx = conn.concreteCnx.asInstanceOf[Connection]
-            val newMetaData = MorphDatabaseMetaData(sqlCnx, databaseName, databaseType);
-            this.dbMetaData = Some(newMetaData);
-            this.classMappings.foreach(cm => cm.buildMetaData(this.dbMetaData));
+    private def buildMetaData(conn: GenericConnection, databaseName: String, databaseType: String) = {
+        if (conn.isRelationalDB) {
+            logger.info("Building database MetaData ")
+            if (conn != null && this.dbMetaData == None) {
+                val sqlCnx = conn.concreteCnx.asInstanceOf[Connection]
+                val newMetaData = MorphDatabaseMetaData(sqlCnx, databaseName, databaseType);
+                this.dbMetaData = Some(newMetaData);
+                this.classMappings.foreach(cm => cm.buildMetaData(this.dbMetaData));
+            }
         }
     }
 
@@ -234,10 +233,8 @@ object R2RMLMappingDocument {
         val md = new R2RMLMappingDocument(classMappings.toSet);
         md.mappingDocumentPath = mdPath;
 
-        if (connection != null) {
-            //BUILDING METADATA
-            md.buildMetaData(connection, props.databaseName, props.databaseType);
-        }
+        // Build METADATA
+        md.buildMetaData(connection, props.databaseName, props.databaseType);
 
         md.mappingDocumentPrefixMap = model.getNsPrefixMap().toMap;
         md
