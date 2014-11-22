@@ -7,25 +7,25 @@
 <#Students>
     a rr:TriplesMap;
     xrr:logicalSource [
-        xrr:query "db.testData.find({ 'a': { $exists: true} })";
+        xrr:query "db.students.find()";
         xrr:referenceFormulation ql:JSONPath;
         rml:iterator "$.*";
     ];
     rr:subjectMap [ 
-    	rr:template "http://example.org/student/{$.*.id}";
+    	rr:template "http://example.org/student/{$._id}";
 		rr:class ex:Student;
     ];
     rr:predicateObjectMap [
     	rr:predicate ex:activity;
     	rr:objectMap [ 
-    	    xrr:reference "$.*.hobby";
+    	    xrr:reference "$.Hobbies.hobby";
     	    rr:termType rr:Literal;
     	];
     ];
     rr:predicateObjectMap [
     	rr:predicate ex:names;
     	rr:objectMap [
-    		rr:template "{$.*.FirstName} {$.*.LastName}";
+    		rr:template "{$.FullName.FirstNames.*} {$.FullName.LastName}";
     		rr:termType xrr:RdfList;
 		];
     ].

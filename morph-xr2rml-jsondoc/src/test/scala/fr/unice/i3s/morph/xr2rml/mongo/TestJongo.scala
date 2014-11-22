@@ -1,16 +1,16 @@
 package fr.unice.i3s.morph.xr2rml.mongo
 
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.jongo.Jongo
 import org.jongo.MongoCollection
 import org.jongo.MongoCursor
 import org.junit.Test
-
 import com.mongodb.DB
 import com.mongodb.MongoClient
 import com.mongodb.MongoCredential
 import com.mongodb.ServerAddress
+import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.JongoResultHandler
+import java.net.URI
 
 class TestJongo {
 
@@ -32,11 +32,34 @@ class TestJongo {
 
         val jongoCnx: Jongo = new Jongo(dbCnx)
 
+        
+        
+        
         val collec: MongoCollection = jongoCnx.getCollection("testData")
         val handler: JongoResultHandler = new JongoResultHandler
         val all: MongoCursor[String] = collec.find("{ 'a': { $exists: true} }").map(handler)
 
         while (all.hasNext())
             println(all.next())
+    }
+
+    @Test def parseQueryString() = {
+
+        val query = "db.testData.find({ 'a': { $exists: true} })"
+
+        var tokens = query.split("\\.")
+        if (!tokens(0).equals("db")) {
+            println("Invalid query string: " + query)
+        } else {
+            val collection = tokens(1)
+            println("Collection: " + collection)
+
+            tokens = query.split("\\(")
+            for (tok <- tokens)
+                println(tok)
+            val queryStr = tokens(1).substring(0, tokens(1).length - 1)
+            println("queryStr: [" + queryStr + "]")
+
+        }
     }
 }

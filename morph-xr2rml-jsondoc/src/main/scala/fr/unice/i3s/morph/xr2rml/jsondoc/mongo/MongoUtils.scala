@@ -85,7 +85,7 @@ object MongoUtils {
      * Execute a MongoDB query against the connection.
      * Returns a list or results as JSON strings
      */
-    def execute(connection: GenericConnection, query: GenericQuery): List[String] = {
+    def execute(connection: GenericConnection, query: GenericQuery): Iterator[String] = {
 
         val mongoQ = query.concreteQuery.asInstanceOf[MongoDBQuery]
         val jongoCnx = connection.concreteCnx.asInstanceOf[Jongo]
@@ -93,6 +93,6 @@ object MongoUtils {
         val collec: MongoCollection = jongoCnx.getCollection(mongoQ.collection)
         val results: MongoCursor[String] = collec.find(mongoQ.query).map[String](jongoHandler)
 
-        results.iterator().toList
+        results.iterator()
     }
 }

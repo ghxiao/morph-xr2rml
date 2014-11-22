@@ -89,20 +89,13 @@ class MorphJsondocDataTranslator(
             throw new Exception(errorMessage);
         }
 
-        val resultSet = this.connection.dbType match {
+        val resultSet: Iterator[String] = this.connection.dbType match {
             case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query) }
             case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
         }
 
-for (res <- resultSet)
-    println("############# " + res)
-
-        throw new Exception("That's all folks!")
-
-        // Run the query against the database 
-        val rows = DBUtility.execute(null, null, this.properties.databaseTimeout);
-
         // Make mappings of each column in the result set and its data type and equivalent XML data type
+        /*
         var mapXMLDatatype: Map[String, String] = Map.empty;
         var mapDBDatatype: Map[String, Integer] = Map.empty;
         var rsmd: ResultSetMetaData = null;
@@ -123,23 +116,24 @@ for (res <- resultSet)
             case e: Exception => {
                 logger.warn("Unable to detect database columns: " + e.getMessage());
             }
-        }
+        } */
 
-        // Main loop: iterate and process each row in the SQL result set 
+        // Main loop: iterate and process each result document of the result set
         var i = 0;
-        while (rows.next()) { // put current cursor on the new row
+        while (resultSet.hasNext) {
             i = i + 1;
-            logger.debug("Generating triples for row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
-            try {
+            val document = resultSet.next()
+            logger.debug("Generating triples for row " + i + ": " + document)
 
+            try {
                 // Create the subject resource
-                val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
+                val subject = this.translateData(sm, document)
                 if (subject == null) { throw new Exception("null value in the subject triple") }
-                logger.debug("Row " + i + " subjects: " + subject)
+                logger.debug("Document " + i + " subjects: " + subject)
 
                 // Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.map(sgmElement => {
-                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalTable.alias, mapXMLDatatype)
+                    val subjectGraphValue = this.translateData(sgmElement, document)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
                         case Constants.R2RML_IRI_URI => {
@@ -154,7 +148,7 @@ for (res <- resultSet)
                     subjectGraph
                 });
                 if (!subjectGraphs.isEmpty)
-                    logger.trace("Row " + i + " subject graphs: " + subjectGraphs)
+                    logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
 
                 // Add subject resource to the JENA model with its class (rdf:type) and target graphs
                 sm.classURIs.foreach(classURI => {
@@ -166,11 +160,9 @@ for (res <- resultSet)
                         }
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
-                            for (sub <- subject) {
-                                for (subG <- subjectGraph) {
+                            for (sub <- subject)
+                                for (subG <- subjectGraph)
                                     this.materializer.materializeQuad(sub, RDF.`type`, classRes, subG);
-                                }
-                            }
                         });
                     }
                 });
@@ -178,20 +170,17 @@ for (res <- resultSet)
                 // Internal loop on each predicate-object map
                 poms.foreach(pom => {
 
-                    val alias = if (pom.getAlias() == null) { logicalTable.alias; }
-                    else { pom.getAlias() }
-
                     // Make a list of resources for the predicate maps of this predicate-object map
                     val predicates = pom.predicateMaps.map(predicateMap => {
-                        this.translateData(predicateMap, rows, logicalTable.alias, mapXMLDatatype)
+                        this.translateData(predicateMap, document)
                     });
-                    logger.debug("Row " + i + " predicates: " + predicates)
+                    logger.debug("Document " + i + " predicates: " + predicates)
 
                     // Make a list of resources for the object maps of this predicate-object map
                     val objects = pom.objectMaps.map(objectMap => {
-                        this.translateData(objectMap, rows, alias, mapXMLDatatype)
+                        this.translateData(objectMap, document)
                     });
-                    logger.debug("Row " + i + " objects: " + objects)
+                    logger.debug("Document " + i + " objects: " + objects)
 
                     /* ####################################################################################
                      * Need to update treatment of ReferencingObjectMaps in xR2RML context
@@ -201,30 +190,20 @@ for (res <- resultSet)
                     val refObjects = pom.refObjectMaps.map(refObjectMap => {
                         val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap)
                         val parentSubjectMap = parentTriplesMap.subjectMap;
-                        val parentTableAlias = null // ###########  this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
-                        val parentSubjects = this.translateData(parentSubjectMap, rows, parentTableAlias, mapXMLDatatype)
+                        val parentSubjects = this.translateData(parentSubjectMap, document)
                         parentSubjects
-
-                        /* if (xR2RMLDataTranslator.checkJoinParseCondition(refObjectMap, rows, this.properties.databaseType, parentTableAlias, logicalTable.alias)) {
-                            val parentSubjectMap = parentTriplesMap.subjectMap;
-                            //because of the fact that the treatment is row per row, i haven't find yet a way to gather all the subjects that constitute the list
-                            //  val parentSubjects = this.translaterefObjectData(parentSubjectMap, rows, parentTableAlias, mapXMLDatatype,defaultFormt,refTermtype)
-                            parentSubjects
-                        } else {
-                            null
-                        } */
                     })
                     if (!refObjects.isEmpty)
-                        logger.trace("Row " + i + " refObjects: " + refObjects)
+                        logger.trace("Document " + i + " refObjects: " + refObjects)
 
                     // Create the list of resources representing target graphs mentioned in the predicate-object map
                     val pogm = pom.graphMaps;
                     val predicateObjectGraphs = pogm.map(pogmElement => {
-                        val poGraphValue = this.translateData(pogmElement, rows, null, mapXMLDatatype)
+                        val poGraphValue = this.translateData(pogmElement, document)
                         poGraphValue
                     });
                     if (!predicateObjectGraphs.isEmpty)
-                        logger.trace("Row " + i + " predicate-object map graphs: " + predicateObjectGraphs)
+                        logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                     // Finally, combine all the terms to generate triples in the target graphs or default graph
                     if (sm.graphMaps.isEmpty && pogm.isEmpty) {
@@ -301,7 +280,6 @@ for (res <- resultSet)
         }
 
         logger.info(i + " instances retrieved.");
-        rows.close();
     }
 
     /**
@@ -473,7 +451,7 @@ for (res <- resultSet)
      * translate them into one RDF term.
      * In the R2RML case, the result list should contain only one term.
      */
-    private def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
+    private def translateData(termMap: R2RMLTermMap, jsonDoc: String): List[RDFNode] = {
 
         var result: List[RDFNode] = List(null);
 
@@ -487,30 +465,6 @@ for (res <- resultSet)
             case Constants.MorphTermMapType.ConstantTermMap => {
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
                 this.translateSingleValue(termMap, termMap.constantValue, datatype)
-            }
-
-            // --- Column-valued term map
-            case Constants.MorphTermMapType.ColumnTermMap => {
-                // Match the column name in the term map definition with the column name in the result set  
-                val columnTermMapValue =
-                    if (logicalTableAlias != null && !logicalTableAlias.equals("")) {
-                        val termMapColumnValueSplit = termMap.columnName.split("\\.");
-                        val columnName = termMapColumnValueSplit(termMapColumnValueSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
-                        logicalTableAlias + "_" + columnName;
-                    } else { termMap.columnName }
-
-                // Read the value from the result set and get its XML datatype
-                val dbValue = this.getResultSetValue(termMap, rs, columnTermMapValue);
-                val datatype =
-                    if (termMap.datatype.isDefined) { termMap.datatype }
-                    else {
-                        val columnNameAux = termMap.columnName.replaceAll("\"", "");
-                        val datatypeAux = mapXMLDatatype.get(columnNameAux)
-                        datatypeAux
-                    }
-
-                // Generate the RDF terms
-                this.translateSingleValue(termMap, dbValue, datatype)
             }
 
             // --- Reference-valued term map
