@@ -4,10 +4,10 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>es.upm.fi.dia.oeg.morph</groupId>
-	<artifactId>morph-rdb</artifactId>
+	<artifactId>morph-xr2rml</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>morph-RDB Parent Project</name>
+	<name>morph-xr2rml parent project</name>
 	<modules>
 		<module>morph-base</module>
 		<module>morph-base-querytranslator</module>
