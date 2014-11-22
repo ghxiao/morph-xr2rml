@@ -5,7 +5,7 @@
 	<packaging>jar</packaging>
 	<parent>
 		<groupId>es.upm.fi.dia.oeg.morph</groupId>
-		<artifactId>morph-rdb</artifactId>
+		<artifactId>morph-xr2rml</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 

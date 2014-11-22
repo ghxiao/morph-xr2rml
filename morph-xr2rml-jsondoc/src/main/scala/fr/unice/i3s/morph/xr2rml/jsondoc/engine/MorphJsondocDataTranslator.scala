@@ -466,7 +466,7 @@ class MorphJsondocDataTranslator(
                 val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
                 this.translateSingleValue(termMap, termMap.constantValue, datatype)
             }
-
+/*
             // --- Reference-valued term map
             case Constants.MorphTermMapType.ReferenceTermMap => {
 
@@ -543,7 +543,7 @@ class MorphJsondocDataTranslator(
                     this.translateMultipleValues(termMap, templates, datatype);
                 }
             }
-
+*/
             case _ => { throw new Exception("Invalid term map type " + termMap.termMapType) }
         }
         result

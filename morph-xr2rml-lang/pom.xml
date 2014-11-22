@@ -1,13 +1,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>morph-r2rml-rdb-querytranslator</artifactId>
+	<artifactId>morph-xr2rml-lang</artifactId>
 	<packaging>jar</packaging>
 	<parent>
 		<groupId>es.upm.fi.dia.oeg.morph</groupId>
-		<artifactId>morph-rdb</artifactId>
+		<artifactId>morph-xr2rml</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>es.upm.fi.dia.oeg.morph</groupId>
+			<artifactId>morph-base</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<sourceDirectory>src/main/scala</sourceDirectory>
@@ -32,19 +40,5 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
-	<dependencies>
-		<dependency>
-			<groupId>es.upm.fi.dia.oeg.morph</groupId>
-			<artifactId>morph-base-querytranslator</artifactId>
-			<version>1.0-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>es.upm.fi.dia.oeg.morph</groupId>
-			<artifactId>morph-r2rml-rdb</artifactId>
-			<version>1.0-SNAPSHOT</version>
-		</dependency>
-	</dependencies>
 
 </project>

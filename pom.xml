@@ -11,9 +11,9 @@
 	<modules>
 		<module>morph-base</module>
 		<module>morph-base-querytranslator</module>
-		<module>morph-r2rml</module>
-		<module>morph-r2rml-rdb</module>
-		<module>morph-r2rml-rdb-querytranslator</module>
+		<module>morph-xr2rml-lang</module>
+		<module>morph-xr2rml-rdb</module>
+		<module>morph-xr2rml-rdb-querytranslator</module>
 		<module>morph-xr2rml-jsondoc</module>
 	</modules>
 
