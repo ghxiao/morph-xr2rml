@@ -75,4 +75,11 @@ object JSONPath_PathExpression {
 
         new JSONPath_PathExpression(MixedSyntaxPath.unescapeChars(expr))
     }
+
+    /**
+     * Make an instance from a raw JSONPath expression (with no path constructor)
+     */
+    def parseRaw(pathConstructExpr: String): JSONPath_PathExpression = {
+        new JSONPath_PathExpression(MixedSyntaxPath.unescapeChars(pathConstructExpr.trim()))
+    }
 }

@@ -24,7 +24,7 @@ abstract class xR2RMLLogicalSource(
     val refFormulation: String,
 
     /** Iteration pattern, defaults to none */
-    val iterator: Option[String])
+    val docIterator: Option[String])
 
         extends MorphBaseLogicalTable with MorphR2RMLElement {
 
@@ -82,7 +82,7 @@ abstract class xR2RMLLogicalSource(
             case _: xR2RMLQuery => { "xR2RMLQuery"; }
             case _ => throw new Exception("Unkown type of logical source or logical table")
         }
-        result + ": " + this.getValue() + ". ReferenceFormulation: " + this.refFormulation + ". Iterator: " + this.iterator
+        result + ": " + this.getValue() + ". ReferenceFormulation: " + this.refFormulation + ". Iterator: " + this.docIterator
     }
 
     def accept(visitor: MorphR2RMLElementVisitor): Object = {
@@ -143,7 +143,7 @@ object xR2RMLLogicalSource {
 
                     // Check validity of optional properties iterator and referenceFormulation
                     if (hasIterator(resource))
-                        logger.warn("Ignoring iterator with rr:tableName " + tableName)
+                        logger.warn("Ignoring iterator [" + readIterator(resource).get + "] with rr:tableName " + tableName)
                     if (!isDefaultReferenceFormulation(resource)) {
                         val msg = "Invalid reference formulation: " + readReferenceFormulation(resource) + " with rr:tableName " + tableName
                         logger.error(msg);
@@ -177,7 +177,7 @@ object xR2RMLLogicalSource {
                 } else if (queryStmt != null) {
                     // xR2RML query
                     val queryStr = queryStmt.getObject().toString().trim();
-                    new xR2RMLQuery(queryStr, refFormulation, None)
+                    new xR2RMLQuery(queryStr, refFormulation, readIterator(resource))
 
                 } else {
                     val errorMessage = "Missing logical source property: rr:tableName, rr:sqlQuery or xrr:query";

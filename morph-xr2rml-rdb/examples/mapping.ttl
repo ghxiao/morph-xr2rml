@@ -10,8 +10,9 @@
     xrr:logicalSource [
         rr:tableName "student";
         xrr:referenceFormulation xrr:Column;
+        rml:iterator "$.*";						# must be ignored
     ];
-    rr:subjectMap [ 
+    rr:subjectMap [
     	rr:template "http://example.org/student/{id}-{Column(name)/XPath(\\/\\/LastName)}";
 		rr:class ex:Student;
     ];

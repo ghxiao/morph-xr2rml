@@ -8,10 +8,9 @@
 <#Students>
     a rr:TriplesMap;
     xrr:logicalSource [
-    	# Jongo needs strings in singles quotes (different from MongoDB shell)
+    	# Jongo needs strings in singles quotes (difference with MongoDB shell)
         xrr:query """db.students.find( { FullName : {$exists: 1} } )""";
         xrr:referenceFormulation ql:JSONPath;
-        rml:iterator "$.*";
     ];
     rr:subjectMap [ 
     	rr:template "http://example.org/student/{$._id.*}";
@@ -43,3 +42,22 @@
     	    xrr:reference "$.id";
     	];
     ].
+
+<#Directors>
+    a rr:TriplesMap;
+	xrr:logicalSource [
+        xrr:query "db.movies.find( { directors: { $exists: true} } )";
+        xrr:referenceFormulation ql:JSONPath;
+        rml:iterator "$.directors.*";
+    ];
+    rr:subjectMap [
+        rr:template "http://example.org/director/{$.name}";
+    ];
+    rr:predicateObjectMap [
+        rr:predicate ex:directed;
+        rr:objectMap [ 
+            xrr:reference "$.movies.*"; 
+            # rr:termType xrr:RdfList;
+        ];
+    ].
+    

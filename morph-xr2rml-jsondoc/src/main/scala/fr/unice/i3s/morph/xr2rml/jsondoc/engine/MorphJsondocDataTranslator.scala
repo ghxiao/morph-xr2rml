@@ -1,10 +1,11 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
-import java.sql.Connection
 import java.sql.ResultSet
-import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
@@ -12,18 +13,21 @@ import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
@@ -41,10 +45,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 
 class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
@@ -89,17 +91,25 @@ class MorphJsondocDataTranslator(
             throw new Exception(errorMessage);
         }
 
-        // Execute the query against the database
+        // Execute the query against the database, choose the execution method depending on the db type
         val resultSet: Iterator[String] = this.connection.dbType match {
             case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query) }
             case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
         }
 
+        // Apply the iterator to the result set, this creates a new result set
+        val resultSetL = resultSet.toList
+        val resultSetIter =
+            if (logicalTable.docIterator.isDefined) {
+                val jPath = JSONPath_PathExpression.parseRaw(logicalTable.docIterator.get)
+                resultSetL.flatMap(result => jPath.evaluate(result).map(value => value.toString))
+            } else resultSetL
+        logger.trace("Query returned " + resultSetL.size + " results, " + resultSetIter.size + " results after applying the iterator.")
+
         // Main loop: iterate and process each result document of the result set
         var i = 0;
-        while (resultSet.hasNext) {
+        for (document <- resultSetIter) {
             i = i + 1;
-            val document = resultSet.next()
             logger.debug("Generating triples for document " + i + ": " + document)
 
             try {
