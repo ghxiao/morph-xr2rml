@@ -221,7 +221,7 @@ object MixedSyntaxPath {
             currentEval
         else
             // For each value produced by the evaluation above, run the evaluation with the next path in the list
-            currentEval.flatMap(value => recursiveEval(value.toString(), paths.tail))
+            currentEval.flatMap(value => recursiveEval(value, paths.tail))
     }
 
     /** For debug purpose only */

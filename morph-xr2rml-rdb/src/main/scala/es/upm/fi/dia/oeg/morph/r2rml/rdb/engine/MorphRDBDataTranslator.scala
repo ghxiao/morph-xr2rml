@@ -114,7 +114,7 @@ class MorphRDBDataTranslator(
                 val mappedDatatype = datatypeMapper.getMappedType(columnType);
                 mapXMLDatatype += (columnName -> mappedDatatype);
                 mapDBDatatype += (columnName -> new Integer(columnType));
-                logger.trace("SQL result: column " + columnName + ", mapped XML type: " + mappedDatatype)
+                logger.trace("SQL result: column " + columnName + " is mapped to XML type: " + mappedDatatype)
             }
         } catch {
             case e: Exception => {
@@ -301,84 +301,6 @@ class MorphRDBDataTranslator(
     }
 
     /**
-     *  Create a JENA resource with an IRI after URL-encoding the string
-     */
-    private def createIRI(originalIRI: String) = {
-        var resultIRI = originalIRI;
-        try {
-            resultIRI = GeneralUtility.encodeURI(resultIRI, properties.mapURIEncodingChars, properties.uriTransformationOperation);
-            if (this.properties.encodeUnsafeChars) {
-                resultIRI = GeneralUtility.encodeUnsafeChars(resultIRI);
-            }
-            if (this.properties.encodeReservedChars) {
-                resultIRI = GeneralUtility.encodeReservedChars(resultIRI);
-            }
-            this.materializer.model.createResource(resultIRI);
-        } catch {
-            case e: Exception => {
-                logger.warn("Error translating object uri value : " + resultIRI);
-                throw e
-            }
-        }
-    }
-
-    /**
-     * Create a JENA literal resource with optional datatype and language tag
-     */
-    private def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
-        try {
-            val encodedValueAux =
-                if (value == null) // case when the database returned NULL
-                    ""
-                else
-                    GeneralUtility.encodeLiteral(value.toString())
-
-            val encodedValue = encodedValueAux.toString();
-            val data: String = datatype.getOrElse(null)
-            val valueWithDataType = if (data != null) {
-                val xsdDateTimeURI = XSDDatatype.XSDdateTime.getURI().toString();
-                val xsdBooleanURI = XSDDatatype.XSDboolean.getURI().toString();
-
-                if (data.equals(xsdDateTimeURI)) {
-                    this.translateDateTime(encodedValue);
-                } else if (data.equals(xsdBooleanURI)) {
-                    this.translateBoolean(encodedValue);
-                } else { encodedValue }
-            } else { encodedValue }
-
-            val result: Literal = if (language.isDefined) {
-                this.materializer.model.createLiteral(valueWithDataType, language.get);
-            } else {
-                if (datatype.isDefined) {
-                    this.materializer.model.createTypedLiteral(valueWithDataType, datatype.get);
-                } else {
-                    this.materializer.model.createLiteral(valueWithDataType);
-                }
-            }
-            result
-        } catch {
-            case e: Exception => {
-                logger.warn("Error translating object uri value : " + value);
-                throw e
-            }
-        }
-    }
-
-    private def translateDateTime(value: String) = {
-        value.toString().trim().replaceAll(" ", "T");
-    }
-
-    private def translateBoolean(value: String) = {
-        if (value.equalsIgnoreCase("T") || value.equalsIgnoreCase("True") || value.equalsIgnoreCase("1")) {
-            "true";
-        } else if (value.equalsIgnoreCase("F") || value.equalsIgnoreCase("False") || value.equalsIgnoreCase("0")) {
-            "false";
-        } else {
-            "false";
-        }
-    }
-
-    /**
      * Create a list of one RDF term (as JENA resource) from one value read from the database,
      * according to the term type specified in the term map.
      * Although there will be always one RDF node, the method still returns a list;
@@ -406,7 +328,6 @@ class MorphRDBDataTranslator(
      */
     private def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
 
-        println(values)
         val result: List[RDFNode] =
             // If the term type is one of R2RML term types then create one RDF term for each of the values
             if (termMap.inferTermType == Constants.R2RML_IRI_URI ||
@@ -481,8 +402,7 @@ class MorphRDBDataTranslator(
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-                this.translateSingleValue(termMap, termMap.constantValue, datatype)
+                this.translateSingleValue(termMap, termMap.constantValue, termMap.datatype)
             }
 
             // --- Column-valued term map
@@ -536,21 +456,22 @@ class MorphRDBDataTranslator(
                 val datatype =
                     if (termMap.datatype.isDefined)
                         termMap.datatype
-                    else
-                        mapXMLDatatype.get(colRef.replaceAll("\"", ""))
+                    else {
+                        val dt = mapXMLDatatype.get(colRef.replaceAll("\"", ""))
+                        if (dt.isDefined && dt.get == null)
+                            None
+                        else dt
+                    }
+
                 this.translateMultipleValues(termMap, values, datatype);
             }
 
             // --- Template-valued term map
             case Constants.MorphTermMapType.TemplateTermMap => {
 
-                val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-
                 // For each group of the template, compute a list of replacement strings
-
                 val colRefs = termMap.getReferencedColumns()
                 val msPaths = termMap.getMixedSyntaxPaths()
-
                 val listReplace = for (i <- 0 to (colRefs.length - 1)) yield {
 
                     // Match the column name in the term map definition with the column name in the result set  
@@ -582,7 +503,7 @@ class MorphRDBDataTranslator(
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val templates = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
-                    this.translateMultipleValues(termMap, templates, datatype);
+                    this.translateMultipleValues(termMap, templates, termMap.datatype);
                 }
             }
 

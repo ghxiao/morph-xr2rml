@@ -98,11 +98,11 @@ object xR2RMLLogicalSource {
      * Check properties of a logical source or logical table to create the appropriate
      * instance of R2RMLTable, R2RMLSqlQuey and xR2RMLQuery.
      *
-     * @param reource : an xrr:LogicalSource or rr:LogicalTable resource
-     * @param logResType : string indicating whether this is a logical source or logical table
+     * @param reource an xrr:LogicalSource or rr:LogicalTable resource
+     * @param logResType class URI of a logical source or logical table
+     * @param refFormulation the reference formulation URI
      */
-    def parse(resource: Resource, logResType: String): xR2RMLLogicalSource = {
-
+    def parse(resource: Resource, logResType: String, refFormulation: String): xR2RMLLogicalSource = {
         val logSrc: xR2RMLLogicalSource =
             {
                 val tableNameStmt = resource.getProperty(Constants.R2RML_TABLENAME_PROPERTY)
@@ -177,7 +177,7 @@ object xR2RMLLogicalSource {
                 } else if (queryStmt != null) {
                     // xR2RML query
                     val queryStr = queryStmt.getObject().toString().trim();
-                    new xR2RMLQuery(queryStr, xR2RML_Constants.xR2RML_COLUMN_URI, None)
+                    new xR2RMLQuery(queryStr, refFormulation, None)
 
                 } else {
                     val errorMessage = "Missing logical source property: rr:tableName, rr:sqlQuery or xrr:query";

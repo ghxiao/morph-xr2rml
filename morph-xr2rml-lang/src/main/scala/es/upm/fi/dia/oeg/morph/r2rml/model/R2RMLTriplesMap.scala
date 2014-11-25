@@ -118,15 +118,24 @@ object R2RMLTriplesMap {
         logger.debug("Parsing triples map: " + tmResource.getLocalName())
 
         // --- Look for Logical table (rr:logicalTable) or Logical source (xrr:logicalSource) definition
-        val logTabStmt = tmResource.getProperty(Constants.R2RML_LOGICALTABLE_PROPERTY);
-        val logSrcStmt = tmResource.getProperty(xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY);
+        val logTabStmt = tmResource.getProperty(Constants.R2RML_LOGICALTABLE_PROPERTY)
+        val logSrcStmt = tmResource.getProperty(xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY)
+
         var logSource: xR2RMLLogicalSource = {
             if (logTabStmt != null) {
                 val res = logTabStmt.getObject().asInstanceOf[Resource]
-                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI)
+                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI, xR2RML_Constants.xR2RML_COLUMN_URI)
+
             } else if (logSrcStmt != null) {
                 val res = logSrcStmt.getObject().asInstanceOf[Resource]
-                xR2RMLLogicalSource.parse(res, xR2RML_Constants.xR2RML_LOGICALSOURCE_URI)
+
+                val refFormStmt = res.getProperty(xR2RML_Constants.xR2RML_REFFORMULATION_PROPERTY)
+                val refForm = if (refFormStmt != null)
+                    refFormStmt.getObject().toString()
+                else
+                    xR2RML_Constants.xR2RML_COLUMN_URI
+                xR2RMLLogicalSource.parse(res, xR2RML_Constants.xR2RML_LOGICALSOURCE_URI, refForm)
+
             } else {
                 val errorMessage = "Missing rr:logicalTable and xrr:logicalSource"
                 logger.error(errorMessage)

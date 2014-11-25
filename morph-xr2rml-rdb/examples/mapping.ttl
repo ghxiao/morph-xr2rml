@@ -12,7 +12,7 @@
         xrr:referenceFormulation xrr:Column;
     ];
     rr:subjectMap [ 
-    	rr:template "http://example.org/student/{Column(id)}";
+    	rr:template "http://example.org/student/{id}-{Column(name)/XPath(\\/\\/LastName)}";
 		rr:class ex:Student;
     ];
     rr:predicateObjectMap [

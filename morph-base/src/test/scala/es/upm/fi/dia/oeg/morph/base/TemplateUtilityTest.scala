@@ -6,6 +6,17 @@ import org.junit.Test
 
 class TemplateUtilityTest {
 
+    @Test def TestGetTemplateGroupsPureJSONPath() {
+        println("------------------ TestGetTemplateGroupsPureJSONPath ------------------")
+        val jsonPath = """$.*"""
+        var tpl = "http://example.org/student/{" + jsonPath + "}"
+
+        val groups = TemplateUtility.getTemplateGroups(tpl)
+        println("groups: " + groups)
+
+        assertEquals(jsonPath, groups(0))
+    }
+
     @Test def TestGetTemplateGroups() {
         println("------------------ TestGetTemplateGroups ------------------")
         val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""

@@ -3,23 +3,25 @@
 @prefix ex:  <http://example.com/> .
 @prefix rml: <http://semweb.mmlab.be/ns/rml#> .
 @prefix ql:	 <http://semweb.mmlab.be/ns/ql#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <#Students>
     a rr:TriplesMap;
     xrr:logicalSource [
-        xrr:query "db.students.find()";
+    	# Jongo needs strings in singles quotes (different from MongoDB shell)
+        xrr:query """db.students.find( { FullName : {$exists: 1} } )""";
         xrr:referenceFormulation ql:JSONPath;
         rml:iterator "$.*";
     ];
     rr:subjectMap [ 
-    	rr:template "http://example.org/student/{$._id}";
+    	rr:template "http://example.org/student/{$._id.*}";
 		rr:class ex:Student;
     ];
     rr:predicateObjectMap [
     	rr:predicate ex:activity;
     	rr:objectMap [ 
-    	    xrr:reference "$.Hobbies.hobby";
-    	    rr:termType rr:Literal;
+    	    xrr:reference "$.Hobbies.*.hobby";
+    	    rr:language "en";
     	];
     ];
     rr:predicateObjectMap [
@@ -28,4 +30,16 @@
     		rr:template "{$.FullName.FirstNames.*} {$.FullName.LastName}";
     		rr:termType xrr:RdfList;
 		];
+	];
+    rr:predicateObjectMap [
+    	rr:predicate ex:isActive;
+    	rr:objectMap [ 
+    	    xrr:reference "$.active";
+    	];
+    ];
+    rr:predicateObjectMap [
+    	rr:predicate ex:hasId;
+    	rr:objectMap [ 
+    	    xrr:reference "$.id";
+    	];
     ].

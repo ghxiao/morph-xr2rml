@@ -34,6 +34,9 @@ class DatatypeMapper {
         this.mapDBDatatype;
     }
 
+    /**
+     *  Return the URI (as a string) of an XSD datatype corresponding to the SQL type
+     */
     def getMappedType(sqlType: Integer) = {
         if (mapDatatype contains sqlType) {
             mapDatatype(sqlType);
@@ -48,9 +51,6 @@ class DatatypeMapper {
             for (i <- 0 until columnCount) {
                 val columnName = rsmd.getColumnName(i + 1);
                 val columnType = rsmd.getColumnType(i + 1);
-
-                //logger.info("rsmd.getColumnClassName(i+1) = " + rsmd.getColumnClassName(i+1));
-                //logger.info("rsmd.getColumnTypeName(i+1) = " + rsmd.getColumnTypeName(i+1));
 
                 val mappedDatatype = this.getMappedType(columnType);
                 if (mappedDatatype != null) {

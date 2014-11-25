@@ -89,41 +89,18 @@ class MorphJsondocDataTranslator(
             throw new Exception(errorMessage);
         }
 
+        // Execute the query against the database
         val resultSet: Iterator[String] = this.connection.dbType match {
             case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query) }
             case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
         }
-
-        // Make mappings of each column in the result set and its data type and equivalent XML data type
-        /*
-        var mapXMLDatatype: Map[String, String] = Map.empty;
-        var mapDBDatatype: Map[String, Integer] = Map.empty;
-        var rsmd: ResultSetMetaData = null;
-        var columnCount = 0
-        try {
-            var rsmd = rows.getMetaData();
-            val datatypeMapper = new DatatypeMapper();
-            columnCount = rsmd.getColumnCount();
-            for (i <- 0 until columnCount) {
-                val columnName = rsmd.getColumnName(i + 1);
-                val columnType = rsmd.getColumnType(i + 1);
-                val mappedDatatype = datatypeMapper.getMappedType(columnType);
-                mapXMLDatatype += (columnName -> mappedDatatype);
-                mapDBDatatype += (columnName -> new Integer(columnType));
-                logger.trace("SQL result: column " + columnName + ", mapped XML type: " + mappedDatatype)
-            }
-        } catch {
-            case e: Exception => {
-                logger.warn("Unable to detect database columns: " + e.getMessage());
-            }
-        } */
 
         // Main loop: iterate and process each result document of the result set
         var i = 0;
         while (resultSet.hasNext) {
             i = i + 1;
             val document = resultSet.next()
-            logger.debug("Generating triples for row " + i + ": " + document)
+            logger.debug("Generating triples for document " + i + ": " + document)
 
             try {
                 // Create the subject resource
@@ -283,84 +260,6 @@ class MorphJsondocDataTranslator(
     }
 
     /**
-     *  Create a JENA resource with an IRI after URL-encoding the string
-     */
-    private def createIRI(originalIRI: String) = {
-        var resultIRI = originalIRI;
-        try {
-            resultIRI = GeneralUtility.encodeURI(resultIRI, properties.mapURIEncodingChars, properties.uriTransformationOperation);
-            if (this.properties.encodeUnsafeChars) {
-                resultIRI = GeneralUtility.encodeUnsafeChars(resultIRI);
-            }
-            if (this.properties.encodeReservedChars) {
-                resultIRI = GeneralUtility.encodeReservedChars(resultIRI);
-            }
-            this.materializer.model.createResource(resultIRI);
-        } catch {
-            case e: Exception => {
-                logger.warn("Error translating object uri value : " + resultIRI);
-                throw e
-            }
-        }
-    }
-
-    /**
-     * Create a JENA literal resource with optional datatype and language tag
-     */
-    private def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
-        try {
-            val encodedValueAux =
-                if (value == null) // case when the database returned NULL
-                    ""
-                else
-                    GeneralUtility.encodeLiteral(value.toString())
-
-            val encodedValue = encodedValueAux.toString();
-            val data: String = datatype.getOrElse(null)
-            val valueWithDataType = if (data != null) {
-                val xsdDateTimeURI = XSDDatatype.XSDdateTime.getURI().toString();
-                val xsdBooleanURI = XSDDatatype.XSDboolean.getURI().toString();
-
-                if (data.equals(xsdDateTimeURI)) {
-                    this.translateDateTime(encodedValue);
-                } else if (data.equals(xsdBooleanURI)) {
-                    this.translateBoolean(encodedValue);
-                } else { encodedValue }
-            } else { encodedValue }
-
-            val result: Literal = if (language.isDefined) {
-                this.materializer.model.createLiteral(valueWithDataType, language.get);
-            } else {
-                if (datatype.isDefined) {
-                    this.materializer.model.createTypedLiteral(valueWithDataType, datatype.get);
-                } else {
-                    this.materializer.model.createLiteral(valueWithDataType);
-                }
-            }
-            result
-        } catch {
-            case e: Exception => {
-                logger.warn("Error translating object uri value : " + value);
-                throw e
-            }
-        }
-    }
-
-    private def translateDateTime(value: String) = {
-        value.toString().trim().replaceAll(" ", "T");
-    }
-
-    private def translateBoolean(value: String) = {
-        if (value.equalsIgnoreCase("T") || value.equalsIgnoreCase("True") || value.equalsIgnoreCase("1")) {
-            "true";
-        } else if (value.equalsIgnoreCase("F") || value.equalsIgnoreCase("False") || value.equalsIgnoreCase("0")) {
-            "false";
-        } else {
-            "false";
-        }
-    }
-
-    /**
      * Create a list of one RDF term (as JENA resource) from one value read from the database,
      * according to the term type specified in the term map.
      * Although there will be always one RDF node, the method still returns a list;
@@ -388,7 +287,6 @@ class MorphJsondocDataTranslator(
      */
     private def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
 
-        println(values)
         val result: List[RDFNode] =
             // If the term type is one of R2RML term types then create one RDF term for each of the values
             if (termMap.inferTermType == Constants.R2RML_IRI_URI ||
@@ -446,10 +344,9 @@ class MorphJsondocDataTranslator(
     }
 
     /**
-     * Apply a term map to the current row of the result set, and generate a list of RDF terms:
-     * for each column reference in the term map (column, reference or template), read cell values from the current row,
-     * translate them into one RDF term.
-     * In the R2RML case, the result list should contain only one term.
+     * Apply a term map to the current document of the result set, and generate a list of RDF terms:
+     * for each element reference in the term map (reference or template), read values from the current document,
+     * translate them into RDF terms.
      */
     private def translateData(termMap: R2RMLTermMap, jsonDoc: String): List[RDFNode] = {
 
@@ -457,93 +354,53 @@ class MorphJsondocDataTranslator(
 
         val dbType = this.properties.databaseType;
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
-        val inferedTermType = termMap.inferTermType;
+        val inferedTermType = termMap.inferTermType();
 
         result = termMap.termMapType match {
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-                this.translateSingleValue(termMap, termMap.constantValue, datatype)
+                this.translateSingleValue(termMap, termMap.constantValue, termMap.datatype)
             }
-/*
+
             // --- Reference-valued term map
             case Constants.MorphTermMapType.ReferenceTermMap => {
 
-                // Parse reference as a mixed syntax path and return the column referenced in the first "Column()" path
-                val colRef = termMap.getReferencedColumns().get(0)
-
-                val colFromResultSet = {
-                    // Match the column name in the term map definition with the column name in the result set  
-                    if (logicalTableAlias != null && !"".equals(logicalTableAlias)) {
-                        val termMapColSplit = colRef.split("\\.");
-                        val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
-                        logicalTableAlias + "_" + columnName;
-                    } else
-                        colRef
-                }
-
-                // Read the value from the result set
-                val dbValue = this.getResultSetValue(termMap, rs, colFromResultSet);
-
                 // Evaluate the value against the mixed syntax path
                 val msPath = termMap.getMixedSyntaxPaths()(0)
-                val values: List[Object] = msPath.evaluate(dbValue)
+                val values: List[Object] = msPath.evaluate(jsonDoc)
 
-                // Generate RDF terms from the values
-                val datatype =
-                    if (termMap.datatype.isDefined)
-                        termMap.datatype
-                    else
-                        mapXMLDatatype.get(colRef.replaceAll("\"", ""))
-                this.translateMultipleValues(termMap, values, datatype);
+                // Generate RDF terms from the values resulting from the evaluation
+                this.translateMultipleValues(termMap, values, termMap.datatype);
             }
 
             // --- Template-valued term map
             case Constants.MorphTermMapType.TemplateTermMap => {
 
-                val datatype = if (termMap.datatype.isDefined) { termMap.datatype } else { None }
-
                 // For each group of the template, compute a list of replacement strings
-
-                val colRefs = termMap.getReferencedColumns()
                 val msPaths = termMap.getMixedSyntaxPaths()
-
-                val listReplace = for (i <- 0 to (colRefs.length - 1)) yield {
-
-                    // Match the column name in the term map definition with the column name in the result set  
-                    val colRef = colRefs(i)
-                    val colFromResultSet =
-                        if (logicalTableAlias != null) {
-                            val termMapColSplit = colRef.split("\\.");
-                            val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter);
-                            logicalTableAlias + "_" + columnName;
-                        } else
-                            colRef
-
-                    // Read the value from the result set
-                    val dbValueRaw = this.getResultSetValue(termMap, rs, colFromResultSet)
+                val listReplace = for (i <- 0 to (msPaths.length - 1)) yield {
 
                     // Evaluate the raw value against the mixed-syntax path.
-                    // If the reference is not a mixed-syntax path, the value is simply returned in a List()
-                    val valuesRaw: List[Object] = msPaths(i).evaluate(dbValueRaw)
-                    valuesRaw.filter(_ != null)
+                    val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
+                    //valuesRaw.filter(_ != null)
+                    valuesRaw
                 }
 
                 val replacements: List[List[Object]] = listReplace.toList
                 logger.trace("Template replacements: " + replacements)
 
-                // Replace {} groups in the template string with corresponding values from the db
+                // Replace "{...}" groups in the template string with corresponding values from the db
                 if (replacements.isEmpty) {
                     logger.warn("Template " + termMap.templateString + ": no group to replace with values from the DB.")
                     null
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val templates = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
-                    this.translateMultipleValues(termMap, templates, datatype);
+                    this.translateMultipleValues(termMap, templates, termMap.datatype);
                 }
             }
-*/
+
             case _ => { throw new Exception("Invalid term map type " + termMap.termMapType) }
         }
         result
@@ -575,6 +432,77 @@ class MorphJsondocDataTranslator(
                 null
             }
         }
+    }
+
+    /**
+     * Create a JENA literal resource with optional data type and language tag.
+     * This method is overriden in the case of JSON to enable the mapping between JSON data types
+     * and XSD data types
+     */
+    override protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
+        try {
+            val encodedValue =
+                if (value == null) // case when the database returned NULL
+                    ""
+                else
+                    GeneralUtility.encodeLiteral(value.toString())
+
+            val dataT: String = datatype.getOrElse(null)
+            val valueConverted =
+                if (dataT != null) {
+                    if (dataT.equals(XSDDatatype.XSDdateTime.getURI().toString()))
+                        this.translateDateTime(encodedValue);
+                    else if (dataT.equals(XSDDatatype.XSDboolean.getURI().toString()))
+                        this.translateBoolean(encodedValue);
+                    else
+                        encodedValue
+                } else
+                    encodedValue
+
+            val result: Literal =
+                if (language.isDefined)
+                    this.materializer.model.createLiteral(valueConverted, language.get);
+                else {
+                    if (datatype.isDefined)
+                        this.materializer.model.createTypedLiteral(valueConverted, datatype.get);
+                    else {
+                        val inferedDT = inferDataType(value)
+                        if (inferedDT == null)
+                            this.materializer.model.createLiteral(valueConverted);
+                        else
+                            this.materializer.model.createTypedLiteral(valueConverted, inferedDT);
+                    }
+                }
+
+            result
+        } catch {
+            case e: Exception => {
+                logger.warn("Error translating object uri value : " + value);
+                throw e
+            }
+        }
+    }
+
+    /**
+     * Defines the mapping from JSON data types to XSD data types
+     */
+    private def inferDataType(value: Object): String = {
+        value match {
+            case _: java.lang.Byte => XSDDatatype.XSDinteger.getURI()
+            case _: java.lang.Short => XSDDatatype.XSDinteger.getURI()
+            case _: java.lang.Integer => XSDDatatype.XSDinteger.getURI()
+            case _: java.lang.Long => XSDDatatype.XSDinteger.getURI()
+
+            case _: java.lang.Double => XSDDatatype.XSDdecimal.getURI()
+            case _: java.lang.Float => XSDDatatype.XSDdecimal.getURI()
+
+            case _: java.lang.Boolean => XSDDatatype.XSDboolean.getURI()
+
+            case _: java.lang.Number => XSDDatatype.XSDdecimal.getURI()
+
+            case _ => null
+        }
+
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): Object = {

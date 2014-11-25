@@ -96,11 +96,7 @@ abstract class R2RMLTermMap(
      * Return the term type mentioned by property rr:termType or the default term type otherwise
      */
     def inferTermType(): String = {
-        if (this.termType.isDefined) {
-            this.termType.get
-        } else {
-            this.getDefaultTermType
-        }
+        this.termType.getOrElse(this.getDefaultTermType())
     }
 
     def getDefaultTermType(): String = {
@@ -202,7 +198,7 @@ abstract class R2RMLTermMap(
                 // Get the list of template strings
                 val tplStrings = TemplateUtility.getTemplateGroups(this.templateString)
 
-                // For each one, parse it as a mixed syntax path and return the column referenced in the first path "Column()" 
+                // For each one, parse it as a mixed syntax path
                 tplStrings.map(tplString => MixedSyntaxPath(tplString, refFormulaion))
             }
             case _ => { throw new Exception("Cannot build a MixedSyntaxPath with a term map of type " + this.termMapType) }

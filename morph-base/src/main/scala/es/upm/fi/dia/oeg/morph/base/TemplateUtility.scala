@@ -13,8 +13,9 @@ object TemplateUtility {
     val logger = Logger.getLogger(this.getClass().getName())
 
     val TemplatePattern = Constants.R2RML_TEMPLATE_PATTERN.r
+    val TemplatePatternCapGrp = Constants.R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP.r
 
-    val TemplatePatternCapGrp = Pattern.compile(Constants.R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP);
+    val TemplatePatternCapGrpPat = Pattern.compile(Constants.R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP);
 
     /**
      * CAUTION ### This method was not updated to support Mixed-syntax paths ###
@@ -66,7 +67,7 @@ object TemplateUtility {
     }
 
     /**
-     * Get the list of capturing groups between '{' and '}' in a template string.
+     * Get the list of capturing groups between '{' and '}' in a template string, without the '{' and '}'.
      * This method applies to R2RML templates as well as xR2RML templates including
      * mixed-syntax paths like: "http://example.org/{Column(NAME)/JSONPath(...)}/...
      *
@@ -90,7 +91,7 @@ object TemplateUtility {
         val tpl2 = mixedSntxRegex.replaceAllIn(tplStr, "xR2RML_replacer")
 
         // (3) Make a list of the R2RML template groups between '{' '}'
-        val listPattern = TemplatePattern.findAllIn(tpl2).toList
+        val listPattern = TemplatePatternCapGrp.findAllIn(tpl2).toList
 
         // (4) Restore the path expressions in each of the place holders
         val listReplaced = MixedSyntaxPath.replaceTplPlaceholder(listPattern, mixedSntxPaths)
@@ -166,14 +167,26 @@ object TemplateUtility {
             var grpIdx = 0
 
             // Make a list of the template groups between '{' '}'
-            val matcher = TemplatePatternCapGrp.matcher(tpl2)
+            val matcher = TemplatePatternCapGrpPat.matcher(tpl2)
+            var appendIdx = 0
             while (matcher.find()) {
                 val path = matcher.group(1)
                 val replacement = combination.get(grpIdx)
-                matcher.appendReplacement(buffer, replacement.toString)
+
+                // Copy the part before the match 
+                buffer.append(tpl2.substring(appendIdx, matcher.start()))
+
+                // Append the replacement
+                buffer.append(replacement.toString)
+
                 grpIdx = grpIdx + 1
+                appendIdx = matcher.end()
             }
-            matcher.appendTail(buffer)
+
+            // Copy the end part after the last match
+            if (appendIdx < tpl2.length() - 1)
+                buffer.append(tpl2.substring(appendIdx, tpl2.length()))
+
             templateResults += buffer.toString
         }
 

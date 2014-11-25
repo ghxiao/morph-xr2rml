@@ -203,6 +203,8 @@ object GeneralUtility {
             result = result.replaceAll("\\[", "%5B");
             result = result.replaceAll("\\]", "%5D");
             result = result.replaceAll("`", "%60");
+            result = result.replaceAll(" ", "%20");
+            result = result.replaceAll("\"", "%22");
         }
         result;
     }
@@ -214,14 +216,13 @@ object GeneralUtility {
             result = result.replaceAll("&", "%26");
             result = result.replaceAll("\\+", "%2B");
             result = result.replaceAll(",", "%2C");
-            result = result.replaceAll("/", "%2F");
-            result = result.replaceAll(":", "%3A");
             result = result.replaceAll(";", "%3B");
             result = result.replaceAll("=", "%3D");
             result = result.replaceAll("\\?", "%3F");
             result = result.replaceAll("@", "%40");
-            result = result.replaceAll(" ", "%20");
-            result = result.replaceAll("\"", "%22");
+
+            result = result.replaceAll("/", "%2F");
+            result = result.replaceAll(":", "%3A");
         }
         result;
     }

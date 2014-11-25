@@ -1,23 +1,21 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import java.io.OutputStream
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.IOException
+import java.io.PrintWriter
 import java.io.Writer
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
-import java.io._
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphJsondocRunner(
     mappingDocument: R2RMLMappingDocument,
