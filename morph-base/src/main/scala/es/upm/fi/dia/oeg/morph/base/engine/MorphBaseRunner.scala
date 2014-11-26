@@ -112,6 +112,7 @@ abstract class MorphBaseRunner(
         val startGeneratingModel = System.currentTimeMillis();
         val cms = md.classMappings;
         cms.foreach(cm => {
+            logger.info("===============================================================================");
             logger.info("Starting data materialization of triples map " + cm.id);
 
             // Create the query to retrieve all needed data (SQL query to retrieve columns in the case of an RDB) from the logical table

@@ -32,7 +32,7 @@ class XPath_PathExpression(pathExpression: String)
         }
     }
 
-    override def toString: String = { "XPath: " + pathExpression }
+    override def toString: String = { "XPath[" + pathExpression  + "]"}
 
     /**
      * Evaluate an XML value against the XPath expression represented by this, and return a list of values.

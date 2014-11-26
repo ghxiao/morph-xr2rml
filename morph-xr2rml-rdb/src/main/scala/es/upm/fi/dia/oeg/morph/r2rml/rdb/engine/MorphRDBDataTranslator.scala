@@ -195,16 +195,16 @@ class MorphRDBDataTranslator(
                      */
                     // In case of a ReferencingObjectMaps, get the object IRI from the subject map of the parent triples map  
                     val refObjects = pom.refObjectMaps.map(refObjectMap => {
-                        val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap)
-                        val parentSubjectMap = parentTriplesMap.subjectMap;
-                        val parentTableAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
-                        val parentSubjects = this.translateData(parentSubjectMap, rows, parentTableAlias, mapXMLDatatype)
+                        val parentTM = this.md.getParentTriplesMap(refObjectMap)
+                        val parentSubjectMap = parentTM.subjectMap;
+                        val parentTabAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
+                        val parentSubjects = this.translateData(parentSubjectMap, rows, parentTabAlias, mapXMLDatatype)
                         parentSubjects
 
-                        /* if (xR2RMLDataTranslator.checkJoinParseCondition(refObjectMap, rows, this.properties.databaseType, parentTableAlias, logicalTable.alias)) {
-                            val parentSubjectMap = parentTriplesMap.subjectMap;
+                        /* if (xR2RMLDataTranslator.checkJoinParseCondition(refObjectMap, rows, this.properties.databaseType, parentTabAlias, logicalTable.alias)) {
+                            val parentSubjectMap = parentTM.subjectMap;
                             //because of the fact that the treatment is row per row, i haven't find yet a way to gather all the subjects that constitute the list
-                            //  val parentSubjects = this.translaterefObjectData(parentSubjectMap, rows, parentTableAlias, mapXMLDatatype,defaultFormt,refTermtype)
+                            //  val parentSubjects = this.translaterefObjectData(parentSubjectMap, rows, parentTabAlias, mapXMLDatatype,defaultFormt,refTermtype)
                             parentSubjects
                         } else {
                             null

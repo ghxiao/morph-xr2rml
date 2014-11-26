@@ -12,7 +12,6 @@ class R2RMLPredicateMap(
     termType: Option[String],
     datatype: Option[String],
     languageTag: Option[String],
-    /** Reference formulation from the logical source */
     refFormulation: String)
 
         extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulation) {
@@ -29,6 +28,13 @@ object R2RMLPredicateMap {
         val termType = coreProperties._2;
         val datatype = coreProperties._3;
         val languageTag = coreProperties._4;
+
+        /**
+         * @TODO
+         * - check that the termType is not an xR2RML term type (collection or container)
+         * - check that there is no nested term map
+         */
+
         val pm = new R2RMLPredicateMap(termMapType, termType, datatype, languageTag, refFormulation);
         pm.parse(rdfNode);
         pm;

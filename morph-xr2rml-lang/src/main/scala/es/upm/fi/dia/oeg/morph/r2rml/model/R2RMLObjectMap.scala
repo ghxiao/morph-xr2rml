@@ -13,7 +13,6 @@ class R2RMLObjectMap(
     datatype: Option[String],
     languageTag: Option[String],
     nestedTermMap: Option[xR2RMLNestedTermMap],
-    /** Reference formulation from the logical source */
     refFormulation: String)
 
         extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation) {

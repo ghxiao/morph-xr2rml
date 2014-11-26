@@ -25,7 +25,7 @@ class JSONPath_PathExpression(
     /** JSON parse context */
     val jsonParseCtx: ParseContext = JsonPath.using(jsonConf)
 
-    override def toString: String = { "JSONPath: " + pathExpression }
+    override def toString: String = { "JSONPath[" + pathExpression + "]"}
 
     val logger = Logger.getLogger(this.getClass().getName())
 

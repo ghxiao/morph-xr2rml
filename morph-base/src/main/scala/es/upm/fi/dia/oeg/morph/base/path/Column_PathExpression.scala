@@ -6,7 +6,7 @@ class Column_PathExpression(
     pathExpression: String)
         extends PathExpression(pathExpression) {
 
-    override def toString: String = { "Column: " + pathExpression }
+    override def toString: String = { "Column[" + pathExpression + "]" }
 
     def evaluate(value: String): List[Object] = {
         throw new Exception("Path constructor Column() only allowed as first path of a mixed syntax path")

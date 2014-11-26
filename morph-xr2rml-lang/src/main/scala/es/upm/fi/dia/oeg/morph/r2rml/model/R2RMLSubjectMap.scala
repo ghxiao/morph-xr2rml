@@ -40,8 +40,9 @@ object R2RMLSubjectMap {
         val languageTag = coreProperties._4;
 
         /**
-         * @TODO in xR2RML: should we raise an error in case of a nested term map?
-         * It is allowed by the spec but is it really clever?
+         * @TODO
+         * - check that the termType is not an xR2RML term type (collection or container)
+         * - check that there is no nested term map
          */
 
         // List the optional rr:class properties of the subject map
