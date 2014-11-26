@@ -1,9 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
+import scala.collection.JavaConversions.asJavaIterator
+
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.Literal
+import com.hp.hpl.jena.rdf.model.RDFNode
 
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
@@ -12,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -68,7 +72,7 @@ abstract class MorphBaseDataTranslator(
 
             val dataT: String = datatype.getOrElse(null)
             val valueConverted =
-                if (dataT != null) {	// the datatype may be Some(null), so keep this test here
+                if (dataT != null) { // the datatype may be Some(null), so keep this test here
                     if (dataT.equals(XSDDatatype.XSDdateTime.getURI().toString()))
                         this.translateDateTime(encodedValue);
                     else if (dataT.equals(XSDDatatype.XSDboolean.getURI().toString()))
@@ -87,7 +91,7 @@ abstract class MorphBaseDataTranslator(
                     else
                         this.materializer.model.createLiteral(valueConverted);
                 }
-            
+
             result
         } catch {
             case e: Exception => {
@@ -95,6 +99,72 @@ abstract class MorphBaseDataTranslator(
                 throw e
             }
         }
+    }
+
+    /**
+     * Convert a list of values (string, integer, boolean, etc) into an RDF collection or container of literals
+     */
+    def createCollection(termType: String, values: List[Object], datatype: Option[String], languageTag: Option[String]): RDFNode = {
+
+        val translated: RDFNode = termType match {
+            case xR2RML_Constants.xR2RML_RDFLIST_URI => {
+                val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, languageTag))
+                val node = this.materializer.model.createList(valuesAsRdfNodes.iterator)
+                node
+            }
+            case xR2RML_Constants.xR2RML_RDFBAG_URI => {
+                var list = this.materializer.model.createBag()
+                for (value <- values)
+                    list.add(this.createLiteral(value, datatype, languageTag))
+                list
+            }
+            case xR2RML_Constants.xR2RML_RDFALT_URI => {
+                val list = this.materializer.model.createAlt()
+                for (value <- values)
+                    list.add(this.createLiteral(value, datatype, languageTag))
+                list
+            }
+            case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
+                val list = this.materializer.model.createSeq()
+                for (value <- values)
+                    list.add(this.createLiteral(value, datatype, languageTag))
+                list
+            }
+            case _ => { throw new Exception("Unkown term type: " + termType) }
+        }
+        translated
+    }
+
+    /**
+     * Convert a list of RDFNodes into an RDF collection or container
+     */
+    def createCollection(termType: String, values: List[RDFNode]): RDFNode = {
+
+        val translated: RDFNode = termType match {
+            case xR2RML_Constants.xR2RML_RDFLIST_URI => {
+                this.materializer.model.createList(values.iterator)
+            }
+            case xR2RML_Constants.xR2RML_RDFBAG_URI => {
+                var list = this.materializer.model.createBag()
+                for (value <- values)
+                    list.add(value)
+                list
+            }
+            case xR2RML_Constants.xR2RML_RDFALT_URI => {
+                val list = this.materializer.model.createAlt()
+                for (value <- values)
+                    list.add(value)
+                list
+            }
+            case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
+                val list = this.materializer.model.createSeq()
+                for (value <- values)
+                    list.add(value)
+                list
+            }
+            case _ => { throw new Exception("Unkown term type: " + termType) }
+        }
+        translated
     }
 
     protected def translateDateTime(value: String): String = {

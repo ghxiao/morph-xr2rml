@@ -58,10 +58,16 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
             case _ => { throw new Exception("Unknown logical table/source type: " + logicalSrc) }
         }
 
-        val mongoQuery = MongoUtils.parseQueryString(logicalSrcQuery)
-
-        logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
-        new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
+        val query = dbType match {
+            case Constants.DATABASE_MONGODB => {
+                val mongoQuery = MongoUtils.parseQueryString(logicalSrcQuery)
+                logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
+                new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
+            }
+            case _ =>
+                throw new Exception("Database type not supported: " + dbType)
+        }
+        query
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {

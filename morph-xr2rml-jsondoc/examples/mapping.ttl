@@ -16,48 +16,64 @@
     	rr:template "http://example.org/student/{$._id.*}";
 		rr:class ex:Student;
     ];
+  	# Example with boolean element
+    rr:predicateObjectMap [
+    	rr:predicate ex:isActive;
+    	rr:objectMap [ xrr:reference "$.active"; ];
+    ];
+   	# Example with integer element
+    rr:predicateObjectMap [
+    	rr:predicate ex:hasId;
+    	rr:objectMap [ xrr:reference "$.id"; ];
+    ];
+   	# Example with multiple terms and language tag
     rr:predicateObjectMap [
     	rr:predicate ex:activity;
-    	rr:objectMap [ 
-    	    xrr:reference "$.Hobbies.*.hobby";
-    	    rr:language "en";
-    	];
+    	rr:objectMap [ xrr:reference "$.Hobbies.*.hobby"; rr:language "en"; ];
     ];
+   	# Example with multiple terms computed from a template and assembled as an RDF list
     rr:predicateObjectMap [
     	rr:predicate ex:names;
     	rr:objectMap [
     		rr:template "{$.FullName.FirstNames.*} {$.FullName.LastName}";
     		rr:termType xrr:RdfList;
 		];
-	];
-    rr:predicateObjectMap [
-    	rr:predicate ex:isActive;
-    	rr:objectMap [ 
-    	    xrr:reference "$.active";
-    	];
+	].
+
+    
+<#Movies>
+    a rr:TriplesMap;
+    xrr:logicalSource [
+        xrr:query "db.movies.find( { movies: { $exists: true} } )";
+        xrr:referenceFormulation ql:JSONPath;
+        rml:iterator "$.movies.*";
     ];
-    rr:predicateObjectMap [
-    	rr:predicate ex:hasId;
-    	rr:objectMap [ 
-    	    xrr:reference "$.id";
-    	];
+    rr:subjectMap [ 
+        rr:template "http://example.org/movies/{$.title}"; 
+		rr:class ex:Movie;
     ].
 
 <#Directors>
     a rr:TriplesMap;
-	xrr:logicalSource [
+    xrr:logicalSource [
         xrr:query "db.movies.find( { directors: { $exists: true} } )";
         xrr:referenceFormulation ql:JSONPath;
         rml:iterator "$.directors.*";
     ];
-    rr:subjectMap [
-        rr:template "http://example.org/director/{$.name}";
+    rr:subjectMap [ rr:template "http://example.org/director/{$.name}"; ];
+    rr:predicateObjectMap [
+        rr:predicate ex:name;
+        rr:objectMap [ xrr:reference "$.name" ];
     ];
     rr:predicateObjectMap [
         rr:predicate ex:directed;
-        rr:objectMap [ 
-            xrr:reference "$.movies.*"; 
-            # rr:termType xrr:RdfList;
+        rr:objectMap [
+            rr:parentTriplesMap <#Movies>;
+            rr:joinCondition [
+                rr:child "$.movies.*";
+                rr:parent "$.title";
+            ];
+            rr:termType xrr:RdfList;
         ];
     ].
-    
+   

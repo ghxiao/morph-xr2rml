@@ -2,16 +2,12 @@ package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
 import java.sql.ResultSet
 
-import scala.collection.JavaConversions._
-
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
-import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
-import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary.RDF
 
 import Zql.ZConstant
@@ -23,29 +19,20 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
-import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
 
 class MorphJsondocDataTranslator(
@@ -57,6 +44,8 @@ class MorphJsondocDataTranslator(
 
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
         with MorphR2RMLElementVisitor {
+
+    private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
@@ -75,14 +64,14 @@ class MorphJsondocDataTranslator(
     }
 
     /**
-     * Query the database and build triples from the result. For each row of the result set,
+     * Query the database and build triples from the result. For each document of the result set:
      * (1) create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,
      * (2) loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
      * a list of resources from the subject map of a parent object map in case there are referencing object maps,
      * and a list of resources representing target graphs mentioned in the predicate-object map.
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
-    private def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
+    private def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
 
         logger.info("Starting translating data into RDF instances...");
         if (sm == null) {
@@ -91,24 +80,12 @@ class MorphJsondocDataTranslator(
             throw new Exception(errorMessage);
         }
 
-        // Execute the query against the database, choose the execution method depending on the db type
-        val resultSet: Iterator[String] = this.connection.dbType match {
-            case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query) }
-            case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
-        }
-
-        // Apply the iterator to the result set, this creates a new result set
-        val resultSetL = resultSet.toList
-        val resultSetIter =
-            if (logicalTable.docIterator.isDefined) {
-                val jPath = JSONPath_PathExpression.parseRaw(logicalTable.docIterator.get)
-                resultSetL.flatMap(result => jPath.evaluate(result).map(value => value.toString))
-            } else resultSetL
-        logger.trace("Query returned " + resultSetL.size + " results, " + resultSetIter.size + " results after applying the iterator.")
+        // Execute the query against the database and apply the iterator
+        val resultSet = executeQueryAndIteraotr(query, logicalSrc.docIterator)
 
         // Main loop: iterate and process each result document of the result set
         var i = 0;
-        for (document <- resultSetIter) {
+        for (document <- resultSet) {
             i = i + 1;
             logger.debug("Generating triples for document " + i + ": " + document)
 
@@ -157,33 +134,55 @@ class MorphJsondocDataTranslator(
                 // Internal loop on each predicate-object map
                 poms.foreach(pom => {
 
-                    // Make a list of resources for the predicate maps of this predicate-object map
-                    val predicates = pom.predicateMaps.map(predicateMap => {
-                        this.translateData(predicateMap, document)
-                    });
+                    // ----- Make a list of resources for the predicate maps of this predicate-object map
+                    val predicates = pom.predicateMaps.map(predicateMap => { this.translateData(predicateMap, document) });
                     logger.debug("Document " + i + " predicates: " + predicates)
 
-                    // Make a list of resources for the object maps of this predicate-object map
-                    val objects = pom.objectMaps.map(objectMap => {
-                        this.translateData(objectMap, document)
-                    });
+                    // ------ Make a list of resources for the object maps of this predicate-object map
+                    val objects = pom.objectMaps.map(objectMap => { this.translateData(objectMap, document) });
                     logger.debug("Document " + i + " objects: " + objects)
 
-                    /* ####################################################################################
-                     * Need to update treatment of ReferencingObjectMaps in xR2RML context
-                     * ####################################################################################
-                     */
-                    // In case of a ReferencingObjectMaps, get the object IRI from the subject map of the parent triples map  
+                    // ----- For each RefObjectMap get the IRIs from the subject map of the parent triples map
                     val refObjects = pom.refObjectMaps.map(refObjectMap => {
-                        val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap)
-                        val parentSubjectMap = parentTriplesMap.subjectMap;
-                        val parentSubjects = this.translateData(parentSubjectMap, document)
-                        parentSubjects
+
+                        val parentTM = this.md.getParentTriplesMap(refObjectMap)
+
+                        // Compute a list of subject IRIs for each of the join conditions, that we will intersect later
+                        val parentSubjectsCandidates: Set[List[RDFNode]] = for (joinCond <- refObjectMap.getJoinConditions()) yield {
+
+                            // Evaluate the child reference on the current document (of the child triples map)
+                            val childMsp = MixedSyntaxPath(joinCond.childRef, parentTM.subjectMap.refFormulaion)
+                            val childValues: List[Object] = childMsp.evaluate(document)
+
+                            // Evaluate the parent reference on the results of the parent triples map logical source
+                            val parentResults = evalMixedSyntaxPathOnTriplesMap(parentTM, joinCond.parentRef)
+
+                            // Make the actual join between the child values and parent values
+                            val parentSubjects = parentResults.flatMap(parentResult => {
+                                // For each document returned by the parent triples map (named parent document),
+                                // if at least one of the child values is in the current parent document values, 
+                                // then generate an RDF term for the subject of the current parent document.
+                                if (!childValues.intersect(parentResult._2).isEmpty)
+                                    Some(this.translateData(parentTM.subjectMap, parentResult._1))
+                                else None
+                            }).flatten
+                            parentSubjects
+                        }
+
+                        // There is a logical AND between several join conditions of the same RefObjectMap 
+                        // => make the intersection between all subjects generated by all join conditions
+                        val finalParentSubjects = MorphJsondocDataTranslator.intersectMultipleSets(parentSubjectsCandidates)
+
+                        // Optionally convert the result to an RDF collection or container
+                        if (refObjectMap.isR2RMLTermType)
+                            finalParentSubjects
+                        else 
+                            List(createCollection(refObjectMap.termType.get, finalParentSubjects))
                     })
                     if (!refObjects.isEmpty)
-                        logger.trace("Document " + i + " refObjects: " + refObjects)
+                        logger.debug("Document " + i + " refObjects: " + refObjects)
 
-                    // Create the list of resources representing target graphs mentioned in the predicate-object map
+                    // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
                     val pogm = pom.graphMaps;
                     val predicateObjectGraphs = pogm.map(pogmElement => {
                         val poGraphValue = this.translateData(pogmElement, document)
@@ -192,7 +191,7 @@ class MorphJsondocDataTranslator(
                     if (!predicateObjectGraphs.isEmpty)
                         logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
-                    // Finally, combine all the terms to generate triples in the target graphs or default graph
+                    // ----- Finally, combine all the terms to generate triples in the target graphs or default graph
                     if (sm.graphMaps.isEmpty && pogm.isEmpty) {
                         predicates.foreach(predicatesElement => {
                             objects.foreach(objectsElement => {
@@ -211,7 +210,7 @@ class MorphJsondocDataTranslator(
                                     for (predEl <- predicatesElement) {
                                         for (obj <- refObjectsElement) {
                                             if (obj != null) {
-                                                this.materializer.materializeQuad(sub, predEl, obj, null)
+                                                this.materializer.materializeQuad(sub, predEl, obj.asInstanceOf[RDFNode], null)
                                                 logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
                                             }
                                         }
@@ -244,7 +243,7 @@ class MorphJsondocDataTranslator(
                                             for (obj <- refObjectsElement) {
                                                 for (un <- unionGraph) {
                                                     if (obj != null) {
-                                                        this.materializer.materializeQuad(sub, predEl, obj, un)
+                                                        this.materializer.materializeQuad(sub, predEl, obj.asInstanceOf[RDFNode], un)
                                                         logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
                                                     }
                                                 }
@@ -317,36 +316,14 @@ class MorphJsondocDataTranslator(
                     }
                 })
             } else {
-
                 // If the term type is one of xR2RML collection/container term types,
                 // then create one single RDF term that gathers all the values
-                val translated: RDFNode = termMap.inferTermType match {
-                    case xR2RML_Constants.xR2RML_RDFLIST_URI => {
-                        val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, termMap.languageTag))
-                        val node = this.materializer.model.createList(valuesAsRdfNodes.iterator)
-                        node
-                    }
-                    case xR2RML_Constants.xR2RML_RDFBAG_URI => {
-                        var list = this.materializer.model.createBag()
-                        for (value <- values)
-                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
-                        list
-                    }
-                    case xR2RML_Constants.xR2RML_RDFALT_URI => {
-                        val list = this.materializer.model.createAlt()
-                        for (value <- values)
-                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
-                        list
-                    }
-                    case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
-                        val list = this.materializer.model.createSeq()
-                        for (value <- values)
-                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
-                        list
-                    }
-                    case _ => { throw new Exception("Unkown term type: " + termMap.inferTermType) }
-                }
-                List(translated)
+                /** 
+                 * @TODO Implementation of NestTermMaps.
+                 * Here we pass the datatype and languageTag for the elements of the collection, but this is incorrect:
+                 * they must be given by a nestedTermType of by inferred defaults. 
+                 */
+                List(createCollection(termMap.inferTermType, values, datatype, termMap.languageTag))
             }
 
         logger.trace("    Translated values [" + values + "] into [" + result + "]")
@@ -354,9 +331,9 @@ class MorphJsondocDataTranslator(
     }
 
     /**
-     * Apply a term map to the current document of the result set, and generate a list of RDF terms:
-     * for each element reference in the term map (reference or template), read values from the current document,
-     * translate them into RDF terms.
+     * Apply a term map to a document of the result set, and generate a list of RDF terms:
+     * for each element reference in the term map (reference or template), read values from the document,
+     * translate those values into RDF terms.
      */
     private def translateData(termMap: R2RMLTermMap, jsonDoc: String): List[RDFNode] = {
 
@@ -377,7 +354,7 @@ class MorphJsondocDataTranslator(
             case Constants.MorphTermMapType.ReferenceTermMap => {
 
                 // Evaluate the value against the mixed syntax path
-                val msPath = termMap.getMixedSyntaxPaths()(0)
+                val msPath = termMap.getMixedSyntaxPaths()(0) // '(0)' because in a reference there is only one mixed syntax path
                 val values: List[Object] = msPath.evaluate(jsonDoc)
 
                 // Generate RDF terms from the values resulting from the evaluation
@@ -406,8 +383,8 @@ class MorphJsondocDataTranslator(
                     null
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
-                    val templates = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
-                    this.translateMultipleValues(termMap, templates, termMap.datatype);
+                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
+                    this.translateMultipleValues(termMap, tplResults, termMap.datatype);
                 }
             }
 
@@ -512,7 +489,77 @@ class MorphJsondocDataTranslator(
 
             case _ => null
         }
+    }
 
+    /**
+     * Execute a query against the database and apply an rml:iterator on the results.
+     *
+     * Results of the query are saved to an hash map, to avoid doing the same query several times
+     * in case we need it again later. This is used to evaluate queries of triples maps and reuse
+     * results for joins in case of reference object map.
+     *
+     * Major drawback: memory consumption, this is not appropriate for very big databases.
+     */
+    private def executeQueryAndIteraotr(query: GenericQuery, logSrcIterator: Option[String]): List[String] = {
+
+        // A query is simply and uniquely identified by its concrete string value
+        val queryMapId = query.concreteQuery.toString
+        val queryResult =
+            if (executedQueries.contains(queryMapId)) {
+                executedQueries(queryMapId)
+            } else {
+                // Execute the query against the database, choose the execution method depending on the db type
+                val resultSet: List[String] = this.connection.dbType match {
+                    case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query).toList }
+                    case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
+                }
+
+                // Save the result of this query in case it is asked again later
+                executedQueries += (queryMapId -> resultSet)
+                resultSet
+            }
+
+        // Apply the iterator to the result set, this creates a new result set
+        val queryResultIter =
+            if (logSrcIterator.isDefined) {
+                val jPath = JSONPath_PathExpression.parseRaw(logSrcIterator.get)
+                queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
+            } else queryResult
+
+        logger.trace("Query returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
+        queryResultIter
+    }
+
+    /**
+     * This method retrieves the data corresponding to a triples map, then
+     * it evaluates an expression (mixed syntax path or a simple JSONPath expression) on
+     * each result documents.
+     * It is used to evaluate the parent reference of a join condition on the parent triples map.
+     *
+     * @param tm triples map
+     * @param reference mixed syntax path expression to evaluate on the results of the triples map
+     * @return a list of couples (result document, evaluation of the expression on that document).
+     * The result document is one of the results of executing the logical source query.
+     * The evaluation of each of these documents can return more than one value, thus the 2nd
+     * member of the couple is a list.
+     */
+    private def evalMixedSyntaxPathOnTriplesMap(tm: R2RMLTriplesMap, reference: String): List[(String, List[Object])] = {
+
+        // Get the query corresponding to that triples map
+        val query = this.unfolder.unfoldConceptMapping(tm);
+
+        // Execute the query against the database
+        val tmResultSet = executeQueryAndIteraotr(query, tm.logicalSource.docIterator)
+
+        // Create the mixed syntax path corresponding to the reference
+        val msp = MixedSyntaxPath(reference, tm.subjectMap.refFormulaion)
+
+        // Evaluate each result of the triples map against the mixed syntax path
+        val results = tmResultSet.map(tmResult => {
+            (tmResult, msp.evaluate(tmResult))
+        })
+
+        results
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): Object = {
@@ -537,5 +584,17 @@ class MorphJsondocDataTranslator(
 
     def visit(triplesMap: R2RMLTriplesMap): Object = {
         throw new Exception("Unsopported method.")
+    }
+}
+
+object MorphJsondocDataTranslator {
+
+    /**
+     * Recursive method to compute the intersection of multiple sets
+     */
+    def intersectMultipleSets(sets: Set[List[RDFNode]]): List[RDFNode] = {
+        if (sets.size > 1)
+            sets.head.intersect(intersectMultipleSets(sets.tail))
+        else sets.head
     }
 }

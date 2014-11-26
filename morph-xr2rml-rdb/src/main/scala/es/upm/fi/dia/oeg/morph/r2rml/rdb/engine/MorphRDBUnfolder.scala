@@ -314,7 +314,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                          *  we have to make the join afterwards
                          */
                         for (join <- joinConditions) {
-                            var selectItem = MorphSQLSelectItem(join.childColumnName, logicalTableAlias, dbType, null);
+                            var selectItem = MorphSQLSelectItem(join.childRef, logicalTableAlias, dbType, null);
                             if (selectItem.getAlias() == null) {
                                 val alias = selectItem.getTable() + "_" + selectItem.getColumn();
                                 selectItem.setAlias(alias);
@@ -327,7 +327,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                                 }
                             }
                             result.addSelectItem(selectItem);
-                            selectItem = MorphSQLSelectItem(join.parentColumnName, joinQueryAlias, dbType, null);
+                            selectItem = MorphSQLSelectItem(join.parentRef, joinQueryAlias, dbType, null);
                             if (selectItem.getAlias() == null) {
                                 val alias = selectItem.getTable() + "_" + selectItem.getColumn();
                                 selectItem.setAlias(alias);
@@ -373,14 +373,14 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * Entry point of the unfolder in the data materialization case
      */
     override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
-        
+
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)
         val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
 
         logger.info("Query for triples map " + cm.id + ": " + resultAux.print(true).replaceAll("\n", " "))
-        
+
         new GenericQuery(Constants.DatabaseType.Relational, resultAux)
     }
 
@@ -426,12 +426,12 @@ object MorphRDBUnfolder {
 
         val joinConditionExpressions = joinConditions.map(
             joinCondition => {
-                var childColumnName = joinCondition.childColumnName
+                var childColumnName = joinCondition.childRef
                 childColumnName = childColumnName.replaceAll("\"", enclosedCharacter);
                 childColumnName = childTableAlias + "." + childColumnName;
                 val childColumn = new ZConstant(childColumnName, ZConstant.COLUMNNAME);
 
-                var parentColumnName = joinCondition.parentColumnName;
+                var parentColumnName = joinCondition.parentRef;
                 parentColumnName = parentColumnName.replaceAll("\"", enclosedCharacter);
                 parentColumnName = joinQueryAlias + "." + parentColumnName;
                 val parentColumn = new ZConstant(parentColumnName, ZConstant.COLUMNNAME);
