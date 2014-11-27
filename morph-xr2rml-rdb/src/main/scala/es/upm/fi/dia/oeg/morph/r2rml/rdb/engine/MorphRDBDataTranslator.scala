@@ -125,18 +125,16 @@ class MorphRDBDataTranslator(
             logger.debug("Generating triples for row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
                 // Create the subject resource
-                val subject = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
-                if (subject == null) { throw new Exception("null value in the subject triple") }
-                logger.debug("Row " + i + " subjects: " + subject)
+                val subjects = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
+                if (subjects == null) { throw new Exception("null value in the subject triple") }
+                logger.debug("Row " + i + " subjects: " + subjects)
 
                 // Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.map(sgmElement => {
                     val subjectGraphValue = this.translateData(sgmElement, rows, logicalTable.alias, mapXMLDatatype)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
-                        case Constants.R2RML_IRI_URI => {
-                            subjectGraphValue
-                        }
+                        case Constants.R2RML_IRI_URI => { subjectGraphValue }
                         case _ => {
                             val errorMessage = "GraphMap's TermType is not valid: " + graphMapTermType;
                             logger.warn(errorMessage);
@@ -152,17 +150,13 @@ class MorphRDBDataTranslator(
                 sm.classURIs.foreach(classURI => {
                     val classRes = this.materializer.model.createResource(classURI);
                     if (subjectGraphs == null || subjectGraphs.isEmpty) {
-                        for (sub <- subject) {
+                        for (sub <- subjects)
                             this.materializer.materializeQuad(sub, RDF.`type`, classRes, null);
-                            this.materializer.outputStream.flush();
-                        }
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
-                            for (sub <- subject) {
-                                for (subG <- subjectGraph) {
+                            for (sub <- subjects)
+                                for (subG <- subjectGraph)
                                     this.materializer.materializeQuad(sub, RDF.`type`, classRes, subG);
-                                }
-                            }
                         });
                     }
                 });
@@ -174,13 +168,13 @@ class MorphRDBDataTranslator(
                     else { pom.getAlias() }
 
                     // ----- Make a list of resources for the predicate maps of this predicate-object map
-                    val predicates = pom.predicateMaps.map(predicateMap => {
+                    val predicates = pom.predicateMaps.flatMap(predicateMap => {
                         this.translateData(predicateMap, rows, logicalTable.alias, mapXMLDatatype)
                     });
                     logger.debug("Row " + i + " predicates: " + predicates)
 
                     // ----- Make a list of resources for the object maps of this predicate-object map
-                    val objects = pom.objectMaps.map(objectMap => {
+                    val objects = pom.objectMaps.flatMap(objectMap => {
                         this.translateData(objectMap, rows, alias, mapXMLDatatype)
                     });
                     logger.debug("Row " + i + " objects: " + objects)
@@ -191,7 +185,7 @@ class MorphRDBDataTranslator(
                      * Need to update treatment of ReferencingObjectMaps in xR2RML context
                      * ####################################################################################
                      */
-                    val refObjects = pom.refObjectMaps.map(refObjectMap => {
+                    val refObjects = pom.refObjectMaps.flatMap(refObjectMap => {
                         val parentTM = this.md.getParentTriplesMap(refObjectMap)
                         val parentSubjectMap = parentTM.subjectMap;
                         val parentTabAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
@@ -221,27 +215,19 @@ class MorphRDBDataTranslator(
 
                     // Finally, combine all the terms to generate triples in the target graphs or default graph
                     if (sm.graphMaps.isEmpty && pogm.isEmpty) {
-                        predicates.foreach(predicatesElement => {
-                            objects.foreach(objectsElement => {
-                                for (sub <- subject) {
-                                    for (predEl <- predicatesElement) {
-                                        for (obj <- objectsElement) {
-                                            this.materializer.materializeQuad(sub, predEl, obj, null)
-                                            logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                        }
-                                    }
+                        predicates.foreach(predEl => {
+                            objects.foreach(obj => {
+                                for (sub <- subjects) {
+                                    this.materializer.materializeQuad(sub, predEl, obj, null)
+                                    logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
                                 }
                             });
 
-                            refObjects.foreach(refObjectsElement => {
-                                for (sub <- subject) {
-                                    for (predEl <- predicatesElement) {
-                                        for (obj <- refObjectsElement) {
-                                            if (obj != null) {
-                                                this.materializer.materializeQuad(sub, predEl, obj, null)
-                                                logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                            }
-                                        }
+                            refObjects.foreach(obj => {
+                                for (sub <- subjects) {
+                                    if (obj != null) {
+                                        this.materializer.materializeQuad(sub, predEl, obj, null)
+                                        logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
                                     }
                                 }
                             });
@@ -249,32 +235,24 @@ class MorphRDBDataTranslator(
                     } else {
                         val unionGraphs = subjectGraphs ++ predicateObjectGraphs
                         unionGraphs.foreach(unionGraph => {
-                            predicates.foreach(predicatesElement => {
-                                objects.foreach(objectsElement => {
+                            predicates.foreach(predEl => {
+                                objects.foreach(obj => {
                                     unionGraphs.foreach(unionGraph => {
-                                        for (sub <- subject) {
-                                            for (predEl <- predicatesElement) {
-                                                for (obj <- objectsElement) {
-                                                    for (un <- unionGraph) {
-                                                        this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                        logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                                    }
-                                                }
+                                        for (sub <- subjects) {
+                                            for (un <- unionGraph) {
+                                                this.materializer.materializeQuad(sub, predEl, obj, un)
+                                                logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
                                             }
                                         }
                                     });
                                 });
 
-                                refObjects.foreach(refObjectsElement => {
-                                    for (sub <- subject) {
-                                        for (predEl <- predicatesElement) {
-                                            for (obj <- refObjectsElement) {
-                                                for (un <- unionGraph) {
-                                                    if (obj != null) {
-                                                        this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                        logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                                    }
-                                                }
+                                refObjects.foreach(obj => {
+                                    for (sub <- subjects) {
+                                        for (un <- unionGraph) {
+                                            if (obj != null) {
+                                                this.materializer.materializeQuad(sub, predEl, obj, un)
+                                                logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
                                             }
                                         }
                                     }
@@ -282,7 +260,6 @@ class MorphRDBDataTranslator(
                             });
                         })
                     }
-
                 });
 
             } catch {
