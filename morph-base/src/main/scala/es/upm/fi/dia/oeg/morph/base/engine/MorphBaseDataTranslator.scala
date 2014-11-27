@@ -1,13 +1,10 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import scala.collection.JavaConversions.asJavaIterator
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
-
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
@@ -16,6 +13,8 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import com.hp.hpl.jena.rdf.model.AnonId
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -30,12 +29,80 @@ abstract class MorphBaseDataTranslator(
 
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def translateData(triplesMap: MorphBaseClassMapping);
+    /**
+     * Generate triples in the current model of the data materializer, based
+     * on the current triples map: this consists in calculating the query, running it
+     * against the database, translating results in RDF terms and making the triples.
+     */
+    def generateRDFTriples(triplesMap: MorphBaseClassMapping): Unit
 
     /**
-     * @param query may be either an iQuery in the RDB case, or a simple string in case of non row-based nor SQL based databases
+     * Create a list of one RDF term (as JENA resources) according to the term type from a value.
+     * Although there will be always one RDF node, the method still returns a list;
+     * this is a convenience as, in xR2RML, all references are potentially multi-valued.
+     *
+     * @param termType term type of the current term map
+     * @param dbValue value read from the db, this may be a string, integer, boolean etc.,
+     * @param datatype URI of the data type
+     * @param language language tag
+     * @return a list of one RDF node (cannot be empty)
      */
-    def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery);
+    protected def translateSingleValue(termType: String, dbValue: Object, datatype: Option[String], language: Option[String]): List[RDFNode] = {
+        translateMultipleValues(termType, List(dbValue), datatype, language)
+    }
+
+    /**
+     * Create a list of RDF terms (as JENA resources) according to the term type from a list of values.
+     * In case of RDF collection or container, the list returned contains one RDF node that
+     * is the head of the collection or container.
+     *
+     * @param termType term type of the current term map
+     * @param values list of values: these may be strings, integers, booleans etc.,
+     * @param datatype URI of the data type
+     * @param language language tag
+     * @return a list of RDF nodes, possibly empty
+     */
+    protected def translateMultipleValues(termType: String, values: List[Object], datatype: Option[String], language: Option[String]): List[RDFNode] = {
+
+        val result: List[RDFNode] =
+            // If the term type is one of R2RML term types then create one RDF term for each of the values
+            if (termType == Constants.R2RML_IRI_URI ||
+                termType == Constants.R2RML_LITERAL_URI ||
+                termType == Constants.R2RML_BLANKNODE_URI) {
+                values.flatMap(value => {
+                    if (value == null) // case when the database returned NULL
+                        None
+                    else {
+                        val node = termType match {
+                            case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
+                            case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, language)
+                            case Constants.R2RML_BLANKNODE_URI => {
+                                var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
+                                this.materializer.model.createResource(new AnonId(rep))
+                            }
+                        }
+                        Some(node)
+                    }
+                })
+            } else {
+                // If the term type is one of xR2RML collection/container term types,
+                // then create one single RDF term that gathers all the values
+                /**
+                 * @TODO Implementation of NestTermMaps.
+                 * Here we pass the datatype and languageTag for the elements of the collection, but this is incorrect:
+                 * they must be given by a nestedTermType of by inferred defaults.
+                 */
+                val res = createCollection(termType, values, datatype, language)
+                if (res.isDefined)
+                    List(res.get)
+                else
+                    // If the res is empty, then do not return a list with one empty list inside, but just an empty list
+                    List()
+            }
+
+        logger.trace("    Translated values [" + values + "] into [" + result + "]")
+        result
+    }
 
     /**
      *  Create a JENA resource with an IRI after URL-encoding the string
@@ -102,9 +169,13 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Convert a list of values (string, integer, boolean, etc) into an RDF collection or container of literals
+     * Convert a list of values (string, integer, boolean, etc) into an RDF collection or container of literals.
+     * If the list of values is empty, return None.
      */
-    def createCollection(termType: String, values: List[Object], datatype: Option[String], languageTag: Option[String]): RDFNode = {
+    def createCollection(termType: String, values: List[Object], datatype: Option[String], languageTag: Option[String]): Option[RDFNode] = {
+
+        if (values.isEmpty)
+            return None
 
         val translated: RDFNode = termType match {
             case xR2RML_Constants.xR2RML_RDFLIST_URI => {
@@ -132,7 +203,7 @@ abstract class MorphBaseDataTranslator(
             }
             case _ => { throw new Exception("Unkown term type: " + termType) }
         }
-        translated
+        Some(translated)
     }
 
     /**

@@ -45,17 +45,15 @@ class MorphJsondocDataTranslator(
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
         with MorphR2RMLElementVisitor {
 
+    /** Store already executed queries do avoid running them several times */
     private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
-    override def translateData(triplesMap: MorphBaseClassMapping): Unit = {
-        val query = this.unfolder.unfoldConceptMapping(triplesMap);
-        this.generateRDFTriples(triplesMap, query);
-    }
-
-    override def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery) = {
+    override def generateRDFTriples(cm: MorphBaseClassMapping) = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
+
+        val query = this.unfolder.unfoldConceptMapping(triplesMap);
         val logicalTable = triplesMap.logicalSource;
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
@@ -176,7 +174,7 @@ class MorphJsondocDataTranslator(
                         // Optionally convert the result to an RDF collection or container
                         if (refObjectMap.isR2RMLTermType)
                             finalParentSubjects
-                        else 
+                        else
                             List(createCollection(refObjectMap.termType.get, finalParentSubjects))
                     })
                     if (!refObjects.isEmpty)
@@ -269,75 +267,13 @@ class MorphJsondocDataTranslator(
     }
 
     /**
-     * Create a list of one RDF term (as JENA resource) from one value read from the database,
-     * according to the term type specified in the term map.
-     * Although there will be always one RDF node, the method still returns a list;
-     * this is a convenience as, in xR2RML, all references are potentially multi-valued.
-     *
-     * @param termMap current term map
-     * @param dbValue value to translate, this may be a string, integer, boolean etc.
-     * @param datatype URI of the data type
-     * @return a list of RDF nodes
-     */
-    private def translateSingleValue(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
-        translateMultipleValues(termMap, List(dbValue), datatype)
-    }
-
-    /**
-     * Create a list of RDF terms (as JENA resources) from a list of values
-     * according to the term type specified in the term map.
-     * In case of RDF collection or container, the list returned contains one RDF node that
-     * is the head of the collection or container.
-     *
-     * @param termMap current term map
-     * @param values list of values: these may be strings, integers, booleans etc.,
-     * @param datatype URI of the data type
-     * @return a list of RDF nodes
-     */
-    private def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
-
-        val result: List[RDFNode] =
-            // If the term type is one of R2RML term types then create one RDF term for each of the values
-            if (termMap.inferTermType == Constants.R2RML_IRI_URI ||
-                termMap.inferTermType == Constants.R2RML_LITERAL_URI ||
-                termMap.inferTermType == Constants.R2RML_BLANKNODE_URI) {
-                values.map(value => {
-                    if (value == null) // case when the database returned NULL
-                        this.createLiteral("", datatype, termMap.languageTag)
-                    else {
-                        termMap.inferTermType match {
-                            case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
-                            case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, termMap.languageTag)
-                            case Constants.R2RML_BLANKNODE_URI => {
-                                var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
-                                this.materializer.model.createResource(new AnonId(rep))
-                            }
-                        }
-                    }
-                })
-            } else {
-                // If the term type is one of xR2RML collection/container term types,
-                // then create one single RDF term that gathers all the values
-                /** 
-                 * @TODO Implementation of NestTermMaps.
-                 * Here we pass the datatype and languageTag for the elements of the collection, but this is incorrect:
-                 * they must be given by a nestedTermType of by inferred defaults. 
-                 */
-                List(createCollection(termMap.inferTermType, values, datatype, termMap.languageTag))
-            }
-
-        logger.trace("    Translated values [" + values + "] into [" + result + "]")
-        result
-    }
-
-    /**
      * Apply a term map to a document of the result set, and generate a list of RDF terms:
      * for each element reference in the term map (reference or template), read values from the document,
      * translate those values into RDF terms.
      */
     private def translateData(termMap: R2RMLTermMap, jsonDoc: String): List[RDFNode] = {
 
-        var result: List[RDFNode] = List(null);
+        var result: List[RDFNode] = List();
 
         val dbType = this.properties.databaseType;
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
@@ -347,7 +283,7 @@ class MorphJsondocDataTranslator(
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                this.translateSingleValue(termMap, termMap.constantValue, termMap.datatype)
+                this.translateSingleValue(termMap.inferTermType, termMap.constantValue, termMap.datatype, termMap.languageTag)
             }
 
             // --- Reference-valued term map
@@ -358,7 +294,7 @@ class MorphJsondocDataTranslator(
                 val values: List[Object] = msPath.evaluate(jsonDoc)
 
                 // Generate RDF terms from the values resulting from the evaluation
-                this.translateMultipleValues(termMap, values, termMap.datatype);
+                this.translateMultipleValues(termMap.inferTermType, values, termMap.datatype, termMap.languageTag)
             }
 
             // --- Template-valued term map
@@ -384,7 +320,7 @@ class MorphJsondocDataTranslator(
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
-                    this.translateMultipleValues(termMap, tplResults, termMap.datatype);
+                    this.translateMultipleValues(termMap.inferTermType, tplResults, termMap.datatype, termMap.languageTag)
                 }
             }
 

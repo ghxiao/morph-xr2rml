@@ -115,11 +115,8 @@ abstract class MorphBaseRunner(
             logger.info("===============================================================================");
             logger.info("Starting data materialization of triples map " + cm.id);
 
-            // Create the query to retrieve all needed data (SQL query to retrieve columns in the case of an RDB) from the logical table
-            val query = this.unfolder.unfoldConceptMapping(cm);
-
             // Run the query and generate triples
-            this.dataTranslator.get.generateRDFTriples(cm, query);
+            this.dataTranslator.get.generateRDFTriples(cm);
         })
 
         // Write the result to the output file

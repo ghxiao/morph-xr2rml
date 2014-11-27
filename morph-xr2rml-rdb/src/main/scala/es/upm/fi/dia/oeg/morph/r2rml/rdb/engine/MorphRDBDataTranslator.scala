@@ -61,16 +61,12 @@ class MorphRDBDataTranslator(
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
-    override def translateData(triplesMap: MorphBaseClassMapping): Unit = {
-        val query = this.unfolder.unfoldConceptMapping(triplesMap);
-        this.generateRDFTriples(triplesMap, query);
-    }
+    override def generateRDFTriples(cm: MorphBaseClassMapping) = {
+        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
 
-    override def generateRDFTriples(cm: MorphBaseClassMapping, query: GenericQuery) = {
+        val query = this.unfolder.unfoldConceptMapping(triplesMap);
         if (!query.isSqlQuery)
             throw new Exception("Unsupported query type: should be an SQL query")
-
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
         val logicalTable = triplesMap.logicalSource;
         val sm = triplesMap.subjectMap;
         val poms = triplesMap.predicateObjectMaps;
@@ -177,23 +173,24 @@ class MorphRDBDataTranslator(
                     val alias = if (pom.getAlias() == null) { logicalTable.alias; }
                     else { pom.getAlias() }
 
-                    // Make a list of resources for the predicate maps of this predicate-object map
+                    // ----- Make a list of resources for the predicate maps of this predicate-object map
                     val predicates = pom.predicateMaps.map(predicateMap => {
                         this.translateData(predicateMap, rows, logicalTable.alias, mapXMLDatatype)
                     });
                     logger.debug("Row " + i + " predicates: " + predicates)
 
-                    // Make a list of resources for the object maps of this predicate-object map
+                    // ----- Make a list of resources for the object maps of this predicate-object map
                     val objects = pom.objectMaps.map(objectMap => {
                         this.translateData(objectMap, rows, alias, mapXMLDatatype)
                     });
                     logger.debug("Row " + i + " objects: " + objects)
 
+                    // ----- For each RefObjectMap get the IRIs from the subject map of the parent triples map
+
                     /* ####################################################################################
                      * Need to update treatment of ReferencingObjectMaps in xR2RML context
                      * ####################################################################################
                      */
-                    // In case of a ReferencingObjectMaps, get the object IRI from the subject map of the parent triples map  
                     val refObjects = pom.refObjectMaps.map(refObjectMap => {
                         val parentTM = this.md.getParentTriplesMap(refObjectMap)
                         val parentSubjectMap = parentTM.subjectMap;
@@ -301,90 +298,6 @@ class MorphRDBDataTranslator(
     }
 
     /**
-     * Create a list of one RDF term (as JENA resource) from one value read from the database,
-     * according to the term type specified in the term map.
-     * Although there will be always one RDF node, the method still returns a list;
-     * this is a convenience as, in xR2RML, all references are potentially multi-valued.
-     *
-     * @param termMap current term map
-     * @param dbValue value to translate, this may be a string, integer, boolean etc.
-     * @param datatype URI of the data type
-     * @return a list of RDF nodes
-     */
-    private def translateSingleValue(termMap: R2RMLTermMap, dbValue: Object, datatype: Option[String]): List[RDFNode] = {
-        translateMultipleValues(termMap, List(dbValue), datatype)
-    }
-
-    /**
-     * Create a list of RDF terms (as JENA resources) from a list of values
-     * according to the term type specified in the term map.
-     * In case of RDF collection or container, the list returned contains one RDF node that
-     * is the head of the collection or container.
-     *
-     * @param termMap current term map
-     * @param values list of values: these may be strings, integers, booleans etc.,
-     * @param datatype URI of the data type
-     * @return a list of RDF nodes
-     */
-    private def translateMultipleValues(termMap: R2RMLTermMap, values: List[Object], datatype: Option[String]): List[RDFNode] = {
-
-        val result: List[RDFNode] =
-            // If the term type is one of R2RML term types then create one RDF term for each of the values
-            if (termMap.inferTermType == Constants.R2RML_IRI_URI ||
-                termMap.inferTermType == Constants.R2RML_LITERAL_URI ||
-                termMap.inferTermType == Constants.R2RML_BLANKNODE_URI) {
-                values.map(value => {
-                    if (value == null) // case when the database returned NULL
-                        this.createLiteral("", datatype, termMap.languageTag)
-                    else {
-                        termMap.inferTermType match {
-                            case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
-                            case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, termMap.languageTag)
-                            case Constants.R2RML_BLANKNODE_URI => {
-                                var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
-                                this.materializer.model.createResource(new AnonId(rep))
-                            }
-                        }
-                    }
-                })
-            } else {
-
-                // If the term type is one of xR2RML collection/container term types,
-                // then create one single RDF term that gathers all the values
-                val translated: RDFNode = termMap.inferTermType match {
-                    case xR2RML_Constants.xR2RML_RDFLIST_URI => {
-                        val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, termMap.languageTag))
-                        val node = this.materializer.model.createList(valuesAsRdfNodes.iterator)
-                        node
-                    }
-                    case xR2RML_Constants.xR2RML_RDFBAG_URI => {
-                        var list = this.materializer.model.createBag()
-                        for (value <- values)
-                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
-                        list
-                    }
-                    case xR2RML_Constants.xR2RML_RDFALT_URI => {
-                        val list = this.materializer.model.createAlt()
-                        for (value <- values)
-                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
-                        list
-                    }
-                    case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
-                        val list = this.materializer.model.createSeq()
-                        for (value <- values)
-                            list.add(this.createLiteral(value, datatype, termMap.languageTag))
-                        list
-                    }
-                    case _ => { throw new Exception("Unkown term type: " + termMap.inferTermType) }
-                }
-                List(translated)
-            }
-
-        logger.trace("    Translated values [" + values + "] into [" + result + "]")
-        result
-    }
-
-    /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:
      * for each column reference in the term map (column, reference or template), read cell values from the current row,
      * translate them into one RDF term.
@@ -392,7 +305,7 @@ class MorphRDBDataTranslator(
      */
     private def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
 
-        var result: List[RDFNode] = List(null);
+        var result: List[RDFNode] = List();
 
         val dbType = this.properties.databaseType;
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
@@ -402,7 +315,7 @@ class MorphRDBDataTranslator(
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                this.translateSingleValue(termMap, termMap.constantValue, termMap.datatype)
+                this.translateSingleValue(termMap.inferTermType, termMap.constantValue, termMap.datatype, termMap.languageTag)
             }
 
             // --- Column-valued term map
@@ -426,7 +339,7 @@ class MorphRDBDataTranslator(
                     }
 
                 // Generate the RDF terms
-                this.translateSingleValue(termMap, dbValue, datatype)
+                this.translateSingleValue(termMap.inferTermType, dbValue, termMap.datatype, termMap.languageTag)
             }
 
             // --- Reference-valued term map
@@ -463,7 +376,7 @@ class MorphRDBDataTranslator(
                         else dt
                     }
 
-                this.translateMultipleValues(termMap, values, datatype);
+                this.translateMultipleValues(termMap.inferTermType, values, termMap.datatype, termMap.languageTag)
             }
 
             // --- Template-valued term map
@@ -502,8 +415,8 @@ class MorphRDBDataTranslator(
                     null
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
-                    val templates = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
-                    this.translateMultipleValues(termMap, templates, termMap.datatype);
+                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
+                    this.translateMultipleValues(termMap.inferTermType, tplResults, termMap.datatype, termMap.languageTag)
                 }
             }
 
