@@ -144,7 +144,7 @@ class MorphJsondocDataTranslator(
                         val parentTM = this.md.getParentTriplesMap(refObjectMap)
 
                         // Compute a list of subject IRIs for each of the join conditions, that we will intersect later
-                        val parentSubjectsCandidates: Set[List[RDFNode]] = for (joinCond <- refObjectMap.getJoinConditions()) yield {
+                        val parentSubjectsCandidates: Set[List[RDFNode]] = for (joinCond <- refObjectMap.joinConditions) yield {
 
                             // Evaluate the child reference on the current document (of the child triples map)
                             val childMsp = MixedSyntaxPath(joinCond.childRef, parentTM.subjectMap.refFormulaion)
@@ -294,10 +294,17 @@ class MorphJsondocDataTranslator(
                 val replacements: List[List[Object]] = listReplace.toList
                 logger.trace("Template replacements: " + replacements)
 
+                // Check if at least one of the remplacements is not null.
+                var isEmptyReplacements: Boolean = true
+                for (repl <- listReplace) {
+                    if (!repl.isEmpty)
+                        isEmptyReplacements = false
+                }
+
                 // Replace "{...}" groups in the template string with corresponding values from the db
-                if (replacements.isEmpty) {
-                    logger.warn("Template " + termMap.templateString + ": no group to replace with values from the DB.")
-                    null
+                if (isEmptyReplacements) {
+                    logger.trace("Template " + termMap.templateString + ": no values read from from the DB.")
+                    List()
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);

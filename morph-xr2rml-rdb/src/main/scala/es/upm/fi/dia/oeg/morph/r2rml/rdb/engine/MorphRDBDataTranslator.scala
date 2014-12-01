@@ -122,7 +122,7 @@ class MorphRDBDataTranslator(
         var i = 0;
         while (rows.next()) { // put current cursor on the new row
             i = i + 1;
-            logger.debug("Generating triples for row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
+            logger.debug("Row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
                 // Create the subject resource
                 val subjects = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
@@ -164,8 +164,8 @@ class MorphRDBDataTranslator(
                 // Internal loop on each predicate-object map
                 poms.foreach(pom => {
 
-                    val alias = if (pom.getAlias() == null) { logicalTable.alias; }
-                    else { pom.getAlias() }
+                    val alias = if (pom.alias == null) { logicalTable.alias; }
+                    else { pom.alias }
 
                     // ----- Make a list of resources for the predicate maps of this predicate-object map
                     val predicates = pom.predicateMaps.flatMap(predicateMap => {
@@ -187,9 +187,8 @@ class MorphRDBDataTranslator(
                      */
                     val refObjects = pom.refObjectMaps.flatMap(refObjectMap => {
                         val parentTM = this.md.getParentTriplesMap(refObjectMap)
-                        val parentSubjectMap = parentTM.subjectMap;
                         val parentTabAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
-                        val parentSubjects = this.translateData(parentSubjectMap, rows, parentTabAlias, mapXMLDatatype)
+                        val parentSubjects = this.translateData(parentTM.subjectMap, rows, parentTabAlias, mapXMLDatatype)
                         parentSubjects
 
                         /* if (xR2RMLDataTranslator.checkJoinParseCondition(refObjectMap, rows, this.properties.databaseType, parentTabAlias, logicalTable.alias)) {
@@ -201,8 +200,7 @@ class MorphRDBDataTranslator(
                             null
                         } */
                     })
-                    if (!refObjects.isEmpty)
-                        logger.trace("Row " + i + " refObjects: " + refObjects)
+                    logger.trace("Row " + i + " refObjects: " + refObjects)
 
                     // Create the list of resources representing target graphs mentioned in the predicate-object map
                     val pogm = pom.graphMaps;
@@ -352,18 +350,20 @@ class MorphRDBDataTranslator(
                             None
                         else dt
                     }
-
                 this.translateMultipleValues(termMap.inferTermType, values, termMap.datatype, termMap.languageTag)
             }
 
             // --- Template-valued term map
             case Constants.MorphTermMapType.TemplateTermMap => {
 
-                // For each group of the template, compute a list of replacement strings
                 val colRefs = termMap.getReferencedColumns()
                 val msPaths = termMap.getMixedSyntaxPaths()
-                val listReplace = for (i <- 0 to (colRefs.length - 1)) yield {
 
+                // For each group of the template, compute a list of replacement strings: if the db returns null,
+                // then return an empty list as replacement. We must return a list of replacements, possibly empty replacements,
+                // but as many replacements as groups {} in the template string.
+
+                val listReplace = for (i <- 0 to (colRefs.length - 1)) yield {
                     // Match the column name in the term map definition with the column name in the result set  
                     val colRef = colRefs(i)
                     val colFromResultSet =
@@ -379,6 +379,7 @@ class MorphRDBDataTranslator(
 
                     // Evaluate the raw value against the mixed-syntax path.
                     // If the reference is not a mixed-syntax path, the value is simply returned in a List()
+                    // If null was returned, then return an empty list.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(dbValueRaw)
                     valuesRaw.filter(_ != null)
                 }
@@ -386,10 +387,17 @@ class MorphRDBDataTranslator(
                 val replacements: List[List[Object]] = listReplace.toList
                 logger.trace("Template replacements: " + replacements)
 
-                // Replace {} groups in the template string with corresponding values from the db
-                if (replacements.isEmpty) {
-                    logger.warn("Template " + termMap.templateString + ": no group to replace with values from the DB.")
-                    null
+                // Check if at least one of the remplacements is not null.
+                var isEmptyReplacements: Boolean = true
+                for (repl <- listReplace) {
+                    if (!repl.isEmpty)
+                        isEmptyReplacements = false
+                }
+
+                // Replace {} groups in the template string with corresponding values from the db               
+                if (isEmptyReplacements) {
+                    logger.trace("Template " + termMap.templateString + ": no values read from from the DB.")
+                    List()
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);

@@ -64,11 +64,21 @@ class MixedSyntaxPath(
     }
 
     /**
+     * Check if <i>this</i> is an single reference to a column, i.e. it was build from a reference
+     * either in the form "COL_NAME" or "Column(COL_NAME). Basically, it says if we are in
+     * a regular R2RML column reference.
+     */
+    def isSimpleColumnExpression(): Boolean = {
+        (paths.size == 1) && (paths.head.isInstanceOf[Column_PathExpression])
+    }
+
+    /**
      * Evaluate an expression against the mixed-syntax path represented by this instance.
      * The expression is evaluated against the first path, then results are evaluated against the second path, etc.
      * until there is no more path to evaluate against.
      *
-     * @return a list of objects representing the result of the evaluation (string, boolean, integer...)
+     * @return a list of objects representing the result of the evaluation (string, boolean, integer...).
+     * Possibly an empty list.
      */
     def evaluate(value: Object): List[Object] = {
 
@@ -160,7 +170,7 @@ object MixedSyntaxPath {
             }
 
         val mxp = new MixedSyntaxPath(rawValue, refFormulation, result)
-        logger.trace("Built " + mxp.toString + " from " + rawValue)
+        //logger.trace("Built " + mxp.toString + " from " + rawValue)
         mxp
     }
 
@@ -222,9 +232,5 @@ object MixedSyntaxPath {
         else
             // For each value produced by the evaluation above, run the evaluation with the next path in the list
             currentEval.flatMap(value => recursiveEval(value, paths.tail))
-    }
-
-    /** For debug purpose only */
-    def main(args: Array[String]) = {
     }
 }

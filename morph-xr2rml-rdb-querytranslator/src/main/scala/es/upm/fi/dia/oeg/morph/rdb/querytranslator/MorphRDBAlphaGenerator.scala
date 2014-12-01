@@ -110,7 +110,7 @@ extends MorphBaseAlphaGenerator(md,unfolder)
 				this.owner.mapTripleAlias += (triple -> sqlParentLogicalTableAuxAlias);
 				val joinQueryAlias = sqlParentLogicalTableAuxAlias;
 	
-				val joinConditions = refObjectMap.getJoinConditions();
+				val joinConditions = refObjectMap.joinConditions;
 				val onExpression = MorphRDBUnfolder.unfoldJoinConditions(
 						joinConditions, logicalTableAlias, joinQueryAlias
 						, databaseType);

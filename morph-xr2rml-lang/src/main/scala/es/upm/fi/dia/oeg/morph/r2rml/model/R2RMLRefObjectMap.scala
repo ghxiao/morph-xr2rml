@@ -15,8 +15,6 @@ class R2RMLRefObjectMap(val parentTriplesMapResource: Resource, val joinConditio
     def getRelationName() = this.rdfNode.asResource().getLocalName();
     def getRangeClassMapping() = this.getParentTripleMapName;
 
-    def getJoinConditions() = { joinConditions }
-
     def getParentTripleMapName(): String = {
         this.parentTriplesMapResource.getURI();
     }

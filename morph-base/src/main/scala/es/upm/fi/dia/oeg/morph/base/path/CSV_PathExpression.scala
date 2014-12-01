@@ -17,7 +17,7 @@ class CSV_PathExpression(
 
     val logger = Logger.getLogger(this.getClass().getName())
 
-    override def toString: String = { "CSV[" + pathExpression + ". Quote: " + parser.getQuoteCharacter()  + "]"}
+    override def toString: String = { "CSV[" + pathExpression + ". Quote: " + parser.getQuoteCharacter() + "]" }
 
     /**
      * Return the CSV elements corresponding to the column named by pathExpression.
@@ -44,8 +44,8 @@ class CSV_PathExpression(
             result.toList
         } catch {
             case e: Exception => {
-                logger.error("Unable to get CSV element with column " + pathExpression + ". Returning empty string.")
-                List("")
+                logger.error("Unable to get CSV element with column " + pathExpression + ". Returning nothing.")
+                List()
             }
         }
     }
