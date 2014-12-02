@@ -1,14 +1,11 @@
 package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.util.Collection
-
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.JavaConversions.setAsJavaSet
-
 import org.apache.log4j.Logger
-
 import Zql.ZConstant
 import Zql.ZExpression
 import Zql.ZQuery
@@ -36,6 +33,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -54,10 +53,6 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         } else {
             null
         }
-    }
-
-    private def getMapRefObjectMapAlias(): Map[R2RMLRefObjectMap, String] = {
-        return mapRefObjectMapAlias;
     }
 
     /**
@@ -115,7 +110,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     case Constants.MorphTermMapType.ConstantTermMap => { Nil }
 
                     case Constants.MorphTermMapType.ColumnTermMap => {
-                        val selectItem = MorphSQLSelectItem.apply(termMap.columnName, logicalTableAlias, dbType);
+                        val selectItem = MorphSQLSelectItem(termMap.columnName, logicalTableAlias, dbType);
                         if (selectItem != null) {
                             if (selectItem.getAlias() == null) {
                                 val alias = selectItem.getTable() + "_" + selectItem.getColumn();
@@ -137,7 +132,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                         if (columns.isEmpty) { Nil }
                         else {
                             columns.map(column => {
-                                val selectItem = MorphSQLSelectItem.apply(column, logicalTableAlias, dbType);
+                                val selectItem = MorphSQLSelectItem(column, logicalTableAlias, dbType);
                                 if (selectItem != null) {
                                     if (selectItem.getAlias() == null) {
                                         val alias = selectItem.getTable() + "_" + selectItem.getColumn();
@@ -161,7 +156,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                         if (columns.isEmpty) { Nil }
                         else {
                             columns.map(column => {
-                                val selectItem = MorphSQLSelectItem.apply(column, logicalTableAlias, dbType);
+                                val selectItem = MorphSQLSelectItem(column, logicalTableAlias, dbType);
                                 if (selectItem != null) {
                                     if (selectItem.getAlias() == null) {
                                         val alias = selectItem.getTable() + "_" + selectItem.getColumn();
@@ -192,7 +187,8 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * (2) for each column in the subject predicate and object maps, add items to the SELECT clause,
      * (3) for each column in the parent triples map of each referencing object map, add items of the SELECT clause,
      * (4) for each join condition, add an SQL WHERE condition and an alias in the FROM clause for the parent table,
-     * (5) xR2RML: for each column of each join condition, add items to the SELECT clause.
+     * (5) xR2RML: in case of mixed syntax path reference (including JSONPath, CSV etc.) the join cannot fully be performed in SQL
+     * by the database, therefore, for each column of such join condition, add items to the SELECT clause.
      *
      * @return an SQLQuery (IQuery) describing the actual SQL query to be run against the RDB
      */
@@ -226,33 +222,30 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             case _ => { throw new Exception("Unknown logical table/source type: " + logicalSrc) }
         }
 
-        // Create an alias for the sub-query in the FROM clause
+        // ----- Create an alias for the sub-query in the FROM clause
         val logicalTableAlias = logicalSrcUnfolded.generateAlias()
         logicalSrc.alias = logicalTableAlias
-        val logicalTableUnfoldedJoinTable = new SQLJoinTable(logicalSrcUnfolded)
-        result.addFromItem(logicalTableUnfoldedJoinTable)
+        val logTabUnfoldedJoinTab = new SQLJoinTable(logicalSrcUnfolded)
+        result.addFromItem(logTabUnfoldedJoinTab)
         logger.trace("Unfolded logical source: " + result.toString.replaceAll("\n", ""))
 
-        // Unfold subject map
+        // ----- Unfold subject map: add select for columns referenced in subject map
         val subjectMapSelectItems = this.unfoldTermMap(subjectMap, logicalTableAlias);
         result.addSelectItems(subjectMapSelectItems);
         logger.debug("Unfolded subject map: " + result.toString.replaceAll("\n", ""))
 
-        // Unfold predicate-object maps
+        // ----- Unfold predicate-object maps
         if (poms != null) {
             for (pom <- poms) {
-                // Unfold all predicateMaps of the current predicate-object map 
-                val predicateMaps = pom.predicateMaps;
-                if (predicateMaps != null && !predicateMaps.isEmpty()) {
+                // Unfold all PredicateMaps of the current predicate-object map: add select for columns referenced in predicate map 
+                if (pom.predicateMaps != null)
                     for (pm <- pom.predicateMaps) {
                         val selectItems = this.unfoldTermMap(pm, logicalTableAlias);
                         result.addSelectItems(selectItems);
                     }
-                }
 
-                // Unfold all objectMaps of the current predicate-object map 
-                val objectMaps = pom.objectMaps;
-                if (objectMaps != null && !objectMaps.isEmpty()) {
+                // Unfold all ObjectMaps of the current predicate-object map: add select for columns referenced in object map
+                if (pom.objectMaps != null) {
                     for (om <- pom.objectMaps) {
                         val selectItems = this.unfoldTermMap(om, logicalTableAlias);
                         result.addSelectItems(selectItems);
@@ -260,88 +253,71 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 }
 
                 // Unfold RefObjectMaps
-                val refObjectMaps = pom.refObjectMaps;
-                if (refObjectMaps != null && !refObjectMaps.isEmpty()) {
-                    // ############ @TODO Limitation here: only the first RefObjectMap is considered
-                    val refObjectMap = pom.getRefObjectMap(0);
-                    if (refObjectMap != null) {
-                        val parentTriplesMap = this.md.getParentTriplesMap(refObjectMap);
-                        val parentLogicalTable = parentTriplesMap.logicalSource
-                        if (parentLogicalTable == null) {
-                            val errorMessage = "Parent logical table is not found for RefObjectMap : " + pom.getMappedPredicateName(0);
-                            throw new Exception(errorMessage);
-                        }
-                        val sqlParentLogicalTable = this.unfoldLogicalSource(parentLogicalTable.asInstanceOf[xR2RMLLogicalSource]);
-                        val joinQueryAlias = sqlParentLogicalTable.generateAlias();
+                if (pom.refObjectMaps != null) {
+                    for (refObjectMap <- pom.refObjectMaps) {
+                        if (refObjectMap != null) {
 
-                        sqlParentLogicalTable.setAlias(joinQueryAlias);
-                        this.mapRefObjectMapAlias += (refObjectMap -> joinQueryAlias);
-                        pom.setAlias(joinQueryAlias);
+                            val parentTM = this.md.getParentTriplesMap(refObjectMap);
 
-                        val parentSubjectMap = parentTriplesMap.subjectMap;
-                        // Get names of the columns referenced in the parent triples map
-                        val refObjectMapColumnsString = parentSubjectMap.getReferencedColumns;
-                        if (refObjectMapColumnsString != null) {
-                            for (refObjectMapColumnString <- refObjectMapColumnsString) {
-                                val selectItem = MorphSQLSelectItem(refObjectMapColumnString, joinQueryAlias, dbType, null);
-                                if (selectItem.getAlias() == null) {
-                                    val alias = selectItem.getTable() + "_" + selectItem.getColumn();
-                                    selectItem.setAlias(alias);
-                                    if (this.mapTermMapColumnsAliases.containsKey(refObjectMap)) {
-                                        val oldColumnAliases = this.mapTermMapColumnsAliases(refObjectMap);
-                                        val newColumnAliases = oldColumnAliases ::: List(alias);
-                                        this.mapTermMapColumnsAliases += (refObjectMap -> newColumnAliases);
-                                    } else {
-                                        this.mapTermMapColumnsAliases += (refObjectMap -> List(alias));
+                            // Create an alias for the parent SQL query
+                            val sqlParentLogSrc = this.unfoldLogicalSource(parentTM.logicalSource.asInstanceOf[xR2RMLLogicalSource]);
+                            val joinQueryAlias = sqlParentLogSrc.generateAlias();
+                            sqlParentLogSrc.setAlias(joinQueryAlias);
+                            this.mapRefObjectMapAlias += (refObjectMap -> joinQueryAlias);
+                            pom.alias = joinQueryAlias;
+
+                            // Add select for columns referenced in the parent triples map's subject map
+                            val parentSubCols = parentTM.subjectMap.getReferencedColumns;
+                            if (parentSubCols != null) {
+                                for (parentSubCol <- parentSubCols) {
+                                    val selectItem = MorphSQLSelectItem(parentSubCol, joinQueryAlias, dbType, null);
+                                    if (selectItem.getAlias() == null) {
+                                        val alias = selectItem.getTable() + "_" + selectItem.getColumn();
+                                        selectItem.setAlias(alias)
+                                        saveAlias(refObjectMap, alias)
                                     }
+                                    result.addSelectItem(selectItem);
                                 }
-                                result.addSelectItem(selectItem);
                             }
-                        }
 
-                        val joinConditions = refObjectMap.getJoinConditions();
-                        val onExpression = MorphRDBUnfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType);
-                        val joinQuery = new SQLJoinTable(sqlParentLogicalTable, Constants.JOINS_TYPE_LEFT, onExpression);
-                        result.addFromItem(joinQuery);
+                            val joinConditions = refObjectMap.joinConditions;
+                            
+                            /**
+                             *  If at least one of the joined columns is not a simple column reference, but contains mixed syntax
+                             *  (e.g. with XPath or JSONPath) then the database cannot evaluate the join. Instead we will have
+                             *  to do it later. And to do that, we must make sure that the columns to join will be in the result set.
+                             *  Therefore, we add the columns in the join conditions to the select clause of the SQL query.
+                             */
+                            for (join <- joinConditions) {
 
-                        /**
-                         * @note XR2RML:
-                         *  The joined columns are not necessarily referenced in the term maps.
-                         *  However in the case of xR2RML, if the joined columns do not contain simple values but
-                         *  structured values (e.g. an XML value that must be evaluated by an XPath expression), then
-                         *  the join operation cannot be done by the database itself (in the SQL query) but afterwards in
-                         *  the code. Therefore we add the joined columns in the select clause to have those values in case
-                         *  we have to make the join afterwards
-                         */
-                        for (join <- joinConditions) {
-                            var selectItem = MorphSQLSelectItem(join.childRef, logicalTableAlias, dbType, null);
-                            if (selectItem.getAlias() == null) {
-                                val alias = selectItem.getTable() + "_" + selectItem.getColumn();
-                                selectItem.setAlias(alias);
-                                if (this.mapTermMapColumnsAliases.containsKey(refObjectMap)) {
-                                    val oldColumnAliases = this.mapTermMapColumnsAliases(refObjectMap);
-                                    val newColumnAliases = oldColumnAliases ::: List(alias);
-                                    this.mapTermMapColumnsAliases += (refObjectMap -> newColumnAliases);
-                                } else {
-                                    this.mapTermMapColumnsAliases += (refObjectMap -> List(alias));
+                                val childMsp = MixedSyntaxPath(join.childRef, xR2RML_Constants.xR2RML_COLUMN_URI)
+                                val parentMsp = MixedSyntaxPath(join.parentRef, xR2RML_Constants.xR2RML_COLUMN_URI)
+
+                                if (!childMsp.isSimpleColumnExpression || !parentMsp.isSimpleColumnExpression) {
+
+                                    // Add a select clause for the child column reference
+                                    var selectItem = MorphSQLSelectItem(childMsp.getReferencedColumn.get, logicalTableAlias, dbType, null);
+                                    if (selectItem.getAlias() == null) {
+                                        val alias = selectItem.getTable() + "_" + selectItem.getColumn();
+                                        selectItem.setAlias(alias);
+                                    }
+                                    result.addSelectItem(selectItem);
+
+                                    // Add a select clause for the parent column reference
+                                    selectItem = MorphSQLSelectItem(parentMsp.getReferencedColumn.get, joinQueryAlias, dbType, null);
+                                    if (selectItem.getAlias() == null) {
+                                        val alias = selectItem.getTable() + "_" + selectItem.getColumn();
+                                        selectItem.setAlias(alias);
+                                    }
+                                    result.addSelectItem(selectItem);
                                 }
                             }
-                            result.addSelectItem(selectItem);
-                            selectItem = MorphSQLSelectItem(join.parentRef, joinQueryAlias, dbType, null);
-                            if (selectItem.getAlias() == null) {
-                                val alias = selectItem.getTable() + "_" + selectItem.getColumn();
-                                selectItem.setAlias(alias);
-                                if (this.mapTermMapColumnsAliases.containsKey(refObjectMap)) {
-                                    val oldColumnAliases = this.mapTermMapColumnsAliases(refObjectMap);
-                                    val newColumnAliases = oldColumnAliases ::: List(alias);
-                                    this.mapTermMapColumnsAliases += (refObjectMap -> newColumnAliases);
-                                } else {
-                                    this.mapTermMapColumnsAliases += (refObjectMap -> List(alias));
-                                }
-                            }
-                            result.addSelectItem(selectItem);
+                            
+                            // Add a left join clause for columns in join conditions of RefObjectMaps
+                            val onExpression = MorphRDBUnfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType);
+                            val joinQuery = new SQLJoinTable(sqlParentLogSrc, Constants.JOINS_TYPE_LEFT, onExpression);
+                            result.addFromItem(joinQuery);
                         }
-                        // end of XR2RML
                     }
                 }
             }
@@ -367,6 +343,18 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             }
         }
         result;
+    }
+
+    /**
+     * Save an alias corresponding to a reference object map to this.mapTermMapColumnsAliases
+     */
+    def saveAlias(refObjectMap: R2RMLRefObjectMap, alias: String) = {
+        if (this.mapTermMapColumnsAliases.containsKey(refObjectMap)) {
+            val oldColumnAliases = this.mapTermMapColumnsAliases(refObjectMap);
+            val newColumnAliases = oldColumnAliases ::: List(alias);
+            this.mapTermMapColumnsAliases += (refObjectMap -> newColumnAliases);
+        } else
+            this.mapTermMapColumnsAliases += (refObjectMap -> List(alias));
     }
 
     /**
@@ -411,36 +399,46 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
 object MorphRDBUnfolder {
 
+    /**
+     * Build a set of SQL join conditions like "child = parent" to reflect a RefObjectMap's joins conditions.
+     * For each join condition, if either the child or parent references is not a regular
+     * R2RML column reference (i.e. if it has a mixed-syntax path with more than one path constructor),
+     * then no join condition is returned: in that case, the join will have to be computed by the xR2RML processor.
+     * But the child and parent columns are then added as select items.
+     */
     def unfoldJoinConditions(
-        pJoinConditions: Iterable[R2RMLJoinCondition],
+        joinConditions: Set[R2RMLJoinCondition],
         childTableAlias: String,
         joinQueryAlias: String,
         dbType: String): ZExpression = {
 
-        val joinConditions = {
-            if (pJoinConditions == null) { Nil }
-            else { pJoinConditions }
-        }
+        val joinConds =
+            if (joinConditions == null) Nil
+            else joinConditions
 
-        val enclosedCharacter = Constants.getEnclosedCharacter(dbType);
+        val enclosedChar = Constants.getEnclosedCharacter(dbType);
+        val joinExpressions = joinConds.flatMap(join => {
 
-        val joinConditionExpressions = joinConditions.map(
-            joinCondition => {
-                var childColumnName = joinCondition.childRef
-                childColumnName = childColumnName.replaceAll("\"", enclosedCharacter);
-                childColumnName = childTableAlias + "." + childColumnName;
-                val childColumn = new ZConstant(childColumnName, ZConstant.COLUMNNAME);
+            // If both the child and parent references are pure column references (without other path constructor)
+            // then the join is made by the database. Otherwise we'll have to do the job ourselves.
+            var childRef = join.childRef
+            var parentRef = join.parentRef
+            if (MixedSyntaxPath(childRef, xR2RML_Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression &&
+                MixedSyntaxPath(parentRef, xR2RML_Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression) {
 
-                var parentColumnName = joinCondition.parentRef;
-                parentColumnName = parentColumnName.replaceAll("\"", enclosedCharacter);
-                parentColumnName = joinQueryAlias + "." + parentColumnName;
-                val parentColumn = new ZConstant(parentColumnName, ZConstant.COLUMNNAME);
+                childRef = childTableAlias + "." + childRef.replaceAll("\"", enclosedChar)
+                val childColumn = new ZConstant(childRef, ZConstant.COLUMNNAME)
 
-                new ZExpression("=", childColumn, parentColumn);
-            })
+                parentRef = joinQueryAlias + "." + parentRef.replaceAll("\"", enclosedChar)
+                val parentColumn = new ZConstant(parentRef, ZConstant.COLUMNNAME)
 
-        val result = if (joinConditionExpressions.size > 0) {
-            MorphSQLUtility.combineExpresions(joinConditionExpressions, Constants.SQL_LOGICAL_OPERATOR_AND);
+                Some(new ZExpression("=", childColumn, parentColumn))
+            } else
+                None
+        })
+
+        val result = if (joinExpressions.size > 0) {
+            MorphSQLUtility.combineExpresions(joinExpressions, Constants.SQL_LOGICAL_OPERATOR_AND);
         } else {
             Constants.SQL_EXPRESSION_TRUE;
         }

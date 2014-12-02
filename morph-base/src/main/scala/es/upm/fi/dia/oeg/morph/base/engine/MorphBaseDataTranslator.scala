@@ -15,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import com.hp.hpl.jena.rdf.model.AnonId
 import es.upm.fi.dia.oeg.morph.base.Constants
+import com.hp.hpl.jena.vocabulary.RDF
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -181,6 +182,7 @@ abstract class MorphBaseDataTranslator(
             case xR2RML_Constants.xR2RML_RDFLIST_URI => {
                 val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, languageTag))
                 val node = this.materializer.model.createList(valuesAsRdfNodes.iterator)
+                this.materializer.model.add(node, RDF.`type`, RDF.List)
                 node
             }
             case xR2RML_Constants.xR2RML_RDFBAG_URI => {

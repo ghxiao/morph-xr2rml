@@ -77,6 +77,7 @@ class MixedSyntaxPath(
      * The expression is evaluated against the first path, then results are evaluated against the second path, etc.
      * until there is no more path to evaluate against.
      *
+     * @value an object representing the data to evaluate. May be null, in that case List() is returned.
      * @return a list of objects representing the result of the evaluation (string, boolean, integer...).
      * Possibly an empty list.
      */

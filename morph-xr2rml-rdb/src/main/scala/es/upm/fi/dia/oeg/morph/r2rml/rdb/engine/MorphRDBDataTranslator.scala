@@ -3,27 +3,21 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.seqAsJavaList
 import org.apache.log4j.Logger
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import com.hp.hpl.jena.rdf.model.AnonId
-import com.hp.hpl.jena.rdf.model.Literal
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.rdf.model.RDFList
 import com.hp.hpl.jena.rdf.model.RDFNode
-import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.vocabulary.RDF
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
@@ -31,18 +25,13 @@ import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLNestedTermMap
-import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -169,7 +158,7 @@ class MorphRDBDataTranslator(
 
                     // ----- Make a list of resources for the predicate maps of this predicate-object map
                     val predicates = pom.predicateMaps.flatMap(predicateMap => {
-                        this.translateData(predicateMap, rows, logicalTable.alias, mapXMLDatatype)
+                        this.translateData(predicateMap, rows, alias, mapXMLDatatype)
                     });
                     logger.debug("Row " + i + " predicates: " + predicates)
 
@@ -181,24 +170,49 @@ class MorphRDBDataTranslator(
 
                     // ----- For each RefObjectMap get the IRIs from the subject map of the parent triples map
 
-                    /* ####################################################################################
-                     * Need to update treatment of ReferencingObjectMaps in xR2RML context
-                     * ####################################################################################
-                     */
                     val refObjects = pom.refObjectMaps.flatMap(refObjectMap => {
                         val parentTM = this.md.getParentTriplesMap(refObjectMap)
-                        val parentTabAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null);
-                        val parentSubjects = this.translateData(parentTM.subjectMap, rows, parentTabAlias, mapXMLDatatype)
-                        parentSubjects
+                        val parentTabAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null)
 
-                        /* if (xR2RMLDataTranslator.checkJoinParseCondition(refObjectMap, rows, this.properties.databaseType, parentTabAlias, logicalTable.alias)) {
-                            val parentSubjectMap = parentTM.subjectMap;
-                            //because of the fact that the treatment is row per row, i haven't find yet a way to gather all the subjects that constitute the list
-                            //  val parentSubjects = this.translaterefObjectData(parentSubjectMap, rows, parentTabAlias, mapXMLDatatype,defaultFormt,refTermtype)
-                            parentSubjects
-                        } else {
-                            null
-                        } */
+                        val parentSubjectsCandidates = refObjectMap.joinConditions.flatMap(joinCond => {
+
+                            val childMsp = MixedSyntaxPath(joinCond.childRef, xR2RML_Constants.xR2RML_COLUMN_URI)
+                            val parentMsp = MixedSyntaxPath(joinCond.parentRef, xR2RML_Constants.xR2RML_COLUMN_URI)
+
+                            if (childMsp.isSimpleColumnExpression && parentMsp.isSimpleColumnExpression) {
+                                // Both the child and parent references are pure column references (without other path constructor)
+                                // => regular R2RML case: the join is performed by the database
+                                Some(this.translateData(parentTM.subjectMap, rows, parentTabAlias, mapXMLDatatype))
+
+                            } else {
+                                // At least the child or parent reference is a mixed syntax path: so the join cannot be performed
+                                // by the database in an SQL join query: all columns have been retrieved and we now have to do the join
+
+                                // Evaluate the child value against the child reference
+                                val childColFromResultSet = getColumnNameFromResultSet(childMsp.getReferencedColumn.get, logicalTable.alias)
+                                val childDbValue = this.getResultSetValue(rows, childColFromResultSet);
+                                val childValues: List[Object] = childMsp.evaluate(childDbValue).map(e => e.toString)
+
+                                // Evaluate the parent value against the parent reference
+                                val parentColFromResultSet = getColumnNameFromResultSet(parentMsp.getReferencedColumn.get, parentTabAlias)
+                                val parentDbValue = this.getResultSetValue(rows, parentColFromResultSet);
+                                val parentValues: List[Object] = parentMsp.evaluate(parentDbValue).map(e => e.toString)
+
+                                val parentSubjects =
+                                    if (!childValues.intersect(parentValues).isEmpty)
+                                        // There is a match between child and parent values, keep the parent IRIs of the current results set row
+                                        Some(this.translateData(parentTM.subjectMap, rows, parentTabAlias, mapXMLDatatype))
+                                    else None
+
+                                logger.trace("Computed " + joinCond.toString + ", result:" + parentSubjects)
+                                parentSubjects
+                            }
+                        })
+
+                        // There is a logical AND between several join conditions of the same RefObjectMap 
+                        // => make the intersection between all subjects generated by all join conditions
+                        val finalParentSubjects = GeneralUtility.intersectMultipleSets(parentSubjectsCandidates)
+                        finalParentSubjects
                     })
                     logger.trace("Row " + i + " refObjects: " + refObjects)
 
@@ -211,7 +225,10 @@ class MorphRDBDataTranslator(
                     if (!predicateObjectGraphs.isEmpty)
                         logger.trace("Row " + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
+                    // ----------------------------------------------------------------------------------------------
                     // Finally, combine all the terms to generate triples in the target graphs or default graph
+                    // ----------------------------------------------------------------------------------------------
+
                     if (sm.graphMaps.isEmpty && pogm.isEmpty) {
                         predicates.foreach(predEl => {
                             objects.foreach(obj => {
@@ -275,8 +292,11 @@ class MorphRDBDataTranslator(
     /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:
      * for each column reference in the term map (column, reference or template), read cell values from the current row,
-     * translate them into one RDF term.
-     * In the R2RML case, the result list should contain only one term.
+     * translate them into RDF terms.
+     * In the regular R2RML case, the result list should contain only one term.
+     *
+     * @return a list of RDN node, possibly an empty list in case the db returned null of the evaluation of
+     * mixed syntax paths failed.
      */
     private def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
 
@@ -296,12 +316,7 @@ class MorphRDBDataTranslator(
             // --- Column-valued term map
             case Constants.MorphTermMapType.ColumnTermMap => {
                 // Match the column name in the term map definition with the column name in the result set  
-                val columnTermMapValue =
-                    if (logicalTableAlias != null && !logicalTableAlias.equals("")) {
-                        val termMapColumnValueSplit = termMap.columnName.split("\\.");
-                        val columnName = termMapColumnValueSplit(termMapColumnValueSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
-                        logicalTableAlias + "_" + columnName;
-                    } else { termMap.columnName }
+                val columnTermMapValue = getColumnNameFromResultSet(termMap.columnName, logicalTableAlias)
 
                 // Read the value from the result set and get its XML datatype
                 val dbValue = this.getResultSetValue(termMap, rs, columnTermMapValue);
@@ -323,15 +338,8 @@ class MorphRDBDataTranslator(
                 // Parse reference as a mixed syntax path and return the column referenced in the first "Column()" path
                 val colRef = termMap.getReferencedColumns().get(0)
 
-                val colFromResultSet = {
-                    // Match the column name in the term map definition with the column name in the result set  
-                    if (logicalTableAlias != null && !"".equals(logicalTableAlias)) {
-                        val termMapColSplit = colRef.split("\\.");
-                        val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
-                        logicalTableAlias + "_" + columnName;
-                    } else
-                        colRef
-                }
+                // Match the column name in the term map definition with the column name in the result set  
+                val colFromResultSet = getColumnNameFromResultSet(colRef, logicalTableAlias)
 
                 // Read the value from the result set
                 val dbValue = this.getResultSetValue(termMap, rs, colFromResultSet);
@@ -342,8 +350,7 @@ class MorphRDBDataTranslator(
 
                 // Generate RDF terms from the values
                 val datatype =
-                    if (termMap.datatype.isDefined)
-                        termMap.datatype
+                    if (termMap.datatype.isDefined) termMap.datatype
                     else {
                         val dt = mapXMLDatatype.get(colRef.replaceAll("\"", ""))
                         if (dt.isDefined && dt.get == null)
@@ -359,48 +366,40 @@ class MorphRDBDataTranslator(
                 val colRefs = termMap.getReferencedColumns()
                 val msPaths = termMap.getMixedSyntaxPaths()
 
-                // For each group of the template, compute a list of replacement strings: if the db returns null,
-                // then return an empty list as replacement. We must return a list of replacements, possibly empty replacements,
-                // but as many replacements as groups {} in the template string.
+                // For each group of the template, compute a list of replacement strings:
+                // If a db value is null, then an empty replacement list is returned.
+                // Thus the list of replacements may contain empty replacements, but it must contain 
+                // exactly as many replacements as groups {} in the template string.
 
                 val listReplace = for (i <- 0 to (colRefs.length - 1)) yield {
                     // Match the column name in the term map definition with the column name in the result set  
-                    val colRef = colRefs(i)
-                    val colFromResultSet =
-                        if (logicalTableAlias != null) {
-                            val termMapColSplit = colRef.split("\\.");
-                            val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter);
-                            logicalTableAlias + "_" + columnName;
-                        } else
-                            colRef
+                    val colFromResultSet = getColumnNameFromResultSet(colRefs(i), logicalTableAlias)
 
                     // Read the value from the result set
                     val dbValueRaw = this.getResultSetValue(termMap, rs, colFromResultSet)
 
                     // Evaluate the raw value against the mixed-syntax path.
-                    // If the reference is not a mixed-syntax path, the value is simply returned in a List()
-                    // If null was returned, then return an empty list.
+                    // If the reference is not a mixed-syntax path, then the value is simply returned in a list.
+                    // If the db value is null, then return an empty list.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(dbValueRaw)
                     valuesRaw.filter(_ != null)
                 }
+                logger.trace("Template replacements: " + listReplace.toList)
 
-                val replacements: List[List[Object]] = listReplace.toList
-                logger.trace("Template replacements: " + replacements)
-
-                // Check if at least one of the remplacements is not null.
-                var isEmptyReplacements: Boolean = true
+                // Check if all replacements are empty, i.e. NOT(at least one replacement is not empty)
+                var isAllEmptyReplacements: Boolean = true
                 for (repl <- listReplace) {
                     if (!repl.isEmpty)
-                        isEmptyReplacements = false
+                        isAllEmptyReplacements = false
                 }
 
                 // Replace {} groups in the template string with corresponding values from the db               
-                if (isEmptyReplacements) {
+                if (isAllEmptyReplacements) {
                     logger.trace("Template " + termMap.templateString + ": no values read from from the DB.")
                     List()
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
-                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
+                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, listReplace.toList);
                     this.translateMultipleValues(termMap.inferTermType, tplResults, termMap.datatype, termMap.languageTag)
                 }
             }
@@ -436,6 +435,39 @@ class MorphRDBDataTranslator(
                 null
             }
         }
+    }
+
+    private def getResultSetValue(rs: ResultSet, pColumnName: String): Object = {
+        try {
+            val zConstant = MorphSQLConstant(pColumnName, ZConstant.COLUMNNAME);
+            val tableName = zConstant.table;
+            val columnName = {
+                if (tableName != null) {
+                    tableName + "." + zConstant.column
+                } else
+                    zConstant.column
+            }
+            rs.getString(columnName);
+        } catch {
+            case e: Exception => {
+                e.printStackTrace();
+                logger.error("An error occured when reading the SQL result set : " + e.getMessage());
+                null
+            }
+        }
+    }
+
+    /**
+     * Match the column name in the term map definition with the equivalent column name in the result set
+     */
+    private def getColumnNameFromResultSet(colRef: String, alias: String): String = {
+        if (alias != null && !"".equals(alias)) {
+            val termMapColSplit = colRef.split("\\.")
+            val dbEnclosedCharacter = Constants.getEnclosedCharacter(this.properties.databaseType)
+            val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
+            alias + "_" + columnName;
+        } else
+            colRef
     }
 
     def visit(logicalTable: xR2RMLLogicalSource): Object = {

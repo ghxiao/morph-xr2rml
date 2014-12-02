@@ -1,20 +1,10 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import java.io._
 import java.net.URL
-import java.util.regex.Pattern
-
-import scala.collection.JavaConversions._
 
 import org.apache.log4j.Logger
 
-import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.RDFNode
-import com.hp.hpl.jena.shared.CannotEncodeCharacterException
-
-class GeneralUtility {
-
-}
 
 object GeneralUtility {
     val logger = Logger.getLogger("GeneralUtility");
@@ -59,20 +49,6 @@ object GeneralUtility {
         result;
     }
 
-    def createQuad(subject: String, predicate: String, obj: String, graph: String) = {
-        val graphString =
-            if (graph != null) { " " + graph }
-            else ""
-        val quad = subject + " " + predicate + " " + obj + graphString
-
-        // When an RDF collection or container is generated Jena already add a tailing '.' and CR
-        val result = if (quad.substring(quad.length - 2, quad.length - 1).equals("."))
-            quad
-        else
-            quad + " .\n"
-        result
-    }
-
     def isNetResource(resourceAddress: String): Boolean = {
         val result = try {
             val url = new URL(resourceAddress);
@@ -85,106 +61,6 @@ object GeneralUtility {
         }
 
         result;
-    }
-
-    //Create blank node from id
-    def createBlankNode(id: String): String = {
-        val result = "_:" + id;
-        result;
-    }
-
-    //Create URIREF from URI
-    def createURIref(uri: String): String = {
-        if (uri == null) {
-            null;
-        } else {
-            val result = "<" + uri + ">";
-            result;
-        }
-    }
-
-    /*
-    def fixCharacters(path: String) {
-        try {
-            var br = new BufferedReader(new FileReader(path));
-            var out = new PrintWriter(new BufferedWriter(new FileWriter(xR2RML_Constants.utilFilesaveTrash, false)))
-            var bool = true
-            while (bool) {
-                val line = br.readLine()
-                if (line == null) { bool = false; }
-                else if (line.size < 3) { logger.trace("Remove line: [" + line + "]") /*  do not save the triplets with less than 3 characters*/ }
-                else { out.println(line); out.flush() }
-            }
-            br.close()
-            out.close()
-
-            var brs = new BufferedReader(new FileReader(xR2RML_Constants.utilFilesaveTrash));
-            var outs = new PrintWriter(new BufferedWriter(new FileWriter(path + ".fix", false)))
-            var bools = true
-            while (bools) {
-                val line = brs.readLine()
-                if (line == null) { bools = false; }
-                else { outs.println(line); outs.flush() }
-            }
-            brs.close()
-            outs.close()
-        } catch {
-            case e: IOException => { logger.info() }
-        }
-    } */
-
-    /*
-    def nodeToString(rdfNode: RDFNode): String = {
-        if (rdfNode == null) {
-            null
-        } else {
-            if (rdfNode.isURIResource()) {
-                this.createURIref(rdfNode.asResource().getURI())
-            } else if (rdfNode.isAnon()) {
-                val id = rdfNode.asResource().getId();
-                var nod = GeneralUtility.createBlankNode(id.getLabelString())
-                nod
-            } else if (rdfNode.isLiteral()) {
-                val literalNode = rdfNode.asLiteral();
-                val datatype = literalNode.getDatatype();
-                val lang = literalNode.getLanguage();
-                val literalValue = literalNode.getValue();
-                val literalValueString = literalValue.toString();
-
-                val literalString = if (datatype == null) {
-                    if (lang == null || lang.equals("")) {
-                        GeneralUtility.createLiteral(literalValueString);
-                    } else {
-                        GeneralUtility.createLanguageLiteral(literalValueString, lang);
-                    }
-                } else {
-                    GeneralUtility.createDataTypeLiteral(literalValueString, datatype.getURI());
-                }
-
-                literalString
-            } else { rdfNode.toString() }
-        }
-    } */
-
-    // Create typed literal
-    def createDataTypeLiteral(pvalue: String, datatypeURI: String): String = {
-        val value = GeneralUtility.encodeLiteral(pvalue);
-        val result = "\"" + value + "\"^^" + "<" + datatypeURI + ">";
-        result;
-    }
-
-    //Create language tagged literal
-    def createLanguageLiteral(pText: String, languageCode: String): String = {
-        val text = GeneralUtility.encodeLiteral(pText);
-        val result = "\"" + text + "\"@" + languageCode;
-        result;
-    }
-
-    //Create Literal
-    def createLiteral(pValue: String): String = {
-        val value = GeneralUtility.encodeLiteral(pValue);
-        val result = "\"" + value + "\"";
-        result
     }
 
     def encodeUnsafeChars(originalValue: String): String = {
@@ -227,48 +103,17 @@ object GeneralUtility {
         result;
     }
 
-    val elementContentEntities = Pattern.compile("<|>|&|[\0-\37&&[^\n\t]]|\uFFFF|\uFFFE");
     /**
-     * Answer <code>s</code> modified to replace &lt;, &gt;, and &amp; by
-     * their corresponding entity references.
-     * <p>
-     * Implementation note: as a (possibly misguided) performance hack,
-     * the obvious cascade of replaceAll calls is replaced by an explicit
-     * loop that looks for all three special characters at once.
+     * Recursive method to compute the intersection of multiple sets of RDFNode
+     * 
+     * @return the intersection, possibly empty
      */
-    def substituteEntitiesInElementContent(s: String): String = {
-        val m = elementContentEntities.matcher(s);
-        if (!m.find())
-            return s;
-        else {
-            var start = 0;
-            var result = new StringBuffer();
-            do {
-                result.append(s.substring(start, m.start()));
-                val ch = s.charAt(m.start());
-                ch match {
-                    case '\r' => { result.append("&#xD;"); }
-                    case '<' => { result.append("&lt;"); }
-                    case '&' => { result.append("&amp;"); }
-                    case '>' => { result.append("&gt;"); }
-                    case _ => { throw new CannotEncodeCharacterException(ch, "XML"); }
-                }
-                start = m.end();
-            } while (m.find(start));
-            result.append(s.substring(start));
-            return result.toString();
-        }
+    def intersectMultipleSets(sets: Set[List[RDFNode]]): List[RDFNode] = {
+        if (sets.size == 0)
+            List()
+        else if (sets.size > 1)
+            sets.head.intersect(intersectMultipleSets(sets.tail))
+        else sets.head
     }
 
-    def readFileAsString(filePath: String): String = {
-        val source = scala.io.Source.fromFile(filePath)
-        val result = source.getLines.mkString
-        result;
-    }
-
-    def readFileAsLines(filePath: String): java.util.List[String] = {
-        val source = scala.io.Source.fromFile(filePath)
-        val result = source.getLines.toList
-        result;
-    }
 }

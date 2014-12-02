@@ -19,7 +19,7 @@
     ];
     # Multiple terms computed from a reference leading to generating multiple triples
     rr:predicateObjectMap [
-        rr:predicate ex:activity;
+        rr:predicate ex:hobbies;
         rr:objectMap [ 
             xrr:reference "Column(comments)/JSONPath($.*.hobby)";
             rr:termType rr:Literal;
@@ -33,9 +33,19 @@
             # xrr:reference "Column(name)/XPath(\\/\\/FirstName)";
             rr:termType xrr:RdfList;
         ];
+    ];
+    rr:predicateObjectMap [
+        rr:predicate ex:practiceInClub;
+        rr:objectMap [
+            rr:parentTriplesMap <#Sport>;
+            rr:joinCondition [
+                rr:parent "id";
+                rr:child "Column(comments)/JSONPath($.*.sportInClub.*)";
+            ];
+        ];
     ].
 
-<#SportBsk>
+<#Sport>
     a rr:TriplesMap;
     # Regular R2RML logical table with SQL query
     rr:logicalTable [ rr:sqlQuery "select * from sport"; ];
@@ -62,7 +72,7 @@
             rr:parentTriplesMap <#Student>;
             rr:joinCondition [
                 rr:child "id";
-                rr:parent "sport";
+                rr:parent "Column(comments)/JSONPath($.*.sportInClub.*)";
             ];
         ];
     ].
