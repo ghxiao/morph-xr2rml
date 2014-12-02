@@ -1,10 +1,11 @@
 package es.upm.fi.dia.oeg.morph.base
 
 import java.net.URL
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.vocabulary.RDF
 
 object GeneralUtility {
     val logger = Logger.getLogger("GeneralUtility");
@@ -57,9 +58,7 @@ object GeneralUtility {
             true;
         } catch {
             case e: Exception => { false }
-
         }
-
         result;
     }
 
@@ -105,7 +104,7 @@ object GeneralUtility {
 
     /**
      * Recursive method to compute the intersection of multiple sets of RDFNode
-     * 
+     *
      * @return the intersection, possibly empty
      */
     def intersectMultipleSets(sets: Set[List[RDFNode]]): List[RDFNode] = {
@@ -116,4 +115,84 @@ object GeneralUtility {
         else sets.head
     }
 
+    /**
+     * Compare 2 RDF Lists. Return true is they have the same elements.
+     * This method does not apply to lists of which members are lists or containers.
+     */
+    def compareRdfList(lst1: Resource, lst2: Resource): Boolean = {
+
+        if ((lst1 == null) && (lst2 != null)) return false
+        if ((lst1 != null) && (lst2 == null)) return false
+        if ((lst1 == null) && (lst2 == null)) return true
+
+        val first1 = lst1.getProperty(RDF.first).getObject
+        val first2 = lst2.getProperty(RDF.first).getObject
+
+        if (first1 != first2) return false
+
+        val rest1 = lst1.getProperty(RDF.rest).getObject
+        val rest2 = lst2.getProperty(RDF.rest).getObject
+
+        if ((rest1 == RDF.nil && rest2 != RDF.nil) || (rest1 != RDF.nil && rest2 == RDF.nil))
+            false
+        else if (rest1 == RDF.nil && rest2 == RDF.nil)
+            true
+        else
+            GeneralUtility.compareRdfList(rest1.asResource, rest2.asResource)
+    }
+
+    /**
+     * Compare 2 RDF containers (alt, seq, bag). Return true is they have the same elements.
+     * This method does not apply to containers of which members are lists or containers.
+     */
+    def compareRdfContainer(lst1: Resource, lst2: Resource): Boolean = {
+        var i = 1
+        var continue: Boolean = true
+        var equal: Boolean = true
+        while (continue && equal) {
+            val item1 = lst1.getProperty(RDF.li(i))
+            val item2 = lst2.getProperty(RDF.li(i))
+            if (item1 == null && item2 == null)
+                continue = false
+            else if ((item1 == null && item2 != null) || (item1 != null && item2 == null))
+                equal = false
+            else
+                equal = (item1.getObject == item2.getObject)
+            i = i + 1
+        }
+        equal
+    }
+
+    /**
+     * Recursive removal of all triples concerning an RDF List.
+     * This method does not apply to lists of which members are nested lists or containers.
+     */
+    def removeRdfList(model: Model, res: Resource) {
+        val rest = model.getProperty(res, RDF.rest)
+        if (rest != null)
+            GeneralUtility.removeRdfList(model, rest.getResource)
+        model.removeAll(res, null, null)
+    }
+
+    /**
+     * Removal of all triples concerning an RDF bag, seq or alt.
+     * This method does not apply to container of which members are nested lists or containers.
+     */
+    def removeRdfContainer(model: Model, res: Resource) {
+        model.removeAll(res, null, null)
+    }
+
+    def isRdfList(model: Model, res: Resource): Boolean = {
+        val stmtType = model.getProperty(res.asResource(), RDF.`type`)
+        (stmtType != null && stmtType.getObject == RDF.List)
+    }
+
+    def isRdfContainer(model: Model, res: Resource): Boolean = {
+        val stmtType = model.getProperty(res.asResource(), RDF.`type`)
+        stmtType != null && (
+            (stmtType.getObject == RDF.Bag) ||
+            (stmtType.getObject == RDF.Alt) ||
+            (stmtType.getObject == RDF.Seq))
+    }
 }
+

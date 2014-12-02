@@ -8,3 +8,8 @@ Limitations:
 - The generation of RDF collection and containers is not supported in the case of a regular join query in an RDB.
 - As in Morph-RDB, named target graphs are not supported.
 - NestedTermMaps are not implemented. As a result, collections or containers evaluated from a value without join will always contain literal with no term type, language tag nor datatype. Note this has no impact on collections or containers resulting from a join condition, as they always contain IRIs.
+
+Examples:
+Example mappings are provided in the RDB and MongoDB case along with an example database connection configuration, see:
+- mapping.ttl and morph.properties in morph-xr2rml-rdb/examples
+- mapping.ttl and morph.properties in morph-xr2rml-jsondoc/examples

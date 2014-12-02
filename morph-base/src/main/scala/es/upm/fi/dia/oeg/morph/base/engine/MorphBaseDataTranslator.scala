@@ -91,7 +91,7 @@ abstract class MorphBaseDataTranslator(
                 /**
                  * @TODO Implementation of NestTermMaps.
                  * Here we pass the datatype and languageTag for the elements of the collection, but this is incorrect:
-                 * they must be given by a nestedTermType of by inferred defaults.
+                 * they must be given by a nestedTermMap or inferred by default.
                  */
                 val res = createCollection(termType, values, datatype, language)
                 if (res.isDefined)
