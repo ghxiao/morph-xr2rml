@@ -5,7 +5,6 @@
 @prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
 
 <#Student>
-    a rr:TriplesMap;
     # Logical source with table name
     xrr:logicalSource [
         rr:tableName "student";
@@ -34,6 +33,18 @@
             rr:termType xrr:RdfList;
         ];
     ];
+    # Regular R2RML join
+    rr:predicateObjectMap [
+        rr:predicate ex:mainSport;
+        rr:objectMap [
+            rr:parentTriplesMap <#Sport>;
+            rr:joinCondition [
+                rr:child "sport";
+                rr:parent "id";
+            ];
+        ];
+    ];
+    # Cross-reference with a join condition evaluated with a JSONPath expression (child)
     rr:predicateObjectMap [
         rr:predicate ex:practiceInClub;
         rr:objectMap [
@@ -46,7 +57,6 @@
     ].
 
 <#Sport>
-    a rr:TriplesMap;
     # Regular R2RML logical table with SQL query
     rr:logicalTable [ rr:sqlQuery "select * from sport"; ];
     rr:subjectMap [ 
@@ -66,6 +76,7 @@
             rr:termType xrr:RdfList;
         ];
     ];
+    # Cross-reference with data evaluated with a JSONPath expression (parent)
     rr:predicateObjectMap [
         rr:predicate ex:practicedBy;
         rr:objectMap [
@@ -76,3 +87,4 @@
             ];
         ];
     ].
+    

@@ -1,21 +1,26 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
-import scala.collection.JavaConversions._
+import java.sql.Connection
+import scala.collection.JavaConversions.asScalaIterator
+import scala.collection.JavaConversions.mapAsScalaMap
+import scala.collection.JavaConversions.setAsJavaSet
 import org.apache.log4j.Logger
+import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.vocabulary.RDF
 import es.upm.fi.dia.oeg.morph.base.Constants
-import java.util.Collection
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import com.hp.hpl.jena.rdf.model.Statement
+import com.hp.hpl.jena.rdf.model.Property
+import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         extends MorphBaseMappingDocument(classMappings) with MorphR2RMLElement {
@@ -77,8 +82,12 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
             })
         })
 
-        val parentTripleMap = parentTripleMaps.iterator.next;
-        parentTripleMap.asInstanceOf[R2RMLTriplesMap]
+        if (parentTripleMaps.iterator.hasNext) {
+            val parentTripleMap = parentTripleMaps.iterator.next;
+            parentTripleMap.asInstanceOf[R2RMLTriplesMap]
+        } else {
+            throw new Exception("Error: referenced parent triples map des not exist: " + parentTripleMapResources)
+        }
     }
 
     override def getPossibleRange(predicateURI: String): Iterable[MorphBaseClassMapping] = {
@@ -213,6 +222,9 @@ object R2RMLMappingDocument {
         // read the Turtle file
         model.read(in, null, "TURTLE");
 
+        // Infer TriplesMap from properties
+        inferR2RMLClasses(model)
+
         // Get the list of JENA resources representing triples maps
         val tmList = model.listResourcesWithProperty(RDF.`type`, Constants.R2RML_TRIPLESMAP_CLASS);
 
@@ -239,4 +251,54 @@ object R2RMLMappingDocument {
         md.mappingDocumentPrefixMap = model.getNsPrefixMap().toMap;
         md
     }
+
+    private def inferR2RMLClasses(model: Model) {
+
+        inferTriplesMaps(model)
+        
+        // Expand all shortcut properties to the long version
+        //expandConstantShortCuts(model, Constants.R2RML_SUBJECT_PROPERTY,Constants.R2RML_SUBJECTMAP_PROPERTY)
+        //expandConstantShortCuts(model, Constants.R2RML_PREDICATE_PROPERTY,Constants.R2RML_PREDICATEMAP_PROPERTY)
+        //expandConstantShortCuts(model, Constants.R2RML_OBJECT_PROPERTY,Constants.R2RML_OBJECTMAP_PROPERTY)
+        //expandConstantShortCuts(model, Constants.R2RML_GRAPH_PROPERTY,Constants.R2RML_GRAPHMAP_PROPERTY)
+    }
+
+    private def expandConstantShortCuts(model: Model, constantProp: Property, longProp: Property) {
+
+        // Find all statements with constant property 
+        val stmts = model.listStatements(null, constantProp, null)
+        for (stmt <- stmts) {
+
+            // Create a statement _:bnId rr:constant "value"
+            val bn = model.createResource()
+            val constStmt = model.createStatement(bn, Constants.R2RML_CONSTANT_PROPERTY, stmt.getObject())
+            model.add(constStmt)
+
+            // Create the statement with the long property: <resource> rr:subjectMap _:bnId;
+            val newStmt = model.createStatement(stmt.getSubject(), longProp, bn)
+            model.add(newStmt)
+
+            logger.info("Added statment: " + newStmt)
+            logger.info("Added statment: " + constStmt)
+        }
+    }
+
+    /**
+     *  Add triples with rdf:type rr:TriplesMap for resources that have one rr:logicalTable
+     *  or one xrr:logicalSource property.
+     */
+    private def inferTriplesMaps(model: Model) {
+        val stmtsLogTab = model.listStatements(null, Constants.R2RML_LOGICALTABLE_PROPERTY, null)
+        for (stmt <- stmtsLogTab) {
+            val stmtType = model.createStatement(stmt.getSubject, RDF.`type`, Constants.R2RML_TRIPLESMAP_CLASS)
+            model.add(stmtType)
+        }
+
+        val stmtsLogSrc = model.listStatements(null, xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY, null)
+        for (stmt <- stmtsLogSrc) {
+            val stmtType = model.createStatement(stmt.getSubject, RDF.`type`, Constants.R2RML_TRIPLESMAP_CLASS)
+            model.add(stmtType)
+        }
+    }
+
 }

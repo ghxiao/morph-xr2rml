@@ -1,7 +1,10 @@
-# Morph
+Morph-xR2RML is an implementation of the xR2RML mapping language, to describe mappings from relational or non relational databases to RDF. The current implementatiion supports the xR2RML language for relational databases (MySQL, PostgreSQL, MonetDB), and the MongoDB NoSQL document store.
 
-Morph-RDB (formerly called ODEMapster) is an RDB2RDF engine developed by the Ontology Engineering Group, that follows the R2RML specification (http://www.w3.org/TR/r2rml/). 
+The xR2RML mapping language (https://hal.archives-ouvertes.fr/hal-01066663) is an extension of R2RML (http://www.w3.org/TR/r2rml/) and RML (http://semweb.mmlab.be/rml/spec.html).
 
-Morph-RDB supports two operational modes: data upgrade (generating RDF instances from data in a relational database) and query translation (SPARQL to SQL). Morph-RDB employs various optimisation techniques in order to generate efficient SQL queries, such as self-join elimination and subquery elimination. 
+Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as an extension of the Morph-RDB project (https://github.com/oeg-upm/morph-rdb) which is an implementation of R2RML. Morph-xR2RML supports the data materialization approach (generate RDF instances from data in a database) but, for now, it does not support query translation (SPARQL to DB native query language).
 
-Morph-RDB has been tested with real queries from various Spanish/EU projects and has proven to work faster than other state-of-the-art tools available. At the moment, Morph-RDB works with MySQL, PostgreSQL, and MonetDB.
+Limitations:
+- The generation of RDF collection and containers is not supported in the case of a regular join query in an RDB.
+- As in Morph-RDB, named target graphs are not supported.
+- NestedTermMaps are not implemented. As a result, collections or containers evaluated from a value without join will always contain literal with no term type, language tag nor datatype. Note this has no impact on collections or containers resulting from a join condition, as they always contain IRIs.

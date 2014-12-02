@@ -218,11 +218,11 @@ object MixedSyntaxPath {
      */
     private def recursiveEval(value: Object, paths: List[PathExpression]): List[Object] = {
 
-        // Stop condition: this case happens when the mixed syntax path is a single Column() 
-        if (paths == Nil) return List(value)
-
         if (value == null) return List()
         if (value.toString.isEmpty()) return List()
+
+        // Stop condition: this case happens when the mixed syntax path is a single Column() 
+        if (paths == Nil) return List(value)
 
         // Evaluate the value against the first path in the list of paths
         val currentEval = paths.head.evaluate(value.toString)
