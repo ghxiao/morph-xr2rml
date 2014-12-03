@@ -186,7 +186,7 @@ class MorphRDBDataTranslator(
 
                                 logger.trace("Join parent candidates from regular SQL query: " + joinCond.toString + ", result:" + parentSubjects)
                                 parentSubjects
-                                
+
                             } else {
                                 // At least the child or parent reference is a mixed syntax path: so the join cannot be performed
                                 // by the database in an SQL join query: all columns have been retrieved and we now have to do the join
@@ -306,17 +306,34 @@ class MorphRDBDataTranslator(
      */
     private def translateData(termMap: R2RMLTermMap, rs: ResultSet, logicalTableAlias: String, mapXMLDatatype: Map[String, String]): List[RDFNode] = {
 
-        var result: List[RDFNode] = List();
+        var datatype = termMap.datatype
+        var languageTag = termMap.languageTag
 
-        val dbType = this.properties.databaseType;
-        val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
-        val inferedTermType = termMap.inferTermType;
+        // Term type of the collection/container to generate, or None if this is not the case 
+        var collecTermType: Option[String] = None
 
-        result = termMap.termMapType match {
+        // Term type of the RDF terms to generate from values
+        var memberTermType: String = Constants.R2RML_LITERAL_URI
+
+        // In case of a collection/container, a nested term map should give the details of term type, datatype and language or the terms 
+        if (R2RMLTermMap.isRdfCollectionTermType(termMap.inferTermType)) {
+            collecTermType = Some(termMap.inferTermType)
+            if (termMap.nestedTermMap.isDefined) { // a nested term type MUST be defined in a term map with collection/container term type
+                memberTermType = termMap.nestedTermMap.get.inferTermType
+                datatype = termMap.nestedTermMap.get.datatype
+                languageTag = termMap.nestedTermMap.get.languageTag
+            } else
+                logger.warn("Term map with collection/container term type but no nested term map: " + termMap)
+        } else {
+            collecTermType = None
+            memberTermType = termMap.inferTermType
+        }
+
+        var result: List[RDFNode] = termMap.termMapType match {
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                this.translateSingleValue(termMap.inferTermType, termMap.constantValue, termMap.datatype, termMap.languageTag)
+                this.translateSingleValue(termMap.constantValue, collecTermType, memberTermType, datatype, languageTag)
             }
 
             // --- Column-valued term map
@@ -335,7 +352,7 @@ class MorphRDBDataTranslator(
                     }
 
                 // Generate the RDF terms
-                this.translateSingleValue(termMap.inferTermType, dbValue, termMap.datatype, termMap.languageTag)
+                this.translateSingleValue(dbValue, collecTermType, memberTermType, datatype, languageTag)
             }
 
             // --- Reference-valued term map
@@ -363,7 +380,7 @@ class MorphRDBDataTranslator(
                             None
                         else dt
                     }
-                this.translateMultipleValues(termMap.inferTermType, values, termMap.datatype, termMap.languageTag)
+                this.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag)
             }
 
             // --- Template-valued term map
@@ -406,7 +423,7 @@ class MorphRDBDataTranslator(
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, listReplace.toList);
-                    this.translateMultipleValues(termMap.inferTermType, tplResults, termMap.datatype, termMap.languageTag)
+                    this.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag)
                 }
             }
 

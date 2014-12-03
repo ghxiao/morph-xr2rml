@@ -78,31 +78,14 @@ object R2RMLPredicateObjectMap {
         val ObjectMap, RefObjectMap = Value
     }
 
-    def apply(resource: Resource, formatFromLogicalTable: String): R2RMLPredicateObjectMap = {
+    def apply(resource: Resource, refFormulation: String): R2RMLPredicateObjectMap = {
 
-        val predicateMaps = R2RMLPredicateMap.extractPredicateMaps(resource, formatFromLogicalTable).toList;
-        val objectMaps = R2RMLObjectMap.extractObjectMaps(resource, formatFromLogicalTable).toList;
+        val predicateMaps = R2RMLPredicateMap.extractPredicateMaps(resource, refFormulation).toList;
+        val objectMaps = R2RMLObjectMap.extractObjectMaps(resource, refFormulation).toList;
         val refObjectMaps = R2RMLRefObjectMap.extractRefObjectMaps(resource).toList;
-        val graphMaps = R2RMLGraphMap.extractGraphMaps(resource, formatFromLogicalTable);
+        val graphMaps = R2RMLGraphMap.extractGraphMaps(resource, refFormulation);
 
         val pom = new R2RMLPredicateObjectMap(predicateMaps, objectMaps, refObjectMaps, graphMaps);
         pom;
     }
-
-    def extractPredicateObjectMaps(resource: Resource, formatFromLogicalTable: String): Set[R2RMLPredicateObjectMap] = {
-        val predicateObjectMapStatements = resource.listProperties(
-            Constants.R2RML_PREDICATEOBJECTMAP_PROPERTY);
-        val predicateObjectMaps = if (predicateObjectMapStatements != null) {
-            predicateObjectMapStatements.toList().map(predicateObjectMapStatement => {
-                val predicateObjectMapStatementObjectResource =
-                    predicateObjectMapStatement.getObject().asInstanceOf[Resource];
-                val predicateObjectMap = R2RMLPredicateObjectMap(predicateObjectMapStatementObjectResource, formatFromLogicalTable);
-                predicateObjectMap;
-            });
-        } else {
-            Set.empty;
-        }
-        predicateObjectMaps.toSet;
-    }
-
 }

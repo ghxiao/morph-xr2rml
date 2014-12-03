@@ -3,6 +3,7 @@
 @prefix ex:  <http://example.com/> .
 @prefix rml: <http://semweb.mmlab.be/ns/rml#> .
 @prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <#Student>
     # Logical source with table name
@@ -24,13 +25,16 @@
             rr:termType rr:Literal;
         ];
     ];
-    # Multiple terms computed from a template and assembled as an RDF list
+    # Multiple terms computed from a template, assembled as an RDF list and datatyped with a nested term map
     rr:predicateObjectMap [
         rr:predicate ex:names;
         rr:objectMap [
             rr:template "{Column(name)/XPath(\\/\\/FirstName)} {Column(name)/XPath(\\/\\/LastName)}";
-            # xrr:reference "Column(name)/XPath(\\/\\/FirstName)";
             rr:termType xrr:RdfList;
+            xrr:nestedTermMap [
+                rr:termType rr:Literal; 
+                rr:datatype xsd:string; 
+            ];
         ];
     ];
     # Regular R2RML join

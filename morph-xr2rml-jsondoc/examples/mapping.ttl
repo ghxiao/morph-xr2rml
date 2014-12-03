@@ -9,38 +9,44 @@
     a rr:TriplesMap;
     xrr:logicalSource [
     	# Jongo needs strings in singles quotes (difference with MongoDB shell)
-        xrr:query """db.students.find( { FullName : {$exists: 1} } )""";
+        xrr:query """db.students.find( { 'FullName' : {$exists: 1} } )""";
         xrr:referenceFormulation ql:JSONPath;
     ];
     rr:subjectMap [ 
     	rr:template "http://example.org/student/{$._id.*}";
 		rr:class ex:Student;
     ];
-  	# Example with boolean element
+  	# Implicit of a boolean element
     rr:predicateObjectMap [
     	rr:predicate ex:isActive;
-    	rr:objectMap [ xrr:reference "$.active"; ];
+    	rr:objectMap [ xrr:reference "$.active" ];
     ];
-   	# Example with integer element
+  	# Implicit of a integer element
     rr:predicateObjectMap [
     	rr:predicate ex:hasId;
     	rr:objectMap [ xrr:reference "$.id"; ];
     ];
-   	# Example with multiple terms and language tag
+   	# Generation of multiple RDF terms with language tag
     rr:predicateObjectMap [
     	rr:predicate ex:activity;
     	rr:objectMap [ xrr:reference "$.Hobbies.*.hobby"; rr:language "en"; ];
     ];
-   	# Example with multiple terms computed from a template and assembled as an RDF list
+   	# Generation of multiple terms from a template, assembled as an RDF list, and datatyped with a nested term map
     rr:predicateObjectMap [
     	rr:predicate ex:names;
     	rr:objectMap [
     		rr:template "{$.FullName.FirstNames.*} {$.FullName.LastName}";
     		rr:termType xrr:RdfList;
+    		xrr:nestedTermMap [
+                rr:termType rr:Literal;
+                rr:datatype xsd:string;
+            ];
 		];
 	].
 
     
+# --- Demonstration of a join between documents
+
 <#Movies>
     a rr:TriplesMap;
     xrr:logicalSource [
@@ -50,7 +56,7 @@
     ];
     rr:subjectMap [ 
         rr:template "http://example.org/movies/{$.title}"; 
-		rr:class ex:Movie;
+		# rr:class ex:Movie;
     ].
 
 <#Directors>

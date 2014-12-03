@@ -34,22 +34,27 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
 
                 var tripleAlreadyExists: Boolean = false
 
-                /*
-                 * The following is a bit crappy: in a join with mixed syntax path, the db cannot do the join, as 
-                 * a result we run an SQL product to retrieve all possibilities and evaluate them afterwards.
+                /* Case RDB:
+                 * The following is a bit crappy: in a join with mixed syntax path, the join cannot be done in SQL,
+                 * as a result we run an SQL cartesian product to retrieve all possibilities and evaluate them afterwards.
                  * This makes lots of lines with the same results, and we generate several times the same triples.
                  * For triples with simple literal of IRI object, that is fine: Jena does not add twice the same triple.
-                 * But for RDF lists and containers, then Jena has no way to know whether this is the same triple or not.
+                 * But for RDF lists and containers, Jena has no way to know whether this is the same triple or not.
                  * As a result a list or container is created several times in the model.
-                 * So in those particular cases, list and containers, we have to check whether the same triple is already
-                 * in the model, and if yes then we have to remove the list of container that was passed to the method,
-                 * since it exists in the model: a list or container consists of several triples.
+                 * So, in those particular cases, list and containers, we have to check whether the same triple is already
+                 * in the model. If yes,
+                 * - first we do not add a triple.
+                 * - but that not enough. The collection/container passed to the method (parameter obj),
+                 *   exists in the model since it consists of several triples. 
+                 *   Therefore, we have to remove this collection/container from the model.
                  */
 
                 // Check if the object is an RDF List and if there would already be the same triple in the model
                 if (obj.isResource && GeneralUtility.isRdfList(model, obj.asResource)) {
-                    // List all triples concerning the subject to see if there would already be the same list
+                    
+                    // List all triples concerning the same subject and predicate to see if there would already be the same list
                     val existingObjs = model.listObjectsOfProperty(subject.asResource(), pred)
+
                     while (!tripleAlreadyExists && existingObjs.hasNext()) {
                         val node = existingObjs.next()
                         if (node.isResource && GeneralUtility.isRdfList(model, node.asResource)) {

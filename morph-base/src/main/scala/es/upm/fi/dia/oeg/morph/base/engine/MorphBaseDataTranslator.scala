@@ -38,70 +38,84 @@ abstract class MorphBaseDataTranslator(
     def generateRDFTriples(triplesMap: MorphBaseClassMapping): Unit
 
     /**
-     * Create a list of one RDF term (as JENA resources) according to the term type from a value.
-     * Although there will be always one RDF node, the method still returns a list;
-     * this is a convenience as, in xR2RML, all references are potentially multi-valued.
+     * Convert a value (string, integer, boolean, etc) into an RDF term.
+     * If collecTermType is not null, the RDF term is enclosed in a term of that type, i.e. a collection or container.
      *
-     * @param termType term type of the current term map
+     * The method always returns a List, either empty or with one RDf term.
+     *
      * @param dbValue value read from the db, this may be a string, integer, boolean etc.,
+     * @param collecTermType term type of the RDF collection/container. May be null.
+     * @param memberTermType the term type of RDF terms representing the value
      * @param datatype URI of the data type
      * @param language language tag
      * @return a list of one RDF node (cannot be empty)
      */
-    protected def translateSingleValue(termType: String, dbValue: Object, datatype: Option[String], language: Option[String]): List[RDFNode] = {
-        translateMultipleValues(termType, List(dbValue), datatype, language)
+    protected def translateSingleValue(dbValue: Object, collecTermType: Option[String], memberTermType: String, datatype: Option[String], language: Option[String]): List[RDFNode] = {
+        translateMultipleValues(List(dbValue), collecTermType, memberTermType, datatype, language)
+    }
+
+    /**
+     * Convert a list of values (string, integer, boolean, etc) into RDF terms.
+     * If collecTermType is not null, RDF terms are enclosed in a term of that type, i.e. a collection or container
+     *
+     * The method always returns a List, either empty or with one RDf term in the case collecTermType is not null,
+     * or with several elements otherwise.
+     *
+     * @param values list of values these may be strings, integers, booleans etc.,
+     * @param collecTermType term type of the RDF collection/container. May be null.
+     * @param memberTermType the term type of RDF terms representing values
+     * @param datatype URI of the data type
+     * @param language language tag
+     * @return a list of one RDF node, possibly empty
+     */
+    protected def translateMultipleValues(values: List[Object], collecTermType: Option[String], memberTermType: String, datatype: Option[String], languageTag: Option[String]): List[RDFNode] = {
+
+        if (values.isEmpty)
+            return List()
+
+        // Convert values into RDF nodes
+        val valuesAsRdfNodes = translateMultipleValues(values, memberTermType, datatype, languageTag)
+
+        val result: List[RDFNode] =
+            if (collecTermType.isDefined)
+                // Create the collection/container with that list of nodes
+                createCollection(collecTermType.get, valuesAsRdfNodes)
+            else
+                valuesAsRdfNodes
+
+        logger.trace("    Translated values [" + values + "] into [" + result + "]")
+        result
     }
 
     /**
      * Create a list of RDF terms (as JENA resources) according to the term type from a list of values.
-     * In case of RDF collection or container, the list returned contains one RDF node that
-     * is the head of the collection or container.
      *
-     * @param termType term type of the current term map
      * @param values list of values: these may be strings, integers, booleans etc.,
+     * @param termType term type of the current term map
      * @param datatype URI of the data type
      * @param language language tag
      * @return a list of RDF nodes, possibly empty
      */
-    protected def translateMultipleValues(termType: String, values: List[Object], datatype: Option[String], language: Option[String]): List[RDFNode] = {
+    private def translateMultipleValues(values: List[Object], termType: String, datatype: Option[String], languageTag: Option[String]): List[RDFNode] = {
 
         val result: List[RDFNode] =
-            // If the term type is one of R2RML term types then create one RDF term for each of the values
-            if (termType == Constants.R2RML_IRI_URI ||
-                termType == Constants.R2RML_LITERAL_URI ||
-                termType == Constants.R2RML_BLANKNODE_URI) {
-                values.flatMap(value => {
-                    if (value == null) // case when the database returned NULL
-                        None
-                    else {
-                        val node = termType match {
-                            case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
-                            case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, language)
-                            case Constants.R2RML_BLANKNODE_URI => {
-                                var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
-                                this.materializer.model.createResource(new AnonId(rep))
-                            }
+            // Create one RDF term for each of the values: the flatMap eliminates None elements, thus the result can be empty
+            values.flatMap(value => {
+                if (value == null) // case when the database returned NULL
+                    None
+                else {
+                    val node = termType match {
+                        case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
+                        case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, languageTag)
+                        case Constants.R2RML_BLANKNODE_URI => {
+                            var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
+                            this.materializer.model.createResource(new AnonId(rep))
                         }
-                        Some(node)
                     }
-                })
-            } else {
-                // If the term type is one of xR2RML collection/container term types,
-                // then create one single RDF term that gathers all the values
-                /**
-                 * @TODO Implementation of NestTermMaps.
-                 * Here we pass the datatype and languageTag for the elements of the collection, but this is incorrect:
-                 * they must be given by a nestedTermMap or inferred by default.
-                 */
-                val res = createCollection(termType, values, datatype, language)
-                if (res.isDefined)
-                    List(res.get)
-                else
-                    // If the res is empty, then do not return a list with one empty list inside, but just an empty list
-                    List()
-            }
-
-        logger.trace("    Translated values [" + values + "] into [" + result + "]")
+                    Some(node)
+                }
+            })
+        //logger.trace("    Translated values [" + values + "] into [" + result + "]")
         result
     }
 
@@ -170,74 +184,40 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Convert a list of values (string, integer, boolean, etc) into an RDF collection or container of literals.
-     * If the list of values is empty, return None.
+     * Convert a list of RDFNodes into an RDF collection or container. The result is returned as a list with one element.
+     *
+     * If the list of nodes is empty, return an empty list, but no empty collection/contianer is returned.
      */
-    def createCollection(termType: String, values: List[Object], datatype: Option[String], languageTag: Option[String]): Option[RDFNode] = {
+    protected def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
 
+        // If values is empty, then do not return a list with one empty list inside, but just an empty list
         if (values.isEmpty)
-            return None
+            return List()
 
-        val translated: RDFNode = termType match {
+        val translated: RDFNode = collecTermType match {
             case xR2RML_Constants.xR2RML_RDFLIST_URI => {
-                val valuesAsRdfNodes = values.map(value => this.createLiteral(value, datatype, languageTag))
-                val node = this.materializer.model.createList(valuesAsRdfNodes.iterator)
+                val node = this.materializer.model.createList(values.iterator)
                 this.materializer.model.add(node, RDF.`type`, RDF.List)
                 node
             }
             case xR2RML_Constants.xR2RML_RDFBAG_URI => {
                 var list = this.materializer.model.createBag()
-                for (value <- values)
-                    list.add(this.createLiteral(value, datatype, languageTag))
+                for (value <- values) list.add(value)
                 list
             }
             case xR2RML_Constants.xR2RML_RDFALT_URI => {
                 val list = this.materializer.model.createAlt()
-                for (value <- values)
-                    list.add(this.createLiteral(value, datatype, languageTag))
+                for (value <- values) list.add(value)
                 list
             }
             case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
                 val list = this.materializer.model.createSeq()
-                for (value <- values)
-                    list.add(this.createLiteral(value, datatype, languageTag))
+                for (value <- values) list.add(value)
                 list
             }
-            case _ => { throw new Exception("Unkown term type: " + termType) }
+            case _ => { throw new Exception("Term type " + collecTermType + " is not an RDF collection/container term type") }
         }
-        Some(translated)
-    }
-
-    /**
-     * Convert a list of RDFNodes into an RDF collection or container
-     */
-    def createCollection(termType: String, values: List[RDFNode]): RDFNode = {
-
-        val translated: RDFNode = termType match {
-            case xR2RML_Constants.xR2RML_RDFLIST_URI => {
-                this.materializer.model.createList(values.iterator)
-            }
-            case xR2RML_Constants.xR2RML_RDFBAG_URI => {
-                var list = this.materializer.model.createBag()
-                for (value <- values)
-                    list.add(value)
-                list
-            }
-            case xR2RML_Constants.xR2RML_RDFALT_URI => {
-                val list = this.materializer.model.createAlt()
-                for (value <- values)
-                    list.add(value)
-                list
-            }
-            case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
-                val list = this.materializer.model.createSeq()
-                for (value <- values)
-                    list.add(value)
-                list
-            }
-            case _ => { throw new Exception("Unkown term type: " + termType) }
-        }
-        translated
+        List(translated)
     }
 
     protected def translateDateTime(value: String): String = {

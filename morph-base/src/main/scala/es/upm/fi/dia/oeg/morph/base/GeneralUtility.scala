@@ -65,10 +65,10 @@ object GeneralUtility {
     def encodeUnsafeChars(originalValue: String): String = {
         var result = originalValue;
         if (result != null) {
-            //result = result.replaceAll("\\%", "%25");//put this first
+            // result = result.replaceAll("\\%", "%25"); //put this first
+            // result = result.replaceAll("#", "%23");
             result = result.replaceAll("<", "%3C");
             result = result.replaceAll(">", "%3E");
-            //			result = result.replaceAll("#", "%23");
             result = result.replaceAll("\\{", "%7B");
             result = result.replaceAll("\\}", "%7D");
             result = result.replaceAll("\\|", "%7C");
@@ -95,7 +95,6 @@ object GeneralUtility {
             result = result.replaceAll("=", "%3D");
             result = result.replaceAll("\\?", "%3F");
             result = result.replaceAll("@", "%40");
-
             result = result.replaceAll("/", "%2F");
             result = result.replaceAll(":", "%3A");
         }

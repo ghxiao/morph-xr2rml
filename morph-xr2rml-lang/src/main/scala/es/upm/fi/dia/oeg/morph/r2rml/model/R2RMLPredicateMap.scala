@@ -28,12 +28,13 @@ object R2RMLPredicateMap {
         val termType = coreProperties._2;
         val datatype = coreProperties._3;
         val languageTag = coreProperties._4;
+        val nestTM = coreProperties._5;
 
-        /**
-         * @TODO
-         * - check that the termType is not an xR2RML term type (collection or container)
-         * - check that there is no nested term map
-         */
+        if (nestTM.isDefined)
+            logger.error("A nested term map cannot be defined in a subject map. Ignoring.")
+
+        if (R2RMLTermMap.isRdfCollectionTermType(termType))
+            logger.error("A subject map cannot have a term type: " + termType + ". Ignoring.")
 
         val pm = new R2RMLPredicateMap(termMapType, termType, datatype, languageTag, refFormulation);
         pm.parse(rdfNode);

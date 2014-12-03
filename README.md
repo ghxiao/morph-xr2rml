@@ -7,7 +7,8 @@ Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as a
 Limitations:
 - The generation of RDF collection and containers is not supported in the case of a regular join query in an RDB.
 - As in Morph-RDB, named target graphs are not supported.
-- NestedTermMaps are not implemented. As a result, collections or containers evaluated from a value without join will always contain literal with no term type, language tag nor datatype. Note this has no impact on collections or containers resulting from a join condition, as they always contain IRIs.
+- Only simple NestedTermMaps are implemented i.e. to qualify RDF terms generated within an RDF collection/container.
+More complex nested term maps (with recursive parse using another nested term map) or with xxr:referencfe or rr:template properties are not supported.
 
 Examples:
 Example mappings are provided in the RDB and MongoDB case along with an example database connection configuration, see:
