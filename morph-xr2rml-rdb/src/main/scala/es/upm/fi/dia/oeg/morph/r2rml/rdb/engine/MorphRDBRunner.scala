@@ -67,10 +67,10 @@ object MorphRDBRunner {
             logger.info("Running data translation...");
             runner.run();
 
+            // Post treatment: reload the resulting file and save it with the requested format
             val properties = MorphProperties(configDir, configFile)
             var outputFilepath = properties.outputFilePath.get
             var outputFormat = properties.rdfLanguageForResult
-
             var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, "TURTLE")
 
             // Display the result on the std output

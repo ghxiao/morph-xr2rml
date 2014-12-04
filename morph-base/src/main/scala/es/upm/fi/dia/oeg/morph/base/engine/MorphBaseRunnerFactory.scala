@@ -72,6 +72,7 @@ abstract class MorphBaseRunnerFactory {
         } catch {
             case e: Exception => {
                 logger.warn("Error building query translator: " + e.getMessage());
+                e.printStackTrace()
                 None
             }
         }
