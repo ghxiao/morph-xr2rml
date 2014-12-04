@@ -197,7 +197,7 @@ class MorphRDBQueryTranslator(nameGenerator:NameGenerator
 								} 
 							  case Constants.MorphTermMapType.ColumnTermMap => {
 									//String columnName = termMap.getColumnName();
-									rs.getString(varName);
+									rs.getObject(varName).toString();
 								} 
 							  case Constants.MorphTermMapType.ConstantTermMap => {
 									termMap.getConstantValue();

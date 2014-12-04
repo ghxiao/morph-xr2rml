@@ -14,103 +14,100 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseQueryResultWriter
 import java.io.OutputStream
 import java.io.Writer
 
+class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStream: Writer)
+        extends MorphBaseQueryResultWriter(queryTranslator, xmlOutputStream) {
+    this.outputStream = xmlOutputStream;
 
-class MorphXMLQueryResultWriter(queryTranslator:IQueryTranslator, xmlOutputStream:Writer) 
-extends MorphBaseQueryResultWriter(queryTranslator, xmlOutputStream) {
-	this.outputStream = xmlOutputStream;
-	
-	val logger = Logger.getLogger(this.getClass().getName());
-	
-	if(queryTranslator == null) {
-		throw new Exception("Query Translator is not set yet!");
+    val logger = Logger.getLogger(this.getClass().getName());
+
+    if (queryTranslator == null) {
+        throw new Exception("Query Translator is not set yet!");
     }
-	
-	val xmlDoc = XMLUtility.createNewXMLDocument();
-	val resultsElement = xmlDoc.createElement("results");
 
-	//var outputFileName:String = null;
-	
+    val xmlDoc = XMLUtility.createNewXMLDocument();
+    val resultsElement = xmlDoc.createElement("results");
 
-	override def initialize() = { }
+    //var outputFileName:String = null;
 
-	def preProcess() = {
-		
-		//create root element
-		val rootElement = xmlDoc.createElement("sparql");
-		xmlDoc.appendChild(rootElement);
+    override def initialize() = {}
 
-		//create head element
-		val headElement = xmlDoc.createElement("head");
-		rootElement.appendChild(headElement);
-		val sparqlQuery = this.sparqlQuery;
-		val varNames = sparqlQuery.getResultVars();
-		for(varName <- varNames) {
-			val variableElement = xmlDoc.createElement("variable");
-			variableElement.setAttribute("name", varName);
-			headElement.appendChild(variableElement);
-		}
-		
-		//create results element
-		rootElement.appendChild(resultsElement);
-	}
+    def preProcess() = {
 
-	def process() = {
-		val queryTranslator = this.queryTranslator;
-		val sparqlQuery = this.sparqlQuery;
-		val varNames = sparqlQuery.getResultVars();
-		
-		var i=0;
-		val rs = this.resultSet;
-		while(rs.next()) {
-			val resultElement = xmlDoc.createElement("result");
-			resultsElement.appendChild(resultElement);
-			
-			for(varName <- varNames) {
-				val translatedColumnValue = queryTranslator.translateResultSet(varName, rs);
-				val translatedDBValue = translatedColumnValue.translatedValue;
-				val xsdDataType = translatedColumnValue.xsdDatatype;
-				val lexicalValue = ValueTransformator.transformToLexical(
-				    translatedDBValue, xsdDataType)
-				if(lexicalValue != null) {
-					val bindingElement = xmlDoc.createElement("binding");
-					bindingElement.setAttribute("name", varName);
-					resultElement.appendChild(bindingElement);
-	
-					val termType = translatedColumnValue.termType;
-					if(termType != null) {
-						val termTypeElementName = { 
-						  if(termType.equalsIgnoreCase(Constants.R2RML_IRI_URI)) {
-							"uri";
-						  } else if(termType.equalsIgnoreCase(Constants.R2RML_LITERAL_URI)) {
-							"literal";
-						  } else {
-							  null
-						  }
-						}
-						
-						val termTypeElement = xmlDoc.createElement(termTypeElementName);
-						bindingElement.appendChild(termTypeElement);
-						termTypeElement.setTextContent(lexicalValue);
-					} else {
-						bindingElement.setTextContent(lexicalValue);	
-					}				  
-				}
-			}
-			i = i+1;
-		}
-		val status = i  + " instance(s) retrieved ";
-		logger.info(status);
-		
-	}
+        //create root element
+        val rootElement = xmlDoc.createElement("sparql");
+        xmlDoc.appendChild(rootElement);
 
-	def postProcess() = {
-		logger.info("Writing query result to " + outputStream);
-		XMLUtility.saveXMLDocument(xmlDoc, outputStream);
-	}
+        //create head element
+        val headElement = xmlDoc.createElement("head");
+        rootElement.appendChild(headElement);
+        val sparqlQuery = this.sparqlQuery;
+        val varNames = sparqlQuery.getResultVars();
+        for (varName <- varNames) {
+            val variableElement = xmlDoc.createElement("variable");
+            variableElement.setAttribute("name", varName);
+            headElement.appendChild(variableElement);
+        }
 
+        //create results element
+        rootElement.appendChild(resultsElement);
+    }
 
-	override def getOutput() = {
-		this.xmlDoc;
-	}
+    def process() = {
+        val queryTranslator = this.queryTranslator;
+        val sparqlQuery = this.sparqlQuery;
+        val varNames = sparqlQuery.getResultVars();
+
+        var i = 0;
+        val rs = this.resultSet;
+        while (rs.next()) {
+            val resultElement = xmlDoc.createElement("result");
+            resultsElement.appendChild(resultElement);
+
+            for (varName <- varNames) {
+                val translatedColumnValue = queryTranslator.translateResultSet(varName, rs);
+                if (translatedColumnValue != null) {
+                    val translatedDBValue = translatedColumnValue.translatedValue;
+                    val xsdDataType = translatedColumnValue.xsdDatatype;
+                    val lexicalValue = ValueTransformator.transformToLexical(
+                        translatedDBValue, xsdDataType)
+                    if (lexicalValue != null) {
+                        val bindingElement = xmlDoc.createElement("binding");
+                        bindingElement.setAttribute("name", varName);
+                        resultElement.appendChild(bindingElement);
+                        val termType = translatedColumnValue.termType;
+                        if (termType != null) {
+                            val termTypeElementName = {
+                                if (termType.equalsIgnoreCase(Constants.R2RML_IRI_URI)) {
+                                    "uri";
+                                } else if (termType.equalsIgnoreCase(Constants.R2RML_LITERAL_URI)) {
+                                    "literal";
+                                } else {
+                                    null
+                                }
+                            }
+                            val termTypeElement = xmlDoc.createElement(termTypeElementName);
+                            bindingElement.appendChild(termTypeElement);
+                            termTypeElement.setTextContent(lexicalValue);
+                        } else {
+                            bindingElement.setTextContent(lexicalValue);
+                        }
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        val status = i + " instance(s) retrieved ";
+        logger.info(status);
+
+    }
+
+    def postProcess() = {
+        logger.info("Writing query result to " + outputStream);
+        XMLUtility.saveXMLDocument(xmlDoc, outputStream);
+    }
+
+    override def getOutput() = {
+        this.xmlDoc;
+    }
 
 }
