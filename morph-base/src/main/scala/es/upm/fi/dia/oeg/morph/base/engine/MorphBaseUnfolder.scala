@@ -8,6 +8,7 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 abstract class MorphBaseUnfolder(md: MorphBaseMappingDocument, properties: MorphProperties) {
 
@@ -15,5 +16,6 @@ abstract class MorphBaseUnfolder(md: MorphBaseMappingDocument, properties: Morph
 
     var dbType = Constants.DATABASE_MYSQL;
 
+    @throws[MorphException]
     def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery;
 }

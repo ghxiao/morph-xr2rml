@@ -26,6 +26,8 @@ import com.hp.hpl.jena.sparql.core.Var
 import com.hp.hpl.jena.vocabulary.RDFS
 import com.hp.hpl.jena.rdf.model.Statement
 import com.hp.hpl.jena.rdf.model.Resource
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 abstract class MorphBaseRunner(
         mappingDocument: MorphBaseMappingDocument,
@@ -104,9 +106,9 @@ abstract class MorphBaseRunner(
     def materializeMappingDocuments(md: MorphBaseMappingDocument) {
 
         if (!this.dataTranslator.isDefined) {
-            val errorMessage = "Data Translator has not been defined yet!";
+            val errorMessage = "Data Translator has not been defined yet.";
             logger.error(errorMessage);
-            throw new Exception(errorMessage)
+            throw new MorphException(errorMessage)
         }
 
         val startGeneratingModel = System.currentTimeMillis();

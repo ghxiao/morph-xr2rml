@@ -80,6 +80,9 @@ object MorphRDBRunner {
             erasefile(outputFilepath)
             model.write(new FileWriter(outputFilepath), outputFormat)
         } catch {
+            case e: com.hp.hpl.jena.n3.turtle.TurtleParseException => {
+                logger.error("Invalid xR2RML document, parsing error: " + e.getMessage)
+            }
             case e: Exception => {
                 logger.error("Exception occured: " + e.getMessage());
                 throw e;

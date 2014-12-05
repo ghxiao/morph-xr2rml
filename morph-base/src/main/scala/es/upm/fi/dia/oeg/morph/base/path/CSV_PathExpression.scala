@@ -44,7 +44,7 @@ class CSV_PathExpression(
             result.toList
         } catch {
             case e: Exception => {
-                logger.error("Unable to get CSV element with column " + pathExpression + ". Returning nothing.")
+                logger.warn("Unable to get CSV element with column " + pathExpression + ". Returning nothing.")
                 List()
             }
         }

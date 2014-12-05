@@ -1,9 +1,11 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.Resource
+
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class R2RMLJoinCondition(val childRef: String, val parentRef: String) {
 
@@ -23,7 +25,7 @@ object R2RMLJoinCondition {
         if (childStatement == null) {
             val errorMessage = "Missing child column in join condition.";
             logger.error(errorMessage);
-            throw new Exception(errorMessage);
+            throw new MorphException(errorMessage);
         }
         val childRef = childStatement.getObject().toString();
 
@@ -31,7 +33,7 @@ object R2RMLJoinCondition {
         if (parentStatement == null) {
             val errorMessage = "Missing parent column in join condition.";
             logger.error(errorMessage);
-            throw new Exception(errorMessage);
+            throw new MorphException(errorMessage);
         }
         val parentRef = parentStatement.getObject().toString();
 

@@ -16,6 +16,8 @@ import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import com.hp.hpl.jena.rdf.model.AnonId
 import es.upm.fi.dia.oeg.morph.base.Constants
 import com.hp.hpl.jena.vocabulary.RDF
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -58,7 +60,7 @@ abstract class MorphBaseDataTranslator(
      * Convert a list of values (string, integer, boolean, etc) into RDF terms.
      * If collecTermType is not null, RDF terms are enclosed in a term of that type, i.e. a collection or container
      *
-     * The method always returns a List, either empty or with one RDf term in the case collecTermType is not null,
+     * The method always returns a List, either empty or with one RDF term in the case collecTermType is not null,
      * or with several elements otherwise.
      *
      * @param values list of values these may be strings, integers, booleans etc.,
@@ -88,7 +90,7 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Create a list of RDF terms (as JENA resources) according to the term type from a list of values.
+     * Create a list of RDF terms (as JENA resources) from a list of values
      *
      * @param values list of values: these may be strings, integers, booleans etc.,
      * @param termType term type of the current term map
@@ -122,6 +124,7 @@ abstract class MorphBaseDataTranslator(
     /**
      *  Create a JENA resource with an IRI after URL-encoding the string
      */
+    @throws[MorphException]
     protected def createIRI(originalIRI: String) = {
         var resultIRI = originalIRI;
         try {
@@ -135,8 +138,9 @@ abstract class MorphBaseDataTranslator(
             this.materializer.model.createResource(resultIRI);
         } catch {
             case e: Exception => {
-                logger.warn("Error translating object uri value : " + resultIRI);
-                throw e
+                val msg = "Error translating object uri value : " + resultIRI
+                logger.error(msg);
+                throw new MorphException(msg, e)
             }
         }
     }
@@ -144,6 +148,7 @@ abstract class MorphBaseDataTranslator(
     /**
      * Create a JENA literal resource with optional datatype and language tag
      */
+    @throws[MorphException]
     protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
             val encodedValue =
@@ -177,8 +182,9 @@ abstract class MorphBaseDataTranslator(
             result
         } catch {
             case e: Exception => {
-                logger.warn("Error translating object uri value : " + value);
-                throw e
+                val msg = "Error translating object uri value : " + value
+                logger.error(msg);
+                throw new MorphException(msg, e)
             }
         }
     }
@@ -188,6 +194,7 @@ abstract class MorphBaseDataTranslator(
      *
      * If the list of nodes is empty, return an empty list, but no empty collection/contianer is returned.
      */
+    @throws[MorphException]
     protected def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
 
         // If values is empty, then do not return a list with one empty list inside, but just an empty list
@@ -215,7 +222,11 @@ abstract class MorphBaseDataTranslator(
                 for (value <- values) list.add(value)
                 list
             }
-            case _ => { throw new Exception("Term type " + collecTermType + " is not an RDF collection/container term type") }
+            case _ => {
+                val msg = "Term type " + collecTermType + " is not an RDF collection/container term type"
+                logger.error(msg);
+                throw new MorphException(msg)
+            }
         }
         List(translated)
     }

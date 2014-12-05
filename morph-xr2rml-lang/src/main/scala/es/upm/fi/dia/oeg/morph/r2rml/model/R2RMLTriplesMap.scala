@@ -4,11 +4,8 @@ import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConversions.setAsJavaSet
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.rdf.model.Resource
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.model.IConceptMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
@@ -18,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class R2RMLTriplesMap(
     val logicalSource: xR2RMLLogicalSource,
@@ -139,7 +137,7 @@ object R2RMLTriplesMap {
             } else {
                 val errorMessage = "Missing rr:logicalTable and xrr:logicalSource"
                 logger.error(errorMessage)
-                throw new Exception(errorMessage)
+                throw new MorphException(errorMessage)
             }
         }
         logger.trace("Parsed logical table/source. " + logSource.toString)
@@ -155,6 +153,11 @@ object R2RMLTriplesMap {
             val errorMessage = "Multiple rr:subjectMap predicates are not allowed";
             logger.error(errorMessage);
             throw new Exception(errorMessage);
+        }
+        if (!subjectMaps.iterator.hasNext) {
+            val errorMessage = "Error: logical source defined without subject map."
+            logger.error(errorMessage)
+            throw new MorphException(errorMessage)
         }
         val subjectMap = subjectMaps.iterator.next;
 

@@ -32,6 +32,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -51,16 +52,27 @@ class MorphRDBDataTranslator(
     override val logger = Logger.getLogger(this.getClass().getName());
 
     override def generateRDFTriples(cm: MorphBaseClassMapping) = {
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
+        try {
+            val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
 
-        val query = this.unfolder.unfoldConceptMapping(triplesMap);
-        if (!query.isSqlQuery)
-            throw new Exception("Unsupported query type: should be an SQL query")
-        val logicalTable = triplesMap.logicalSource;
-        val sm = triplesMap.subjectMap;
-        val poms = triplesMap.predicateObjectMaps;
+            val query = this.unfolder.unfoldConceptMapping(triplesMap);
+            if (!query.isSqlQuery)
+                throw new Exception("Unsupported query type: should be an SQL query")
+            val logicalTable = triplesMap.logicalSource;
+            val sm = triplesMap.subjectMap;
+            val poms = triplesMap.predicateObjectMaps;
 
-        this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery]);
+            this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery]);
+        } catch {
+            case e: MorphException => {
+                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
+                e.printStackTrace()
+            }
+            case e: Exception => {
+                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
+                e.printStackTrace()
+            }
+        }
     }
 
     /**
@@ -71,18 +83,19 @@ class MorphRDBDataTranslator(
      * and a list of resources representing target graphs mentioned in the predicate-object map.
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
-    private def generateRDFTriples(logicalTable: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
+    @throws[MorphException]
+    private def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
 
-        logger.info("Starting translating RDB data into RDF instances...");
+        logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {
-            val errorMessage = "No SubjectMap is defined";
+            val errorMessage = "Error: no SubjectMap is defined with LogicalSource " + logicalSrc;
             logger.error(errorMessage);
-            throw new Exception(errorMessage);
+            throw new MorphException(errorMessage);
         }
 
         // Run the query against the database
         val rows = DBUtility.execute(this.connection, iQuery.toString(), this.properties.databaseTimeout);
-        // logger.trace(DBUtility.resultSetToString(rows)) // debug only, can't be reset afterwards
+        // logger.trace(DBUtility.resultSetToString(rows)) // debug only, it consumes the cursor and can't be reset afterwards
 
         // Make mappings of each column in the result set and its data type and equivalent XML data type
         var mapXMLDatatype: Map[String, String] = Map.empty;
@@ -103,7 +116,9 @@ class MorphRDBDataTranslator(
             }
         } catch {
             case e: Exception => {
-                logger.warn("Unable to detect database columns: " + e.getMessage());
+                val errorMessage = "Unable to detect database columns: " + e.getMessage
+                logger.warn(errorMessage);
+                throw new MorphException(errorMessage, e);
             }
         }
 
@@ -114,20 +129,20 @@ class MorphRDBDataTranslator(
             logger.debug("Row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
                 // Create the subject resource
-                val subjects = this.translateData(sm, rows, logicalTable.alias, mapXMLDatatype);
+                val subjects = this.translateData(sm, rows, logicalSrc.alias, mapXMLDatatype);
                 if (subjects == null) { throw new Exception("null value in the subject triple") }
                 logger.debug("Row " + i + " subjects: " + subjects)
 
                 // Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.map(sgmElement => {
-                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalTable.alias, mapXMLDatatype)
+                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalSrc.alias, mapXMLDatatype)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
                         case Constants.R2RML_IRI_URI => { subjectGraphValue }
                         case _ => {
                             val errorMessage = "GraphMap's TermType is not valid: " + graphMapTermType;
                             logger.warn(errorMessage);
-                            throw new Exception(errorMessage);
+                            throw new MorphException(errorMessage);
                         }
                     }
                     subjectGraph
@@ -153,7 +168,7 @@ class MorphRDBDataTranslator(
                 // Internal loop on each predicate-object map
                 poms.foreach(pom => {
 
-                    val alias = if (pom.alias == null) { logicalTable.alias; }
+                    val alias = if (pom.alias == null) { logicalSrc.alias; }
                     else { pom.alias }
 
                     // ----- Make a list of resources for the predicate maps of this predicate-object map
@@ -192,7 +207,7 @@ class MorphRDBDataTranslator(
                                 // by the database in an SQL join query: all columns have been retrieved and we now have to do the join
 
                                 // Evaluate the child value against the child reference
-                                val childColFromResultSet = getColumnNameFromResultSet(childMsp.getReferencedColumn.get, logicalTable.alias)
+                                val childColFromResultSet = getColumnNameFromResultSet(childMsp.getReferencedColumn.get, logicalSrc.alias)
                                 val childDbValue = this.getResultSetValue(rows, childColFromResultSet);
                                 val childValues: List[Object] = childMsp.evaluate(childDbValue).map(e => e.toString)
 
@@ -284,9 +299,13 @@ class MorphRDBDataTranslator(
                 });
 
             } catch {
+                case e: MorphException => {
+                    logger.error("Error while translating data of row " + i + ": " + e.getMessage);
+                    e.printStackTrace()
+                }
                 case e: Exception => {
-                    logger.error("error while translating data: " + e.getMessage());
-                    throw e
+                    logger.error("Unexpected error while translating data of row " + i + ": " + e.getMessage);
+                    e.printStackTrace()
                 }
             }
         }
@@ -453,8 +472,8 @@ class MorphRDBDataTranslator(
             result
         } catch {
             case e: Exception => {
+                logger.error("An error occured when reading the SQL result set: " + e.getMessage());
                 e.printStackTrace();
-                logger.error("An error occured when reading the SQL result set : " + e.getMessage());
                 null
             }
         }
@@ -473,8 +492,8 @@ class MorphRDBDataTranslator(
             rs.getString(columnName);
         } catch {
             case e: Exception => {
+                logger.error("An error occured when reading the SQL result set: " + e.getMessage());
                 e.printStackTrace();
-                logger.error("An error occured when reading the SQL result set : " + e.getMessage());
                 null
             }
         }

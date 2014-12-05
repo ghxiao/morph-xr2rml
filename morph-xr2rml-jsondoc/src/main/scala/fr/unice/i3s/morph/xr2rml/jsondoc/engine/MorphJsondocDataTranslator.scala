@@ -5,7 +5,6 @@ import java.sql.ResultSet
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
@@ -19,6 +18,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
@@ -51,14 +51,25 @@ class MorphJsondocDataTranslator(
     override val logger = Logger.getLogger(this.getClass().getName());
 
     override def generateRDFTriples(cm: MorphBaseClassMapping) = {
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
+        try {
+            val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
 
-        val query = this.unfolder.unfoldConceptMapping(triplesMap);
-        val logicalTable = triplesMap.logicalSource;
-        val sm = triplesMap.subjectMap;
-        val poms = triplesMap.predicateObjectMaps;
+            val query = this.unfolder.unfoldConceptMapping(triplesMap);
+            val logicalTable = triplesMap.logicalSource;
+            val sm = triplesMap.subjectMap;
+            val poms = triplesMap.predicateObjectMaps;
 
-        this.generateRDFTriples(logicalTable, sm, poms, query);
+            this.generateRDFTriples(logicalTable, sm, poms, query);
+        } catch {
+            case e: MorphException => {
+                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
+                e.printStackTrace()
+            }
+            case e: Exception => {
+                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
+                e.printStackTrace()
+            }
+        }
     }
 
     /**
@@ -71,11 +82,11 @@ class MorphJsondocDataTranslator(
      */
     private def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
 
-        logger.info("Starting translating data into RDF instances...");
+        logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {
             val errorMessage = "No SubjectMap is defined";
             logger.error(errorMessage);
-            throw new Exception(errorMessage);
+            throw new MorphException(errorMessage);
         }
 
         // Execute the query against the database and apply the iterator
@@ -102,7 +113,7 @@ class MorphJsondocDataTranslator(
                         case _ => {
                             val errorMessage = "GraphMap's TermType is not valid: " + graphMapTermType;
                             logger.warn(errorMessage);
-                            throw new Exception(errorMessage);
+                            throw new MorphException(errorMessage);
                         }
                     }
                     subjectGraph
@@ -241,9 +252,13 @@ class MorphJsondocDataTranslator(
                 });
 
             } catch {
+                case e: MorphException => {
+                    logger.error("Error while translating data of row " + i + ": " + e.getMessage);
+                    e.printStackTrace()
+                }
                 case e: Exception => {
-                    logger.error("error while translating data: " + e.getMessage());
-                    throw e
+                    logger.error("Unexpected error while translating data of row " + i + ": " + e.getMessage);
+                    e.printStackTrace()
                 }
             }
         }
@@ -274,8 +289,7 @@ class MorphJsondocDataTranslator(
                 memberTermType = termMap.nestedTermMap.get.inferTermType
                 datatype = termMap.nestedTermMap.get.datatype
                 languageTag = termMap.nestedTermMap.get.languageTag
-            }
-            else
+            } else
                 logger.warn("Term map with collection/container term type but no nested term map: " + termMap)
         } else {
             collecTermType = None
@@ -372,6 +386,7 @@ class MorphJsondocDataTranslator(
      * This method is overriden in the case of JSON to enable the mapping between JSON data types
      * and XSD data types
      */
+    @throws[MorphException]
     override protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
             val encodedValue =
@@ -410,8 +425,9 @@ class MorphJsondocDataTranslator(
             result
         } catch {
             case e: Exception => {
-                logger.warn("Error translating object uri value : " + value);
-                throw e
+                val msg = "Error translating object uri value : " + value
+                logger.error(msg);
+                throw new MorphException(msg, e)
             }
         }
     }
@@ -446,6 +462,7 @@ class MorphJsondocDataTranslator(
      *
      * Major drawback: memory consumption, this is not appropriate for very big databases.
      */
+    @throws[MorphException]
     private def executeQueryAndIteraotr(query: GenericQuery, logSrcIterator: Option[String]): List[String] = {
 
         // A query is simply and uniquely identified by its concrete string value
@@ -457,7 +474,7 @@ class MorphJsondocDataTranslator(
                 // Execute the query against the database, choose the execution method depending on the db type
                 val resultSet: List[String] = this.connection.dbType match {
                     case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query).toList }
-                    case _ => { throw new Exception("Unsupported query type: should be an MongoDB query") }
+                    case _ => { throw new MorphException("Unsupported query type: should be an MongoDB query") }
                 }
 
                 // Save the result of this query in case it is asked again later

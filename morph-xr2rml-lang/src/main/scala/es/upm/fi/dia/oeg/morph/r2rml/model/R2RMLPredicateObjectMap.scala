@@ -2,14 +2,13 @@ package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.rdf.model.Resource
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
+@throws[MorphException]
 class R2RMLPredicateObjectMap(
     val predicateMaps: List[R2RMLPredicateMap],
     val objectMaps: List[R2RMLObjectMap],
@@ -18,6 +17,12 @@ class R2RMLPredicateObjectMap(
         extends MorphBasePropertyMapping {
 
     val logger = Logger.getLogger(this.getClass().getName());
+
+    if (predicateMaps.isEmpty)
+        throw new MorphException("Error: predicateObjectMap with no predicate map will be ignored.")
+    if (objectMaps.isEmpty)
+        throw new MorphException("Error: predicateObjectMap with no object map will be ignored.")
+    
     var alias: String = null;
 
     def getMappedPredicateName(index: Int): String = {

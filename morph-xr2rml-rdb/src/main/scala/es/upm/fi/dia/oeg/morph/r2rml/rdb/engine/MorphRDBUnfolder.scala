@@ -35,6 +35,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -62,6 +63,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      *
      * @return instance of SQLFromItem or SQLQuery
      */
+    @throws[MorphException]
     private def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
 
@@ -84,14 +86,14 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                 try { MorphRDBUtility.toSQLQuery(sqlString2) }
                 catch {
                     case e: Exception => {
-                        logger.warn("Not able to parse the query, string will be used.");
+                        logger.warn("Not able to parse the query, string will be used: " + e.getMessage);
                         val resultAux = new SQLFromItem(sqlString, Constants.LogicalTableType.QUERY);
                         resultAux.databaseType = this.dbType;
                         resultAux
                     }
                 }
             }
-            case _ => { throw new Exception("Invalid logical table type" + logicalTable.logicalTableType) }
+            case _ => { throw new MorphException("Invalid logical table type" + logicalTable.logicalTableType) }
         }
         result;
     }
@@ -101,6 +103,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * Nil in case of a constant-valued term-map, a list of one select item for a column-valued term map,
      * and a list of several select items for a template-valued term map.
      */
+    @throws[MorphException]
     private def unfoldTermMap(termMap: R2RMLTermMap, logicalTableAlias: String): List[MorphSQLSelectItem] = {
 
         val result =
@@ -174,7 +177,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                         };
                     }
 
-                    case _ => { throw new Exception("Invalid term map type") }
+                    case _ => { throw new MorphException("Invalid term map type: " + termMap.termMapType) }
                 }
             } else { Nil }
 
@@ -338,8 +341,9 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             }
 
         } catch {
-            case e: Exception => {
+            case e: MorphException => {
                 logger.error("Errors parsing LIMIT from properties file!")
+                e.printStackTrace()
             }
         }
         result;

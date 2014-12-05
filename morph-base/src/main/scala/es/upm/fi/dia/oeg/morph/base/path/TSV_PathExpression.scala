@@ -46,7 +46,7 @@ class TSV_PathExpression(
             result.toList
         } catch {
             case e: Exception => {
-                logger.error("Unable to get TSV element with column " + pathExpression + ". Returning nothing.")
+                logger.warn("Unable to get TSV element with column " + pathExpression + ". Returning nothing.")
                 List()
             }
         }
