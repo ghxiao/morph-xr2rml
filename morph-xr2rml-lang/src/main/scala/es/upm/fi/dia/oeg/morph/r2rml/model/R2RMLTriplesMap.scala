@@ -74,9 +74,8 @@ class R2RMLTriplesMap(
             if (templateValues != null && templateValues.size() > 0) {
                 result = true;
                 for (value <- templateValues.values()) {
-                    if (value.contains("/")) {
+                    if (value.contains("/"))
                         result = false;
-                    }
                 }
             }
         } else {
@@ -135,8 +134,8 @@ object R2RMLTriplesMap {
                 xR2RMLLogicalSource.parse(res, xR2RML_Constants.xR2RML_LOGICALSOURCE_URI, refForm)
 
             } else {
-                val errorMessage = "Missing rr:logicalTable and xrr:logicalSource"
-                logger.error(errorMessage)
+                val errorMessage = "Error: missing rr:logicalTable and xrr:logicalSource"
+                logger.fatal(errorMessage)
                 throw new MorphException(errorMessage)
             }
         }
@@ -145,18 +144,18 @@ object R2RMLTriplesMap {
         // --- Subject map
         val subjectMaps = R2RMLSubjectMap.extractSubjectMaps(tmResource, logSource.refFormulation)
         if (subjectMaps == null) {
-            val errorMessage = "Missing rr:subjectMap";
-            logger.error(errorMessage);
-            throw new Exception(errorMessage);
+            val errorMessage = "Error: missing rr:subjectMap";
+            logger.fatal(errorMessage);
+            throw new MorphException(errorMessage);
         }
         if (subjectMaps.size > 1) {
-            val errorMessage = "Multiple rr:subjectMap predicates are not allowed";
-            logger.error(errorMessage);
+            val errorMessage = "Error: multiple rr:subjectMap predicates are not allowed";
+            logger.fatal(errorMessage);
             throw new Exception(errorMessage);
         }
         if (!subjectMaps.iterator.hasNext) {
             val errorMessage = "Error: logical source defined without subject map."
-            logger.error(errorMessage)
+            logger.fatal(errorMessage)
             throw new MorphException(errorMessage)
         }
         val subjectMap = subjectMaps.iterator.next;

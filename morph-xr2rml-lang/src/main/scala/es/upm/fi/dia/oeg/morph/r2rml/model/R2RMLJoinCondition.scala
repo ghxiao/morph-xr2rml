@@ -24,7 +24,7 @@ object R2RMLJoinCondition {
         val childStatement = resource.getProperty(Constants.R2RML_CHILD_PROPERTY);
         if (childStatement == null) {
             val errorMessage = "Missing child column in join condition.";
-            logger.error(errorMessage);
+            logger.fatal(errorMessage);
             throw new MorphException(errorMessage);
         }
         val childRef = childStatement.getObject().toString();
@@ -32,7 +32,7 @@ object R2RMLJoinCondition {
         val parentStatement = resource.getProperty(Constants.R2RML_PARENT_PROPERTY);
         if (parentStatement == null) {
             val errorMessage = "Missing parent column in join condition.";
-            logger.error(errorMessage);
+            logger.fatal(errorMessage);
             throw new MorphException(errorMessage);
         }
         val parentRef = parentStatement.getObject().toString();

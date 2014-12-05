@@ -222,7 +222,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     case _ => { null }
                 }
             }
-            case _ => { throw new Exception("Unknown logical table/source type: " + logicalSrc) }
+            case _ => { throw new MorphException("Unknown logical table/source type: " + logicalSrc) }
         }
 
         // ----- Create an alias for the sub-query in the FROM clause
