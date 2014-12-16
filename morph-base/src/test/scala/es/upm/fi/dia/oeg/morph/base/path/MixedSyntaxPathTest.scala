@@ -74,7 +74,7 @@ class MixedSyntaxPathTest {
         val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
         val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
 
-        var colRef = MixedSyntaxPath(mixedPath, Constants.xR2RML_COLUMN_URI).getReferencedColumn
+        var colRef = MixedSyntaxPath(mixedPath, Constants.xR2RML_REFFORMULATION_COLUMN).getReferencedColumn
         println("Column references: " + colRef)
         assertEquals("NAME", colRef.get)
     }
@@ -98,14 +98,14 @@ class MixedSyntaxPathTest {
     @Test def TestReconstructMixedSyntaxPath() {
         println("------------------ TestReconstructMixedSyntaxPath ------------------")
 
-        var pathToStr = MixedSyntaxPath("NAME", Constants.xR2RML_COLUMN_URI).reconstructMixedSyntaxPath
+        var pathToStr = MixedSyntaxPath("NAME", Constants.xR2RML_REFFORMULATION_COLUMN).reconstructMixedSyntaxPath
         println("Reconstructred path: " + pathToStr)
         assertEquals("Column(NAME)", pathToStr)
 
         val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
         val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
         val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
-        pathToStr = MixedSyntaxPath(mixedPath, Constants.xR2RML_COLUMN_URI).reconstructMixedSyntaxPath
+        pathToStr = MixedSyntaxPath(mixedPath, Constants.xR2RML_REFFORMULATION_COLUMN).reconstructMixedSyntaxPath
         println("Reconstructred path: " + pathToStr)
         assertEquals(MixedSyntaxPath.unescapeChars(mixedPath), pathToStr)
     }
@@ -113,7 +113,7 @@ class MixedSyntaxPathTest {
     @Test def TestEvaluateColJson() {
         println("------------------ TestEvaluateColJson ------------------")
 
-        var paths = MixedSyntaxPath("NAME", Constants.xR2RML_COLUMN_URI)
+        var paths = MixedSyntaxPath("NAME", Constants.xR2RML_REFFORMULATION_COLUMN)
         var result = paths.evaluate("one simple value")
         println("Eval: " + result)
         assertEquals("one simple value", result(0))
@@ -121,7 +121,7 @@ class MixedSyntaxPathTest {
         // JSON value read from an RDB
         var jsonValue: String = """[{ "name" : "john", "age": 28}, { "name" : "lucie", "isMale": false}]"""
         var mixedPath = "Column(NAME)/JSONPath($.*.*)"
-        paths = MixedSyntaxPath(mixedPath, Constants.xR2RML_COLUMN_URI)
+        paths = MixedSyntaxPath(mixedPath, Constants.xR2RML_REFFORMULATION_COLUMN)
         result = paths.evaluate(jsonValue)
         println("Eval: " + result)
         assertEquals(List("john", 28, "lucie", false), result)
@@ -152,7 +152,7 @@ class MixedSyntaxPathTest {
             </People>"""
 
         var mixedPath = """Column(NAME)/XPath(\/\/Person[email]\/firstname)"""
-        val paths = MixedSyntaxPath(mixedPath, Constants.xR2RML_COLUMN_URI)
+        val paths = MixedSyntaxPath(mixedPath, Constants.xR2RML_REFFORMULATION_COLUMN)
         println(paths.toString)
         val result = paths.evaluate(value)
         println("Eval: " + result)
@@ -180,7 +180,7 @@ class MixedSyntaxPathTest {
             </People>"""
 
         var mixedPath = """XPath(\/\/Person\/details)/JSONPath($.firstname)"""
-        val paths = MixedSyntaxPath(mixedPath, Constants.QL_XPATH_URI)
+        val paths = MixedSyntaxPath(mixedPath, Constants.xR2RML_REFFORMULATION_XPATH)
         println(paths.toString)
         val result = paths.evaluate(value)
         println("Eval: " + result)

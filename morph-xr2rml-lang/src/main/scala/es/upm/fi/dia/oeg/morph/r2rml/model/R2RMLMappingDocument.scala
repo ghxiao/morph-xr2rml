@@ -236,7 +236,7 @@ object R2RMLMappingDocument {
             tmList.map(tmRes => {
                 val triplesMapKey = tmRes.getLocalName();
                 // From that point on, each triples map is browsed in depth to create the whole model (logical source, term maps)
-                val tm = R2RMLTriplesMap(tmRes);
+                val tm = R2RMLTriplesMap(tmRes, R2RMLMappingDocument.readReferenceFormulation(props));
                 tm.id = triplesMapKey;
                 tm;
             })
@@ -258,7 +258,6 @@ object R2RMLMappingDocument {
     private def inferR2RMLClasses(model: Model) {
 
         inferTriplesMaps(model)
-        
         // Expand all shortcut properties to the long version
         //expandConstantShortCuts(model, Constants.R2RML_SUBJECT_PROPERTY,Constants.R2RML_SUBJECTMAP_PROPERTY)
         //expandConstantShortCuts(model, Constants.R2RML_PREDICATE_PROPERTY,Constants.R2RML_PREDICATEMAP_PROPERTY)
@@ -302,6 +301,27 @@ object R2RMLMappingDocument {
             val stmtType = model.createStatement(stmt.getSubject, RDF.`type`, Constants.R2RML_TRIPLESMAP_CLASS)
             model.add(stmtType)
         }
+    }
+
+    /**
+     * Read the reference formulation from the config properties and checks it has is an authorized value.
+     * @throws MorphException in case the value in the configuration is invalid
+     */
+    private def readReferenceFormulation(props: MorphProperties): String = {
+        var result = Constants.xR2RML_REFFORMULATION_COLUMN
+
+        val refFormConf = props.databaseReferenceFormulation
+        if (refFormConf != null) {
+            // Verify that the formulation is part of the list of authorized reference formulations
+            if (Constants.xR2RML_AUTHZD_REFERENCE_FORMULATION.contains(refFormConf))
+                result = refFormConf
+            else {
+                val msg = "Unknown reference formulation: " + refFormConf
+                logger.fatal(msg)
+                throw new MorphException(msg)
+            }
+        }
+        result
     }
 
 }

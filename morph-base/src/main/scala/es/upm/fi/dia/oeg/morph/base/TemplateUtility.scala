@@ -126,7 +126,7 @@ object TemplateUtility {
 
         // Extract the column references of each template group between
         val columnsFromTemplate = groups.map(group =>
-            MixedSyntaxPath(group, Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
+            MixedSyntaxPath(group, Constants.xR2RML_REFFORMULATION_COLUMN).getReferencedColumn.getOrElse("")
         )
         logger.trace("Extracted columns: " + columnsFromTemplate + " from template " + tplStr)
         columnsFromTemplate;

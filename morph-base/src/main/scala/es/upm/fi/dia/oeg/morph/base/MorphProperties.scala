@@ -53,6 +53,7 @@ class MorphProperties extends java.util.Properties {
     var databaseUser: String = null;
     var databasePassword: String = null;
     var databaseTimeout = 0;
+    var databaseReferenceFormulation: String = null;
 
     //uri encoding
     var mapURIEncodingChars: Map[String, String] = Map.empty;
@@ -89,6 +90,9 @@ class MorphProperties extends java.util.Properties {
             if (timeoutPropertyString != null && !timeoutPropertyString.equals("")) {
                 this.databaseTimeout = Integer.parseInt(timeoutPropertyString.trim());
             }
+
+            val propertyrefForm = Constants.DATABASE_REFERENCE_FORMULATION + "[" + i + "]";
+            this.databaseReferenceFormulation = this.getProperty(propertyrefForm, Constants.xR2RML_REFFORMULATION_COLUMN);
         }
 
         this.mappingDocumentFilePath = this.readString(Constants.MAPPINGDOCUMENT_FILE_PATH, null);

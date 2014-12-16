@@ -263,23 +263,15 @@ object Constants {
     val xR2RML_QUERY_URI = xR2RML_NS + "query";
     val xR2RML_QUERY_PROPERTY = ResourceFactory.createProperty(xR2RML_QUERY_URI);
 
-    val xR2RML_REFFORMULATION_URI = xR2RML_NS + "referenceFormulation";
-    val xR2RML_REFFORMULATION_PROPERTY = ResourceFactory.createProperty(xR2RML_REFFORMULATION_URI);
-
     val RML_ITERATOR_URI = RML_NS + "iterator";
     val RML_ITERATOR_PROPERTY = ResourceFactory.createProperty(RML_ITERATOR_URI);
 
     // Reference formulation
-    val QL_JSONPATH_URI = QL_NS + "JSONPath";
-    val QL_JSONPATH_CLASS = ResourceFactory.createResource(QL_JSONPATH_URI);
+    val xR2RML_REFFORMULATION_COLUMN = "Column";
+    val xR2RML_REFFORMULATION_JSONPATH = "JSONPath";
+    val xR2RML_REFFORMULATION_XPATH = "XPath";
 
-    val QL_XPATH_URI = QL_NS + "XPath";
-    val QL_XPATH_CLASS = ResourceFactory.createResource(QL_XPATH_URI);
-
-    val xR2RML_COLUMN_URI = xR2RML_NS + "Column";
-    val xR2RML_COLUMN_CLASS = ResourceFactory.createResource(xR2RML_COLUMN_URI);
-
-    val xR2RML_AUTHZD_REFERENCE_FORMULATION = Set(xR2RML_COLUMN_URI, QL_JSONPATH_URI, QL_XPATH_URI)
+    val xR2RML_AUTHZD_REFERENCE_FORMULATION = Set(xR2RML_REFFORMULATION_JSONPATH, xR2RML_REFFORMULATION_XPATH, xR2RML_REFFORMULATION_COLUMN)
 
     //--- PredicateObjectMap
     val R2RML_PREDICATEMAP_URI = R2RML_NS + "predicateMap";

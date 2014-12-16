@@ -99,7 +99,7 @@ object xR2RMLLogicalSource {
      *
      * @param reource an xrr:LogicalSource or rr:LogicalTable resource
      * @param logResType class URI of a logical source or logical table
-     * @param refFormulation the reference formulation URI
+     * @param refFormulation the reference formulation
      */
     def parse(resource: Resource, logResType: String, refFormulation: String): xR2RMLLogicalSource = {
         val logSrc: xR2RMLLogicalSource =
@@ -118,15 +118,10 @@ object xR2RMLLogicalSource {
                     else
                         "Undefined property tableName, sqlQuery or query."
 
-                // Check compliance with R2RML
+                // Check compliance with xR2RML
                 if (isLogicalTable(logResType)) {
                     if (queryStmt != null) {
                         val msg = "Logical Table cannot have an xrr:query property. " + source;
-                        logger.error(msg);
-                        throw new Exception(msg);
-                    }
-                    if (hasReferenceFormulation(resource)) {
-                        val msg = "Logical Table cannot have an xrr:referenceFormulation property. " + source;
                         logger.error(msg);
                         throw new Exception(msg);
                     }
@@ -143,8 +138,8 @@ object xR2RMLLogicalSource {
                     // Check validity of optional properties iterator and referenceFormulation
                     if (hasIterator(resource))
                         logger.warn("Ignoring iterator [" + readIterator(resource).get + "] with rr:tableName " + tableName)
-                    if (!isDefaultReferenceFormulation(resource)) {
-                        val msg = "Invalid reference formulation: " + readReferenceFormulation(resource) + " with rr:tableName " + tableName
+                    if (!isDefaultReferenceFormulation(refFormulation)) {
+                        val msg = "Invalid reference formulation: " + refFormulation + " with rr:tableName " + tableName
                         logger.error(msg);
                         throw new Exception(msg);
                     }
@@ -165,13 +160,13 @@ object xR2RMLLogicalSource {
                     // Check validity of optional properties iterator and referenceFormulation
                     if (hasIterator(resource))
                         logger.warn("Ignoring iterator \"" + readIterator(resource).get + "\" with rr:sqlQuery \"" + queryStr + "\"")
-                    if (!isDefaultReferenceFormulation(resource)) {
-                        val msg = "Invalid reference formulation: " + readReferenceFormulation(resource) + "\". Cannot be used with rr:sqlQuery \"" + queryStr + "\""
+                    if (!isDefaultReferenceFormulation(refFormulation)) {
+                        val msg = "Invalid reference formulation: " + refFormulation + "\". Cannot be used with rr:sqlQuery \"" + queryStr + "\""
                         logger.error(msg);
                         throw new Exception(msg);
                     }
 
-                    new xR2RMLQuery(queryStr, readReferenceFormulation(resource), readIterator(resource))
+                    new xR2RMLQuery(queryStr, refFormulation, readIterator(resource))
 
                 } else if (queryStmt != null) {
                     // xR2RML query
@@ -185,13 +180,6 @@ object xR2RMLLogicalSource {
                 }
             }
         logSrc;
-    }
-
-    /**
-     * Return true is the resource has an xrr:referenceFormulation property
-     */
-    private def hasReferenceFormulation(resource: Resource): Boolean = {
-        (resource.getProperty(Constants.xR2RML_REFFORMULATION_PROPERTY) != null)
     }
 
     /**
@@ -218,29 +206,9 @@ object xR2RMLLogicalSource {
         iter
     }
 
-    /**
-     * Read the reference formulation property and checks it has is an authorized value.
-     * Return xrr:Column as a default if property if not defined.
-     */
-    private def readReferenceFormulation(resource: Resource): String = {
-        var result = Constants.xR2RML_COLUMN_URI
-
-        val refFormStmt = resource.getProperty(Constants.xR2RML_REFFORMULATION_PROPERTY)
-        if (refFormStmt != null) {
-            val refFormStr = refFormStmt.getObject().toString();
-            if (!refFormStr.isEmpty())
-                // Verify that the formulation is part of the list of authorized reference formulations
-                if (Constants.xR2RML_AUTHZD_REFERENCE_FORMULATION.contains(refFormStr))
-                    result = refFormStr
-                else
-                    logger.warn("Unknown reference formulation: " + refFormStr)
-        }
-        result
-    }
-
     /** Return true is the reference formulation has the default value i.e. xrr:Column */
-    private def isDefaultReferenceFormulation(resource: Resource): Boolean = {
-        Constants.xR2RML_COLUMN_URI.equals(readReferenceFormulation(resource))
+    private def isDefaultReferenceFormulation(refForm: String): Boolean = {
+        Constants.xR2RML_REFFORMULATION_COLUMN.equals(refForm)
     }
 
     private def isLogicalSource(logResType: String): Boolean = {

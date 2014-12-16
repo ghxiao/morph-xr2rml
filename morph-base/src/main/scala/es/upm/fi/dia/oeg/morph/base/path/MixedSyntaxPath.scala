@@ -49,7 +49,7 @@ class MixedSyntaxPath(
      * otherwise None is returned.
      */
     def getReferencedColumn(): Option[String] = {
-        if (refFormulation == Constants.xR2RML_COLUMN_URI) {
+        if (refFormulation == Constants.xR2RML_REFFORMULATION_COLUMN) {
             val path = paths.head
             // In a column-based database, the first expression MUST be a Column() expression
             if (path.isInstanceOf[Column_PathExpression]) {
@@ -150,9 +150,9 @@ object MixedSyntaxPath {
             if (rawPathList.isEmpty) {
                 // The value is a simple path expression without any path construct
                 val res = refFormulation match {
-                    case Constants.xR2RML_COLUMN_URI => new Column_PathExpression(rawValue)
-                    case Constants.QL_XPATH_URI => new XPath_PathExpression(rawValue)
-                    case Constants.QL_JSONPATH_URI => new JSONPath_PathExpression(rawValue)
+                    case Constants.xR2RML_REFFORMULATION_COLUMN => new Column_PathExpression(rawValue)
+                    case Constants.xR2RML_REFFORMULATION_XPATH => new XPath_PathExpression(rawValue)
+                    case Constants.xR2RML_REFFORMULATION_JSONPATH => new JSONPath_PathExpression(rawValue)
                     case _ => throw new Exception("Unknown reference formulation: " + refFormulation)
                 }
                 List(res)

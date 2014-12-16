@@ -21,6 +21,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
 class R2RMLTriplesMap(
     val logicalSource: xR2RMLLogicalSource,
+    val refFormulation: String,
     val subjectMap: R2RMLSubjectMap,
     val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
 
@@ -113,7 +114,7 @@ class R2RMLTriplesMap(
 object R2RMLTriplesMap {
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def apply(tmResource: Resource): R2RMLTriplesMap = {
+    def apply(tmResource: Resource, refFormulation: String): R2RMLTriplesMap = {
         logger.debug("Parsing triples map: " + tmResource.getLocalName())
 
         // --- Look for Logical table (rr:logicalTable) or Logical source (xrr:logicalSource) definition
@@ -123,17 +124,11 @@ object R2RMLTriplesMap {
         var logSource: xR2RMLLogicalSource = {
             if (logTabStmt != null) {
                 val res = logTabStmt.getObject().asInstanceOf[Resource]
-                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI, Constants.xR2RML_COLUMN_URI)
+                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI, Constants.xR2RML_REFFORMULATION_COLUMN)
 
             } else if (logSrcStmt != null) {
                 val res = logSrcStmt.getObject().asInstanceOf[Resource]
-
-                val refFormStmt = res.getProperty(Constants.xR2RML_REFFORMULATION_PROPERTY)
-                val refForm = if (refFormStmt != null)
-                    refFormStmt.getObject().toString()
-                else
-                    Constants.xR2RML_COLUMN_URI
-                xR2RMLLogicalSource.parse(res, Constants.xR2RML_LOGICALSOURCE_URI, refForm)
+                xR2RMLLogicalSource.parse(res, Constants.xR2RML_LOGICALSOURCE_URI, refFormulation)
 
             } else {
                 val errorMessage = "Error: missing rr:logicalTable and xrr:logicalSource"
@@ -175,7 +170,7 @@ object R2RMLTriplesMap {
             Set.empty
         };
 
-        val tm = new R2RMLTriplesMap(logSource, subjectMap, predicateObjectMaps.toSet);
+        val tm = new R2RMLTriplesMap(logSource, refFormulation, subjectMap, predicateObjectMaps.toSet);
         tm.resource = tmResource
         tm.name = tmResource.getLocalName();
         logger.debug("Completed parsing triples map: " + tmResource.getLocalName())

@@ -82,14 +82,6 @@ class R2RMLMappingDocument(mappingFile: String) {
         triplesMapResource.getPropertyResourceValue(Constants.xR2RML_LOGICALSOURCE_PROPERTY);
     }
 
-    def getRRLogicalSourceRefFormulation(triplesMapResource: Resource) = {
-        val refForm = this.getRRLogicalSource(triplesMapResource).getPropertyResourceValue(Constants.xR2RML_REFFORMULATION_PROPERTY);
-        if (refForm != null)
-            refForm.asLiteral().getValue().toString();
-        else
-            null;
-    }
-
     def getRRSubjectMapResource(triplesMapResource: Resource) = {
         triplesMapResource.getPropertyResourceValue(Constants.R2RML_SUBJECTMAP_PROPERTY);
     }

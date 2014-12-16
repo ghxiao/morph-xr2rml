@@ -286,7 +286,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                             }
 
                             val joinConditions = refObjectMap.joinConditions;
-                            
+
                             /**
                              *  If at least one of the joined columns is not a simple column reference, but contains mixed syntax
                              *  (e.g. with XPath or JSONPath) then the database cannot evaluate the join. Instead we will have
@@ -295,8 +295,8 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                              */
                             for (join <- joinConditions) {
 
-                                val childMsp = MixedSyntaxPath(join.childRef, Constants.xR2RML_COLUMN_URI)
-                                val parentMsp = MixedSyntaxPath(join.parentRef, Constants.xR2RML_COLUMN_URI)
+                                val childMsp = MixedSyntaxPath(join.childRef, Constants.xR2RML_REFFORMULATION_COLUMN)
+                                val parentMsp = MixedSyntaxPath(join.parentRef, Constants.xR2RML_REFFORMULATION_COLUMN)
 
                                 if (!childMsp.isSimpleColumnExpression || !parentMsp.isSimpleColumnExpression) {
 
@@ -317,7 +317,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                                     result.addSelectItem(selectItem);
                                 }
                             }
-                            
+
                             // Add a left join clause for columns in join conditions of RefObjectMaps
                             val onExpression = MorphRDBUnfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType);
                             val joinQuery = new SQLJoinTable(sqlParentLogSrc, Constants.JOINS_TYPE_LEFT, onExpression);
@@ -429,8 +429,8 @@ object MorphRDBUnfolder {
             // then the join is made by the database. Otherwise we'll have to do the job ourselves.
             var childRef = join.childRef
             var parentRef = join.parentRef
-            if (MixedSyntaxPath(childRef, Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression &&
-                MixedSyntaxPath(parentRef, Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression) {
+            if (MixedSyntaxPath(childRef, Constants.xR2RML_REFFORMULATION_COLUMN).isSimpleColumnExpression &&
+                MixedSyntaxPath(parentRef, Constants.xR2RML_REFFORMULATION_COLUMN).isSimpleColumnExpression) {
 
                 childRef = childTableAlias + "." + childRef.replaceAll("\"", enclosedChar)
                 val childColumn = new ZConstant(childRef, ZConstant.COLUMNNAME)

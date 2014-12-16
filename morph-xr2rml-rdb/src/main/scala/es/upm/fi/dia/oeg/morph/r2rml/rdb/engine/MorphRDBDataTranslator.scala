@@ -194,8 +194,8 @@ class MorphRDBDataTranslator(
 
                         val parentSubjectsCandidates = refObjectMap.joinConditions.flatMap(joinCond => {
 
-                            val childMsp = MixedSyntaxPath(joinCond.childRef, Constants.xR2RML_COLUMN_URI)
-                            val parentMsp = MixedSyntaxPath(joinCond.parentRef, Constants.xR2RML_COLUMN_URI)
+                            val childMsp = MixedSyntaxPath(joinCond.childRef, Constants.xR2RML_REFFORMULATION_COLUMN)
+                            val parentMsp = MixedSyntaxPath(joinCond.parentRef, Constants.xR2RML_REFFORMULATION_COLUMN)
 
                             if (childMsp.isSimpleColumnExpression && parentMsp.isSimpleColumnExpression) {
                                 // Both the child and parent references are pure column references (without other path constructor)
