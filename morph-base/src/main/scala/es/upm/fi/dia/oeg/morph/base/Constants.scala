@@ -44,7 +44,7 @@ object Constants {
 
     val MAP_ZSQL_CUSTOM_FUNCTIONS = Map("CONCAT" -> 2, "SUBSTRING" -> 3, "CONVERT" -> 2, "COALESCE" -> 2, "ABS" -> 1, "LOWER" -> 1, "UPPER" -> 1, "REPLACE" -> 3, "TRIM" -> 1);
 
-    // Relational databases
+    // Document databases
     val DATABASE_MONGODB = "MongoDB";
 
     // Relational databases
@@ -99,6 +99,7 @@ object Constants {
     val DATABASE_PWD_PROP_NAME = "database.pwd";
     val DATABASE_TYPE_PROP_NAME = "database.type";
     val DATABASE_TIMEOUT_PROP_NAME = "database.timeout";
+    val DATABASE_REFERENCE_FORMULATION = "database.reference_formulation";
 
     val MAPPINGDOCUMENT_FILE_PATH = "mappingdocument.file.path";
     val QUERYFILE_PROP_NAME = "query.file.path";
@@ -160,66 +161,23 @@ object Constants {
     // ------------------------------------------------------
 
     val R2RML_NS = "http://www.w3.org/ns/r2rml#";
+    val xR2RML_NS = "http://i3s.unice.fr/xr2rml#";
+    val RML_NS = "http://semweb.mmlab.be/ns/rml#";
+    val QL_NS = "http://semweb.mmlab.be/ns/ql#";
 
-    // TermMap
-    val R2RML_SUBJECTMAP_URI = R2RML_NS + "subjectMap";
-    val R2RML_SUBJECTMAP_PROPERTY = ResourceFactory.createProperty(R2RML_SUBJECTMAP_URI);
+    //--- TriplesMap
 
-    val R2RML_CLASS_URI = R2RML_NS + "class";
-    val R2RML_CLASS_PROPERTY = ResourceFactory.createProperty(R2RML_CLASS_URI);
+    val R2RML_TRIPLESMAP_URI = R2RML_NS + "TriplesMap";
+    val R2RML_TRIPLESMAP_CLASS = ResourceFactory.createResource(R2RML_TRIPLESMAP_URI);
 
-    val R2RML_PREDICATEOBJECTMAP_URI = R2RML_NS + "predicateObjectMap";
-    val R2RML_PREDICATEOBJECTMAP_PROPERTY = ResourceFactory.createProperty(R2RML_PREDICATEOBJECTMAP_URI);
+    val R2RML_OBJECTMAPCLASS_URI = R2RML_NS + "ObjectMap";
+    val R2RML_OBJECTSMAP_CLASS = ResourceFactory.createResource(R2RML_OBJECTMAPCLASS_URI);
 
-    val R2RML_OBJECTMAP_URI = R2RML_NS + "objectMap";
-    val R2RML_OBJECTMAP_PROPERTY = ResourceFactory.createProperty(R2RML_OBJECTMAP_URI);
-
-    val R2RML_PARENTTRIPLESMAP_URI = R2RML_NS + "parentTriplesMap";
-    val R2RML_PARENTTRIPLESMAP_PROPERTY = ResourceFactory.createProperty(R2RML_PARENTTRIPLESMAP_URI);
-
-    //TermType
-    val R2RML_TERMTYPE_URI = R2RML_NS + "termType";
-    val R2RML_TERMTYPE_PROPERTY = ResourceFactory.createProperty(R2RML_TERMTYPE_URI);
-
-    val R2RML_LITERAL_URI = R2RML_NS + "Literal";
-    //val R2RML_LITERAL_CLASS = ResourceFactory.createResource(R2RML_LITERAL_URI);
-
-    val R2RML_IRI_URI = R2RML_NS + "IRI";
-    //val R2RML_IRI_CLASS = ResourceFactory.createResource(R2RML_IRI_URI);
-
-    val R2RML_BLANKNODE_URI = R2RML_NS + "BlankNode";
-
-    val R2RML_TERMTYPE_IRI_URI = R2RML_NS + "IRI";
-    //val R2RML_TERM_TYPE_IRI_RESOURCE = ResourceFactory.createResource(R2RML_TERMTYPE_IRI_URI);
-
-    val R2RML_DATATYPE_URI = R2RML_NS + "datatype";
-    val R2RML_DATATYPE_PROPERTY = ResourceFactory.createProperty(R2RML_DATATYPE_URI);
-
-    //TermMap
-    val R2RML_GRAPHMAP_URI = R2RML_NS + "graphMap";
-    val R2RML_GRAPHMAP_PROPERTY = ResourceFactory.createProperty(R2RML_GRAPHMAP_URI);
-
-    val R2RML_LANGUAGE_URI = R2RML_NS + "language";
-    val R2RML_LANGUAGE_PROPERTY = ResourceFactory.createProperty(R2RML_LANGUAGE_URI);
-
-    //TermMap Types
-    val R2RML_CONSTANT_URI = R2RML_NS + "constant";
-    val R2RML_CONSTANT_PROPERTY = ResourceFactory.createProperty(R2RML_CONSTANT_URI);
-
-    val R2RML_COLUMN_URI = R2RML_NS + "column";
-    val R2RML_COLUMN_PROPERTY = ResourceFactory.createProperty(R2RML_COLUMN_URI);
-
-    val R2RML_TEMPLATE_URI = R2RML_NS + "template";
-    val R2RML_TEMPLATE_PROPERTY = ResourceFactory.createProperty(R2RML_TEMPLATE_URI);
-
-    //val R2RML_TEMPLATE_PATTERN = "\\{\"*\\w+(\\s\\w+)*\\\"*}"; // \{"*\w+(\s\w+)*\"*}
-    val R2RML_TEMPLATE_PATTERN = """\{"*\w+\s*[\s\w/]*\"*}"""
-
-    val R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP = """\{(.+?)\}"""
-
-    //TriplesMap
     val R2RML_LOGICALTABLE_URI = R2RML_NS + "logicalTable";
     val R2RML_LOGICALTABLE_PROPERTY = ResourceFactory.createProperty(R2RML_LOGICALTABLE_URI);
+
+    val xR2RML_LOGICALSOURCE_URI = xR2RML_NS + "logicalSource";
+    val xR2RML_LOGICALSOURCE_PROPERTY = ResourceFactory.createProperty(xR2RML_LOGICALSOURCE_URI);
 
     val R2RML_SUBJECT_URI = R2RML_NS + "subject";
     val R2RML_SUBJECT_PROPERTY = ResourceFactory.createProperty(R2RML_SUBJECT_URI);
@@ -233,21 +191,97 @@ object Constants {
     val R2RML_GRAPH_URI = R2RML_NS + "graph";
     val R2RML_GRAPH_PROPERTY = ResourceFactory.createProperty(R2RML_GRAPH_URI);
 
-    //logical table
+    val R2RML_SUBJECTMAP_URI = R2RML_NS + "subjectMap";
+    val R2RML_SUBJECTMAP_PROPERTY = ResourceFactory.createProperty(R2RML_SUBJECTMAP_URI);
+
+    val R2RML_PREDICATEOBJECTMAP_URI = R2RML_NS + "predicateObjectMap";
+    val R2RML_PREDICATEOBJECTMAP_PROPERTY = ResourceFactory.createProperty(R2RML_PREDICATEOBJECTMAP_URI);
+
+    val R2RML_OBJECTMAP_URI = R2RML_NS + "objectMap";
+    val R2RML_OBJECTMAP_PROPERTY = ResourceFactory.createProperty(R2RML_OBJECTMAP_URI);
+
+    val R2RML_PARENTTRIPLESMAP_URI = R2RML_NS + "parentTriplesMap";
+    val R2RML_PARENTTRIPLESMAP_PROPERTY = ResourceFactory.createProperty(R2RML_PARENTTRIPLESMAP_URI);
+
+    val R2RML_GRAPHMAP_URI = R2RML_NS + "graphMap";
+    val R2RML_GRAPHMAP_PROPERTY = ResourceFactory.createProperty(R2RML_GRAPHMAP_URI);
+
+    val R2RML_CLASS_URI = R2RML_NS + "class";
+    val R2RML_CLASS_PROPERTY = ResourceFactory.createProperty(R2RML_CLASS_URI);
+
+    //--- TermType
+    val R2RML_TERMTYPE_URI = R2RML_NS + "termType";
+    val R2RML_TERMTYPE_PROPERTY = ResourceFactory.createProperty(R2RML_TERMTYPE_URI);
+
+    val R2RML_LITERAL_URI = R2RML_NS + "Literal";
+    val R2RML_IRI_URI = R2RML_NS + "IRI";
+    val R2RML_BLANKNODE_URI = R2RML_NS + "BlankNode";
+
+    val xR2RML_RDFLIST_URI = xR2RML_NS + "RdfList";
+    val xR2RML_RDFLIST_CLASS = ResourceFactory.createResource(xR2RML_RDFLIST_URI);
+
+    val xR2RML_RDFBAG_URI = xR2RML_NS + "RdfBag";
+    val xR2RML_RDFBAG_CLASS = ResourceFactory.createResource(xR2RML_RDFBAG_URI);
+
+    val xR2RML_RDFSEQ_URI = xR2RML_NS + "RdfSeq";
+    val xR2RML_RDFSEQ_CLASS = ResourceFactory.createResource(xR2RML_RDFSEQ_URI);
+
+    val xR2RML_RDFALT_URI = xR2RML_NS + "RdfAlt";
+    val xR2RML_RDFALT_CLASS = ResourceFactory.createResource(xR2RML_RDFALT_URI);
+
+    //--- TermMap
+    val R2RML_DATATYPE_URI = R2RML_NS + "datatype";
+    val R2RML_DATATYPE_PROPERTY = ResourceFactory.createProperty(R2RML_DATATYPE_URI);
+
+    val R2RML_LANGUAGE_URI = R2RML_NS + "language";
+    val R2RML_LANGUAGE_PROPERTY = ResourceFactory.createProperty(R2RML_LANGUAGE_URI);
+
+    //--- TermMap Types
+    val R2RML_CONSTANT_URI = R2RML_NS + "constant";
+    val R2RML_CONSTANT_PROPERTY = ResourceFactory.createProperty(R2RML_CONSTANT_URI);
+
+    val R2RML_COLUMN_URI = R2RML_NS + "column";
+    val R2RML_COLUMN_PROPERTY = ResourceFactory.createProperty(R2RML_COLUMN_URI);
+
+    val R2RML_TEMPLATE_URI = R2RML_NS + "template";
+    val R2RML_TEMPLATE_PROPERTY = ResourceFactory.createProperty(R2RML_TEMPLATE_URI);
+
+    val R2RML_TEMPLATE_PATTERN = """\{"*\w+\s*[\s\w/]*\"*}"""
+    val R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP = """\{(.+?)\}"""
+
+    val xR2RML_REFERENCE_URI = xR2RML_NS + "reference";
+    val xR2RML_REFERENCE_PROPERTY = ResourceFactory.createProperty(xR2RML_REFERENCE_URI);
+
+    //--- Logical table
     val R2RML_TABLENAME_URI = R2RML_NS + "tableName";
     val R2RML_TABLENAME_PROPERTY = ResourceFactory.createProperty(R2RML_TABLENAME_URI);
 
     val R2RML_SQLQUERY_URI = R2RML_NS + "sqlQuery";
     val R2RML_SQLQUERY_PROPERTY = ResourceFactory.createProperty(R2RML_SQLQUERY_URI);
 
-    //MappingDocument
-    val R2RML_TRIPLESMAP_URI = R2RML_NS + "TriplesMap";
-    val R2RML_TRIPLESMAP_CLASS = ResourceFactory.createResource(R2RML_TRIPLESMAP_URI);
+    // Logical source
+    val xR2RML_QUERY_URI = xR2RML_NS + "query";
+    val xR2RML_QUERY_PROPERTY = ResourceFactory.createProperty(xR2RML_QUERY_URI);
 
-    val R2RML_OBJECTMAPCLASS_URI = R2RML_NS + "ObjectMap";
-    val R2RML_OBJECTSMAP_CLASS = ResourceFactory.createResource(R2RML_OBJECTMAPCLASS_URI);
+    val xR2RML_REFFORMULATION_URI = xR2RML_NS + "referenceFormulation";
+    val xR2RML_REFFORMULATION_PROPERTY = ResourceFactory.createProperty(xR2RML_REFFORMULATION_URI);
 
-    //PredicateObjectMap
+    val RML_ITERATOR_URI = RML_NS + "iterator";
+    val RML_ITERATOR_PROPERTY = ResourceFactory.createProperty(RML_ITERATOR_URI);
+
+    // Reference formulation
+    val QL_JSONPATH_URI = QL_NS + "JSONPath";
+    val QL_JSONPATH_CLASS = ResourceFactory.createResource(QL_JSONPATH_URI);
+
+    val QL_XPATH_URI = QL_NS + "XPath";
+    val QL_XPATH_CLASS = ResourceFactory.createResource(QL_XPATH_URI);
+
+    val xR2RML_COLUMN_URI = xR2RML_NS + "Column";
+    val xR2RML_COLUMN_CLASS = ResourceFactory.createResource(xR2RML_COLUMN_URI);
+
+    val xR2RML_AUTHZD_REFERENCE_FORMULATION = Set(xR2RML_COLUMN_URI, QL_JSONPATH_URI, QL_XPATH_URI)
+
+    //--- PredicateObjectMap
     val R2RML_PREDICATEMAP_URI = R2RML_NS + "predicateMap";
     val R2RML_PREDICATEMAP_PROPERTY = ResourceFactory.createProperty(R2RML_PREDICATEMAP_URI);
 
@@ -267,6 +301,31 @@ object Constants {
     val R2RML_DEFAULT_GRAPH_URI = R2RML_NS + "defaultGraph";
     val R2RML_DEFAULT_GRAPH_CLASS = ResourceFactory.createResource(R2RML_DEFAULT_GRAPH_URI);
 
+    // Nested Term Map
+    val xR2RML_NESTEDTM_URI = xR2RML_NS + "nestedTermMap";
+    val xR2RML_NESTEDTM_PROPERTY = ResourceFactory.createProperty(xR2RML_NESTEDTM_URI);
+
+    //--- Mixed-syntax paths
+    val xR2RML_PATH_CONSTR_COLUMN = "Column";
+    val xR2RML_PATH_CONSTR_XPATH = "XPath";
+    val xR2RML_PATH_CONSTR_JSONPATH = "JSONPath";
+    val xR2RML_PATH_CONSTR_CSV = "CSV";
+    val xR2RML_PATH_CONSTR_TSV = "TSV";
+
+    val xR2RML_PATH_CONSTRUCTORS = "(" + xR2RML_PATH_CONSTR_COLUMN + "|" + xR2RML_PATH_CONSTR_XPATH + "|" + xR2RML_PATH_CONSTR_JSONPATH + "|" + xR2RML_PATH_CONSTR_CSV + "|" + xR2RML_PATH_CONSTR_TSV + ")"
+
+    // In the path expressions, characters '/', '(', ')', '{' and '}' must be escaped with a '\'.
+    // In the regex, these will appear as groups (\\\/), (\\\(), (\\\)), (\\\{) or (\\\}): escaped '\' + escaped char '/', '(', ')', '{' or '}'
+    // Other characters must not be escaped: alpha numerical chars, as well as: !#%&,-./:;<=>?@_`|~[]"'*+^$
+    val xR2RML_PATH_EXPR_CHARS = """([\p{Alnum}\p{Space}!#%&,-.:;<=>?(\\@)_`\|~\[\]\"\'\*\+\^\$]|(\\/)|(\\\()|(\\\))|(\\\{)|(\\\}))+"""
+
+    val xR2RML_MIXED_SYNTX_PATH_REGEX = (xR2RML_PATH_CONSTRUCTORS + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+
+    val xR2RML_PATH_COLUMN_REGEX = (xR2RML_PATH_CONSTR_COLUMN + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_XPATH_REGEX = (xR2RML_PATH_CONSTR_XPATH + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_JSONPATH_REGEX = (xR2RML_PATH_CONSTR_JSONPATH + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_CSV_REGEX = (xR2RML_PATH_CONSTR_CSV + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
+    val xR2RML_PATH_TSV_REGEX = (xR2RML_PATH_CONSTR_TSV + """\(""" + xR2RML_PATH_EXPR_CHARS + """\)""").r
     /**
      * Return the enclosed character depending on the type of database
      * @param dbType the database type

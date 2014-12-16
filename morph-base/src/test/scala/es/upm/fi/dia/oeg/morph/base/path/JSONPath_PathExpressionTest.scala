@@ -2,7 +2,6 @@ package es.upm.fi.dia.oeg.morph.base.path
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import org.junit.Test
 
 class JSONPath_PathExpressionTest {

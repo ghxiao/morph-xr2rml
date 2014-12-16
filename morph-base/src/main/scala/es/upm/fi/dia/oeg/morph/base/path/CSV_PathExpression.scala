@@ -1,13 +1,16 @@
 package es.upm.fi.dia.oeg.morph.base.path
 
-import scala.collection.JavaConversions._
-import java.io.StringReader
-import org.apache.commons.csv.CSVFormat
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import java.io.Reader
-import org.apache.commons.csv.CSVRecord
+import java.io.StringReader
+
+import scala.collection.JavaConversions._
+
+import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVRecord
 import org.apache.log4j.Logger
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class CSV_PathExpression(
     pathExpression: String)
@@ -59,7 +62,7 @@ object CSV_PathExpression {
     def parse(pathConstructExpr: String): CSV_PathExpression = {
 
         // Remove the path constructor name "CSV(" and the final ")"
-        var expr = pathConstructExpr.trim().substring(xR2RML_Constants.xR2RML_PATH_CONSTR_CSV.length + 1, pathConstructExpr.length - 1)
+        var expr = pathConstructExpr.trim().substring(Constants.xR2RML_PATH_CONSTR_CSV.length + 1, pathConstructExpr.length - 1)
 
         new CSV_PathExpression(MixedSyntaxPath.unescapeChars(expr))
     }

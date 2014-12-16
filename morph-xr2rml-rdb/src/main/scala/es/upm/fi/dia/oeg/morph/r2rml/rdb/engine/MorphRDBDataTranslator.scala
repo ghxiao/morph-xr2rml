@@ -3,25 +3,30 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
@@ -31,8 +36,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -191,8 +194,8 @@ class MorphRDBDataTranslator(
 
                         val parentSubjectsCandidates = refObjectMap.joinConditions.flatMap(joinCond => {
 
-                            val childMsp = MixedSyntaxPath(joinCond.childRef, xR2RML_Constants.xR2RML_COLUMN_URI)
-                            val parentMsp = MixedSyntaxPath(joinCond.parentRef, xR2RML_Constants.xR2RML_COLUMN_URI)
+                            val childMsp = MixedSyntaxPath(joinCond.childRef, Constants.xR2RML_COLUMN_URI)
+                            val parentMsp = MixedSyntaxPath(joinCond.parentRef, Constants.xR2RML_COLUMN_URI)
 
                             if (childMsp.isSimpleColumnExpression && parentMsp.isSimpleColumnExpression) {
                                 // Both the child and parent references are pure column references (without other path constructor)

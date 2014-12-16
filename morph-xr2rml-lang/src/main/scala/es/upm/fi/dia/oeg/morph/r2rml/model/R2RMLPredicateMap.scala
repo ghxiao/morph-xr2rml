@@ -1,11 +1,13 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import scala.collection.JavaConversions._
-import es.upm.fi.dia.oeg.morph.base.Constants
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.RDFNode
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+
 import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.rdf.model.Resource
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class R2RMLPredicateMap(
     termMapType: Constants.MorphTermMapType.Value,

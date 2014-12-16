@@ -6,7 +6,7 @@ import java.io.StringWriter
 import org.apache.log4j.Logger
 import org.w3c.dom.Node
 
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import es.upm.fi.dia.oeg.morph.base.Constants
 import javax.xml.transform.Transformer
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -79,7 +79,7 @@ object XPath_PathExpression {
     def parse(pathConstructExpr: String): XPath_PathExpression = {
 
         // Remove the path constructor name "XPath(" and the final ")"
-        var expr = pathConstructExpr.trim().substring(xR2RML_Constants.xR2RML_PATH_CONSTR_XPATH.length + 1, pathConstructExpr.length - 1)
+        var expr = pathConstructExpr.trim().substring(Constants.xR2RML_PATH_CONSTR_XPATH.length + 1, pathConstructExpr.length - 1)
 
         new XPath_PathExpression(MixedSyntaxPath.unescapeChars(expr))
     }

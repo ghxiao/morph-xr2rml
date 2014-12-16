@@ -3,7 +3,6 @@ package es.upm.fi.dia.oeg.morph.r2rml.model
 import org.apache.log4j.Logger
 
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 /**
  * @TODO This class is ony a partial implementation of xR2RML nested term maps: it only support simple nested term maps,
@@ -61,10 +60,10 @@ class xR2RMLNestedTermMap(
     def isRdfCollectionTermType: Boolean = {
         if (this.termType.isDefined) {
             val tt = this.termType.get
-            (tt == xR2RML_Constants.xR2RML_RDFLIST_URI ||
-                tt == xR2RML_Constants.xR2RML_RDFBAG_URI ||
-                tt == xR2RML_Constants.xR2RML_RDFSEQ_URI ||
-                tt == xR2RML_Constants.xR2RML_RDFALT_URI)
+            (tt == Constants.xR2RML_RDFLIST_URI ||
+                tt == Constants.xR2RML_RDFBAG_URI ||
+                tt == Constants.xR2RML_RDFSEQ_URI ||
+                tt == Constants.xR2RML_RDFALT_URI)
         } else { false }
     }
 }

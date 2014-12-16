@@ -1,11 +1,13 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
+
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 class R2RMLRefObjectMap(val parentTriplesMapResource: Resource, val joinConditions: Set[R2RMLJoinCondition], val termType: Option[String]) {
 

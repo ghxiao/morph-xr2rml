@@ -1,11 +1,13 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
-import com.hp.hpl.jena.rdf.model.Resource
-import es.upm.fi.dia.oeg.morph.base.Constants
+
 import com.hp.hpl.jena.rdf.model.RDFNode
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import com.hp.hpl.jena.rdf.model.Resource
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class R2RMLObjectMap(
     termMapType: Constants.MorphTermMapType.Value,
@@ -51,12 +53,12 @@ object R2RMLObjectMap {
         om;
     }
 
-    def extractObjectMaps(resource: Resource, formatFromLogicalTable: String): Set[R2RMLObjectMap] = {
+    def extractObjectMaps(resource: Resource, refFormulation: String): Set[R2RMLObjectMap] = {
         logger.trace("Looking for object maps")
-        val tms = R2RMLTermMap.extractTermMaps(resource, Constants.MorphPOS.obj, formatFromLogicalTable);
+        val tms = R2RMLTermMap.extractTermMaps(resource, Constants.MorphPOS.obj, refFormulation);
         val result = tms.map(tm => tm.asInstanceOf[R2RMLObjectMap]);
         if (result.isEmpty)
-            logger.trace("No graph map found.")
+            logger.trace("No object map found.")
         result;
     }
 }

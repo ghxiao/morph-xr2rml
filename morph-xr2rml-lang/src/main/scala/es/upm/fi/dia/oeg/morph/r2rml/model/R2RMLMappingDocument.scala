@@ -1,26 +1,29 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import java.sql.Connection
+
 import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.JavaConversions.setAsJavaSet
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.rdf.model.Property
 import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.vocabulary.RDF
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import com.hp.hpl.jena.rdf.model.Statement
-import com.hp.hpl.jena.rdf.model.Property
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 
 class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         extends MorphBaseMappingDocument(classMappings) with MorphR2RMLElement {
@@ -294,7 +297,7 @@ object R2RMLMappingDocument {
             model.add(stmtType)
         }
 
-        val stmtsLogSrc = model.listStatements(null, xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY, null)
+        val stmtsLogSrc = model.listStatements(null, Constants.xR2RML_LOGICALSOURCE_PROPERTY, null)
         for (stmt <- stmtsLogSrc) {
             val stmtType = model.createStatement(stmt.getSubject, RDF.`type`, Constants.R2RML_TRIPLESMAP_CLASS)
             model.add(stmtType)

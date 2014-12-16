@@ -4,18 +4,20 @@ import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConversions.setAsJavaSet
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.Resource
+
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.model.IConceptMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class R2RMLTriplesMap(
     val logicalSource: xR2RMLLogicalSource,
@@ -116,22 +118,22 @@ object R2RMLTriplesMap {
 
         // --- Look for Logical table (rr:logicalTable) or Logical source (xrr:logicalSource) definition
         val logTabStmt = tmResource.getProperty(Constants.R2RML_LOGICALTABLE_PROPERTY)
-        val logSrcStmt = tmResource.getProperty(xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY)
+        val logSrcStmt = tmResource.getProperty(Constants.xR2RML_LOGICALSOURCE_PROPERTY)
 
         var logSource: xR2RMLLogicalSource = {
             if (logTabStmt != null) {
                 val res = logTabStmt.getObject().asInstanceOf[Resource]
-                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI, xR2RML_Constants.xR2RML_COLUMN_URI)
+                xR2RMLLogicalSource.parse(res, Constants.R2RML_LOGICALTABLE_URI, Constants.xR2RML_COLUMN_URI)
 
             } else if (logSrcStmt != null) {
                 val res = logSrcStmt.getObject().asInstanceOf[Resource]
 
-                val refFormStmt = res.getProperty(xR2RML_Constants.xR2RML_REFFORMULATION_PROPERTY)
+                val refFormStmt = res.getProperty(Constants.xR2RML_REFFORMULATION_PROPERTY)
                 val refForm = if (refFormStmt != null)
                     refFormStmt.getObject().toString()
                 else
-                    xR2RML_Constants.xR2RML_COLUMN_URI
-                xR2RMLLogicalSource.parse(res, xR2RML_Constants.xR2RML_LOGICALSOURCE_URI, refForm)
+                    Constants.xR2RML_COLUMN_URI
+                xR2RMLLogicalSource.parse(res, Constants.xR2RML_LOGICALSOURCE_URI, refForm)
 
             } else {
                 val errorMessage = "Error: missing rr:logicalTable and xrr:logicalSource"

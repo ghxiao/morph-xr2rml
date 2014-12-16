@@ -9,7 +9,8 @@ import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.ParseContext
 
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 /**
  * A mixed syntax path consists of a sequence of path constructors each containing a path expression, example:
@@ -48,7 +49,7 @@ class MixedSyntaxPath(
      * otherwise None is returned.
      */
     def getReferencedColumn(): Option[String] = {
-        if (refFormulation == xR2RML_Constants.xR2RML_COLUMN_URI) {
+        if (refFormulation == Constants.xR2RML_COLUMN_URI) {
             val path = paths.head
             // In a column-based database, the first expression MUST be a Column() expression
             if (path.isInstanceOf[Column_PathExpression]) {
@@ -144,14 +145,14 @@ object MixedSyntaxPath {
     def apply(rawValue: String, refFormulation: String): MixedSyntaxPath = {
 
         // Split the mixed syntax path into individual path construct expressions, like "Column(NAME)"  
-        val rawPathList = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX.findAllMatchIn(rawValue).toList
+        val rawPathList = Constants.xR2RML_MIXED_SYNTX_PATH_REGEX.findAllMatchIn(rawValue).toList
         val result =
             if (rawPathList.isEmpty) {
                 // The value is a simple path expression without any path construct
                 val res = refFormulation match {
-                    case xR2RML_Constants.xR2RML_COLUMN_URI => new Column_PathExpression(rawValue)
-                    case xR2RML_Constants.QL_XPATH_URI => new XPath_PathExpression(rawValue)
-                    case xR2RML_Constants.QL_JSONPATH_URI => new JSONPath_PathExpression(rawValue)
+                    case Constants.xR2RML_COLUMN_URI => new Column_PathExpression(rawValue)
+                    case Constants.QL_XPATH_URI => new XPath_PathExpression(rawValue)
+                    case Constants.QL_JSONPATH_URI => new JSONPath_PathExpression(rawValue)
                     case _ => throw new Exception("Unknown reference formulation: " + refFormulation)
                 }
                 List(res)
@@ -160,11 +161,11 @@ object MixedSyntaxPath {
                 // The value is a mixed syntax path. Each individual path (in the path constructor) is parsed 
                 rawPathList.map(rawPath =>
                     rawPath match {
-                        case xR2RML_Constants.xR2RML_PATH_COLUMN_REGEX(_*) => { Column_PathExpression.parse(rawPath.toString) }
-                        case xR2RML_Constants.xR2RML_PATH_XPATH_REGEX(_*) => { XPath_PathExpression.parse(rawPath.toString) }
-                        case xR2RML_Constants.xR2RML_PATH_JSONPATH_REGEX(_*) => { JSONPath_PathExpression.parse(rawPath.toString) }
-                        case xR2RML_Constants.xR2RML_PATH_CSV_REGEX(_*) => { CSV_PathExpression.parse(rawPath.toString) }
-                        case xR2RML_Constants.xR2RML_PATH_TSV_REGEX(_*) => { TSV_PathExpression.parse(rawPath.toString) }
+                        case Constants.xR2RML_PATH_COLUMN_REGEX(_*) => { Column_PathExpression.parse(rawPath.toString) }
+                        case Constants.xR2RML_PATH_XPATH_REGEX(_*) => { XPath_PathExpression.parse(rawPath.toString) }
+                        case Constants.xR2RML_PATH_JSONPATH_REGEX(_*) => { JSONPath_PathExpression.parse(rawPath.toString) }
+                        case Constants.xR2RML_PATH_CSV_REGEX(_*) => { CSV_PathExpression.parse(rawPath.toString) }
+                        case Constants.xR2RML_PATH_TSV_REGEX(_*) => { TSV_PathExpression.parse(rawPath.toString) }
                         case _ => throw new Exception("Unknown type of path: " + rawPath)
                     }
                 )

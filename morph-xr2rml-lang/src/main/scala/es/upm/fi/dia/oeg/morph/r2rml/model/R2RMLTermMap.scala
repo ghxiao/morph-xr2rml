@@ -1,17 +1,15 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asScalaBuffer
 
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.Statement
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
@@ -82,7 +80,7 @@ abstract class R2RMLTermMap(
                     if (templateStatement != null)
                         this.templateString = templateStatement.getObject().toString();
                     else {
-                        val refStmt = resourceNode.getProperty(xR2RML_Constants.xR2RML_REFERENCE_PROPERTY);
+                        val refStmt = resourceNode.getProperty(Constants.xR2RML_REFERENCE_PROPERTY);
                         if (refStmt != null)
                             this.reference = refStmt.getObject().toString();
                         else {
@@ -243,7 +241,7 @@ object R2RMLTermMap {
                 if (resource.getProperty(Constants.R2RML_CONSTANT_PROPERTY) != null) Constants.MorphTermMapType.ConstantTermMap;
                 else if (resource.getProperty(Constants.R2RML_COLUMN_PROPERTY) != null) Constants.MorphTermMapType.ColumnTermMap;
                 else if (resource.getProperty(Constants.R2RML_TEMPLATE_PROPERTY) != null) Constants.MorphTermMapType.TemplateTermMap;
-                else if (resource.getProperty(xR2RML_Constants.xR2RML_REFERENCE_PROPERTY) != null) Constants.MorphTermMapType.ReferenceTermMap;
+                else if (resource.getProperty(Constants.xR2RML_REFERENCE_PROPERTY) != null) Constants.MorphTermMapType.ReferenceTermMap;
                 else {
                     val errorMessage = "Invalid term map " + resource.getLocalName() + ". Should have one of rr:constant, rr:column, rr:template or xrr:reference.";
                     logger.error(errorMessage);
@@ -292,7 +290,7 @@ object R2RMLTermMap {
     def extractNestedTermMap(parentTermMapType: Constants.MorphTermMapType.Value, rdfNode: RDFNode): Option[xR2RMLNestedTermMap] = {
         rdfNode match {
             case resource: Resource => {
-                var ntmStmt = resource.getProperty(xR2RML_Constants.xR2RML_NESTEDTM_PROPERTY);
+                var ntmStmt = resource.getProperty(Constants.xR2RML_NESTEDTM_PROPERTY);
                 if ((ntmStmt != null) && ntmStmt.getObject.isResource) {
                     val ntmRes = ntmStmt.getObject.asResource
                     val termTypeStmt = ntmRes.getProperty(Constants.R2RML_TERMTYPE_PROPERTY)
@@ -356,7 +354,6 @@ object R2RMLTermMap {
         val maps1 =
             if (stmts != null) {
                 stmts.toList().flatMap(mapStatement => {
-
                     val stmtObject = mapStatement.getObject();
                     termPos match {
                         case Constants.MorphPOS.sub => Some(R2RMLSubjectMap(stmtObject, refFormulation))
@@ -377,6 +374,7 @@ object R2RMLTermMap {
                     }
                 })
             } else { Nil }
+        
 
         // Extract term map introduced with constant properties rr:subject, rr:predicate, rr:object and rr:graph
         val constProperties = termPos match {
@@ -438,9 +436,9 @@ object R2RMLTermMap {
      * Return true if the term type is one of RDF list, bag, seq, alt
      */
     def isRdfCollectionTermType(termType: String): Boolean = {
-        (termType == xR2RML_Constants.xR2RML_RDFLIST_URI ||
-            termType == xR2RML_Constants.xR2RML_RDFBAG_URI ||
-            termType == xR2RML_Constants.xR2RML_RDFSEQ_URI ||
-            termType == xR2RML_Constants.xR2RML_RDFALT_URI)
+        (termType == Constants.xR2RML_RDFLIST_URI ||
+            termType == Constants.xR2RML_RDFBAG_URI ||
+            termType == Constants.xR2RML_RDFSEQ_URI ||
+            termType == Constants.xR2RML_RDFALT_URI)
     }
 }

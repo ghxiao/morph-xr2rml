@@ -11,7 +11,7 @@ import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.ParseContext
 import com.jayway.jsonpath.ReadContext
 
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class JSONPath_PathExpression(
     pathExpression: String)
@@ -71,7 +71,7 @@ object JSONPath_PathExpression {
     def parse(pathConstructExpr: String): JSONPath_PathExpression = {
 
         // Remove the path constructor name "JSONPath(" and the final ")"
-        var expr = pathConstructExpr.trim().substring(xR2RML_Constants.xR2RML_PATH_CONSTR_JSONPATH.length + 1, pathConstructExpr.length - 1)
+        var expr = pathConstructExpr.trim().substring(Constants.xR2RML_PATH_CONSTR_JSONPATH.length + 1, pathConstructExpr.length - 1)
 
         new JSONPath_PathExpression(MixedSyntaxPath.unescapeChars(expr))
     }

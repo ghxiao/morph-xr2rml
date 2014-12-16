@@ -1,12 +1,13 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.Constants
-import com.hp.hpl.jena.rdf.model.Resource
-import java.util.HashSet
+
 import com.hp.hpl.jena.rdf.model.RDFNode
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
+import com.hp.hpl.jena.rdf.model.Resource
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class R2RMLSubjectMap(
     termMapType: Constants.MorphTermMapType.Value,
@@ -39,7 +40,6 @@ object R2RMLSubjectMap {
         val datatype = coreProperties._3;
         val languageTag = coreProperties._4;
         val nestTM = coreProperties._5;
-
         if (nestTM.isDefined)
             logger.error("A nested term map cannot be defined in a subject map. Ignoring.")
 

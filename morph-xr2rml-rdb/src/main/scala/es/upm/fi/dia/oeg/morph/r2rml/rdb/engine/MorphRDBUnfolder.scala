@@ -1,11 +1,14 @@
 package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.util.Collection
+
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.JavaConversions.setAsJavaSet
+
 import org.apache.log4j.Logger
+
 import Zql.ZConstant
 import Zql.ZExpression
 import Zql.ZQuery
@@ -13,7 +16,9 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
@@ -33,9 +38,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
-import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
@@ -293,8 +295,8 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                              */
                             for (join <- joinConditions) {
 
-                                val childMsp = MixedSyntaxPath(join.childRef, xR2RML_Constants.xR2RML_COLUMN_URI)
-                                val parentMsp = MixedSyntaxPath(join.parentRef, xR2RML_Constants.xR2RML_COLUMN_URI)
+                                val childMsp = MixedSyntaxPath(join.childRef, Constants.xR2RML_COLUMN_URI)
+                                val parentMsp = MixedSyntaxPath(join.parentRef, Constants.xR2RML_COLUMN_URI)
 
                                 if (!childMsp.isSimpleColumnExpression || !parentMsp.isSimpleColumnExpression) {
 
@@ -427,8 +429,8 @@ object MorphRDBUnfolder {
             // then the join is made by the database. Otherwise we'll have to do the job ourselves.
             var childRef = join.childRef
             var parentRef = join.parentRef
-            if (MixedSyntaxPath(childRef, xR2RML_Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression &&
-                MixedSyntaxPath(parentRef, xR2RML_Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression) {
+            if (MixedSyntaxPath(childRef, Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression &&
+                MixedSyntaxPath(parentRef, Constants.xR2RML_COLUMN_URI).isSimpleColumnExpression) {
 
                 childRef = childTableAlias + "." + childRef.replaceAll("\"", enclosedChar)
                 val childColumn = new ZConstant(childRef, ZConstant.COLUMNNAME)

@@ -1,12 +1,14 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import scala.util.matching.Regex
-import scala.collection.JavaConversions._
-import java.util.regex.Matcher
 import java.util.regex.Pattern
+
+import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.mutable.Queue
-import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import scala.util.matching.Regex
+
 import org.apache.log4j.Logger
+
+import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 object TemplateUtility {
 
@@ -84,7 +86,7 @@ object TemplateUtility {
     def getTemplateGroups(tplStr: String): List[String] = {
 
         // (1) Save all mixed-syntax path expressions in the template string
-        val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
+        val mixedSntxRegex = Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
         val mixedSntxPaths: Queue[String] = Queue(mixedSntxRegex.findAllMatchIn(tplStr).toList.map(item => item.toString): _*)
 
         // (2) Replace each path expression with a place holder "xR2RML_replacer"
@@ -124,7 +126,7 @@ object TemplateUtility {
 
         // Extract the column references of each template group between
         val columnsFromTemplate = groups.map(group =>
-            MixedSyntaxPath(group, xR2RML_Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
+            MixedSyntaxPath(group, Constants.xR2RML_COLUMN_URI).getReferencedColumn.getOrElse("")
         )
         logger.trace("Extracted columns: " + columnsFromTemplate + " from template " + tplStr)
         columnsFromTemplate;
@@ -150,7 +152,7 @@ object TemplateUtility {
         }
 
         // Save all mixed-syntax path expressions in the template string
-        val mixedSntxRegex = xR2RML_Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
+        val mixedSntxRegex = Constants.xR2RML_MIXED_SYNTX_PATH_REGEX
         val mixedSntxPaths = mixedSntxRegex.findAllMatchIn(tplStr).toList
 
         // Replace each path expression with a place holder "xR2RML_replacer"

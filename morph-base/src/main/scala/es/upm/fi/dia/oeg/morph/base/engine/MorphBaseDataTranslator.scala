@@ -1,23 +1,24 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import scala.collection.JavaConversions.asJavaIterator
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
+import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.vocabulary.RDF
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
-import com.hp.hpl.jena.rdf.model.AnonId
-import es.upm.fi.dia.oeg.morph.base.Constants
-import com.hp.hpl.jena.vocabulary.RDF
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 abstract class MorphBaseDataTranslator(
         val md: MorphBaseMappingDocument,
@@ -202,22 +203,22 @@ abstract class MorphBaseDataTranslator(
             return List()
 
         val translated: RDFNode = collecTermType match {
-            case xR2RML_Constants.xR2RML_RDFLIST_URI => {
+            case Constants.xR2RML_RDFLIST_URI => {
                 val node = this.materializer.model.createList(values.iterator)
                 this.materializer.model.add(node, RDF.`type`, RDF.List)
                 node
             }
-            case xR2RML_Constants.xR2RML_RDFBAG_URI => {
+            case Constants.xR2RML_RDFBAG_URI => {
                 var list = this.materializer.model.createBag()
                 for (value <- values) list.add(value)
                 list
             }
-            case xR2RML_Constants.xR2RML_RDFALT_URI => {
+            case Constants.xR2RML_RDFALT_URI => {
                 val list = this.materializer.model.createAlt()
                 for (value <- values) list.add(value)
                 list
             }
-            case xR2RML_Constants.xR2RML_RDFSEQ_URI => {
+            case Constants.xR2RML_RDFSEQ_URI => {
                 val list = this.materializer.model.createSeq()
                 for (value <- values) list.add(value)
                 list

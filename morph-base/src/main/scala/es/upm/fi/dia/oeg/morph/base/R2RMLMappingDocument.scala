@@ -1,12 +1,13 @@
 package es.upm.fi.dia.oeg.morph.base
 
 import scala.collection.JavaConversions._
-import com.hp.hpl.jena.rdf.model.ResourceFactory
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.rdf.model.Resource
-import org.apache.log4j.Logger
+import com.hp.hpl.jena.util.FileManager
 
 class R2RMLMappingDocument(mappingFile: String) {
     val logger = Logger.getLogger(this.getClass());
@@ -78,11 +79,11 @@ class R2RMLMappingDocument(mappingFile: String) {
     }
 
     def getRRLogicalSource(triplesMapResource: Resource) = {
-        triplesMapResource.getPropertyResourceValue(xR2RML_Constants.xR2RML_LOGICALSOURCE_PROPERTY);
+        triplesMapResource.getPropertyResourceValue(Constants.xR2RML_LOGICALSOURCE_PROPERTY);
     }
 
     def getRRLogicalSourceRefFormulation(triplesMapResource: Resource) = {
-        val refForm = this.getRRLogicalSource(triplesMapResource).getPropertyResourceValue(xR2RML_Constants.xR2RML_REFFORMULATION_PROPERTY);
+        val refForm = this.getRRLogicalSource(triplesMapResource).getPropertyResourceValue(Constants.xR2RML_REFFORMULATION_PROPERTY);
         if (refForm != null)
             refForm.asLiteral().getValue().toString();
         else
@@ -184,7 +185,7 @@ class R2RMLMappingDocument(mappingFile: String) {
                 Constants.MorphTermMapType.ColumnTermMap;
             else if (tmRes.getProperty(Constants.R2RML_TEMPLATE_PROPERTY) != null)
                 Constants.MorphTermMapType.TemplateTermMap;
-            else if (tmRes.getProperty(xR2RML_Constants.xR2RML_REFERENCE_PROPERTY) != null)
+            else if (tmRes.getProperty(Constants.xR2RML_REFERENCE_PROPERTY) != null)
                 Constants.MorphTermMapType.ReferenceTermMap
             else
                 Constants.MorphTermMapType.InvalidTermMapType;

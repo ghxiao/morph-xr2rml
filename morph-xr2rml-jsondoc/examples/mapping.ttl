@@ -56,7 +56,7 @@
     ];
     rr:subjectMap [ 
         rr:template "http://example.org/movies/{$.title}"; 
-		# rr:class ex:Movie;
+		rr:class ex:Movie;
     ].
 
 <#Directors>

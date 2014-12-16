@@ -67,7 +67,7 @@ class TriplePatternPredicateBounder(mappingFile: String //, mapColumnsMetaData :
       if (objectMapResource != null) {
         val objectMapTermMapType = mappingDocument.getTermMapType(objectMapResource);
         val objectMapTermType = mappingDocument.getTermTypeResource(objectMapResource).getURI();
-        if (objectMapTermType.equals(Constants.R2RML_TERMTYPE_IRI_URI)) {
+        if (objectMapTermType.equals(Constants.R2RML_IRI_URI)) {
           val errorMessage = "triple.object " + tp + " is a literal, but the mapping " + predicateObjectMapResource + " specifies URI.";
           result = result ::: List(errorMessage);
         }

@@ -8,7 +8,6 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseLogicalTable
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
-import es.upm.fi.dia.oeg.morph.base.xR2RML_Constants
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
 import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
@@ -107,7 +106,7 @@ object xR2RMLLogicalSource {
             {
                 val tableNameStmt = resource.getProperty(Constants.R2RML_TABLENAME_PROPERTY)
                 val sqlQueryStmt = resource.getProperty(Constants.R2RML_SQLQUERY_PROPERTY)
-                val queryStmt = resource.getProperty(xR2RML_Constants.xR2RML_QUERY_PROPERTY)
+                val queryStmt = resource.getProperty(Constants.xR2RML_QUERY_PROPERTY)
 
                 val source: String =
                     if (tableNameStmt != null)
@@ -192,21 +191,21 @@ object xR2RMLLogicalSource {
      * Return true is the resource has an xrr:referenceFormulation property
      */
     private def hasReferenceFormulation(resource: Resource): Boolean = {
-        (resource.getProperty(xR2RML_Constants.xR2RML_REFFORMULATION_PROPERTY) != null)
+        (resource.getProperty(Constants.xR2RML_REFFORMULATION_PROPERTY) != null)
     }
 
     /**
      * Return true is the resource has an rml:iterator property
      */
     private def hasIterator(resource: Resource): Boolean = {
-        (resource.getProperty(xR2RML_Constants.RML_ITERATOR_PROPERTY) != null)
+        (resource.getProperty(Constants.RML_ITERATOR_PROPERTY) != null)
     }
 
     /**
      *  Read the rml:iterator property, return None if undefined
      */
     private def readIterator(resource: Resource): Option[String] = {
-        val iterStmt = resource.getProperty(xR2RML_Constants.RML_ITERATOR_PROPERTY)
+        val iterStmt = resource.getProperty(Constants.RML_ITERATOR_PROPERTY)
         val iter: Option[String] =
             if (iterStmt == null)
                 None
@@ -224,14 +223,14 @@ object xR2RMLLogicalSource {
      * Return xrr:Column as a default if property if not defined.
      */
     private def readReferenceFormulation(resource: Resource): String = {
-        var result = xR2RML_Constants.xR2RML_COLUMN_URI
+        var result = Constants.xR2RML_COLUMN_URI
 
-        val refFormStmt = resource.getProperty(xR2RML_Constants.xR2RML_REFFORMULATION_PROPERTY)
+        val refFormStmt = resource.getProperty(Constants.xR2RML_REFFORMULATION_PROPERTY)
         if (refFormStmt != null) {
             val refFormStr = refFormStmt.getObject().toString();
             if (!refFormStr.isEmpty())
                 // Verify that the formulation is part of the list of authorized reference formulations
-                if (xR2RML_Constants.xR2RML_AUTHZD_REFERENCE_FORMULATION.contains(refFormStr))
+                if (Constants.xR2RML_AUTHZD_REFERENCE_FORMULATION.contains(refFormStr))
                     result = refFormStr
                 else
                     logger.warn("Unknown reference formulation: " + refFormStr)
@@ -241,11 +240,11 @@ object xR2RMLLogicalSource {
 
     /** Return true is the reference formulation has the default value i.e. xrr:Column */
     private def isDefaultReferenceFormulation(resource: Resource): Boolean = {
-        xR2RML_Constants.xR2RML_COLUMN_URI.equals(readReferenceFormulation(resource))
+        Constants.xR2RML_COLUMN_URI.equals(readReferenceFormulation(resource))
     }
 
     private def isLogicalSource(logResType: String): Boolean = {
-        logResType.equals(xR2RML_Constants.xR2RML_LOGICALSOURCE_URI)
+        logResType.equals(Constants.xR2RML_LOGICALSOURCE_URI)
     }
 
     private def isLogicalTable(logResType: String): Boolean = {
