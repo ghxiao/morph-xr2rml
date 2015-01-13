@@ -17,8 +17,7 @@ More complex nested term maps (with recursive parse using another nested term ma
 The application is built using Maven (http://maven.apache.org/). In a shell, CD to the root directory morph-xr2rml, then run the command: ```mvn clean package```
 
 #### Using an IDE
-Another simple way to compile the application is to import the parent project (directory morph-xr2rml) as a Maven project into your favorite IDE, such as Eclipse. 
-Once done, in projects morph-xr2rml-rdb and morph-xr2rml-jsondoc, add the src/resource directory as part of the source directories. In Eclipse, this is typically done by opening the project properties -> Java Build Path -> tab 'Source' -> Add Folder.
+Another simple way to compile the application is to import the parent project (directory morph-xr2rml) as a Maven project into your favorite IDE.
 
 ## Examples
 Example databases and corresponding mappings are provided for the MySQL and MongoDB database cases, see:
@@ -29,6 +28,7 @@ See directory `morph-xr2rml-rdb/examples`
 - `testdb_dump.sql` is a dump of the MySQL test database,
 - `morph.properties` provides database connection details,
 - `mapping.ttl` contains the xR2RML mapping graph.
+- `result.ttl` contains the expected result of applying these mappings to that database.
 
 To run the test, edit morph.properties and change the database url, name, user and password with appropriate values.
 
@@ -46,6 +46,7 @@ See directory `morph-xr2rml-jsondoc/examples`:
 - `testdb_dump.json` is a dump of the MongoDB test database: run the commands in the MongoDB shell window to create the documents,
 - `morph.properties` provides database connection details,
 - `mapping.ttl` contains the xR2RML mapping graph.
+- `result.ttl` contains the expected result of applying these mappings to that database.
 
 To run the test, edit morph.properties and change the database url, name, user and password with appropriate values.
 

@@ -1,0 +1,45 @@
+@prefix ex:      <http://example.com/> .
+@prefix rml:     <http://semweb.mmlab.be/ns/rml#> .
+@prefix ql:      <http://semweb.mmlab.be/ns/ql#> .
+@prefix rr:      <http://www.w3.org/ns/r2rml#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix xrr:     <http://i3s.unice.fr/xr2rml#> .
+
+<http://example.org/director/Wong%20Kar-wai>
+      ex:directed (<http://example.org/movies/2046> <http://example.org/movies/In%20the%20Mood%20for%20Love>) ;
+      ex:name "Wong Kar-wai" .
+
+<http://example.org/student/547f2a2b31f7a44bec07b221>
+      a       ex:Student ;
+      ex:hasId 13.0 ;
+      ex:isActive "false"^^xsd:boolean ;
+      ex:names ("Weirdo Foo"^^xsd:string "#{[|`^@]%22 Foo"^^xsd:string) .
+
+<http://example.org/movies/In%20the%20Mood%20for%20Love>
+      a       ex:Movie .
+
+<http://example.org/student/547f2a2b31f7a44bec07b220>
+      a       ex:Student ;
+      ex:activity "Hiking"@en , "Basketball"@en ;
+      ex:names ("Frank Underwood"^^xsd:string "Francis Underwood"^^xsd:string) .
+
+<http://example.org/student/547f2a2b31f7a44bec07b21f>
+      a       ex:Student ;
+      ex:activity "Swimming"@en , "Soccer"@en ;
+      ex:names ("Paul Smith"^^xsd:string "Jack Smith"^^xsd:string) .
+
+<http://example.org/director/Woody%20Allen>
+      ex:directed (<http://example.org/movies/Manhattan> <http://example.org/movies/Annie%20Hall>) ;
+      ex:name "Woody Allen" .
+
+<http://example.org/movies/Manhattan>
+      a       ex:Movie .
+
+<http://example.org/movies/2046>
+      a       ex:Movie .
+
+<http://example.org/movies/West%20Side%20Story>
+      a       ex:Movie .
+
+<http://example.org/movies/Annie%20Hall>
+      a       ex:Movie .
