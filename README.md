@@ -11,21 +11,49 @@ Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as a
 More complex nested term maps (with recursive parse using another nested term map and using xrr:reference or rr:template properties) are not supported.
 - Named target graphs are not supported.
 
+## Build
+
+#### Using the command line interface
+The application is built using Maven (http://maven.apache.org/). In a shell, CD to the root directory morph-xr2rml, then run the command: ```mvn clean package```
+
+#### Using an IDE
+Another simple way to compile the application is to import the parent project (directory morph-xr2rml) as a Maven project into your favorite IDE, such as Eclipse. 
+Once done, in projects morph-xr2rml-rdb and morph-xr2rml-jsondoc, add the src/resource directory as part of the source directories. In Eclipse, this is typically done by opening the project properties -> Java Build Path -> tab 'Source' -> Add Folder.
+
 ## Examples
 Example databases and corresponding mappings are provided for the MySQL and MongoDB database cases, see:
 
-MySQL: see `morph-xr2rml-rdb/examples`
-- `testdb_dump.sql` is a dump of the MySQL test database
-- `morph.properties` provide database connection details
--` mapping.ttl contains` the xR2RML mapping graph
-To run the test, edit morph.properties and change database url, name, user and password with appropriate values.
-Then run main class `es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner` (defined in project morph-xr2rml-rdb).
+#### With MySQL
 
-MongoDB: see `morph-xr2rml-jsondoc/examples`
-- `testdb_dump.json` is a dump of the MongoDB test database: run the commands in the MongoDB shell window to create the documents
-- `morph.properties` provide database connection details
-- `mapping.ttl` contains the xR2RML mapping graph
-To run the test, edit morph.properties and change database url, name, user and password with appropriate values.
-Then run main class `fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner` (defined in project morph-xr2rml-jsondoc).
+See directory `morph-xr2rml-rdb/examples`
+- `testdb_dump.sql` is a dump of the MySQL test database,
+- `morph.properties` provides database connection details,
+- `mapping.ttl` contains the xR2RML mapping graph.
 
-A simple way to test those examples is to import the project into Eclipse and run the main classes mentioned above as Scala application.
+To run the test, edit morph.properties and change the database url, name, user and password with appropriate values.
+
+From an IDE: locate main class `es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner` defined in project morph-xr2rml-rdb, and run it as a Scala application.
+
+From a command line interface, run the application as follows:
+```
+cd morph-xr2rml-rdb
+java -cp target\morph-xr2rml-rdb-1.0-SNAPSHOT-jar-with-dependencies.jar es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner
+```
+
+#### With MongoDB
+
+See directory `morph-xr2rml-jsondoc/examples`:
+- `testdb_dump.json` is a dump of the MongoDB test database: run the commands in the MongoDB shell window to create the documents,
+- `morph.properties` provides database connection details,
+- `mapping.ttl` contains the xR2RML mapping graph.
+
+To run the test, edit morph.properties and change the database url, name, user and password with appropriate values.
+
+From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner` defined in project morph-xr2rml-jsondoc, and run it as a Scala application.
+
+
+From a command line interface, run the application as follows:
+```
+cd morph-xr2rml-jsondoc
+java -cp target\morph-xr2rml-jsondoc-1.0-SNAPSHOT-jar-with-dependencies.jar fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner
+```
