@@ -28,7 +28,7 @@ See directory `morph-xr2rml-rdb/examples`
 - `testdb_dump.sql` is a dump of the MySQL test database,
 - `morph.properties` provides database connection details,
 - `mapping.ttl` contains the xR2RML mapping graph.
-- `result.ttl` contains the expected result of applying these mappings to that database.
+- `result.ttl` contains the expected result of applying this mapping to that database.
 
 To run the test, edit morph.properties and change the database url, name, user and password with appropriate values.
 
@@ -37,7 +37,7 @@ From an IDE: locate main class `es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRD
 From a command line interface, run the application as follows:
 ```
 cd morph-xr2rml-rdb
-java -cp target\morph-xr2rml-rdb-1.0-SNAPSHOT-jar-with-dependencies.jar es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner
+java -cp target/morph-xr2rml-rdb-1.0-SNAPSHOT-jar-with-dependencies.jar es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner
 ```
 
 #### With MongoDB
@@ -46,7 +46,7 @@ See directory `morph-xr2rml-jsondoc/examples`:
 - `testdb_dump.json` is a dump of the MongoDB test database: run the commands in the MongoDB shell window to create the documents,
 - `morph.properties` provides database connection details,
 - `mapping.ttl` contains the xR2RML mapping graph.
-- `result.ttl` contains the expected result of applying these mappings to that database.
+- `result.ttl` contains the expected result of applying this mapping to that database.
 
 To run the test, edit morph.properties and change the database url, name, user and password with appropriate values.
 
@@ -56,5 +56,5 @@ From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJs
 From a command line interface, run the application as follows:
 ```
 cd morph-xr2rml-jsondoc
-java -cp target\morph-xr2rml-jsondoc-1.0-SNAPSHOT-jar-with-dependencies.jar fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner
+java -cp target/morph-xr2rml-jsondoc-1.0-SNAPSHOT-jar-with-dependencies.jar fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner
 ```
