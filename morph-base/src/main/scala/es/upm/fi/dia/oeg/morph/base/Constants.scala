@@ -38,10 +38,8 @@ object Constants {
     val SQL_LOGICAL_OPERATOR_OR = "OR";
     val SQL_KEYWORD_UNION = "UNION";
     val SQL_KEYWORD_ORDER_BY = "ORDER BY";
-
     val SQL_EXPRESSION_TRUE = new ZExpression("=", new ZConstant("1", ZConstant.NUMBER), new ZConstant("1", ZConstant.NUMBER));
     val SQL_EXPRESSION_FALSE = new ZExpression("=", new ZConstant("1", ZConstant.NUMBER), new ZConstant("0", ZConstant.NUMBER));
-
     val MAP_ZSQL_CUSTOM_FUNCTIONS = Map("CONCAT" -> 2, "SUBSTRING" -> 3, "CONVERT" -> 2, "COALESCE" -> 2, "ABS" -> 1, "LOWER" -> 1, "UPPER" -> 1, "REPLACE" -> 3, "TRIM" -> 1);
 
     // Document databases
@@ -85,7 +83,6 @@ object Constants {
     val OUTPUT_FORMAT_NQUAD = "N-QUAD";
     val OUTPUT_FORMAT_TURTLE = "TURTLE";
     val OUTPUT_FORMAT_N3 = "N3";
-
     val DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMAT_TURTLE
 
     // ------------------------------------------------------
@@ -122,9 +119,9 @@ object Constants {
     val QUERY_RESULT_TRANSLATOR_CLASSNAME = "queryresulttranslator.class.name";
     val QUERY_RESULT_TRANSLATOR_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.base.querytranslator.engine.DefaultQueryResultTranslatorFactory";
 
+    val RUNNER_FACTORY_CLASSNAME = "runner_factory.class.name";
     val DATASOURCE_READER_CLASSNAME = "datasourcereader.class.name";
     val QUERY_RESULT_WRITER_FACTORY_CLASSNAME = "queryresultwriterfactory.class.name";
-    //val QUERY_RESULT_WRITER_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.obdi.core.engine.XMLQueryResultWriter";
     val QUERY_RESULT_WRITER_FACTORY_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.base.querytranslator.engine.XMLQueryResultWriterFactory";
 
     val QUERY_RESULT_XMLWRITER_OUTPUT_DEFAULT = "output.rdf.xml";

@@ -37,22 +37,6 @@ object MorphRDBRunner {
         runner.asInstanceOf[MorphRDBRunner];
     }
 
-    def apply(configDir: String, configFile: String): MorphRDBRunner = {
-        val configurationProperties = MorphProperties(configDir, configFile);
-        MorphRDBRunner(configurationProperties)
-    }
-
-    def erasefile(file: String) {
-        try {
-            var out = new PrintWriter(new BufferedWriter(new FileWriter(file, false)))
-            out.print("")
-            out.flush()
-            out.close()
-        } catch {
-            case e: IOException => { logger.info("Error with file " + file); }
-        }
-    }
-
     def main(args: Array[String]) {
         try {
             // Default config dir and file
@@ -91,7 +75,7 @@ object MorphRDBRunner {
             if (outputFormat != Constants.DEFAULT_OUTPUT_FORMAT) {
                 // Save the result in the output file again but with the requested format (in case it is different)
                 logger.info("Saving output to format " + outputFormat + "...");
-                erasefile(outputFilepath)
+                MorphBaseRunner.erasefile(outputFilepath)
                 model.write(new FileWriter(outputFilepath), outputFormat)
             }
         } catch {

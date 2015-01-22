@@ -1,5 +1,9 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.IOException
+import java.io.PrintWriter
 import java.io.Writer
 
 import scala.collection.JavaConversions.asJavaCollection
@@ -150,5 +154,22 @@ abstract class MorphBaseRunner(
     def getTranslationResults: java.util.Collection[IQuery] = {
         this.mapSparqlSql.values
     }
+
 }
+
+object MorphBaseRunner {
+    val logger = Logger.getLogger(this.getClass());
+
+    def erasefile(file: String) {
+        try {
+            var out = new PrintWriter(new BufferedWriter(new FileWriter(file, false)))
+            out.print("")
+            out.flush()
+            out.close()
+        } catch {
+            case e: IOException => { logger.info("Error with file " + file); }
+        }
+    }
+}
+
 

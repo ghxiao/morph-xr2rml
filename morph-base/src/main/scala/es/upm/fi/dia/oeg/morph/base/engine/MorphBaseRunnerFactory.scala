@@ -64,16 +64,20 @@ abstract class MorphBaseRunnerFactory {
         // Building QUERY TRANSLATOR
         logger.info("Building query translator...");
         val queryTranslatorFactoryClassName = properties.queryTranslatorFactoryClassName;
-        val queryTranslator = try {
-            val qtAux = this.buildQueryTranslator(queryTranslatorFactoryClassName, mappingDocument, connection, properties);
-            Some(qtAux);
-        } catch {
-            case e: Exception => {
-                logger.warn("Error building query translator: " + e.getMessage());
-                e.printStackTrace()
+        val queryTranslator =
+            if (queryTranslatorFactoryClassName == null)
                 None
-            }
-        }
+            else
+                try {
+                    val qtAux = this.buildQueryTranslator(queryTranslatorFactoryClassName, mappingDocument, connection, properties);
+                    Some(qtAux);
+                } catch {
+                    case e: Exception => {
+                        logger.warn("Error building query translator: " + e.getMessage());
+                        e.printStackTrace()
+                        None
+                    }
+                }
 
         // Building QUERY RESULT WRITER
         val queryResultWriter = if (queryTranslator.isDefined) {

@@ -14,7 +14,6 @@ class MorphProperties extends java.util.Properties {
     var configurationFileURL: String = null;
     var configurationDirectory: String = null
 
-    //	var conn:Connection=null;
     var ontologyFilePath: Option[String] = None;
     var mappingDocumentFilePath: String = null;
     var outputFilePath: Option[String] = None;
@@ -22,9 +21,9 @@ class MorphProperties extends java.util.Properties {
     var rdfLanguageForResult: String = null;
     var jenaMode: String = null;
     var databaseType: String = null;
+    var runnerFactoryClassName: String = null;
 
     //query translator
-
     var queryTranslatorFactoryClassName: String = null;
     var queryEvaluatorClassName: String = null;
     var queryResultWriterFactoryClassName: String = null;
@@ -157,28 +156,32 @@ class MorphProperties extends java.util.Properties {
         this.subQueryElimination = this.readBoolean(Constants.SUBQUERY_ELIMINATION, true);
         logger.info("Subquery elimination = " + this.subQueryElimination);
 
-        this.transJoinSubQueryElimination = this.readBoolean(
-            Constants.TRANSJOIN_SUBQUERY_ELIMINATION, true);
+        this.transJoinSubQueryElimination = this.readBoolean(Constants.TRANSJOIN_SUBQUERY_ELIMINATION, true);
         logger.info("Trans join subquery elimination = " + this.transJoinSubQueryElimination);
 
-        this.transSTGSubQueryElimination = this.readBoolean(
-            Constants.TRANSSTG_SUBQUERY_ELIMINATION, true);
+        this.transSTGSubQueryElimination = this.readBoolean(Constants.TRANSSTG_SUBQUERY_ELIMINATION, true);
         logger.info("Trans stg subquery elimination = " + this.transSTGSubQueryElimination);
 
         this.subQueryAsView = this.readBoolean(Constants.SUBQUERY_AS_VIEW, false);
         logger.info("Subquery as view = " + this.subQueryAsView);
 
-        this.queryTranslatorFactoryClassName = this.readString(
-            Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME, null);
+        this.runnerFactoryClassName = this.readString(Constants.RUNNER_FACTORY_CLASSNAME , null);
+        if (runnerFactoryClassName == null) {
+            logger.error("Mandatory parameter " + Constants.RUNNER_FACTORY_CLASSNAME + " is missing.")
+            System.exit(-1)
+        }
+        logger.info("RunnerFactory = " + runnerFactoryClassName);
 
-        this.queryEvaluatorClassName = this.readString(
-            Constants.DATASOURCE_READER_CLASSNAME, null);
+        this.queryTranslatorFactoryClassName = this.readString(Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME, null);
+        logger.info("QueryTranslatorFactory = " + queryTranslatorFactoryClassName);
 
-        this.queryResultWriterFactoryClassName = this.readString(
-            Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME, null);
+        this.queryEvaluatorClassName = this.readString(Constants.DATASOURCE_READER_CLASSNAME, null);
+        logger.info("QueryEvaluator = " + queryEvaluatorClassName);
 
-        this.literalRemoveStrangeChars = this.readBoolean(
-            Constants.REMOVE_STRANGE_CHARS_FROM_LITERAL, true);
+        this.queryResultWriterFactoryClassName = this.readString(Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME, null);
+        logger.info("QueryResultWriterFactory = " + queryResultWriterFactoryClassName);
+
+        this.literalRemoveStrangeChars = this.readBoolean(Constants.REMOVE_STRANGE_CHARS_FROM_LITERAL, true);
         logger.info("Remove Strange Chars From Literal Column = " + this.literalRemoveStrangeChars);
 
         this.encodeUnsafeChars = this.readBoolean(Constants.ENCODE_UNSAFE_CHARS_IN_URI_COLUMN, true);
@@ -196,7 +199,6 @@ class MorphProperties extends java.util.Properties {
 
         this.mapDataTranslationLimits = this.readMapStringString(MorphProperties.DATATRANSLATION_LIMIT, Map.empty);
         this.mapDataTranslationOffsets = this.readMapStringString(MorphProperties.DATATRANSLATION_OFFSET, Map.empty);
-
     }
 
     def readMapStringString(property: String, defaultValue: Map[String, String]): Map[String, String] = {
