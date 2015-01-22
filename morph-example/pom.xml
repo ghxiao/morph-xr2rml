@@ -24,38 +24,14 @@
 		<artifactId>morph-xr2rml-rdb-querytranslator</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</dependency>
+
+	<dependency>
+		<groupId>es.upm.fi.dia.oeg.morph</groupId>
+		<artifactId>morph-xr2rml-dist</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</dependency>
   </dependencies>
 
-  <distributionManagement>
-<!-- 		<repository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>aldebaran-releases</id>
-			<name>Aldebaran Releases</name>
-			<url>http://aldebaran.dia.fi.upm.es/artifactory/sstreams-releases-local</url>
-		</repository>
-		<snapshotRepository>
-			<uniqueVersion>true</uniqueVersion>
-			<id>aldebaran-snapshots</id>
-			<name>Aldebaran Snapshots</name>
-			<url>http://aldebaran.dia.fi.upm.es/artifactory/sstreams-snapshots-local</url>
-		</snapshotRepository> -->
-		
-		<repository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>dropbox-releases</id>
-			<name>Dropbox Releases</name>
-			<url>file:///C:/Users/Freddy Priyatna/Dropbox/Public/mvn-repository/releases/</url>
-		</repository>
-
-		<snapshotRepository>
-			<uniqueVersion>true</uniqueVersion>
-			<id>dropbox-snapshots</id>
-			<name>Dropbox Snapshots</name>
-			<url>file:///C:/Users/Freddy Priyatna/Dropbox/Public/mvn-repository/snapshots/</url>
-		</snapshotRepository>
-		
-  </distributionManagement>
-  	 
   <repositories>
 		<repository>
 			<id>aldebaran-external-libs</id>

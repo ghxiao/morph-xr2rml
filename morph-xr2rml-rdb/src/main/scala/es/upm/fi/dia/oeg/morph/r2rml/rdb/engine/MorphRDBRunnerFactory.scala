@@ -1,7 +1,6 @@
 package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.io.Writer
-import java.sql.Connection
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -10,8 +9,6 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
@@ -28,9 +25,9 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         dataTranslator: Option[MorphBaseDataTranslator],
         queryTranslator: Option[IQueryTranslator],
         resultProcessor: Option[AbstractQueryResultTranslator],
-        outputStream: Writer): MorphRDBRunner = {
+        outputStream: Writer): MorphBaseRunner = {
 
-        new MorphRDBRunner(
+        new MorphBaseRunner(
             mappingDocument.asInstanceOf[R2RMLMappingDocument],
             unfolder.asInstanceOf[MorphRDBUnfolder],
             dataTranslator.asInstanceOf[Option[MorphRDBDataTranslator]],

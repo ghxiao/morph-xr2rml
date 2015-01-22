@@ -7,8 +7,8 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.Test;
 
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner;
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner;
 import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunnerFactory;
+import fr.unice.i3s.morph.xr2rml.engine.MorphRunner;
 
 
 public class ExampleWithPropertiesFile {
@@ -55,7 +55,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query01.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -70,7 +70,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query01postgresql.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -87,7 +87,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query02.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -104,7 +104,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query03.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -121,7 +121,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query04.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -138,7 +138,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query05.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -154,7 +154,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query06.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -170,7 +170,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query07.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -186,7 +186,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query08.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -202,7 +202,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query09.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -217,7 +217,7 @@ public class ExampleWithPropertiesFile {
 		String configurationFile = "query10.r2rml.properties";
 		try {
 			String[] args = {configurationDirectory, configurationFile};
-			MorphRDBRunner.main(args);
+			MorphRunner.main(args);
 			logger.info("Query process DONE------\n\n");
 		} catch (Exception e) {
 			e.printStackTrace();

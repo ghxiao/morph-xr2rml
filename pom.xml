@@ -15,6 +15,7 @@
 		<module>morph-xr2rml-rdb</module>
 		<module>morph-xr2rml-rdb-querytranslator</module>
 		<module>morph-xr2rml-jsondoc</module>
+		<module>morph-xr2rml-dist</module>
 	</modules>
 
 	<properties>
@@ -125,7 +126,7 @@
 
 				<!--This plugin's configuration is used to store Eclipse m2e settings 
 					only. It has no influence on the Maven build itself. Uncomment if Eclipse 
-					complains about the maven-scala-plugin executions in each child project pom. -->
+					complains about the maven-scala-plugin executions in child project poms. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>

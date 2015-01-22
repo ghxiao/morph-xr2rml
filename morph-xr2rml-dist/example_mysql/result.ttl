@@ -27,15 +27,15 @@
       a       ex:Student ;
       ex:names ("Mike Peterson"^^xsd:string) .
 
-<http://example.org/sport/200-Chess>
-      a       ex:Sport ;
-      ex:colors ("yellow") ;
-      ex:practicedBy <http://example.org/student/B2-Kennedy> .
-
 <http://example.org/sport/100-Tennis>
       a       ex:Sport ;
       ex:code1 "TN" ;
       ex:colors ("blue" "red" "brown") ;
+      ex:practicedBy <http://example.org/student/B2-Kennedy> .
+
+<http://example.org/sport/200-Chess>
+      a       ex:Sport ;
+      ex:colors ("yellow") ;
       ex:practicedBy <http://example.org/student/B2-Kennedy> .
 
 <http://example.org/sport/500-Pool>

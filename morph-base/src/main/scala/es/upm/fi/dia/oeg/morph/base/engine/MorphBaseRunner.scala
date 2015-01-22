@@ -19,7 +19,7 @@ import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.newrqr.RewriterWrapper
 
-abstract class MorphBaseRunner(
+class MorphBaseRunner(
         mappingDocument: MorphBaseMappingDocument,
         unfolder: MorphBaseUnfolder,
         dataTranslator: Option[MorphBaseDataTranslator],

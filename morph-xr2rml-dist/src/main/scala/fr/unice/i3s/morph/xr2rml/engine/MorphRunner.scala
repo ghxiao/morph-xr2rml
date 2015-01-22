@@ -1,46 +1,29 @@
-package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
+package fr.unice.i3s.morph.xr2rml.engine
 
-import java.io.BufferedWriter
 import java.io.FileWriter
-import java.io.IOException
-import java.io.PrintWriter
-import java.io.Writer
+
+import org.apache.commons.cli.BasicParser
+import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.CommandLineParser
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.Constants
-import org.apache.commons.cli.CommandLineParser
-import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.BasicParser
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 
-class MorphRDBRunner(
-    mappingDocument: R2RMLMappingDocument,
-    unfolder: MorphRDBUnfolder,
-    dataTranslator: Option[MorphRDBDataTranslator],
-    queryTranslator: Option[IQueryTranslator],
-    resultProcessor: Option[AbstractQueryResultTranslator],
-    outputStream: Writer)
-
-        extends MorphBaseRunner(mappingDocument, unfolder, dataTranslator, queryTranslator, resultProcessor, outputStream) {
-}
-
-object MorphRDBRunner {
+object MorphRunner {
     val logger = Logger.getLogger(this.getClass());
-
-    def apply(properties: MorphProperties): MorphRDBRunner = {
-        val runner = new MorphRDBRunnerFactory().createRunner(properties);
-        runner.asInstanceOf[MorphRDBRunner];
-    }
 
     def main(args: Array[String]) {
         try {
             // Default config dir and file
-            var configDir = "examples"
+            var configDir = "example_mysql"
             var configFile = "morph.properties"
 
             // Parse the command line arguments
@@ -60,7 +43,10 @@ object MorphRDBRunner {
 
             // Create the runner, parse the mapping document, create the unfolder, data materializer, data translator etc.
             val properties = MorphProperties(configDir, configFile)
-            val runner = MorphRDBRunner(properties)
+
+            val runnerFactInstance = Class.forName(properties.runnerFactoryClassName).newInstance()
+            val runnerFact = runnerFactInstance.asInstanceOf[MorphBaseRunnerFactory]
+            val runner = runnerFact.createRunner(properties);
 
             // Start the translation process
             logger.info("Running data translation...")
@@ -84,7 +70,8 @@ object MorphRDBRunner {
                 System.exit(-1)
             }
             case e: Exception => {
-                logger.fatal("An unexpected exception occured: " + e.getMessage());
+                logger.fatal("An unexpected exception occured: " + e.getMessage())
+                e.printStackTrace()
                 System.exit(-1)
             }
         }

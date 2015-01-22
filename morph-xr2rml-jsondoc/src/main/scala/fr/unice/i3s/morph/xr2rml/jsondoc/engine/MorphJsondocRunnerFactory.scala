@@ -15,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 
 class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -26,9 +27,9 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
         dataTranslator: Option[MorphBaseDataTranslator],
         queryTranslator: Option[IQueryTranslator],
         resultProcessor: Option[AbstractQueryResultTranslator],
-        outputStream: Writer): MorphJsondocRunner = {
+        outputStream: Writer): MorphBaseRunner = {
 
-        new MorphJsondocRunner(
+        new MorphBaseRunner(
             mappingDocument.asInstanceOf[R2RMLMappingDocument],
             unfolder.asInstanceOf[MorphJsondocUnfolder],
             dataTranslator.asInstanceOf[Option[MorphJsondocDataTranslator]],
