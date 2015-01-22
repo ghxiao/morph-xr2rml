@@ -1,33 +1,19 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
-import scala.collection.JavaConversions._
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import java.sql.Connection
-import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import com.hp.hpl.jena.query.Query
-import es.upm.fi.dia.oeg.morph.base.DBUtility
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
-import com.hp.hpl.jena.query.QueryFactory
-import es.upm.fi.dia.oeg.newrqr.RewriterWrapper
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import java.io.OutputStream
 import java.io.Writer
-import com.hp.hpl.jena.graph.NodeFactory
-import com.hp.hpl.jena.vocabulary.RDF
-import com.hp.hpl.jena.graph.Triple
-import com.hp.hpl.jena.sparql.core.BasicPattern
-import com.hp.hpl.jena.sparql.algebra.op.OpBGP
-import com.hp.hpl.jena.sparql.algebra.op.OpProject
-import com.hp.hpl.jena.sparql.algebra.OpAsQuery
-import com.hp.hpl.jena.sparql.core.Var
-import com.hp.hpl.jena.vocabulary.RDFS
-import com.hp.hpl.jena.rdf.model.Statement
-import com.hp.hpl.jena.rdf.model.Resource
+
+import scala.collection.JavaConversions.asJavaCollection
+import scala.collection.JavaConversions.asScalaBuffer
+
+import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.query.Query
+import com.hp.hpl.jena.query.QueryFactory
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.newrqr.RewriterWrapper
 
 abstract class MorphBaseRunner(
         mappingDocument: MorphBaseMappingDocument,
@@ -164,6 +150,5 @@ abstract class MorphBaseRunner(
     def getTranslationResults: java.util.Collection[IQuery] = {
         this.mapSparqlSql.values
     }
-
 }
 

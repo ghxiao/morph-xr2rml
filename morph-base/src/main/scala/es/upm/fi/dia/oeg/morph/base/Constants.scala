@@ -86,6 +86,8 @@ object Constants {
     val OUTPUT_FORMAT_TURTLE = "TURTLE";
     val OUTPUT_FORMAT_N3 = "N3";
 
+    val DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMAT_TURTLE
+
     // ------------------------------------------------------
     // Config file properties
     // ------------------------------------------------------

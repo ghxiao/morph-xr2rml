@@ -40,6 +40,8 @@ cd morph-xr2rml-rdb
 java -cp target/morph-xr2rml-rdb-1.0-SNAPSHOT-jar-with-dependencies.jar es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBRunner
 ```
 
+You may also use command line options --configDir and --configFile to specify your own configuration directory and configuration file.
+
 #### With MongoDB
 
 See directory `morph-xr2rml-jsondoc/examples`:
@@ -52,9 +54,10 @@ To run the test, edit morph.properties and change the database url, name, user a
 
 From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner` defined in project morph-xr2rml-jsondoc, and run it as a Scala application.
 
-
 From a command line interface, run the application as follows:
 ```
 cd morph-xr2rml-jsondoc
 java -cp target/morph-xr2rml-jsondoc-1.0-SNAPSHOT-jar-with-dependencies.jar fr.unice.i3s.morph.xr2rml.jsondoc.engine.MorphJsondocRunner
 ```
+
+You may also use command line options --configDir and --configFile to specify your own configuration directory and configuration file.
