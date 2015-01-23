@@ -17,6 +17,12 @@ import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 
+/**
+ * MorphRunner is the main entry point of the Morph-xR2RML application.
+ * It expects two input parameters: the configuration directory (option --configDir) and the
+ * configuration file name (option --configFile) that must be located in the configuration directory.
+ * The configuration file lists, among others, the name of the mapping file and the output file.
+ */
 object MorphRunner {
     val logger = Logger.getLogger(this.getClass());
 

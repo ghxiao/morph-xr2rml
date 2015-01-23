@@ -4,14 +4,14 @@
 	<artifactId>morph-xr2rml-lang</artifactId>
 	<packaging>jar</packaging>
 	<parent>
-		<groupId>es.upm.fi.dia.oeg.morph</groupId>
+		<groupId>fr.unice.i3s</groupId>
 		<artifactId>morph-xr2rml</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
 		<dependency>
-			<groupId>es.upm.fi.dia.oeg.morph</groupId>
+			<groupId>fr.unice.i3s</groupId>
 			<artifactId>morph-base</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>

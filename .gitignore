@@ -2,6 +2,7 @@ bin
 target/
 log/
 rdf_result.ttl
+morph-example/
 
 # Eclipse:
 .cache

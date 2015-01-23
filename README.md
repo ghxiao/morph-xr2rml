@@ -3,7 +3,7 @@ Morph-xR2RML is an implementation of the xR2RML mapping language, to describe ma
 
 The xR2RML mapping language (https://hal.archives-ouvertes.fr/hal-01066663 V3) is an extension of R2RML (http://www.w3.org/TR/r2rml/) and RML (http://semweb.mmlab.be/rml/spec.html).
 
-Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as an extension of the Morph-RDB project (https://github.com/oeg-upm/morph-rdb) which is an implementation of R2RML. Morph-xR2RML supports the data materialization approach (generate RDF instances from data in a database) but, for now, it does not support query translation (SPARQL to DB native query language).
+Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as an extension of the Morph-RDB project (https://github.com/oeg-upm/morph-rdb) which is an implementation of R2RML. Morph-xR2RML supports the data materialization approach (generate RDF instances from data in a database) but, for now, it does not support query translation (SPARQL to DB native query language rewriting).
 
 ### Limitations
 - The generation of RDF collection and containers is supported in all cases (from a list of values resulting of the evaluation of a mixed syntax path typically, from the result of a join query implied by a referencing object map), except in the case of a regular R2RML join query applied to a relational database: the result of the join SQL query cannot be translated into an RDF collection or container.
@@ -13,20 +13,20 @@ More complex nested term maps (with recursive parse using another nested term ma
 
 ## Build
 
-The application is built using Maven (http://maven.apache.org/). In a shell, CD to the root directory morph-xr2rml, then run the command: ```mvn clean package```
+The application is built using Maven (http://maven.apache.org/). In a shell, CD to the root directory morph-xr2rml, then run the command: ```mvn clean package```.
 A jar with all dependencies is generated in morph-xr2rml-dist/target.
 
-Alternatively, import the parent project (directory morph-xr2rml) as a Maven project into your favorite IDE and run the project building.
+Alternatively, you can download a snapshot of the last current version published <a href="https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AAAGpp6oKyZ8pKMxsb6Fgmgja/snapshot/fr/unice/i3s/morph-xr2rml-dist?dl=0">here</a>. Get the jar from the last snapshot directory, for instance 1-0.SNAPSHOT/morph-xr2rml-dist-1.0-20150123.133316-1.jar.
 
 
-## Examples
-Example databases and corresponding mappings are provided for the MySQL and MongoDB database cases, see:
+## How to use it?
+We provide example databases and corresponding mappings for the MySQL and MongoDB database cases.
 
 #### With MySQL
 
 See directory `morph-xr2rml-dist/example_mysql`
-- `testdb_dump.sql` is a dump of the MySQL test database,
-- `morph.properties` provides database connection details,
+- `testdb_dump.sql` is a dump of the MySQL test database. You may import it into a MySQL instance by running command `mysql -u root -p test < testdb_dump.sql`.
+- `morph.properties` provides database connection details.
 - `mapping.ttl` contains the xR2RML mapping graph.
 - `result.ttl` contains the expected result of applying this mapping to that database.
 
@@ -34,16 +34,19 @@ To run the test, edit morph.properties and change the database url, name, user a
 
 From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.engine.MorphRunner` defined in project morph-xr2rml-dist, and run it as a Scala application.
 
-From a command line interface, run the application as follows:
+From a command line interface, CD to directory morph-xr2rml-dist and run the application as follows:
 ```
-java -cp target\morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar fr.unice.i3s.morph.xr2rml.engine.MorphRunner --configDir example_mysql --configFile morph.properties
+java -cp target\morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar \
+    fr.unice.i3s.morph.xr2rml.engine.MorphRunner \
+    --configDir example_mysql \
+    --configFile morph.properties
 ```
 
 #### With MongoDB
 
 See directory `morph-xr2rml-dist/example_mongo`:
-- `testdb_dump.json` is a dump of the MongoDB test database: run the commands of that file in a MongoDB shell window to create the database,
-- `morph.properties` provides database connection details,
+- `testdb_dump.json` is a dump of the MongoDB test database: copy and paste the content of that file into a MongoDB shell window to create the database.
+- `morph.properties` provides database connection details.
 - `mapping.ttl` contains the xR2RML mapping graph.
 - `result.ttl` contains the expected result of applying this mapping to that database.
 
@@ -51,7 +54,10 @@ To run the test, edit morph.properties and change the database url, name, user a
 
 From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.engine.MorphRunner` defined in project morph-xr2rml-dist, and run it as a Scala application.
 
-From a command line interface, run the application as follows:
+From a command line interface, CD to directory morph-xr2rml-dist and run the application as follows:
 ```
-java -cp target\morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar fr.unice.i3s.morph.xr2rml.engine.MorphRunner --configDir example_mongo --configFile morph.properties
+java -cp target\morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar \
+   fr.unice.i3s.morph.xr2rml.engine.MorphRunner \
+   --configDir example_mongo \
+   --configFile morph.properties
 ```
