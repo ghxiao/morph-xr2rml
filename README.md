@@ -36,7 +36,7 @@ From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.engine.MorphRunner` de
 
 From a command line interface, CD to directory morph-xr2rml-dist and run the application as follows:
 ```
-java -cp target\morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar \
+java -cp target/morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar \
     fr.unice.i3s.morph.xr2rml.engine.MorphRunner \
     --configDir example_mysql \
     --configFile morph.properties
@@ -56,7 +56,7 @@ From an IDE: locate main class `fr.unice.i3s.morph.xr2rml.engine.MorphRunner` de
 
 From a command line interface, CD to directory morph-xr2rml-dist and run the application as follows:
 ```
-java -cp target\morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar \
+java -cp target/morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar \
    fr.unice.i3s.morph.xr2rml.engine.MorphRunner \
    --configDir example_mongo \
    --configFile morph.properties

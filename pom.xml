@@ -27,17 +27,28 @@
 		<repository>
 			<uniqueVersion>false</uniqueVersion>
 			<id>dropbox-releases</id>
-			<!-- Public url: https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AAA6817hFleId-zP7Khr-BCYa/release?dl=0  -->
+			<!-- Public url: https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AAA6817hFleId-zP7Khr-BCYa/release?dl=0 -->
 			<url>file:///C:/Users/fmichel/Documents/Dropbox/Public/artifacts/release</url>
 		</repository>
 
 		<snapshotRepository>
 			<uniqueVersion>false</uniqueVersion>
 			<id>dropbox-snapshots</id>
-			<!--  Public url: https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AABc7hU5YdNqsQmdO7Q5yb-ya/snapshot?dl=0 -->
+			<!-- Public url: https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AABc7hU5YdNqsQmdO7Q5yb-ya/snapshot?dl=0 -->
 			<url>file:///C:/Users/fmichel/Documents/Dropbox/Public/artifacts/snapshot</url>
 		</snapshotRepository>
+
 	</distributionManagement>
+
+	<!-- <reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.scala-tools</groupId>
+				<artifactId>maven-scala-plugin</artifactId>
+				<version>2.15.2</version>
+			</plugin>
+		</plugins>
+	</reporting> -->
 
 	<repositories>
 		<repository>
@@ -67,7 +78,7 @@
 		</repository>
 	</repositories>
 
-	<!--  Common dependencies -->
+	<!-- Common dependencies -->
 	<dependencies>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
@@ -80,7 +91,7 @@
 			<artifactId>commons-cli</artifactId>
 			<version>1.2</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
