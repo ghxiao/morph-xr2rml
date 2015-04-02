@@ -2,7 +2,6 @@
 @prefix rr:  <http://www.w3.org/ns/r2rml#> .
 @prefix ex:  <http://example.com/> .
 @prefix rml: <http://semweb.mmlab.be/ns/rml#> .
-@prefix ql:	 <http://semweb.mmlab.be/ns/ql#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <#Students>
@@ -10,7 +9,6 @@
     xrr:logicalSource [
     	# Jongo needs strings in singles quotes (difference with MongoDB shell)
         xrr:query """db.students.find( { 'FullName' : {$exists: 1} } )""";
-        xrr:referenceFormulation ql:JSONPath;
     ];
     rr:subjectMap [ 
     	rr:template "http://example.org/student/{$._id.*}";
@@ -51,7 +49,6 @@
     a rr:TriplesMap;
     xrr:logicalSource [
         xrr:query "db.movies.find( { movies: { $exists: true} } )";
-        xrr:referenceFormulation ql:JSONPath;
         rml:iterator "$.movies.*";
     ];
     rr:subjectMap [ 
@@ -63,7 +60,6 @@
     a rr:TriplesMap;
     xrr:logicalSource [
         xrr:query "db.movies.find( { directors: { $exists: true} } )";
-        xrr:referenceFormulation ql:JSONPath;
         rml:iterator "$.directors.*";
     ];
     rr:subjectMap [ rr:template "http://example.org/director/{$.name}"; ];

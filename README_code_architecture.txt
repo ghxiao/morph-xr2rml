@@ -1,29 +1,33 @@
+Below we describe the architecture of classes regarding the treatment of RDBs. This can easily be adapted to the MongoDB case.
+
 base.MorphProperties
     Is a java.util.Properties.
     Holds members for each property definable in the configuration file 
-    (defaults to examples/morph.properties, set in MorphRDBRunner main)
+    (defaults to example_mysql/morph.properties, set in project morph-xr2rml-dist, MorphRunner main)
+
+The base.engine.MorphBaseRunnerFactory class is an abstract class that builds an morph.base.engine.MorphBaseRunner.
+Database-specific methods are implemented in concrete factory classes like r2rml.rdb.engine.MorphRDBRunnerFactory. 
 
 r2rml.rdb.engine.MorphRDBRunnerFactory < base.engine.MorphBaseRunnerFactory
-    Build an r2rml.rdb.engine.MorphRDBRunner object to initialize:
+    Provides methods to initialize:
+    - a mapping document (R2RMLMappingDocument): read the xR2RML mapping file into a JENA model, then create an R2RMLMappingDocument
+      that consists of a set of classMappings, namely triples maps (R2RMLTriplesMap).
     - a DB connection
     - a data source reader (MorphBaseDataSourceReader) of which concrete class name (MorphRDBDataSourceReader) 
-      is passed as contruct parameter. The data source reader provides methods to set the connection and run 
-      queries against the DB.
-    - a mapping document (R2RMLMappingDocument): read the R2RML mapping into a JENA model, then create an R2RMLMappingDocument
-      that consists of a set of classMappings, namely triples maps (R2RMLTriplesMap).
+      is passed as contruct parameter. The data source reader provides methods to open, configure, and close the connection, 
+      run queries against the DB, and possibly manage strategies to store results to avoid executing the same query several times in the case of joint queries.
     - an unfolder (MorphRDBUnfolder < MorphBaseUnfolder) to create SQL queries using a table name or query
-    - a data materializer (MorphBaseMaterializer) basically consists of a proper JENA model (either in mem or db)
-      initialized with a name space etc. The model is used to create statements from subject, predicate, objects read
-      from the database.
     - a data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) that actually makes the translation: it runs
       SQL queries created by the unfolder, then generates RDF triples from the results.
+    - a data materializer (MorphBaseMaterializer) basically consists of a properly initialized (name space, etc.) 
+      JENA model, either in mem or db. The model is used to store statements created from subjects, predicates and objects read
+      from the database.
     - a query translator, query result writer and query result processor
     
-r2rml.rdb.engine.MorphRDBRunner < base.engine.MorphBaseRunner
-    Main: 
+fr.unice.i3s.morph.xr2rml.engine.MorphRunner provide the main class to run the process:
     - Load the properties
-    - Create a singleton MorphRDBRunner using the MorphRDBRunnerFactory that creates
-      a R2RMLMappingDocument, MorphRDBUnfoldern MorphRDBDataMaterializer and MorphRDBDataTranslator (see above).
+    - Create a singleton MorphBaseRunner using the MorphRDBRunnerFactory that creates
+      a R2RMLMappingDocument, MorphRDBUnfolder, MorphRDBDataMaterializer and MorphRDBDataTranslator (see above).
     - Run the process using either materialization (MorphBaseRunner.materializeMappingDocuments) or query rewriting
     - Load the RDF graph produced in a JENA model and save a serialization into a file using the requested RDF syntax.
     

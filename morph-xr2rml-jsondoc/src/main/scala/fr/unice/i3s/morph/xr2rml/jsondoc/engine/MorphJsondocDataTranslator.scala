@@ -45,7 +45,7 @@ class MorphJsondocDataTranslator(
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
         with MorphR2RMLElementVisitor {
 
-    /** Store already executed queries do avoid running them several times */
+    /** Store already executed queries to avoid running them several times */
     private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
 
     override val logger = Logger.getLogger(this.getClass().getName());
@@ -351,34 +351,6 @@ class MorphJsondocDataTranslator(
             case _ => { throw new Exception("Invalid term map type " + termMap.termMapType) }
         }
         result
-    }
-
-    private def getResultSetValue(termMap: R2RMLTermMap, rs: ResultSet, pColumnName: String): Object = {
-        try {
-            val zConstant = MorphSQLConstant(pColumnName, ZConstant.COLUMNNAME);
-            val tableName = zConstant.table;
-            val columnName = {
-                if (tableName != null) {
-                    tableName + "." + zConstant.column
-                } else
-                    zConstant.column
-            }
-
-            val result = if (termMap.datatype == null) {
-                rs.getString(columnName);
-            } else if (termMap.datatype.equals(XSDDatatype.XSDdateTime.getURI())) {
-                rs.getDate(columnName).toString();
-            } else {
-                rs.getObject(columnName);
-            }
-            result
-        } catch {
-            case e: Exception => {
-                e.printStackTrace();
-                logger.error("An error occured when reading the SQL result set : " + e.getMessage());
-                null
-            }
-        }
     }
 
     /**

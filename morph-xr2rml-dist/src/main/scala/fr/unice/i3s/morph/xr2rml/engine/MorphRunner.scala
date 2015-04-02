@@ -47,11 +47,12 @@ object MorphRunner {
             logger.info("properties Directory = " + configDir)
             logger.info("properties File      = " + configFile)
 
-            // Create the runner, parse the mapping document, create the unfolder, data materializer, data translator etc.
             val properties = MorphProperties(configDir, configFile)
 
-            val runnerFactInstance = Class.forName(properties.runnerFactoryClassName).newInstance()
-            val runnerFact = runnerFactInstance.asInstanceOf[MorphBaseRunnerFactory]
+            // Create the runner factory based on the class name given in configuration file
+            val runnerFact = Class.forName(properties.runnerFactoryClassName).newInstance().asInstanceOf[MorphBaseRunnerFactory]
+
+            // Create the runner, parse the mapping document, create the unfolder, data materializer, data translator etc.
             val runner = runnerFact.createRunner(properties);
 
             // Start the translation process
