@@ -62,7 +62,8 @@ object MorphRunner {
             // Reload the resulting file and display it on the std output
             var outputFilepath = properties.outputFilePath.get
             var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
-            model.write(System.out, Constants.DEFAULT_OUTPUT_FORMAT, null)
+            if (properties.outputDisplay)
+                model.write(System.out, Constants.DEFAULT_OUTPUT_FORMAT, null)
 
             var outputFormat = properties.rdfLanguageForResult
             if (outputFormat != Constants.DEFAULT_OUTPUT_FORMAT) {

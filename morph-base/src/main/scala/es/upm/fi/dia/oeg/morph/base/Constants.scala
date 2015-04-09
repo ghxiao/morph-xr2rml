@@ -106,6 +106,7 @@ object Constants {
     val ONTOURL_PROP_NAME = "onto.url.path";
     val OUTPUTFILE_PROP_NAME = "output.file.path";
     val OUTPUTFILE_RDF_LANGUAGE = "output.rdflanguage";
+    val OUTPUTFILE_DISPLAY = "output.display";
     val SPLIT_OUTPUT_PER_CONCEPT = "split_output_per_concept";
 
     val OPTIMIZE_TB = "querytranslator.selfjoinelimination";
