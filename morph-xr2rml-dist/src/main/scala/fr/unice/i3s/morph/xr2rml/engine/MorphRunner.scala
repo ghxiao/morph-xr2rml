@@ -6,14 +6,13 @@ import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.CommandLineParser
 import org.apache.log4j.Logger
+import org.apache.log4j.PropertyConfigurator
 
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 
@@ -24,6 +23,11 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
  * The configuration file lists, among others, the name of the mapping file and the output file.
  */
 object MorphRunner {
+
+    // Log4j init
+    val log4jfile = this.getClass().getClassLoader().getResource("xr2rml-log4j.properties")
+    println("Loading log4j configuration: " + log4jfile)
+    PropertyConfigurator.configure(log4jfile)
     val logger = Logger.getLogger(this.getClass());
 
     def main(args: Array[String]) {

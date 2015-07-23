@@ -253,11 +253,11 @@ class MorphJsondocDataTranslator(
 
             } catch {
                 case e: MorphException => {
-                    logger.error("Error while translating data of row " + i + ": " + e.getMessage);
+                    logger.error("Error while translating data of document " + i + ": " + e.getMessage);
                     e.printStackTrace()
                 }
                 case e: Exception => {
-                    logger.error("Unexpected error while translating data of row " + i + ": " + e.getMessage);
+                    logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
                     e.printStackTrace()
                 }
             }
@@ -269,7 +269,7 @@ class MorphJsondocDataTranslator(
     /**
      * Apply a term map to a document of the result set, and generate a list of RDF terms:
      * for each element reference in the term map (reference or template), read values from the document,
-     * translate those values into RDF terms.
+     * then translate those values into RDF terms.
      */
     private def translateData(termMap: R2RMLTermMap, jsonDoc: String): List[RDFNode] = {
 
@@ -279,7 +279,7 @@ class MorphJsondocDataTranslator(
         // Term type of the collection/container to generate, or None if this is not the case 
         var collecTermType: Option[String] = None
 
-        // Term type of the RDF terms to generate from values
+        // Term type of the RDF terms to generate from database values
         var memberTermType: String = Constants.R2RML_LITERAL_URI
 
         // In case of a collection/container, a nested term map should give the details of term type, datatype and language or the terms 
@@ -323,14 +323,14 @@ class MorphJsondocDataTranslator(
 
                     // Evaluate the raw value against the mixed-syntax path.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
-                    //valuesRaw.filter(_ != null)
-                    valuesRaw
+                    valuesRaw.filter(_ != null)
+                    //valuesRaw
                 }
 
                 val replacements: List[List[Object]] = listReplace.toList
                 logger.trace("Template replacements: " + replacements)
 
-                // Check if at least one of the remplacements is not null.
+                // Check if at least one of the replacements is not null.
                 var isEmptyReplacements: Boolean = true
                 for (repl <- listReplace) {
                     if (!repl.isEmpty)
@@ -339,7 +339,7 @@ class MorphJsondocDataTranslator(
 
                 // Replace "{...}" groups in the template string with corresponding values from the db
                 if (isEmptyReplacements) {
-                    logger.trace("Template " + termMap.templateString + ": no values read from from the DB.")
+                    logger.trace("Template " + termMap.templateString + ": no values (or only null values) were read from from the DB.")
                     List()
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values

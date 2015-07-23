@@ -1,37 +1,35 @@
 # Create a test user used by xR2RML to read in the MongoDB instance
 use test
 db.createUser( { user: "user", pwd: "user", 
-      roles: [ { role: "read", db: "test" } ]
+      roles: [ { role: "readWrite", db: "test" } ]
     }
 )
 
 # Add documents to collection students
 db.students.remove( {} )
-
-db.students.insert(
-{ "FullName": { "FirstNames": ["Paul", "Jack"], "LastName": "Smith" },
-  "Hobbies": [ {"hobby":"Swimming", "place":"pool"}, {"hobby": "Soccer", "place": "stadium"} ] } )
-
-db.students.insert(
-{ "FullName": { "FirstNames": ["Frank", "Francis"], "LastName": "Underwood" },
-  "Hobbies": [{"hobby":"Hiking", "place": "Mountain"}, {"hobby":"Basketball", "place": "street"}] } )
-
-db.students.insert(
-{ "FullName": { "FirstNames": ["Weirdo", "\#{[|`\^@]\""], "LastName": "Foo" }, 
-  "id": 13, "active": false })
+db.students.insert([
+    { "FullName": { "FirstNames": ["Paul", "Jack"], 
+      "LastName": "Smith" },
+      "Hobbies": [ {"hobby":"Swimming", "place":"pool"}, {"hobby": "Soccer", "place": "stadium"} ] },
+    { "FullName": { "FirstNames": ["Frank", "Francis"], 
+      "LastName": "Underwood" },
+      "Hobbies": [{"hobby":"Hiking", "place": "Mountain"}, {"hobby":"Basketball", "place": "street"}] },
+    { "FullName": { "FirstNames": ["Weirdo", "\#{[|`\^@]\""], 
+      "LastName": "Foo" },
+      "id": 13, "active": false }
+])
 
 # Add documents to collection movies
 db.movies.remove({})
+db.movies.insert([
+    { "directors": [ 
+        { "name": "Wong Kar-wai", "movies": ["2046", "In the Mood for Love", "The Grandmaster"] },
+        { "name": "Woody Allen", "movies": ["Manhattan", "Annie Hall"] } ]},
+    { "movies": [
+       { "title": "Manhattan", "year": "1979" },
+       { "title": "Annie Hall", "year": "1977" },
+       { "title": "2046", "year": "2004" },
+       { "title": "In the Mood for Love", "year": "2000" },
+       { "title": "West Side Story", "year": "1962" } ]}
+])
 
-db.movies.insert(
-{ "directors": [ 
-    { "name": "Wong Kar-wai", "movies": ["2046", "In the Mood for Love", "The Grandmaster"] },
-    { "name": "Woody Allen", "movies": ["Manhattan", "Annie Hall"] } ]})
-
-db.movies.insert(
-{ "movies": [
-   { "title": "Manhattan", "year": "1979" },
-   { "title": "Annie Hall", "year": "1977" },
-   { "title": "2046", "year": "2004" },
-   { "title": "In the Mood for Love", year: "2000" },
-   { "title": "West Side Story", "year": "1962" } ]})
