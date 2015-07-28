@@ -36,6 +36,7 @@ class MorphProperties extends java.util.Properties {
     var transJoinSubQueryElimination = true;
     var transSTGSubQueryElimination = true;
     var subQueryAsView = false;
+    var cacheQueryResult: Boolean = false
 
     //batch upgrade
     var literalRemoveStrangeChars: Boolean = true;
@@ -169,6 +170,9 @@ class MorphProperties extends java.util.Properties {
         this.subQueryAsView = this.readBoolean(Constants.SUBQUERY_AS_VIEW, false);
         logger.info("Subquery as view = " + this.subQueryAsView);
 
+        this.cacheQueryResult = this.readBoolean(Constants.CACHE_QUERY_RESULT, false);
+        logger.info("Cache the result of queries for join evaluation (non Relational DBs) = " + this.cacheQueryResult);
+        
         this.runnerFactoryClassName = this.readString(Constants.RUNNER_FACTORY_CLASSNAME , null);
         if (runnerFactoryClassName == null) {
             logger.error("Mandatory parameter " + Constants.RUNNER_FACTORY_CLASSNAME + " is missing.")

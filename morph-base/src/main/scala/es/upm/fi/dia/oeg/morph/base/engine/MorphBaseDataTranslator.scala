@@ -86,7 +86,7 @@ abstract class MorphBaseDataTranslator(
             else
                 valuesAsRdfNodes
 
-        logger.trace("    Translated values [" + values + "] into [" + result + "]")
+        if (logger.isTraceEnabled()) logger.trace("    Translated values [" + values + "] into [" + result + "]")
         result
     }
 
@@ -118,7 +118,7 @@ abstract class MorphBaseDataTranslator(
                     Some(node)
                 }
             })
-        //logger.trace("    Translated values [" + values + "] into [" + result + "]")
+        //if (logger.isTraceEnabled()) logger.trace("    Translated values [" + values + "] into [" + result + "]")
         result
     }
 

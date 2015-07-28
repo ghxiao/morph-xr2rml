@@ -325,7 +325,7 @@ object R2RMLTermMap {
         val languageTag = R2RMLTermMap.extractLanguageTag(rdfNode);
         val nestedTM = R2RMLTermMap.extractNestedTermMap(termMapType, rdfNode);
 
-        logger.trace("Extracted term map core properties: termMapType: " + termMapType + ". termType: "
+        if (logger.isTraceEnabled()) logger.trace("Extracted term map core properties: termMapType: " + termMapType + ". termType: "
             + termType + ". datatype: " + datatype + ". languageTag: " + languageTag
             + ". nestedTermMap: " + nestedTM)
 
@@ -418,7 +418,7 @@ object R2RMLTermMap {
 
         val maps = maps1 ++ maps2
         val mapsSet = maps.toSet
-        logger.trace("Extracted term maps: " + mapsSet)
+        if (logger.isTraceEnabled()) logger.trace("Extracted term maps: " + mapsSet)
         mapsSet
     }
 

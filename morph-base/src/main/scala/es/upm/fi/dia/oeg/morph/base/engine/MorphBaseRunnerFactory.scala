@@ -12,6 +12,9 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import java.io.OutputStreamWriter
+import java.io.FileOutputStream
+import java.io.PrintWriter
 
 abstract class MorphBaseRunnerFactory {
     val logger = Logger.getLogger(this.getClass());
@@ -36,7 +39,8 @@ abstract class MorphBaseRunnerFactory {
         val unfolder = this.createUnfolder(mappingDocument, properties);
 
         val outputStream: Writer = if (properties.outputFilePath.isDefined) {
-            new FileWriter(properties.outputFilePath.get)
+            //new OutputStreamWriter(new FileOutputStream(properties.outputFilePath.get), "UTF-8")
+            new PrintWriter(properties.outputFilePath.get, "UTF-8")
         } else { new StringWriter }
 
         // Building MATERIALIZER

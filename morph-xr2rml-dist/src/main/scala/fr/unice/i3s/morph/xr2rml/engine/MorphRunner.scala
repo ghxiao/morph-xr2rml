@@ -1,20 +1,20 @@
 package fr.unice.i3s.morph.xr2rml.engine
 
 import java.io.FileWriter
-
 import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.CommandLineParser
 import org.apache.log4j.Logger
 import org.apache.log4j.PropertyConfigurator
-
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
 
 /**
  * MorphRunner is the main entry point of the Morph-xR2RML application.
@@ -63,22 +63,32 @@ object MorphRunner {
             logger.info("Running data translation...")
             runner.run()
 
-            // Reload the resulting file and display it on the std output
             var outputFilepath = properties.outputFilePath.get
-            var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
-            if (properties.outputDisplay)
-                model.write(System.out, Constants.DEFAULT_OUTPUT_FORMAT, null)
-
             var outputFormat = properties.rdfLanguageForResult
-            if (outputFormat != Constants.DEFAULT_OUTPUT_FORMAT) {
-                // Save the result in the output file again but with the requested format (in case it is different)
-                logger.info("Saving output to format " + outputFormat + "...");
-                MorphBaseRunner.erasefile(outputFilepath)
-                model.write(new FileWriter(outputFilepath), outputFormat)
+
+            if (properties.outputDisplay || !outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
+
+                // Reload the resulting file
+                var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
+                if (properties.outputDisplay) {
+                    // Display the result on the std output
+                    model.write(System.out, Constants.DEFAULT_OUTPUT_FORMAT, null)
+                }
+
+                if (!outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
+                    // Save the result in the output file again but with the requested format (in case it is different)
+                    logger.info("Saving output to format " + outputFormat + "...");
+                    // MorphBaseRunner.erasefile(outputFilepath)
+                    model.write(new PrintWriter(properties.outputFilePath.get + "_rewritten.rdf", "UTF-8"), outputFormat)
+                }
             }
+
+            logger.info("Treatment completed, exiting.");
+
         } catch {
             case e: com.hp.hpl.jena.n3.turtle.TurtleParseException => {
                 logger.fatal("Invalid xR2RML document, parsing error: " + e.getMessage)
+                e.printStackTrace()
                 System.exit(-1)
             }
             case e: Exception => {

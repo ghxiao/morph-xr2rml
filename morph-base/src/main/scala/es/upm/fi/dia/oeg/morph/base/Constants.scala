@@ -115,6 +115,8 @@ object Constants {
     val TRANSJOIN_SUBQUERY_ELIMINATION = "querytranslator.transjoin.subqueryelimination";
     val TRANSSTG_SUBQUERY_ELIMINATION = "querytranslator.transstg.subqueryelimination";
     val SUBQUERY_AS_VIEW = "querytranslator.subqueryasview";
+    val CACHE_QUERY_RESULT = "querytranslator.cachequeryresult";
+    
     val QUERY_TRANSLATOR_FACTORY_CLASSNAME = "querytranslatorfactory.class.name";
     val QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslatorFactory";
     val QUERY_RESULT_TRANSLATOR_CLASSNAME = "queryresulttranslator.class.name";

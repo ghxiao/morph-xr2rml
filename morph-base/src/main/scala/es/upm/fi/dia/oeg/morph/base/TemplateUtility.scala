@@ -108,7 +108,7 @@ object TemplateUtility {
                 else group
             }
         )
-        logger.trace("Extracted groups: " + groupsFromTpl + " from template " + tplStr)
+        if (logger.isTraceEnabled()) logger.trace("Extracted groups: " + groupsFromTpl + " from template " + tplStr)
         groupsFromTpl;
     }
 
@@ -128,7 +128,7 @@ object TemplateUtility {
         val columnsFromTemplate = groups.map(group =>
             MixedSyntaxPath(group, Constants.xR2RML_REFFORMULATION_COLUMN).getReferencedColumn.getOrElse("")
         )
-        logger.trace("Extracted columns: " + columnsFromTemplate + " from template " + tplStr)
+        if (logger.isTraceEnabled()) logger.trace("Extracted columns: " + columnsFromTemplate + " from template " + tplStr)
         columnsFromTemplate;
     }
 
@@ -160,7 +160,7 @@ object TemplateUtility {
 
         // Compute all possible combinations between all values of the groups
         val combinations = cartesianProduct(replacements)
-        logger.trace("Template replacement combinations: " + combinations)
+        if (logger.isTraceEnabled()) logger.trace("Template replacement combinations: " + combinations)
 
         val templateResults = new Queue[String]
 
@@ -193,7 +193,7 @@ object TemplateUtility {
         }
 
         val result = templateResults.toList
-        logger.trace("Generated templates: " + result)
+        if (logger.isTraceEnabled()) logger.trace("Generated templates: " + result)
         result
     }
 
