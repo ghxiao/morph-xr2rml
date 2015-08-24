@@ -37,7 +37,7 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
     override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
-        logger.debug("Unfolding triples map " + triplesMap.toString)
+        if (logger.isDebugEnabled()) logger.debug("Unfolding triples map " + triplesMap.toString)
         val logicalSrc = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
 
         val logicalSrcQuery: String = logicalSrc match {

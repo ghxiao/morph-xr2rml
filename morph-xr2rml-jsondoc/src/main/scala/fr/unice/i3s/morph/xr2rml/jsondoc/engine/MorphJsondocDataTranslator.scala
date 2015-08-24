@@ -45,8 +45,11 @@ class MorphJsondocDataTranslator(
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
         with MorphR2RMLElementVisitor {
 
-    /** Store already executed queries to avoid running them several times */
+    /** Store already executed queries to avoid running them several times. The key of the hashmap is the query string itself. */
     private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+
+    /** Store already parsed queries to avoid creating the same GenericQuery object several times. The key of the hashmap is the triples map name */
+    private var queries: scala.collection.mutable.Map[String, GenericQuery] = new scala.collection.mutable.HashMap
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
@@ -455,7 +458,7 @@ class MorphJsondocDataTranslator(
                 // @TODO USE WITH CARE: this needs to be strongly improved with the use of a real cache library, 
                 // and memory-consumption-based eviction.
                 if (properties.cacheQueryResult)
-                	executedQueries += (queryMapId -> resultSet)
+                    executedQueries += (queryMapId -> resultSet)
                 resultSet
             }
 
@@ -486,7 +489,14 @@ class MorphJsondocDataTranslator(
     private def evalMixedSyntaxPathOnTriplesMap(tm: R2RMLTriplesMap, reference: String): List[(String, List[Object])] = {
 
         // Get the query corresponding to that triples map
-        val query = this.unfolder.unfoldConceptMapping(tm);
+        var query: GenericQuery = null
+        if (queries.contains(tm.id)) {
+            logger.info("Query for triples map " + tm.id + ": " + queries(tm.id))
+            query = queries(tm.id)
+        } else {
+            query = this.unfolder.unfoldConceptMapping(tm)
+            queries += (tm.id -> query)
+        }
 
         // Execute the query against the database
         val tmResultSet = executeQueryAndIteraotr(query, tm.logicalSource.docIterator)
