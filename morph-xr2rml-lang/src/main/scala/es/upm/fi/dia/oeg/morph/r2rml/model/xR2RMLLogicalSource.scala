@@ -8,8 +8,6 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseLogicalTable
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
 /**
  * Abstract class to represent an xR2RML LogicalSource, is inherited by R2RMLTable, R2RMLSqlQuey and xR2RMLQuery.
@@ -25,7 +23,7 @@ abstract class xR2RMLLogicalSource(
     /** Iteration pattern, defaults to none */
     val docIterator: Option[String])
 
-        extends MorphBaseLogicalTable with MorphR2RMLElement {
+        extends MorphBaseLogicalTable {
 
     val logger = Logger.getLogger(this.getClass().getName());
     var alias: String = null;
@@ -84,11 +82,6 @@ abstract class xR2RMLLogicalSource(
             case _ => throw new Exception("Unkown type of logical source or logical table")
         }
         result + ": " + this.getValue() + ". ReferenceFormulation: " + this.refFormulation + ". Iterator: " + this.docIterator
-    }
-
-    def accept(visitor: MorphR2RMLElementVisitor): Object = {
-        val result = visitor.visit(this);
-        result;
     }
 }
 

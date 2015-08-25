@@ -3,11 +3,15 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -19,11 +23,11 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
@@ -32,7 +36,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -41,8 +44,7 @@ class MorphRDBDataTranslator(
     dataSourceReader: MorphRDBDataSourceReader,
     genCnx: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties)
-        with MorphR2RMLElementVisitor {
+        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties) {
 
     if (!genCnx.isRelationalDB)
         throw new Exception("Database connection type does not mathc relational database")
@@ -330,8 +332,8 @@ class MorphRDBDataTranslator(
     def translateData(triplesMaps: Iterable[MorphBaseClassMapping]): Unit = {
         for (triplesMap <- triplesMaps) {
             try {
-                this.visit(triplesMap.asInstanceOf[R2RMLTriplesMap]);
-                //triplesMap.asInstanceOf[R2RMLTriplesMap].accept(this);
+                this.translateData(triplesMap)
+                null
             } catch {
                 case e: Exception => {
                     logger.error("error while translating data of triplesMap : " + triplesMap);
@@ -548,39 +550,5 @@ class MorphRDBDataTranslator(
             alias + "_" + columnName;
         } else
             colRef
-    }
-
-    override def visit(logicalTable: xR2RMLLogicalSource): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(mappingDocument: R2RMLMappingDocument): Object = {
-        try {
-            this.translateData(mappingDocument)
-        } catch {
-            case e: Exception => {
-                e.printStackTrace()
-                logger.error("Error during data translation process : " + e.getMessage())
-                throw new Exception(e.getMessage());
-            }
-        }
-        null
-    }
-
-    override def visit(objectMap: R2RMLObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(triplesMap: R2RMLTriplesMap): Object = {
-		this.translateData(triplesMap)
-		null
     }
 }

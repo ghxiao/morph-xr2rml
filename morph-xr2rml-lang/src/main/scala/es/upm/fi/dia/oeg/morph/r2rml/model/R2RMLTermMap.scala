@@ -10,8 +10,6 @@ import com.hp.hpl.jena.rdf.model.Resource
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
 abstract class R2RMLTermMap(
     val termMapType: Constants.MorphTermMapType.Value,
@@ -25,7 +23,7 @@ abstract class R2RMLTermMap(
     /** Reference formulation from the logical source */
     val refFormulaion: String)
 
-        extends MorphR2RMLElement with IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap {
+        extends IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap {
 
     /** Jena resource corresponding to that term map */
     var rdfNode: RDFNode = null;
@@ -41,10 +39,6 @@ abstract class R2RMLTermMap(
             refForm);
         this.rdfNode = rdfNode;
         this.parse(rdfNode);
-    }
-
-    def accept(visitor: MorphR2RMLElementVisitor): Object = {
-        visitor.visit(this);
     }
 
     /**

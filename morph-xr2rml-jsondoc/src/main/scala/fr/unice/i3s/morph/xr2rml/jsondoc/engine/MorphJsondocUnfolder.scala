@@ -12,7 +12,6 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
@@ -24,7 +23,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
 
 class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
-        extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
+        extends MorphBaseUnfolder(md, properties) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -63,29 +62,5 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
                 throw new MorphException("Database type not supported: " + dbType)
         }
         query
-    }
-
-    def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(md: R2RMLMappingDocument): Collection[IQuery] = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(objectMap: R2RMLObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(triplesMap: R2RMLTriplesMap): IQuery = {
-        throw new Exception("Unsopported method.")
     }
 }

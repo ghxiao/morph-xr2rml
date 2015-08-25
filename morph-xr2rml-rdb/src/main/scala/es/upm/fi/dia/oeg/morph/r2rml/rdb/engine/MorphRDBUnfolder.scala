@@ -26,7 +26,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
@@ -40,7 +39,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
-        extends MorphBaseUnfolder(md, properties) with MorphR2RMLElementVisitor {
+        extends MorphBaseUnfolder(md, properties) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -66,7 +65,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * @return instance of SQLFromItem or SQLQuery
      */
     @throws[MorphException]
-    private def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
 
         val result = logicalTable.logicalTableType match {
@@ -422,30 +421,6 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         } else
             Nil
         result.toList
-    }
-
-    override def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
-        this.unfoldLogicalSource(logicalTable);
-    }
-
-    override def visit(md: R2RMLMappingDocument): Collection[GenericQuery] = {
-        this.unfoldMappingDocument()
-    }
-
-    override def visit(objectMap: R2RMLObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(triplesMap: R2RMLTriplesMap): IQuery = {
-        this.unfoldTriplesMap(triplesMap)
     }
 }
 

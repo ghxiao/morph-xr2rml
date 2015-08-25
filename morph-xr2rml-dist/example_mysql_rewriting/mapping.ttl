@@ -84,7 +84,7 @@
     rr:predicateObjectMap [
         rr:predicate ex:practicedBy;
         rr:objectMap [
-            rr:parentTriplesMap <#Student>;
+            rr:parentTriplesMap <#TMStudent>;
             rr:joinCondition [
                 rr:child "id";
                 rr:parent "comments";

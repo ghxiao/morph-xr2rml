@@ -22,11 +22,9 @@ import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 
 class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
-        extends MorphBaseMappingDocument(classMappings) with MorphR2RMLElement {
+        extends MorphBaseMappingDocument(classMappings) {
 
     override val logger = Logger.getLogger(this.getClass());
 
@@ -41,8 +39,6 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
             }
         }
     }
-
-    def accept(visitor: MorphR2RMLElementVisitor): Object = { visitor.visit(this); }
 
     /**
      * Find the list of predicates that are used in all PredicateObjectMaps of all TriplesMaps of the document

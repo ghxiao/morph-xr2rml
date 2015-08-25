@@ -4,17 +4,17 @@ import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConversions.setAsJavaSet
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.rdf.model.Resource
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.model.IConceptMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElement
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 
 class R2RMLTriplesMap(
     val logicalSource: xR2RMLLogicalSource,
@@ -22,7 +22,7 @@ class R2RMLTriplesMap(
     val subjectMap: R2RMLSubjectMap,
     val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
 
-        extends MorphBaseClassMapping(predicateObjectMaps) with MorphR2RMLElement with IConceptMapping {
+        extends MorphBaseClassMapping(predicateObjectMaps) {
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -30,8 +30,6 @@ class R2RMLTriplesMap(
         logger.debug("Building metadata for TriplesMap: " + this.name);
         this.logicalSource.buildMetaData(dbMetadata);
     }
-
-    def accept(visitor: MorphR2RMLElementVisitor): Object = { return visitor.visit(this); }
 
     override def toString(): String = { return this.name }
 

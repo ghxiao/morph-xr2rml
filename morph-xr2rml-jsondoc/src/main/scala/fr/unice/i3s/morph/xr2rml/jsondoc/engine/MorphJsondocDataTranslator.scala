@@ -1,7 +1,5 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
-import java.sql.ResultSet
-
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
@@ -9,7 +7,6 @@ import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
 
-import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
@@ -23,8 +20,6 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.r2rml.MorphR2RMLElementVisitor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
@@ -42,8 +37,7 @@ class MorphJsondocDataTranslator(
     dataSourceReader: MorphBaseDataSourceReader,
     connection: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties)
-        with MorphR2RMLElementVisitor {
+        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties) {
 
     /** Store already executed queries to avoid running them several times. The key of the hashmap is the query string itself. */
     private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
@@ -510,29 +504,5 @@ class MorphJsondocDataTranslator(
         })
 
         results
-    }
-
-    def visit(logicalTable: xR2RMLLogicalSource): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    override def visit(mappingDocument: R2RMLMappingDocument): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(objectMap: R2RMLObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(triplesMap: R2RMLTriplesMap): Object = {
-        throw new Exception("Unsopported method.")
     }
 }

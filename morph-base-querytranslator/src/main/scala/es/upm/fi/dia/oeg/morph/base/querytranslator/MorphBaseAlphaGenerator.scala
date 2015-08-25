@@ -1,19 +1,22 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asJavaCollection
+import scala.collection.JavaConversions.seqAsJavaList
+
+import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
-import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 
-abstract class MorphBaseAlphaGenerator(md: MorphBaseMappingDocument, unfolder: MorphBaseUnfolder) //(val owner:IQueryTranslator) 
-{
+abstract class MorphBaseAlphaGenerator(md: MorphBaseMappingDocument, unfolder: MorphBaseUnfolder) {
     var owner: MorphBaseQueryTranslator = null;
 
     val logger = Logger.getLogger(this.getClass());
