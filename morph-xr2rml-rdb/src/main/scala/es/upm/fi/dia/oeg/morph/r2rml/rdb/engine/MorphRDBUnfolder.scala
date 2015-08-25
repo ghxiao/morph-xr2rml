@@ -351,6 +351,32 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         result;
     }
 
+    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): IQuery = {
+        val logicalTable = triplesMap.getLogicalSource().asInstanceOf[xR2RMLLogicalSource];
+        val subjectMap = triplesMap.subjectMap;
+        val predicateObjectMaps = triplesMap.predicateObjectMaps;
+        val triplesMapId = triplesMap.id;
+
+        val resultAux = this.unfoldTriplesMap(triplesMapId, logicalTable, subjectMap, predicateObjectMaps);
+        val result = if (subjectURI != null) {
+            val whereExpression = MorphRDBUtility.generateCondForWellDefinedURI(
+                subjectMap, triplesMap, subjectURI, logicalTable.alias);
+            if (whereExpression != null) {
+                resultAux.addWhere(whereExpression);
+                resultAux;
+            } else {
+                null;
+            }
+        } else {
+            resultAux;
+        }
+        result;
+    }
+
+    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): IQuery = {
+        this.unfoldTriplesMap(triplesMap, null);
+    }
+
     /**
      * Save an alias corresponding to a reference object map to this.mapTermMapColumnsAliases
      */
@@ -378,28 +404,48 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         new GenericQuery(Constants.DatabaseType.Relational, resultAux)
     }
 
-    def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+    def unfoldMappingDocument() = {
+        val triplesMaps = this.md.classMappings
+        val result = if (triplesMaps != null) {
+            triplesMaps.flatMap(triplesMap => {
+                try {
+                    val triplesMapUnfolded = this.unfoldConceptMapping(triplesMap);
+                    Some(triplesMapUnfolded);
+                } catch {
+                    case e: Exception => {
+                        logger.error("error while unfolding triplesMap : " + triplesMap);
+                        logger.error("error message = " + e.getMessage());
+                        None
+                    }
+                }
+            })
+        } else
+            Nil
+        result.toList
+    }
+
+    override def visit(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+        this.unfoldLogicalSource(logicalTable);
+    }
+
+    override def visit(md: R2RMLMappingDocument): Collection[GenericQuery] = {
+        this.unfoldMappingDocument()
+    }
+
+    override def visit(objectMap: R2RMLObjectMap): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(md: R2RMLMappingDocument): Collection[IQuery] = {
+    override def visit(refObjectMap: R2RMLRefObjectMap): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(objectMap: R2RMLObjectMap): Object = {
+    override def visit(r2rmlTermMap: R2RMLTermMap): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(refObjectMap: R2RMLRefObjectMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(triplesMap: R2RMLTriplesMap): IQuery = {
-        throw new Exception("Unsopported method.")
+    override def visit(triplesMap: R2RMLTriplesMap): IQuery = {
+        this.unfoldTriplesMap(triplesMap)
     }
 }
 

@@ -48,9 +48,6 @@ class TriplePatternPredicateBounder(mappingFile: String //, mapColumnsMetaData :
 
   def checkExpandedTriplePattern(tp: Triple, triplesMapResource: Resource,
     predicateObjectMapResource: Resource): java.util.List[String] = {
-
-    logger.debug(" method checkExpandedTriplePattern ");
-
     val tpObject = tp.getObject();
     var result: List[String] = Nil;
     val objectMapResource = mappingDocument.getObjectMapResource(predicateObjectMapResource);

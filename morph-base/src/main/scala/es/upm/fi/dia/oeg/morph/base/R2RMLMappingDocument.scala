@@ -24,29 +24,6 @@ class R2RMLMappingDocument(mappingFile: String) {
     val in = FileManager.get().open(mappingFile);
     model.read(in, null, "TURTLE");
 
-    /**
-     * Get all triples maps that generate resources of a given class IRI
-     */
-//    def getTriplesMapResourcesByRRClass(classURI: String) = {
-//        var result: List[Resource] = Nil;
-//        logger.info("method getTriplesMapResourcesByRRClass");
-//        val triplesMapRes = model.listSubjectsWithProperty(Constants.R2RML_SUBJECTMAP_PROPERTY);
-//        if (triplesMapRes != null) {
-//            for (triplesMapRes <- triplesMapRes.toList()) yield {
-//                val subjectMapRes = triplesMapRes.getPropertyResourceValue(Constants.R2RML_SUBJECTMAP_PROPERTY);
-//                if (subjectMapRes != null) {
-//                    val rrClassRes = subjectMapRes.getPropertyResourceValue(Constants.R2RML_CLASS_PROPERTY);
-//                    if (rrClassRes != null) {
-//                        if (classURI.equals(rrClassRes.getURI())) {
-//                            result = result ::: result ::: List(triplesMapRes);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        result;
-//    }
-
     def getPredicateObjectMapResources(triplesMapResources: List[Resource]): List[Resource] = {
         val result = {
             if (triplesMapResources.isEmpty) {
@@ -133,7 +110,6 @@ class R2RMLMappingDocument(mappingFile: String) {
     }
 
     def getParentTriplesMapLogicalTableResource(objectMapResource: Resource) = {
-        logger.info(" method getParentTriplesMapLogicalTableResource ");
         val parentTriplesMapResource = this.getParentTriplesMapResource(objectMapResource);
         val parentTriplesMapLogicalTableResource = this.getRRLogicalTable(Constants.R2RML_LOGICALTABLE_PROPERTY);
         parentTriplesMapLogicalTableResource
@@ -145,19 +121,16 @@ class R2RMLMappingDocument(mappingFile: String) {
     }
 
     def getRRColumnResource(termMapResource: Resource) = {
-        logger.info(" method getRRColumnResource ");
         val rrColumnResource = termMapResource.getProperty(Constants.R2RML_COLUMN_PROPERTY);
         rrColumnResource;
     }
 
     def getRRTemplateResource(termMapResource: Resource) = {
-        logger.info(" method getRRTemplateResource ");
         val rrTemplateResource = termMapResource.getProperty(Constants.R2RML_TEMPLATE_PROPERTY);
         rrTemplateResource.getObject();
     }
 
     def getDatatypeResource(termMapResource: Resource) = {
-        logger.info(" method getDatatypeResource ");
         val datatypeResource = termMapResource.getPropertyResourceValue(Constants.R2RML_DATATYPE_PROPERTY);
         datatypeResource;
     }

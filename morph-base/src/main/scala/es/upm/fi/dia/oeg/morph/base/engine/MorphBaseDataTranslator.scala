@@ -15,7 +15,6 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
@@ -32,13 +31,13 @@ abstract class MorphBaseDataTranslator(
         properties: MorphProperties) {
 
     val logger = Logger.getLogger(this.getClass().getName());
-
+    
     /**
      * Generate triples in the current model of the data materializer, based
      * on the current triples map: this consists in calculating the query, running it
      * against the database, translating results in RDF terms and making the triples.
      */
-    def generateRDFTriples(triplesMap: MorphBaseClassMapping): Unit
+    def generateRDFTriples(triplesMap: MorphBaseClassMapping)
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

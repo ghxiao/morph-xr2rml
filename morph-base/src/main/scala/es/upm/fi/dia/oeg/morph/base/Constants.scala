@@ -102,7 +102,6 @@ object Constants {
 
     val MAPPINGDOCUMENT_FILE_PATH = "mappingdocument.file.path";
     val QUERYFILE_PROP_NAME = "query.file.path";
-    val ONTOFILE_PROP_NAME = "onto.file.path";
     val ONTOURL_PROP_NAME = "onto.url.path";
     val OUTPUTFILE_PROP_NAME = "output.file.path";
     val OUTPUTFILE_RDF_LANGUAGE = "output.rdflanguage";

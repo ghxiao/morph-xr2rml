@@ -14,7 +14,6 @@ class MorphProperties extends java.util.Properties {
     var configurationFileURL: String = null;
     var configurationDirectory: String = null
 
-    var ontologyFilePath: Option[String] = None;
     var mappingDocumentFilePath: String = null;
     var outputFilePath: Option[String] = None;
     var queryFilePath: Option[String] = None;
@@ -109,11 +108,6 @@ class MorphProperties extends java.util.Properties {
             this.queryFilePath = Some(queryFilePathPropertyValue);
         }
 
-        val ontologyFilePathPropertyValue = this.getProperty(Constants.ONTOFILE_PROP_NAME);
-        if (ontologyFilePathPropertyValue != null && !ontologyFilePathPropertyValue.equals("")) {
-            this.ontologyFilePath = Some(ontologyFilePathPropertyValue);
-        }
-
         val outputFilePropertyValue = this.getProperty(Constants.OUTPUTFILE_PROP_NAME);
         this.outputFilePath = if (outputFilePropertyValue != null
             && !outputFilePropertyValue.equals("")) {
@@ -121,22 +115,13 @@ class MorphProperties extends java.util.Properties {
         } else { None }
 
         if (configurationDirectory != null) {
-            if (this.outputFilePath.isDefined) {
+            if (this.outputFilePath.isDefined)
                 this.outputFilePath = Some(configurationDirectory + outputFilePath.get);
-            }
-
-            if (this.ontologyFilePath.isDefined) {
-                val isNetResourceOntology = GeneralUtility.isNetResource(ontologyFilePath.get);
-                if (!isNetResourceOntology) {
-                    this.ontologyFilePath = Some(configurationDirectory + ontologyFilePath.get);
-                }
-            }
 
             if (this.queryFilePath.isDefined) {
                 val isNetResourceQuery = GeneralUtility.isNetResource(queryFilePath.get);
-                if (!isNetResourceQuery) {
+                if (!isNetResourceQuery)
                     this.queryFilePath = Some(configurationDirectory + queryFilePath.get);
-                }
             }
         }
 
@@ -172,8 +157,8 @@ class MorphProperties extends java.util.Properties {
 
         this.cacheQueryResult = this.readBoolean(Constants.CACHE_QUERY_RESULT, false);
         logger.info("Cache the result of queries for join evaluation (non Relational DBs) = " + this.cacheQueryResult);
-        
-        this.runnerFactoryClassName = this.readString(Constants.RUNNER_FACTORY_CLASSNAME , null);
+
+        this.runnerFactoryClassName = this.readString(Constants.RUNNER_FACTORY_CLASSNAME, null);
         if (runnerFactoryClassName == null) {
             logger.error("Mandatory parameter " + Constants.RUNNER_FACTORY_CLASSNAME + " is missing.")
             System.exit(-1)
@@ -186,7 +171,7 @@ class MorphProperties extends java.util.Properties {
         this.queryEvaluatorClassName = this.readString(Constants.DATASOURCE_READER_CLASSNAME, null);
         logger.info("QueryEvaluator = " + queryEvaluatorClassName);
 
-        this.queryResultWriterFactoryClassName = this.readString(Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME, null);
+        this.queryResultWriterFactoryClassName = this.readString(Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME, Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME_DEFAULT);
         logger.info("QueryResultWriterFactory = " + queryResultWriterFactoryClassName);
 
         this.literalRemoveStrangeChars = this.readBoolean(Constants.REMOVE_STRANGE_CHARS_FROM_LITERAL, true);

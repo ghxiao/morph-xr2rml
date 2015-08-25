@@ -66,8 +66,10 @@ abstract class xR2RMLLogicalSource(
             val optionTableMetaData = dbMetaData.get.getTableMetaData(tableName);
             val tableMetaData = optionTableMetaData.getOrElse(
                 MorphTableMetaData.buildTableMetaData(tableName, dbMetaData.get));
-
-            this.tableMetaData = Some(tableMetaData);
+            this.tableMetaData =
+                if (tableMetaData != null)
+                    Some(tableMetaData)
+                else None
         }
 
     }

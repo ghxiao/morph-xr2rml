@@ -21,35 +21,26 @@ object TemplateUtility {
 
     /**
      * CAUTION ### This method was not updated to support Mixed-syntax paths ###
-     * Unused (at least in data materialization)
+     * Query rewriting only works with standard column references
      */
-    def getTemplateMatching(inputTemplateString: String, inputURIString: String): Map[String, String] = {
+    def getTemplateMatching(tplStr: String, inputURIString: String): Map[String, String] = {
+        if (logger.isTraceEnabled()) logger.trace("inputTemplateString " + tplStr)
+        var newTplStr = tplStr;
+        if (!newTplStr.startsWith("<")) newTplStr = "<" + newTplStr;
+        if (!newTplStr.endsWith(">")) newTplStr = newTplStr + ">";
 
-        println("#################### inputTemplateString " + inputTemplateString)
-        var newTemplateString = inputTemplateString;
-        if (!newTemplateString.startsWith("<"))
-            newTemplateString = "<" + newTemplateString;
-        if (!newTemplateString.endsWith(">"))
-            newTemplateString = newTemplateString + ">";
+        var newURIStr = inputURIString;
+        if (!newURIStr.startsWith("<")) newURIStr = "<" + newURIStr;
+        if (!newURIStr.endsWith(">")) newURIStr = newURIStr + ">";
 
-        var newURIString = inputURIString;
-        if (!newURIString.startsWith("<"))
-            newURIString = "<" + newURIString;
-        if (!newURIString.endsWith(">"))
-            newURIString = newURIString + ">";
-
-        val columnsFromTemplate = this.getTemplateColumns(newTemplateString);
-
-        var columnsList = List[String]();
-        for (column <- columnsFromTemplate) {
-            columnsList = column :: columnsList;
+        val colList = this.getTemplateColumns(newTplStr)
+        for (column <- colList) {
             // Replace each group "{column}" with the regex "(.+?)"
-            newTemplateString = newTemplateString.replaceAll("\\{" + column + "\\}", "(.+?)");
+            newTplStr = newTplStr.replaceAll("\\{" + column + "\\}", "(.+?)");
         }
-        columnsList = columnsList.reverse;
-
-        val pattern = new Regex(newTemplateString);
-        val firstMatch = pattern.findFirstMatchIn(newURIString);
+        
+        val pattern = new Regex(newTplStr);
+        val firstMatch = pattern.findFirstMatchIn(newURIStr);
 
         // Create a map of couples (column name, column value)
         val result: Map[String, String] =
@@ -57,14 +48,13 @@ object TemplateUtility {
                 // Subgroups return values corresponding to the (.+?) groups
                 val subgroups = firstMatch.get.subgroups;
                 var i = 0;
-                columnsList.map(column => {
+                colList.map(column => {
                     val resultAux = (column -> subgroups(i));
                     i = i + 1;
                     resultAux
                 }).toMap
             } else
                 Map.empty
-
         result;
     }
 

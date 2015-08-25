@@ -3,15 +3,11 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
-
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
-
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -36,6 +32,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -52,20 +49,20 @@ class MorphRDBDataTranslator(
 
     private val connection = genCnx.concreteCnx.asInstanceOf[Connection]
 
-    override val logger = Logger.getLogger(this.getClass().getName());
+    override val logger = Logger.getLogger(this.getClass().getName())
 
     override def generateRDFTriples(cm: MorphBaseClassMapping) = {
         try {
-            val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
+            val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
 
-            val query = this.unfolder.unfoldConceptMapping(triplesMap);
+            val query = this.unfolder.unfoldConceptMapping(triplesMap)
             if (!query.isSqlQuery)
                 throw new Exception("Unsupported query type: should be an SQL query")
-            val logicalTable = triplesMap.logicalSource;
-            val sm = triplesMap.subjectMap;
-            val poms = triplesMap.predicateObjectMaps;
+            val logicalTable = triplesMap.logicalSource
+            val sm = triplesMap.subjectMap
+            val poms = triplesMap.predicateObjectMaps
 
-            this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery]);
+            this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery])
         } catch {
             case e: MorphException => {
                 logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
@@ -76,6 +73,14 @@ class MorphRDBDataTranslator(
                 e.printStackTrace()
             }
         }
+    }
+
+    private def generateRDFTriples(cm: MorphBaseClassMapping, iQuery: IQuery): Unit = {
+        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
+        val logicalTable = triplesMap.getLogicalSource().asInstanceOf[xR2RMLLogicalSource]
+        val sm = triplesMap.subjectMap
+        val poms = triplesMap.predicateObjectMaps
+        this.generateRDFTriples(logicalTable, sm, poms, iQuery)
     }
 
     /**
@@ -317,6 +322,36 @@ class MorphRDBDataTranslator(
         rows.close();
     }
 
+    def translateData(triplesMap: MorphBaseClassMapping): Unit = {
+        val query = this.unfolder.unfoldConceptMapping(triplesMap)
+        this.generateRDFTriples(triplesMap, query.concreteQuery.asInstanceOf[IQuery])
+    }
+
+    def translateData(triplesMaps: Iterable[MorphBaseClassMapping]): Unit = {
+        for (triplesMap <- triplesMaps) {
+            try {
+                this.visit(triplesMap.asInstanceOf[R2RMLTriplesMap]);
+                //triplesMap.asInstanceOf[R2RMLTriplesMap].accept(this);
+            } catch {
+                case e: Exception => {
+                    logger.error("error while translating data of triplesMap : " + triplesMap);
+                    if (e.getMessage() != null)
+                        logger.error("error message = " + e.getMessage());
+                    throw new Exception(e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+    def translateData(mappingDocument: MorphBaseMappingDocument): Unit = {
+        val conn = this.connection
+
+        val triplesMaps = mappingDocument.classMappings
+        if (triplesMaps != null) {
+            this.translateData(triplesMaps)
+        }
+    }
+
     /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:
      * for each column reference in the term map (column, reference or template), read cell values from the current row,
@@ -515,27 +550,37 @@ class MorphRDBDataTranslator(
             colRef
     }
 
-    def visit(logicalTable: xR2RMLLogicalSource): Object = {
+    override def visit(logicalTable: xR2RMLLogicalSource): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(mappingDocument: R2RMLMappingDocument): Object = {
+    override def visit(mappingDocument: R2RMLMappingDocument): Object = {
+        try {
+            this.translateData(mappingDocument)
+        } catch {
+            case e: Exception => {
+                e.printStackTrace()
+                logger.error("Error during data translation process : " + e.getMessage())
+                throw new Exception(e.getMessage());
+            }
+        }
+        null
+    }
+
+    override def visit(objectMap: R2RMLObjectMap): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(objectMap: R2RMLObjectMap): Object = {
+    override def visit(refObjectMap: R2RMLRefObjectMap): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(refObjectMap: R2RMLRefObjectMap): Object = {
+    override def visit(r2rmlTermMap: R2RMLTermMap): Object = {
         throw new Exception("Unsopported method.")
     }
 
-    def visit(r2rmlTermMap: R2RMLTermMap): Object = {
-        throw new Exception("Unsopported method.")
-    }
-
-    def visit(triplesMap: R2RMLTriplesMap): Object = {
-        throw new Exception("Unsopported method.")
+    override def visit(triplesMap: R2RMLTriplesMap): Object = {
+		this.translateData(triplesMap)
+		null
     }
 }

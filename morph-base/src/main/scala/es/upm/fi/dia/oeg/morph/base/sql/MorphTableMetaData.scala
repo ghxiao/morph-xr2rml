@@ -79,15 +79,22 @@ object MorphTableMetaData {
             if (optionTableMetaData.isDefined) {
                 optionTableMetaData.get;
             } else {
-                val stmt = conn.createStatement();
-                val query = "SELECT COUNT(*) FROM " + tableName + " T";
-                val rs = stmt.executeQuery(query);
-                rs.next();
-                val tableRows = rs.getLong(1);
+                try {
+                    val stmt = conn.createStatement();
+                    val query = "SELECT COUNT(*) FROM " + tableName + " T";
+                    val rs = stmt.executeQuery(query);
+                    rs.next();
+                    val tableRows = rs.getLong(1);
 
-                val tableMetaDataAux = new MorphTableMetaData(tableName, tableRows, null, dbType);
-                dbMetaData.addTableMetaData(tableName, tableMetaDataAux);
-                tableMetaDataAux
+                    val tableMetaDataAux = new MorphTableMetaData(tableName, tableRows, null, dbType);
+                    dbMetaData.addTableMetaData(tableName, tableMetaDataAux);
+                    tableMetaDataAux
+                } catch {
+                    case e: Exception => {
+                        logger.warn("Unable to get metadata for table " + tableName + ". Caught exception: " + e.getMessage())
+                        null
+                    }
+                }
             }
         }
 

@@ -39,7 +39,6 @@ abstract class MorphBaseRunnerFactory {
         val unfolder = this.createUnfolder(mappingDocument, properties);
 
         val outputStream: Writer = if (properties.outputFilePath.isDefined) {
-            //new OutputStreamWriter(new FileOutputStream(properties.outputFilePath.get), "UTF-8")
             new PrintWriter(properties.outputFilePath.get, "UTF-8")
         } else { new StringWriter }
 
@@ -99,10 +98,8 @@ abstract class MorphBaseRunnerFactory {
         // Creation of final runner object using the concrete class instance
         val runner = this.createRunner(mappingDocument, unfolder, dataTranslator, queryTranslator, resultProcessor, outputStream)
 
-        runner.ontologyFilePath = properties.ontologyFilePath;
-        if (properties.queryFilePath.isDefined) {
+        if (properties.queryFilePath.isDefined)
             runner.sparqlQuery = Some(QueryFactory.read(properties.queryFilePath.get))
-        }
 
         runner;
     }

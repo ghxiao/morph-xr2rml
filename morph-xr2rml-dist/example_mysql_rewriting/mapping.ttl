@@ -14,14 +14,14 @@
     ];
     # Template with mixed syntax paths dealing with XML data
     rr:subjectMap [
-        rr:template "http://example.org/student/{id}-{Column(name)/XPath(\\/\\/LastName)}";
+        rr:template "http://example.org/student/{id}";
         rr:class ex:Student;
     ];
     # Multiple terms computed from a reference leading to generating multiple triples
     rr:predicateObjectMap [
         rr:predicate ex:hobbies;
         rr:objectMap [ 
-            xrr:reference "Column(comments)/JSONPath($.*.hobby)";
+            xrr:reference "comments";
             rr:termType rr:Literal;
         ];
     ];
@@ -29,7 +29,7 @@
     rr:predicateObjectMap [
         rr:predicate ex:names;
         rr:objectMap [
-            rr:template "{Column(name)/XPath(\\/\\/FirstName)} {Column(name)/XPath(\\/\\/LastName)}";
+            rr:template "{name}";
             rr:termType xrr:RdfList;
             xrr:nestedTermMap [
                 rr:termType rr:Literal; 
@@ -41,7 +41,7 @@
     rr:predicateObjectMap [
         rr:predicate ex:mainSport;
         rr:objectMap [
-            rr:parentTriplesMap <#TMSport>;
+            rr:parentTriplesMap <#Sport>;
             rr:joinCondition [
                 rr:child "sport";
                 rr:parent "id";
@@ -52,10 +52,10 @@
     rr:predicateObjectMap [
         rr:predicate ex:practiceInClub;
         rr:objectMap [
-            rr:parentTriplesMap <#TMSport>;
+            rr:parentTriplesMap <#Sport>;
             rr:joinCondition [
                 rr:parent "id";
-                rr:child "Column(comments)/JSONPath($.*.sportInClub.*)";
+                rr:child "comments";
             ];
         ];
     ].
@@ -70,13 +70,13 @@
     # Mixed syntax path with CSV data
     rr:predicateObjectMap [
         rr:predicate ex:code1;
-        rr:objectMap [ xrr:reference "Column(code)/CSV(1)"; ];
+        rr:objectMap [ rr:column "code"; ];
     ];
     # Multiple terms produced by a reference, grouped as a bag
     rr:predicateObjectMap [
         rr:predicate ex:colors;
         rr:objectMap [
-            xrr:reference "Column(shirt_colors)/JSONPath($.*)" ;
+            rr:column "shirt_colors" ;
             rr:termType xrr:RdfList;
         ];
     ];
@@ -87,7 +87,7 @@
             rr:parentTriplesMap <#Student>;
             rr:joinCondition [
                 rr:child "id";
-                rr:parent "Column(comments)/JSONPath($.*.sportInClub.*)";
+                rr:parent "comments";
             ];
         ];
     ].

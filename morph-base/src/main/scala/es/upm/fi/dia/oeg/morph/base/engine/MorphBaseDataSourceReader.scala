@@ -43,6 +43,5 @@ object MorphBaseDataSourceReader {
             reader.setTimeout(timeout)
             reader
         }
-
     }
 }

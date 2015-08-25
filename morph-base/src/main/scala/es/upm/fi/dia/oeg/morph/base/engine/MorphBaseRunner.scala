@@ -28,20 +28,17 @@ class MorphBaseRunner(
         var outputStream: Writer) {
 
     val logger = Logger.getLogger(this.getClass());
-    var ontologyFilePath: Option[String] = None;
     var sparqlQuery: Option[Query] = None;
     var mapSparqlSql: Map[Query, IQuery] = Map.empty;
 
     def setOutputStream(outputStream: Writer) = {
         this.outputStream = outputStream
 
-        if (this.dataTranslator.isDefined) {
+        if (this.dataTranslator.isDefined)
             this.dataTranslator.get.materializer.outputStream = outputStream;
-        }
 
-        if (this.queryResultTranslator.isDefined) {
+        if (this.queryResultTranslator.isDefined)
             this.queryResultTranslator.get.queryResultWriter.outputStream = outputStream;
-        }
     }
 
     /**
@@ -58,29 +55,9 @@ class MorphBaseRunner(
             this.materializeMappingDocuments(mappingDocument);
 
         } else {
-            logger.info("sparql query = " + this.sparqlQuery.get);
+            //Translate SPARQL query into SQL
+            this.mapSparqlSql = this.translateSPARQLQueriesIntoSQLQueries(List(sparqlQuery.get));
 
-            //LOADING ONTOLOGY FILE. REWRITE THE SPARQL QUERY IF NECESSARY
-            val queries = if (!this.ontologyFilePath.isDefined) {
-                List(sparqlQuery.get);
-            } else {
-                //REWRITE THE QUERY BASED ON THE MAPPINGS AND ONTOLOGY
-                logger.info("Rewriting query...");
-                val mappedOntologyElements = this.mappingDocument.getMappedClasses();
-                val mappedOntologyElements2 = this.mappingDocument.getMappedProperties();
-                mappedOntologyElements.addAll(mappedOntologyElements2);
-
-                val queriesAux = RewriterWrapper.rewrite(sparqlQuery.get, ontologyFilePath.get, RewriterWrapper.fullMode, mappedOntologyElements, RewriterWrapper.globalMatchMode);
-
-                logger.info("No of rewriting query result = " + queriesAux.size());
-                logger.info("queries = " + queriesAux);
-                queriesAux.toList
-            }
-
-            //TRANSLATE SPARQL QUERIES INTO SQL QUERIES
-            this.mapSparqlSql = this.translateSPARQLQueriesIntoSQLQueries(queries);
-
-            //translate result
             this.queryResultTranslator.get.translateResult(mapSparqlSql);
         }
 
