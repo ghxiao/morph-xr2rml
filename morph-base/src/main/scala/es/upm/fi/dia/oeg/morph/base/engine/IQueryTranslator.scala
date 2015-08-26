@@ -23,17 +23,15 @@ trait IQueryTranslator {
 
     def translate(query: Query): IQuery;
 
+    def translateResultSet(varName: String, rs: MorphBaseResultSet): TermMapResult;
+
+    def trans(op: Op): IQuery;
+
     //def translate(op: Op): IQuery;
 
     //def translateFromQueryFile(queryFilePath: String): IQuery;
 
     //def translateFromString(queryString: String): IQuery;
-
-    def translateResultSet(varName: String, rs: MorphBaseResultSet): TermMapResult;
-
-    //def setDatabaseType(dbType: String) = { this.databaseType = dbType }
-
-    def trans(op: Op): IQuery;
 
     //def translateUpdate(stg: OpBGP): ZUpdate;
 
@@ -44,4 +42,6 @@ trait IQueryTranslator {
     //def setConnection(conn: Connection) = { this.connection = conn }
 
     //def setOptimizer(optimizer: QueryTranslationOptimizer) = { this.optimizer = optimizer }
+
+    //def setDatabaseType(dbType: String) = { this.databaseType = dbType }
 }

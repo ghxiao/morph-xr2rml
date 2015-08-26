@@ -9,40 +9,10 @@ import java.util.Properties
 import java.sql.DriverManager
 
 class DBUtility {
-
 }
 
 object DBUtility {
     def logger = Logger.getLogger(this.getClass());
-
-    /*	def execute(conn : Connection , query: String) : Boolean = {
-		val stmt = conn.createStatement();
-
-		try  {
-			stmt.setQueryTimeout(60);
-			stmt.setFetchSize(Integer.MIN_VALUE);
-		} catch {
-		  case e:Exception => {
-		    logger.debug("Can't set fetch size!");
-		  }
-		}
-
-		logger.debug("Executing query = \n" + query);
-
-		try {
-			val start = System.currentTimeMillis();
-			val result = stmt.execute(query);
-			val end = System.currentTimeMillis();
-			logger.debug("View creation/deletion time was "+(end-start)+" ms.");
-			return result;
-		} catch {
-		  case e:SQLException => {
-			e.printStackTrace();
-			logger.error("Error executing query, error message = "+ e.getMessage());
-			false;
-		  }
-		}
-	}*/
 
     def execute(conn: Connection, query: String, timeout: Integer): ResultSet = {
         logger.info("Executing query: " + query.replaceAll("\n", " "));

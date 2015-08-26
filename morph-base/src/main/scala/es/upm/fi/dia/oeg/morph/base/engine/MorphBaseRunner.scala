@@ -29,19 +29,9 @@ class MorphBaseRunner(
         val queryResultTranslator: Option[AbstractQueryResultTranslator],
         var outputStream: Writer) {
 
+    var sparqlQuery: Option[Query] = None
+
     val logger = Logger.getLogger(this.getClass());
-    var sparqlQuery: Option[Query] = None;
-    var mapSparqlSql: Map[Query, IQuery] = Map.empty;
-
-    def setOutputStream(outputStream: Writer) = {
-        this.outputStream = outputStream
-
-        if (this.dataTranslator.isDefined)
-            this.dataTranslator.get.materializer.outputStream = outputStream;
-
-        if (this.queryResultTranslator.isDefined)
-            this.queryResultTranslator.get.queryResultWriter.outputStream = outputStream;
-    }
 
     /**
      * Main function to run the translation of data. Runner must be initialized with a config file.
@@ -52,14 +42,11 @@ class MorphBaseRunner(
         var status: String = null;
 
         if (!this.sparqlQuery.isDefined) {
-
             // No SPARQL query => materialization mode
             this.materializeMappingDocuments(mappingDocument);
-
         } else {
             //Translate SPARQL query into SQL
-            this.mapSparqlSql = this.translateSPARQLQueriesIntoSQLQueries(List(sparqlQuery.get));
-
+            val mapSparqlSql = this.translateSPARQLQueriesIntoSQLQueries(List(sparqlQuery.get));
             this.queryResultTranslator.get.translateResult(mapSparqlSql);
         }
 
@@ -97,19 +84,7 @@ class MorphBaseRunner(
         logger.info("Data materialization process lasted " + (durationGeneratingModel) + "ms.");
     }
 
-    def readSPARQLFile(sparqQueryFileURL: String) {
-        if (this.queryTranslator.isDefined) {
-            this.sparqlQuery = Some(QueryFactory.read(sparqQueryFileURL));
-        }
-    }
-
-    def readSPARQLString(sparqString: String) {
-        if (this.queryTranslator.isDefined) {
-            this.sparqlQuery = Some(QueryFactory.create(sparqString));
-        }
-    }
-
-    def translateSPARQLQueriesIntoSQLQueries(sparqlQueries: Iterable[Query]): Map[Query, IQuery] = {
+    private def translateSPARQLQueriesIntoSQLQueries(sparqlQueries: Iterable[Query]): Map[Query, IQuery] = {
         val sqlQueries = sparqlQueries.map(sparqlQuery => {
             logger.info("SPARQL Query = \n" + sparqlQuery);
             val sqlQuery = this.queryTranslator.get.translate(sparqlQuery);
@@ -119,21 +94,6 @@ class MorphBaseRunner(
 
         sqlQueries.toMap
     }
-
-    def getQueryTranslator() = {
-        queryTranslator.getOrElse(null);
-    }
-
-    def getQueryResultWriter() = {
-        if (queryResultTranslator.isDefined) {
-            queryResultTranslator.get.queryResultWriter
-        } else { null }
-    }
-
-    def getTranslationResults: java.util.Collection[IQuery] = {
-        this.mapSparqlSql.values
-    }
-
 }
 
 object MorphBaseRunner {
@@ -150,5 +110,3 @@ object MorphBaseRunner {
         }
     }
 }
-
-

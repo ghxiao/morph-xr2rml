@@ -32,10 +32,6 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
 
     val logger = Logger.getLogger(this.getClass());
 
-    def getPropertyMappingsByPropertyURI(propertyURI: String): Iterable[R2RMLPredicateObjectMap] = {
-        this.classMappings.map(cm => cm.getPropertyMappings(propertyURI)).flatten
-    }
-
     private def buildMetaData(conn: GenericConnection, databaseName: String, databaseType: String) = {
         if (conn.isRelationalDB) {
             logger.info("Building database MetaData ")
@@ -46,6 +42,10 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
                 this.classMappings.foreach(cm => cm.buildMetaData(this.dbMetaData));
             }
         }
+    }
+
+    def getPropertyMappingsByPropertyURI(propertyURI: String): Iterable[R2RMLPredicateObjectMap] = {
+        this.classMappings.map(cm => cm.getPropertyMappings(propertyURI)).flatten
     }
 
     def getClassMappingByPropertyURIs(propertyURIs: Iterable[String]): Iterable[R2RMLTriplesMap] =
@@ -213,7 +213,6 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
             possibleInstance
         })
     }
-
 }
 
 object R2RMLMappingDocument {

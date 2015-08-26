@@ -21,7 +21,8 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
         logger.info("Model size (in triples): " + model.size())
         logger.info("Writing serialization to output stream to " + outputStream)
         this.model.write(this.outputStream, "TURTLE", null)
-        this.outputStream.flush();
+        this.outputStream.flush()
+        this.outputStream.close()
     }
 
     override def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode) {

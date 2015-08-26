@@ -13,17 +13,14 @@ import java.io.Writer
 
 abstract class MorphBaseMaterializer(val model: Model, var outputStream: Writer) {
     val logger = Logger.getLogger(this.getClass().getName());
-    //	var outputFileName:String = null;
     var rdfLanguage: String = null;
 
-    def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode);
-    def materialize();
-    def postMaterialize() = this.outputStream.close()
+    def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode)
+    def materialize()
 
     def setModelPrefixMap(prefixMap: Map[String, String]) = {
         this.model.setNsPrefixes(prefixMap);
     }
-
 }
 
 object MorphBaseMaterializer {

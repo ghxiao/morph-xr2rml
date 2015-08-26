@@ -1,8 +1,11 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import java.sql.Connection
-
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asJavaCollection
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions.asScalaSet
+import scala.collection.JavaConversions.mutableSetAsJavaSet
+import scala.collection.JavaConversions.seqAsJavaList
+import scala.collection.JavaConversions.setAsJavaSet
 import scala.collection.mutable.LinkedHashSet
 
 import org.apache.log4j.Logger
@@ -12,8 +15,6 @@ import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.query.QueryFactory
-import com.hp.hpl.jena.query.SortCondition
-import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
@@ -30,7 +31,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
 import com.hp.hpl.jena.sparql.core.BasicPattern
 import com.hp.hpl.jena.sparql.core.Var
-import com.hp.hpl.jena.sparql.core.VarExprList
 import com.hp.hpl.jena.sparql.expr.E_Bound
 import com.hp.hpl.jena.sparql.expr.E_Function
 import com.hp.hpl.jena.sparql.expr.E_LogicalAnd
@@ -40,7 +40,6 @@ import com.hp.hpl.jena.sparql.expr.E_NotEquals
 import com.hp.hpl.jena.sparql.expr.E_OneOf
 import com.hp.hpl.jena.sparql.expr.E_Regex
 import com.hp.hpl.jena.sparql.expr.Expr
-import com.hp.hpl.jena.sparql.expr.ExprAggregator
 import com.hp.hpl.jena.sparql.expr.ExprFunction
 import com.hp.hpl.jena.sparql.expr.ExprFunction1
 import com.hp.hpl.jena.sparql.expr.ExprFunction2
@@ -51,7 +50,6 @@ import com.hp.hpl.jena.sparql.expr.aggregate.AggCount
 import com.hp.hpl.jena.sparql.expr.aggregate.AggMax
 import com.hp.hpl.jena.sparql.expr.aggregate.AggMin
 import com.hp.hpl.jena.sparql.expr.aggregate.AggSum
-import com.hp.hpl.jena.sparql.expr.aggregate.Aggregator
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.XSD
 
@@ -59,18 +57,13 @@ import Zql.ZConstant
 import Zql.ZExp
 import Zql.ZExpression
 import Zql.ZGroupBy
-import Zql.ZInsert
 import Zql.ZOrderBy
 import Zql.ZSelectItem
-import Zql.ZUpdate
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
 import es.upm.fi.dia.oeg.morph.base.TriplePatternPredicateBounder
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.engine.QueryTranslationOptimizer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
@@ -92,10 +85,11 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
 
     //query translator
     var mapInferredTypes: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
-    //val mapTermsC : Map[Op, Set[Node]] = Map.empty;
+
     var mapAggreatorAlias: Map[String, ZSelectItem] = Map.empty; //varname - selectitem
-    //val notNullColumns:List[String] = Nil;
+
     var mapTripleAlias: Map[Triple, String] = Map.empty;
+
     var mapVarNotNull: Map[Node, Boolean] = Map.empty;
 
     Optimize.setFactory(new MorphQueryRewritterFactory());
@@ -759,11 +753,9 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
                     }
                 }
             } else if (tpPredicate.isVariable()) {
-                val mappingDocumentURL = this.getMappingDocumentURL();
                 val triplesMapResource = cm.resource;
-                //val columnsMetaData = cm.getLogicalTable().getColumnsMetaData();
                 val tableMetaData = cm.getLogicalSource().tableMetaData;
-                val tpBounder = new TriplePatternPredicateBounder(mappingDocumentURL, tableMetaData);
+                val tpBounder = new TriplePatternPredicateBounder(tableMetaData);
                 val boundedTriplePatterns = tpBounder.expandUnboundedPredicateTriplePattern(tp, triplesMapResource);
                 logger.debug("boundedTriplePatterns = " + boundedTriplePatterns);
 
@@ -776,6 +768,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
                     val sqlQueries = pms.flatMap(pm => {
                         val propertyMappingResource = pm.resource;
                         val boundedTriplePatternErrorMessages = boundedTriplePatterns.get(propertyMappingResource);
+                        // Strong assumption here: the predicate map are always constants!
                         val predicateURI = pm.getMappedPredicateName(0);
                         if (boundedTriplePatternErrorMessages == null || boundedTriplePatternErrorMessages.isEmpty()) {
                             try {
@@ -815,11 +808,8 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
         result;
     }
 
-    //	def transTP(tp:Triple , cm:MorphBaseClassMapping , predicateURI:String , pm:MorphBasePropertyMapping ) : IQuery;
-
     private def transTP(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, unboundedPredicate: Boolean): MorphTransTPResult = {
         val pms = cm.getPropertyMappings(predicateURI);
-
         if (pms == null || pms.size() == 0 && !RDF.`type`.getURI().equalsIgnoreCase(predicateURI)) {
             val errorMessage = "Undefined property mappings of predicate : " + predicateURI;
             logger.error(errorMessage);

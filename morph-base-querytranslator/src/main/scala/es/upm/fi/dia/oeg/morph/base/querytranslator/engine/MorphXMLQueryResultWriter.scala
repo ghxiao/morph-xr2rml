@@ -1,18 +1,17 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator.engine
 
-import scala.collection.JavaConversions._
+import java.io.Writer
+
+import scala.collection.JavaConversions.asScalaBuffer
+
 import org.apache.log4j.Logger
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import com.hp.hpl.jena.query.Query
+
+import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
+
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.TermMapResult
-import es.upm.fi.dia.oeg.morph.base.ValueTransformator
-import es.upm.fi.dia.oeg.morph.base.XMLUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseQueryResultWriter
-import java.io.OutputStream
-import java.io.Writer
+import es.upm.fi.dia.oeg.morph.base.materializer.XMLUtility
 
 class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStream: Writer)
         extends MorphBaseQueryResultWriter(queryTranslator, xmlOutputStream) {
@@ -30,6 +29,30 @@ class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStre
     //var outputFileName:String = null;
 
     override def initialize() = {}
+
+    private def transformToLexical(originalValue: String, pDatatype: Option[String]): String = {
+        if (pDatatype.isDefined && originalValue != null) {
+            val datatype = pDatatype.get;
+            val xsdDateTimeURI = XSDDatatype.XSDdateTime.getURI().toString();
+            val xsdBooleanURI = XSDDatatype.XSDboolean.getURI().toString();
+
+            if (datatype.equals(xsdDateTimeURI)) {
+                originalValue.trim().replaceAll(" ", "T");
+            } else if (datatype.equals(xsdBooleanURI)) {
+                if (originalValue.equalsIgnoreCase("T") || originalValue.equalsIgnoreCase("True")) {
+                    "true";
+                } else if (originalValue.equalsIgnoreCase("F") || originalValue.equalsIgnoreCase("False")) {
+                    "false";
+                } else {
+                    "false";
+                }
+            } else {
+                originalValue
+            }
+        } else {
+            originalValue
+        }
+    }
 
     def preProcess() = {
 
@@ -68,8 +91,7 @@ class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStre
                 if (translatedColumnValue != null) {
                     val translatedDBValue = translatedColumnValue.translatedValue;
                     val xsdDataType = translatedColumnValue.xsdDatatype;
-                    val lexicalValue = ValueTransformator.transformToLexical(
-                        translatedDBValue, xsdDataType)
+                    val lexicalValue = transformToLexical(translatedDBValue, xsdDataType)
                     if (lexicalValue != null) {
                         val bindingElement = xmlDoc.createElement("binding");
                         bindingElement.setAttribute("name", varName);

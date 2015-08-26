@@ -2,15 +2,16 @@ package es.upm.fi.dia.oeg.morph.base
 
 import scala.collection.JavaConversions.asScalaBuffer
 
-import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.util.FileManager
 
-class R2RMLMapping(mappingFile: String) {
-    val logger = Logger.getLogger(this.getClass());
+/**
+ * This utility class provides methods that navigate through JENA resources representing the mapping graph.
+ */
+class R2RMLMappingUtility {
+}
+
+object R2RMLMappingUtility {
 
     val XSDIntegerURI = XSDDatatype.XSDinteger.getURI();
     val XSDDoubleURI = XSDDatatype.XSDdouble.getURI();
@@ -20,51 +21,47 @@ class R2RMLMapping(mappingFile: String) {
     datatypesMap += ("DOUBLE" -> XSDDoubleURI);
     datatypesMap += ("DATETIME" -> XSDDateTimeURI);
 
-    val model = ModelFactory.createDefaultModel();
-    val in = FileManager.get().open(mappingFile);
-    model.read(in, null, "TURTLE");
-
-    def getPredicateObjectMapResources(triplesMapResources: List[Resource]): List[Resource] = {
+    /** 
+     *  Retrieve the predicate object map resources of a set of triples maps
+     */
+    def getPredicateObjectMapResources(tmsRes: List[Resource]): List[Resource] = {
         val result = {
-            if (triplesMapResources.isEmpty) {
-                Nil; ;
+            if (tmsRes.isEmpty) {
+                Nil;
             } else {
-                val resultHead = this.getPredicateObjectMapResources(triplesMapResources.head);
-                val resultTail = this.getPredicateObjectMapResources(triplesMapResources.tail);
+                val resultHead = this.getPredicateObjectMapResources(tmsRes.head);
+                val resultTail = this.getPredicateObjectMapResources(tmsRes.tail);
                 resultHead ::: resultHead ::: resultTail;
             }
         }
         result;
     }
 
-    def getPredicateObjectMapResources(triplesMapResource: Resource): List[Resource] = {
-        val pomStmtsIterator = triplesMapResource.listProperties(Constants.R2RML_PREDICATEOBJECTMAP_PROPERTY);
+    /** 
+     *  Retrieve the predicate-object map resources of a triples map
+     */
+    def getPredicateObjectMapResources(tmRes: Resource): List[Resource] = {
+        val pomStmtsIterator = tmRes.listProperties(Constants.R2RML_PREDICATEOBJECTMAP_PROPERTY);
         val pomStmts = pomStmtsIterator.toList().toList;
-        for (pomRes <- pomStmts) {
-            val pomResObject = pomRes.getObject();
-            val pomResObjectRes = pomResObject.asResource();
-        }
-
-        logger.info(" method getPredicateObjectMapResources ");
-        val result = for { predicateObjectMapStatement <- pomStmts }
-            yield predicateObjectMapStatement.getObject().asResource();
+        val result = for { pomStmt <- pomStmts }
+            yield pomStmt.getObject().asResource();
         result;
     }
 
-    def getRRLogicalTable(triplesMapResource: Resource) = {
-        triplesMapResource.getPropertyResourceValue(Constants.R2RML_LOGICALTABLE_PROPERTY);
+    def getRRLogicalTable(tmRes: Resource) = {
+        tmRes.getPropertyResourceValue(Constants.R2RML_LOGICALTABLE_PROPERTY);
     }
 
-    def getRRLogicalSource(triplesMapResource: Resource) = {
-        triplesMapResource.getPropertyResourceValue(Constants.xR2RML_LOGICALSOURCE_PROPERTY);
+    def getRRLogicalSource(tmRes: Resource) = {
+        tmRes.getPropertyResourceValue(Constants.xR2RML_LOGICALSOURCE_PROPERTY);
     }
 
-    def getRRSubjectMapResource(triplesMapResource: Resource) = {
-        triplesMapResource.getPropertyResourceValue(Constants.R2RML_SUBJECTMAP_PROPERTY);
+    def getRRSubjectMapResource(tmRes: Resource) = {
+        tmRes.getPropertyResourceValue(Constants.R2RML_SUBJECTMAP_PROPERTY);
     }
 
-    def getRRLogicalTableTableName(triplesMapResource: Resource) = {
-        val rrLogicalTableResource = this.getRRLogicalTable(triplesMapResource);
+    def getRRLogicalTableTableName(tmRes: Resource) = {
+        val rrLogicalTableResource = this.getRRLogicalTable(tmRes);
         val rrTableNameResource = rrLogicalTableResource.getPropertyResourceValue(Constants.R2RML_TABLENAME_PROPERTY);
         val result = {
             if (rrTableNameResource != null)
@@ -76,7 +73,6 @@ class R2RMLMapping(mappingFile: String) {
     }
 
     def getObjectMapResource(predicateObjectMapResource: Resource) = {
-
         val objectMapResource = predicateObjectMapResource.getPropertyResourceValue(Constants.R2RML_OBJECTMAP_PROPERTY);
         val parentTriplesMap = objectMapResource.getPropertyResourceValue(Constants.R2RML_PARENTTRIPLESMAP_PROPERTY);
         val result: Resource = {
@@ -86,7 +82,6 @@ class R2RMLMapping(mappingFile: String) {
                 null;
             }
         }
-
         result;
     }
 
@@ -136,11 +131,6 @@ class R2RMLMapping(mappingFile: String) {
     }
 
     def getTermMapType(tmRes: Resource) = {
-        logger.info(" method getTermMapType ");
-        if (tmRes == null) {
-            logger.info("termMapResource is null");
-        }
-
         val props = tmRes.listProperties().toList();
 
         val termMapType = {
@@ -172,5 +162,4 @@ class R2RMLMapping(mappingFile: String) {
         }
         result;
     }
-
 }

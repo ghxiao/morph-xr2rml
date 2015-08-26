@@ -1,8 +1,9 @@
 package es.upm.fi.dia.oeg.morph.base.sql
 
-import org.apache.log4j.Logger
 import java.sql.Connection
-import scala.collection.JavaConversions._
+
+import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 
 class MorphTableMetaData(val tableName: String, val tableRows: Long, var columnsMetaData: List[MorphColumnMetaData], val dbType: String) {
@@ -21,7 +22,6 @@ class MorphTableMetaData(val tableName: String, val tableRows: Long, var columns
                 xColumnName.equalsIgnoreCase(inputColumnName)
             });
         }
-
         result
     }
 
@@ -48,9 +48,8 @@ object MorphTableMetaData {
                 "SELECT * FROM information_schema.tables WHERE TABLE_SCHEMA = '" + databaseName + "'";
             } else if (databaseType.equalsIgnoreCase(Constants.DATABASE_POSTGRESQL)) {
                 "SELECT * FROM pg_stat_user_tables ";
-            } else {
+            } else
                 null;
-            }
         }
 
         var result: List[MorphTableMetaData] = Nil;
@@ -63,7 +62,6 @@ object MorphTableMetaData {
                 result = result ::: List(tableMetaData);
             }
         }
-
         result
     }
 
