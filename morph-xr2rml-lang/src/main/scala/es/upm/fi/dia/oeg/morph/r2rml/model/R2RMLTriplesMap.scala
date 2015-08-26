@@ -10,19 +10,23 @@ import org.apache.log4j.Logger
 import com.hp.hpl.jena.rdf.model.Resource
 
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
 class R2RMLTriplesMap(
-    val logicalSource: xR2RMLLogicalSource,
-    val refFormulation: String,
-    val subjectMap: R2RMLSubjectMap,
-    val predicateObjectMaps: Set[R2RMLPredicateObjectMap])
+        val logicalSource: xR2RMLLogicalSource,
+        val refFormulation: String,
+        val subjectMap: R2RMLSubjectMap,
+        val predicateObjectMaps: Set[R2RMLPredicateObjectMap]) {
 
-        extends MorphBaseClassMapping(predicateObjectMaps) {
+    var id: String = null;
+
+    var name: String = null;
+
+    var resource: Resource = null;
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -33,7 +37,7 @@ class R2RMLTriplesMap(
 
     override def toString(): String = { return this.name }
 
-    override def getConceptName(): String = {
+    def getConceptName(): String = {
         var result: String = null;
 
         val classURIs = this.subjectMap.classURIs;
@@ -49,7 +53,7 @@ class R2RMLTriplesMap(
         return result;
     }
 
-    override def getPropertyMappings(propertyURI: String): Iterable[MorphBasePropertyMapping] = {
+    def getPropertyMappings(propertyURI: String): Iterable[R2RMLPredicateObjectMap] = {
         val poms = this.predicateObjectMaps;
         val result = poms.filter(pom => {
             val predicateMapValue = pom.getPredicateMap(0).getOriginalValue();
@@ -59,11 +63,11 @@ class R2RMLTriplesMap(
         result;
     }
 
-    override def getPropertyMappings(): Iterable[MorphBasePropertyMapping] = {
+    def getPropertyMappings(): Iterable[R2RMLPredicateObjectMap] = {
         this.predicateObjectMaps
     }
 
-    override def isPossibleInstance(uri: String): Boolean = {
+    def isPossibleInstance(uri: String): Boolean = {
         var result = false;
 
         val subjectMapTermMapType = this.subjectMap.termMapType;
@@ -85,15 +89,15 @@ class R2RMLTriplesMap(
         result;
     }
 
-    override def getLogicalTableSize(): Long = {
+    def getLogicalTableSize(): Long = {
         this.logicalSource.getLogicalTableSize();
     }
 
-    override def getMappedClassURIs(): Iterable[String] = {
+    def getMappedClassURIs(): Iterable[String] = {
         this.subjectMap.classURIs;
     }
 
-    override def getTableMetaData(): Option[MorphTableMetaData] = {
+    def getTableMetaData(): Option[MorphTableMetaData] = {
         this.logicalSource.tableMetaData;
     }
 
@@ -101,7 +105,7 @@ class R2RMLTriplesMap(
         this.logicalSource;
     }
 
-    override def getSubjectReferencedColumns(): List[String] = {
+    def getSubjectReferencedColumns(): List[String] = {
         this.subjectMap.getReferencedColumns();
     }
 }

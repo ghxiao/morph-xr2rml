@@ -1,8 +1,11 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
+import java.util.Collection
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
+import scala.collection.JavaConversions.asJavaCollection
+import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.JavaConversions.setAsJavaSet
@@ -13,7 +16,6 @@ import com.hp.hpl.jena.graph.Node
 
 import Zql.ZConstant
 import Zql.ZExp
-import es.upm.fi.dia.oeg.morph.base.CollectionUtility
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
@@ -40,6 +42,17 @@ class MorphRDBQueryTranslator(nameGenerator: NameGenerator, alphaGenerator: Morp
     var mapTemplateMatcher: Map[String, Matcher] = Map.empty;
     var mapTemplateAttributes: Map[String, List[String]] = Map.empty;
 
+    private def getElementsStartWith(theCollection: Collection[String], prefix: String): Collection[String] = {
+        val result = theCollection.flatMap(collectionElement => {
+            if (collectionElement.startsWith(prefix)) {
+                Some(collectionElement);
+            } else {
+                None;
+            }
+        })
+
+        result;
+    }
     override def transIRI(node: Node): List[ZExp] = {
         val cms = mapInferredTypes(node);
         val cm = cms.iterator().next().asInstanceOf[R2RMLTriplesMap];
@@ -86,7 +99,7 @@ class MorphRDBQueryTranslator(nameGenerator: NameGenerator, alphaGenerator: Morp
             try {
                 if (rs != null) {
                     val rsColumnNames = rs.getColumnNames();
-                    val columnNames = CollectionUtility.getElementsStartWith(rsColumnNames, varName + "_");
+                    val columnNames = this.getElementsStartWith(rsColumnNames, varName + "_");
 
                     val mapValue = this.getMappedMappingByVarName(varName, rs);
 

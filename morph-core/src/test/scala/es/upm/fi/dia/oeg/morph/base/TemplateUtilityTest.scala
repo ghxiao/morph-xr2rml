@@ -1,7 +1,6 @@
 package es.upm.fi.dia.oeg.morph.base
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TemplateUtilityTest {

@@ -10,26 +10,27 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
 
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
-abstract class MorphBaseAlphaGenerator(md: MorphBaseMappingDocument, unfolder: MorphBaseUnfolder) {
+abstract class MorphBaseAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
     var owner: MorphBaseQueryTranslator = null;
 
     val logger = Logger.getLogger(this.getClass());
 
-    def calculateAlpha(tp: Triple, cm: MorphBaseClassMapping, predicateURI: String): MorphAlphaResult;
+    def calculateAlpha(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String): MorphAlphaResult;
 
-    def calculateAlpha(tp: Triple, cm: MorphBaseClassMapping, predicateURI: String, pm: MorphBasePropertyMapping): MorphAlphaResult;
+    def calculateAlpha(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, pm: R2RMLPredicateObjectMap): MorphAlphaResult;
 
-    def calculateAlphaPredicateObject(tp: Triple, cm: MorphBaseClassMapping, pm: MorphBasePropertyMapping, logicalTableAlias: String): (SQLJoinTable, String);
+    def calculateAlphaPredicateObject(tp: Triple, cm: R2RMLTriplesMap, pm: R2RMLPredicateObjectMap, logicalTableAlias: String): (SQLJoinTable, String);
 
-    def calculateAlphaSubject(subject: Node, cm: MorphBaseClassMapping): SQLLogicalTable;
+    def calculateAlphaSubject(subject: Node, cm: R2RMLTriplesMap): SQLLogicalTable;
 
-    def calculateAlphaSTG(triples: Iterable[Triple], cm: MorphBaseClassMapping): java.util.List[MorphAlphaResultUnion] = {
+    def calculateAlphaSTG(triples: Iterable[Triple], cm: R2RMLTriplesMap): java.util.List[MorphAlphaResultUnion] = {
         var alphaResultUnionList: List[MorphAlphaResultUnion] = Nil;
 
         val firstTriple = triples.iterator.next();
@@ -98,6 +99,6 @@ abstract class MorphBaseAlphaGenerator(md: MorphBaseMappingDocument, unfolder: M
         return alphaResultUnionList;
     }
 
-    def calculateAlphaPredicateObjectSTG(tp: Triple, cm: MorphBaseClassMapping, tpPredicateURI: String, logicalTableAlias: String): List[(SQLJoinTable, String)];
+    def calculateAlphaPredicateObjectSTG(tp: Triple, cm: R2RMLTriplesMap, tpPredicateURI: String, logicalTableAlias: String): List[(SQLJoinTable, String)];
 
 }

@@ -13,7 +13,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>fr.unice.i3s</groupId>
-			<artifactId>morph-base</artifactId>
+			<artifactId>morph-core</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>

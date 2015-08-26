@@ -9,8 +9,6 @@ import Zql.ZConstant
 import Zql.ZExpression
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseBetaGenerator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseCondSQLGenerator
@@ -25,7 +23,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfol
         extends MorphBaseCondSQLGenerator(md, unfolder: MorphBaseUnfolder) {
     override val logger = Logger.getLogger("MorphCondSQLGenerator");
 
-    override def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, cm: MorphBaseClassMapping, pm: MorphBasePropertyMapping): ZExpression = {
+    override def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, cm: R2RMLTriplesMap, pm: R2RMLPredicateObjectMap): ZExpression = {
         val tpObject = tp.getObject();
         val logicalTableAlias = alphaResult.alphaSubject.getAlias();
 
@@ -132,7 +130,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfol
         result2;
     }
 
-    override def genCondSQLSubjectURI(tpSubject: Node, alphaResult: MorphAlphaResult, cm: MorphBaseClassMapping): ZExpression = {
+    override def genCondSQLSubjectURI(tpSubject: Node, alphaResult: MorphAlphaResult, cm: R2RMLTriplesMap): ZExpression = {
         val subjectURI = tpSubject.getURI();
         val tm = cm.asInstanceOf[R2RMLTriplesMap];
         val subjectURIConstant = new ZConstant(subjectURI, ZConstant.STRING);

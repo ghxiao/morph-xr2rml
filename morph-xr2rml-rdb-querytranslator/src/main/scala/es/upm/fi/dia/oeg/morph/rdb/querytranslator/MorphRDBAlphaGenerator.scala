@@ -9,8 +9,6 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
 
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
@@ -28,7 +26,7 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolde
 
     override val logger = Logger.getLogger("MorphQueryTranslator");
 
-    override def calculateAlpha(tp: Triple, abstractConceptMapping: MorphBaseClassMapping, predicateURI: String): MorphAlphaResult = {
+    override def calculateAlpha(tp: Triple, abstractConceptMapping: R2RMLTriplesMap, predicateURI: String): MorphAlphaResult = {
         //ALPHA SUBJECT
         val tpSubject = tp.getSubject();
         val alphaSubject = this.calculateAlphaSubject(tpSubject, abstractConceptMapping);
@@ -72,11 +70,11 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolde
         alphaResult;
     }
 
-    override def calculateAlpha(tp: Triple, abstractConceptMapping: MorphBaseClassMapping, predicateURI: String, pm: MorphBasePropertyMapping): MorphAlphaResult = {
+    override def calculateAlpha(tp: Triple, abstractConceptMapping: R2RMLTriplesMap, predicateURI: String, pm: R2RMLPredicateObjectMap): MorphAlphaResult = {
         null;
     }
 
-    override def calculateAlphaPredicateObject(triple: Triple, abstractConceptMapping: MorphBaseClassMapping, abstractPropertyMapping: MorphBasePropertyMapping, logicalTableAlias: String): (SQLJoinTable, String) = {
+    override def calculateAlphaPredicateObject(triple: Triple, abstractConceptMapping: R2RMLTriplesMap, abstractPropertyMapping: R2RMLPredicateObjectMap, logicalTableAlias: String): (SQLJoinTable, String) = {
 
         val pm = abstractPropertyMapping.asInstanceOf[R2RMLPredicateObjectMap];
         val refObjectMap = pm.getRefObjectMap(0);
@@ -117,7 +115,7 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolde
         (result, predicateURI);
     }
 
-    override def calculateAlphaSubject(subject: Node, abstractConceptMapping: MorphBaseClassMapping): SQLLogicalTable = {
+    override def calculateAlphaSubject(subject: Node, abstractConceptMapping: R2RMLTriplesMap): SQLLogicalTable = {
         val cm = abstractConceptMapping.asInstanceOf[R2RMLTriplesMap];
         val r2rmlLogicalTable = cm.logicalSource.asInstanceOf[xR2RMLLogicalSource];
         val sqlLogicalTable = unfolder.unfoldLogicalSource(r2rmlLogicalTable).asInstanceOf[SQLLogicalTable]
@@ -136,7 +134,7 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolde
         return sqlLogicalTable;
     }
 
-    override def calculateAlphaPredicateObjectSTG(tp: Triple, cm: MorphBaseClassMapping, tpPredicateURI: String, logicalTableAlias: String): List[(SQLJoinTable, String)] = {
+    override def calculateAlphaPredicateObjectSTG(tp: Triple, cm: R2RMLTriplesMap, tpPredicateURI: String, logicalTableAlias: String): List[(SQLJoinTable, String)] = {
 
         val isRDFTypeStatement = RDF.`type`.getURI().equals(tpPredicateURI);
         val alphaPredicateObjects: List[(SQLJoinTable, String)] = {

@@ -5,7 +5,6 @@ import org.apache.log4j.Logger
 import com.hp.hpl.jena.rdf.model.Resource
 
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseLogicalTable
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
@@ -15,21 +14,26 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
  * This class is a refactoring of former R2RMLLogicalTable class.
  */
 abstract class xR2RMLLogicalSource(
-    val logicalTableType: Constants.LogicalTableType.Value,
+        val logicalTableType: Constants.LogicalTableType.Value,
 
-    /** Syntax of data elements references (iterator, reference, template). Defaults to xrr:Column */
-    val refFormulation: String,
+        /** Syntax of data elements references (iterator, reference, template). Defaults to xrr:Column */
+        val refFormulation: String,
 
-    /** Iteration pattern, defaults to none */
-    val docIterator: Option[String])
+        /** Iteration pattern, defaults to none */
+        val docIterator: Option[String]) {
 
-        extends MorphBaseLogicalTable {
+    var tableMetaData: Option[MorphTableMetaData] = None;
 
-    val logger = Logger.getLogger(this.getClass().getName());
     var alias: String = null;
 
-    def buildMetaData(dbMetaData: Option[MorphDatabaseMetaData]) = {
+    val logger = Logger.getLogger(this.getClass().getName());
 
+    def getLogicalTableSize(): Long = {
+        if (this.tableMetaData.isDefined) { this.tableMetaData.get.getTableRows(); }
+        else { -1 }
+    }
+
+    def buildMetaData(dbMetaData: Option[MorphDatabaseMetaData]) = {
         val source = this match {
             case _: xR2RMLTable => this.asInstanceOf[xR2RMLTable]
             case _: xR2RMLQuery => this.asInstanceOf[xR2RMLQuery]
@@ -69,7 +73,6 @@ abstract class xR2RMLLogicalSource(
                     Some(tableMetaData)
                 else None
         }
-
     }
 
     /** Return the table name or query depending on the type of logical table */

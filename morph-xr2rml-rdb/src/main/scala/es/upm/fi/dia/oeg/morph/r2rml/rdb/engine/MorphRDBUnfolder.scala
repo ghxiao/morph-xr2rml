@@ -17,7 +17,6 @@ import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
@@ -28,7 +27,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
@@ -391,7 +389,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     /**
      * Entry point of the unfolder in the data materialization case
      */
-    override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
+    override def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)

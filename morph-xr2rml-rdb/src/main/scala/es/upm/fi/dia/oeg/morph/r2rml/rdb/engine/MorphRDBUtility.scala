@@ -1,20 +1,19 @@
 package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
-import java.util.Collection
-import es.upm.fi.dia.oeg.morph.base.Constants
-import Zql.ZExpression
-import scala.collection.JavaConversions._
-import Zql.ZConstant
-import Zql.ZQuery
 import java.io.ByteArrayInputStream
-import Zql.ZqlParser
+
 import org.apache.log4j.Logger
+
+import Zql.ZConstant
+import Zql.ZExpression
+import Zql.ZQuery
+import Zql.ZqlParser
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.base.sql.SQLDataType
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphRDBUtility {
 
@@ -23,7 +22,7 @@ class MorphRDBUtility {
 object MorphRDBUtility {
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def generateCondForWellDefinedURI(termMap: R2RMLTermMap, ownerTriplesMap: MorphBaseClassMapping, uri: String, alias: String): ZExpression = {
+    def generateCondForWellDefinedURI(termMap: R2RMLTermMap, ownerTriplesMap: R2RMLTriplesMap, uri: String, alias: String): ZExpression = {
         val logicalTable = ownerTriplesMap.getLogicalSource();
         val logicalTableMetaData = logicalTable.tableMetaData;
         val dbType = if (logicalTableMetaData.isDefined) { logicalTableMetaData.get.dbType }

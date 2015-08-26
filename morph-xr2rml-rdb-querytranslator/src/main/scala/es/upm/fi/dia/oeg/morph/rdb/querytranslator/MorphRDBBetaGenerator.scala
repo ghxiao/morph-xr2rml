@@ -5,8 +5,6 @@ import com.hp.hpl.jena.graph.Triple
 import Zql.ZConstant
 import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseBetaGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
@@ -18,7 +16,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
 class MorphRDBBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolder)
         extends MorphBaseBetaGenerator(md, unfolder) {
 
-    override def calculateBetaObject(tp: Triple, cm: MorphBaseClassMapping, predicateURI: String, alphaResult: MorphAlphaResult, pm: MorphBasePropertyMapping): List[ZSelectItem] = {
+    override def calculateBetaObject(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, alphaResult: MorphAlphaResult, pm: R2RMLPredicateObjectMap): List[ZSelectItem] = {
 
         val predicateObjectMap = pm.asInstanceOf[R2RMLPredicateObjectMap];
         val refObjectMap = predicateObjectMap.getRefObjectMap(0);
@@ -67,7 +65,7 @@ class MorphRDBBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolder
         betaObjects;
     }
 
-    override def calculateBetaSubject(tp: Triple, cm: MorphBaseClassMapping, alphaResult: MorphAlphaResult): List[ZSelectItem] = {
+    override def calculateBetaSubject(tp: Triple, cm: R2RMLTriplesMap, alphaResult: MorphAlphaResult): List[ZSelectItem] = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
         val subjectMap = triplesMap.subjectMap;

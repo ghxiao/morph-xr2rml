@@ -1,28 +1,29 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
 import java.io.Writer
+
 import org.apache.log4j.Logger
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
-import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 
 class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
 
     override val logger = Logger.getLogger(this.getClass().getName())
 
     override def createRunner(
-        mappingDocument: MorphBaseMappingDocument,
+        mappingDocument: R2RMLMappingDocument,
         unfolder: MorphBaseUnfolder,
         dataTranslator: Option[MorphBaseDataTranslator],
         queryTranslator: Option[IQueryTranslator],
@@ -38,19 +39,19 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
             outputStream)
     }
 
-    override def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: GenericConnection): MorphBaseMappingDocument = {
+    override def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
         val mappingDocument = R2RMLMappingDocument(mappingDocumentFile, props, connection);
         mappingDocument
     }
 
-    override def createUnfolder(md: MorphBaseMappingDocument, props: MorphProperties): MorphJsondocUnfolder = {
+    override def createUnfolder(md: R2RMLMappingDocument, props: MorphProperties): MorphJsondocUnfolder = {
         val unfolder = new MorphJsondocUnfolder(md.asInstanceOf[R2RMLMappingDocument], props);
         unfolder.dbType = props.databaseType;
         unfolder;
     }
 
     override def createDataTranslator(
-        mappingDocument: MorphBaseMappingDocument,
+        mappingDocument: R2RMLMappingDocument,
         materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
         dataSourceReader: MorphBaseDataSourceReader,

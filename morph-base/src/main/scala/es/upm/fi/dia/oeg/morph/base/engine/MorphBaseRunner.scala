@@ -15,12 +15,14 @@ import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.query.QueryFactory
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.newrqr.RewriterWrapper
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseRunner(
-        mappingDocument: MorphBaseMappingDocument,
+        mappingDocument: R2RMLMappingDocument,
         unfolder: MorphBaseUnfolder,
         dataTranslator: Option[MorphBaseDataTranslator],
         val queryTranslator: Option[IQueryTranslator],
@@ -70,7 +72,7 @@ class MorphBaseRunner(
     /**
      * Entry point for the data materialization process
      */
-    def materializeMappingDocuments(md: MorphBaseMappingDocument) {
+    def materializeMappingDocuments(md: R2RMLMappingDocument) {
 
         if (!this.dataTranslator.isDefined) {
             val errorMessage = "Data Translator has not been defined yet.";

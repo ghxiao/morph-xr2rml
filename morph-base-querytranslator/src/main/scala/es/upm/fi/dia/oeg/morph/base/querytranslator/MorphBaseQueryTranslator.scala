@@ -1,16 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
+import java.sql.Connection
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.LinkedHashSet
+
 import org.apache.log4j.Logger
-import java.sql.Connection
-import Zql.ZConstant
-import Zql.ZExp
-import Zql.ZExpression
-import Zql.ZGroupBy
-import Zql.ZOrderBy
-import Zql.ZSelectItem
-import Zql.ZUpdate
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
@@ -58,38 +54,44 @@ import com.hp.hpl.jena.sparql.expr.aggregate.AggSum
 import com.hp.hpl.jena.sparql.expr.aggregate.Aggregator
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.XSD
+
+import Zql.ZConstant
+import Zql.ZExp
+import Zql.ZExpression
+import Zql.ZGroupBy
+import Zql.ZInsert
+import Zql.ZOrderBy
+import Zql.ZSelectItem
+import Zql.ZUpdate
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
-import es.upm.fi.dia.oeg.morph.base.TriplePatternPredicateBounder
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
-import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
-import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
+import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.TriplePatternPredicateBounder
+import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.engine.QueryTranslationOptimizer
+import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
+import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryTranslatorUtility
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphSQLSelectItemGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
-import Zql.ZInsert
+import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
+import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
+import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
+import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
+import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
+import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGenerator: MorphBaseAlphaGenerator, betaGenerator: MorphBaseBetaGenerator, condSQLGenerator: MorphBaseCondSQLGenerator, prSQLGenerator: MorphBasePRSQLGenerator)
         extends IQueryTranslator {
     val logger = Logger.getLogger(this.getClass());
 
     //query translator
-    var mapInferredTypes: Map[Node, Set[MorphBaseClassMapping]] = Map.empty;
+    var mapInferredTypes: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
     //val mapTermsC : Map[Op, Set[Node]] = Map.empty;
     var mapAggreatorAlias: Map[String, ZSelectItem] = Map.empty; //varname - selectitem
     //val notNullColumns:List[String] = Nil;
@@ -741,7 +743,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
         result;
     }
 
-    private def transTP(tp: Triple, cm: MorphBaseClassMapping): IQuery = {
+    private def transTP(tp: Triple, cm: R2RMLTriplesMap): IQuery = {
         val tpPredicate = tp.getPredicate();
 
         val result: IQuery = {
@@ -815,7 +817,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
 
     //	def transTP(tp:Triple , cm:MorphBaseClassMapping , predicateURI:String , pm:MorphBasePropertyMapping ) : IQuery;
 
-    private def transTP(tp: Triple, cm: MorphBaseClassMapping, predicateURI: String, unboundedPredicate: Boolean): MorphTransTPResult = {
+    private def transTP(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, unboundedPredicate: Boolean): MorphTransTPResult = {
         val pms = cm.getPropertyMappings(predicateURI);
 
         if (pms == null || pms.size() == 0 && !RDF.`type`.getURI().equalsIgnoreCase(predicateURI)) {
@@ -1461,7 +1463,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
         result;
     }
 
-    private def transSTGUnionFree(stg: List[Triple], cm: MorphBaseClassMapping): MorphTransTPResult = {
+    private def transSTGUnionFree(stg: List[Triple], cm: R2RMLTriplesMap): MorphTransTPResult = {
         //AlphaSTG
         val alphaResultUnionList = this.alphaGenerator.calculateAlphaSTG(stg, cm);
 
@@ -1485,7 +1487,7 @@ abstract class MorphBaseQueryTranslator(nameGenerator: NameGenerator, alphaGener
         transTPResult
     }
 
-    private def transSTG(stg: List[Triple], cm: MorphBaseClassMapping): IQuery = {
+    private def transSTG(stg: List[Triple], cm: R2RMLTriplesMap): IQuery = {
         //AlphaSTG
         val alphaResultUnionList = this.alphaGenerator.calculateAlphaSTG(stg, cm);
 

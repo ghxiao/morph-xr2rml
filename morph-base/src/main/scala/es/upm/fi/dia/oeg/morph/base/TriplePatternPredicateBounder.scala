@@ -1,21 +1,23 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import scala.collection.JavaConversions._
-import com.hp.hpl.jena.graph.Triple
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
-import com.hp.hpl.jena.rdf.model.ResourceFactory
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import java.text.SimpleDateFormat
+
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConversions.mapAsScalaMap
+import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.graph.Triple
+import com.hp.hpl.jena.rdf.model.Resource
+
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
 class TriplePatternPredicateBounder(mappingFile: String //, mapColumnsMetaData : java.util.Map[String, ColumnMetaData]
 , tableMetaData: Option[MorphTableMetaData]) {
 
   val logger = Logger.getLogger("TriplePatternPredicateBounder");
-  val mappingDocument = new R2RMLMappingDocument(mappingFile);
+  val mappingDocument = new R2RMLMapping(mappingFile);
   val constants = new Constants();
 
   def this(mappingFile: String) {

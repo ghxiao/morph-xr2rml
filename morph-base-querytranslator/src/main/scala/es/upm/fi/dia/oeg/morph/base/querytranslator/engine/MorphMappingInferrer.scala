@@ -11,19 +11,19 @@ import com.hp.hpl.jena.sparql.algebra.op.{ OpBGP, OpLeftJoin, OpUnion, OpJoin, O
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.expr.ExprList
 import com.hp.hpl.jena.sparql.expr.Expr
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
-class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
+class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
     val logger = Logger.getLogger(this.getClass());
-    var mapInferredTypes: Map[Node, Set[MorphBaseClassMapping]] = Map.empty
+    var mapInferredTypes: Map[Node, Set[R2RMLTriplesMap]] = Map.empty
 
-    private def addToInferredTypes(mapNodeTypes: Map[Node, Set[MorphBaseClassMapping]], node: Node, cms: Set[MorphBaseClassMapping]): Map[Node, Set[MorphBaseClassMapping]] = {
+    private def addToInferredTypes(mapNodeTypes: Map[Node, Set[R2RMLTriplesMap]], node: Node, cms: Set[R2RMLTriplesMap]): Map[Node, Set[R2RMLTriplesMap]] = {
         val newVal = mapNodeTypes.get(node).map(_.intersect(cms)).getOrElse(cms)
         mapNodeTypes + (node -> newVal)
     }
 
-    private def genericInferBGP(bgpFunc: (OpBGP) => Map[Node, Set[MorphBaseClassMapping]])(op: Op): Map[Node, Set[MorphBaseClassMapping]] = {
+    private def genericInferBGP(bgpFunc: (OpBGP) => Map[Node, Set[R2RMLTriplesMap]])(op: Op): Map[Node, Set[R2RMLTriplesMap]] = {
         op match {
             case bgp: OpBGP => bgpFunc(bgp)
             case opLeftJoin: OpLeftJoin => {
@@ -48,11 +48,11 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         }
     }
 
-    private def genericInfer(tripleFunc: (Triple) => Option[Pair[Node, Set[MorphBaseClassMapping]]])(op: Op): Map[Node, Set[MorphBaseClassMapping]] = {
-        def bgpHelper(bgp: OpBGP): Map[Node, Set[MorphBaseClassMapping]] = {
+    private def genericInfer(tripleFunc: (Triple) => Option[Pair[Node, Set[R2RMLTriplesMap]]])(op: Op): Map[Node, Set[R2RMLTriplesMap]] = {
+        def bgpHelper(bgp: OpBGP): Map[Node, Set[R2RMLTriplesMap]] = {
             val bpTriples = bgp.getPattern().getList()
             val newMappings = bpTriples.flatMap(tripleFunc(_))
-            newMappings.foldLeft(Map.empty[Node, Set[MorphBaseClassMapping]])(
+            newMappings.foldLeft(Map.empty[Node, Set[R2RMLTriplesMap]])(
                 (mapNodeTypes, tpNodeCms) => tpNodeCms match {
                     case (tpNode, cms) => this.addToInferredTypes(mapNodeTypes, tpNode, cms.toSet)
                 })
@@ -60,7 +60,7 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         genericInferBGP(bgpHelper _)(op)
     }
 
-    def infer(query: Query): Map[Node, Set[MorphBaseClassMapping]] = {
+    def infer(query: Query): Map[Node, Set[R2RMLTriplesMap]] = {
         if (this.mapInferredTypes.isEmpty) {
             val queryPattern = query.getQueryPattern();
             val opQueryPattern = Algebra.compile(queryPattern);
@@ -70,15 +70,15 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         this.mapInferredTypes;
     }
 
-    def infer(opQueryPattern: Op): Map[Node, Set[MorphBaseClassMapping]] = {
+    def infer(opQueryPattern: Op): Map[Node, Set[R2RMLTriplesMap]] = {
         if (this.mapInferredTypes.isEmpty) {
-            
+
             val mapSubjectTypesByRdfType = this.inferByRDFType(opQueryPattern);
             if (logger.isTraceEnabled()) logger.trace("mapSubjectTypesByRdfType: " + mapSubjectTypesByRdfType)
-            
+
             val mapSubjectTypesByPredicatesURIs = this.inferSubjectTypesByPredicatesURIs(opQueryPattern);
             if (logger.isTraceEnabled()) logger.trace("mapSubjectTypesByPredicatesURIs: " + mapSubjectTypesByPredicatesURIs)
-            
+
             val mapSubjectTypesBySubjectUri = this.inferSubjectTypesBySubjectURI(opQueryPattern);
             if (logger.isTraceEnabled()) logger.trace("mapSubjectTypesBySubjectUri: " + mapSubjectTypesBySubjectUri)
 
@@ -90,11 +90,11 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
 
             val mapObjectTypesByObjectsURIs = this.inferObjectTypesByObjectURI(opQueryPattern)
             if (logger.isTraceEnabled()) logger.trace("mapObjectTypesByObjectsURIs: " + mapObjectTypesByObjectsURIs)
-            
+
             val mapObjectTypesWithConceptMappingsWithClassURI =
                 mapObjectTypesByObjectsURIs.mapValues(_.filter(_.getMappedClassURIs.nonEmpty))
             if (logger.isTraceEnabled()) logger.trace("mapObjectTypesWithConceptMappingsWithClassURI: " + mapObjectTypesWithConceptMappingsWithClassURI)
-            
+
             val mapObjectTypesByPredicatesURIs = this.inferObjectTypesByPredicateURI(opQueryPattern, mapSubjectTypes)
             if (logger.isTraceEnabled()) logger.trace("mapObjectTypesByPredicatesURIs: " + mapObjectTypesByPredicatesURIs)
 
@@ -110,9 +110,9 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         this.mapInferredTypes;
     }
 
-    private def inferByRDFType(op: Op): Map[Node, Set[MorphBaseClassMapping]] = {
-        def helper(tp: Triple): Option[Pair[Node, Set[MorphBaseClassMapping]]] = {
-    		if (logger.isTraceEnabled()) logger.trace("inferByRDFType.helper, tp: " + tp)
+    private def inferByRDFType(op: Op): Map[Node, Set[R2RMLTriplesMap]] = {
+        def helper(tp: Triple): Option[Pair[Node, Set[R2RMLTriplesMap]]] = {
+            if (logger.isTraceEnabled()) logger.trace("inferByRDFType.helper, tp: " + tp)
             val tpPredicate = tp.getPredicate()
             if (tpPredicate.isURI()) {
                 val predicateURI = tpPredicate.getURI()
@@ -136,7 +136,7 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         genericInfer(helper _)(op)
     }
 
-    private def inferSubjectsTypesByPredicateURIs(mapSubjectSTGs: Map[Node, Set[Triple]]): Map[Node, Set[MorphBaseClassMapping]] =
+    private def inferSubjectsTypesByPredicateURIs(mapSubjectSTGs: Map[Node, Set[Triple]]): Map[Node, Set[R2RMLTriplesMap]] =
         mapSubjectSTGs.mapValues(stg =>
             this.mappingDocument.getClassMappingByPropertyURIs(
                 stg.map(_.getPredicate())
@@ -148,9 +148,9 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
     private def bgpToSTGs(triples: List[Triple]): Map[Node, Set[Triple]] =
         triples.groupBy(_.getSubject()).mapValues(_.toSet)
 
-    private def inferSubjectTypesBySubjectURI(op: Op): Map[Node, Set[MorphBaseClassMapping]] = {
-        def helper(tp: Triple): Option[Pair[Node, Set[MorphBaseClassMapping]]] = {
-    		if (logger.isTraceEnabled()) logger.trace("inferSubjectTypesBySubjectURI.helper, tp: " + tp)
+    private def inferSubjectTypesBySubjectURI(op: Op): Map[Node, Set[R2RMLTriplesMap]] = {
+        def helper(tp: Triple): Option[Pair[Node, Set[R2RMLTriplesMap]]] = {
+            if (logger.isTraceEnabled()) logger.trace("inferSubjectTypesBySubjectURI.helper, tp: " + tp)
             val tpSubject = tp.getSubject()
             if (tpSubject.isURI()) {
                 val subjectURI = tpSubject.getURI()
@@ -163,13 +163,13 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         genericInfer(helper _)(op)
     }
 
-    private def inferObjectTypesByExprList(exprList: ExprList): Map[Node, Set[MorphBaseClassMapping]] = {
+    private def inferObjectTypesByExprList(exprList: ExprList): Map[Node, Set[R2RMLTriplesMap]] = {
         val listOfMaps = exprList.getList().map(this.inferObjectTypesByExpr(_))
         MorphQueryTranslatorUtility.mapsIntersection(listOfMaps.toList)
     }
 
-    private def inferObjectTypesByExpr(expr: Expr): Map[Node, Set[MorphBaseClassMapping]] = {
-        val mapNodeTypesExprs: Map[Node, Set[MorphBaseClassMapping]] = {
+    private def inferObjectTypesByExpr(expr: Expr): Map[Node, Set[R2RMLTriplesMap]] = {
+        val mapNodeTypesExprs: Map[Node, Set[R2RMLTriplesMap]] = {
             if (expr.isConstant()) {
                 val nodeValue = expr.getConstant();
                 if (nodeValue.isIRI()) {
@@ -191,9 +191,9 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         mapNodeTypesExprs;
     }
 
-    private def inferObjectTypesByObjectURI(op: Op): Map[Node, Set[MorphBaseClassMapping]] = {
-        def helper(tp: Triple): Option[Pair[Node, Set[MorphBaseClassMapping]]] = {
-    		if (logger.isTraceEnabled()) logger.trace("inferObjectTypesByObjectURI.helper, tp: " + tp)
+    private def inferObjectTypesByObjectURI(op: Op): Map[Node, Set[R2RMLTriplesMap]] = {
+        def helper(tp: Triple): Option[Pair[Node, Set[R2RMLTriplesMap]]] = {
+            if (logger.isTraceEnabled()) logger.trace("inferObjectTypesByObjectURI.helper, tp: " + tp)
             val tpObject = tp.getObject()
             if (tpObject.isURI()) {
                 val nodeTypes = this.inferByURI(tpObject.getURI())
@@ -205,9 +205,9 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         genericInfer(helper _)(op)
     }
 
-    private def inferObjectTypesByPredicateURI(op: Op, mapSubjectTypes: Map[Node, Set[MorphBaseClassMapping]]): Map[Node, Set[MorphBaseClassMapping]] = {
-        def helper(mapSubjectTypes: Map[Node, Set[MorphBaseClassMapping]])(tp: Triple): Option[Pair[Node, Set[MorphBaseClassMapping]]] = {
-    		if (logger.isTraceEnabled()) logger.trace("inferObjectTypesByPredicateURI.helper, tp: " + tp)
+    private def inferObjectTypesByPredicateURI(op: Op, mapSubjectTypes: Map[Node, Set[R2RMLTriplesMap]]): Map[Node, Set[R2RMLTriplesMap]] = {
+        def helper(mapSubjectTypes: Map[Node, Set[R2RMLTriplesMap]])(tp: Triple): Option[Pair[Node, Set[R2RMLTriplesMap]]] = {
+            if (logger.isTraceEnabled()) logger.trace("inferObjectTypesByPredicateURI.helper, tp: " + tp)
             val tpPredicate = tp.getPredicate()
             if (tpPredicate.isURI()) {
                 val predicateURI = tpPredicate.getURI()
@@ -229,14 +229,14 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         genericInfer(helper(mapSubjectTypes) _)(op)
     }
 
-    private def inferSubjectTypesByPredicatesURIs(op: Op): Map[Node, Set[MorphBaseClassMapping]] = {
-        def helper(bgp: OpBGP): Map[Node, Set[MorphBaseClassMapping]] = {
+    private def inferSubjectTypesByPredicatesURIs(op: Op): Map[Node, Set[R2RMLTriplesMap]] = {
+        def helper(bgp: OpBGP): Map[Node, Set[R2RMLTriplesMap]] = {
             val bpTriples = bgp.getPattern().getList()
             val mapSubjectSTGs = this.bgpToSTGs(bpTriples.toList)
 
             //get subject types by all the predicate URIs of the STGs
             val subjectsTypesByPredicateURIs = this.inferSubjectsTypesByPredicateURIs(mapSubjectSTGs)
-            subjectsTypesByPredicateURIs.foldLeft(Map.empty[Node, Set[MorphBaseClassMapping]])(
+            subjectsTypesByPredicateURIs.foldLeft(Map.empty[Node, Set[R2RMLTriplesMap]])(
                 (mapNodeTypes, subjectAndTypes) => subjectAndTypes match {
                     case (subject, subjectTypes) => this.addToInferredTypes(mapNodeTypes, subject, subjectTypes)
                 }
@@ -245,10 +245,10 @@ class MorphMappingInferrer(mappingDocument: MorphBaseMappingDocument) {
         genericInferBGP(helper _)(op)
     }
 
-    private def getTypes(node: Node): Set[MorphBaseClassMapping] =
+    private def getTypes(node: Node): Set[R2RMLTriplesMap] =
         this.mapInferredTypes.getOrElse(node, Set.empty).toSet
 
-    private def inferByURI(uri: String): Set[MorphBaseClassMapping] =
+    private def inferByURI(uri: String): Set[R2RMLTriplesMap] =
         this.mappingDocument.classMappings.filter(_.isPossibleInstance(uri)).toSet
 
     def printInferredTypes(): String = {

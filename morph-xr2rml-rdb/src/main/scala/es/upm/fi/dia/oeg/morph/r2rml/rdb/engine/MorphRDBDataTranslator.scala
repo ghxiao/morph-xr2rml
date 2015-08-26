@@ -22,16 +22,12 @@ import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
@@ -53,9 +49,9 @@ class MorphRDBDataTranslator(
 
     override val logger = Logger.getLogger(this.getClass().getName())
 
-    override def generateRDFTriples(cm: MorphBaseClassMapping) = {
+    override def generateRDFTriples(cm: R2RMLTriplesMap) = {
         try {
-            val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
+            val triplesMap = cm
 
             val query = this.unfolder.unfoldConceptMapping(triplesMap)
             if (!query.isSqlQuery)
@@ -77,7 +73,7 @@ class MorphRDBDataTranslator(
         }
     }
 
-    private def generateRDFTriples(cm: MorphBaseClassMapping, iQuery: IQuery): Unit = {
+    private def generateRDFTriples(cm: R2RMLTriplesMap, iQuery: IQuery): Unit = {
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         val logicalTable = triplesMap.getLogicalSource().asInstanceOf[xR2RMLLogicalSource]
         val sm = triplesMap.subjectMap
@@ -324,12 +320,12 @@ class MorphRDBDataTranslator(
         rows.close();
     }
 
-    def translateData(triplesMap: MorphBaseClassMapping): Unit = {
+    def translateData(triplesMap: R2RMLTriplesMap): Unit = {
         val query = this.unfolder.unfoldConceptMapping(triplesMap)
         this.generateRDFTriples(triplesMap, query.concreteQuery.asInstanceOf[IQuery])
     }
 
-    def translateData(triplesMaps: Iterable[MorphBaseClassMapping]): Unit = {
+    def translateData(triplesMaps: Iterable[R2RMLTriplesMap]): Unit = {
         for (triplesMap <- triplesMaps) {
             try {
                 this.translateData(triplesMap)
@@ -345,7 +341,7 @@ class MorphRDBDataTranslator(
         }
     }
 
-    def translateData(mappingDocument: MorphBaseMappingDocument): Unit = {
+    def translateData(mappingDocument: R2RMLMappingDocument): Unit = {
         val conn = this.connection
 
         val triplesMaps = mappingDocument.classMappings

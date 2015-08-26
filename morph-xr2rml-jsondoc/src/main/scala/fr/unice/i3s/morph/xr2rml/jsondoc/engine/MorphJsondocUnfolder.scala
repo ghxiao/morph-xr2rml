@@ -1,7 +1,5 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
-import java.util.Collection
-
 import org.apache.log4j.Logger
 
 import es.upm.fi.dia.oeg.morph.base.Constants
@@ -9,13 +7,7 @@ import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
@@ -33,7 +25,7 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
      * @return GenericQuery instance corresponding to the query provided in the logical source
      */
     @throws[MorphException]
-    override def unfoldConceptMapping(cm: MorphBaseClassMapping): GenericQuery = {
+    override def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         if (logger.isDebugEnabled()) logger.debug("Unfolding triples map " + triplesMap.toString)

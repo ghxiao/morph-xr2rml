@@ -16,11 +16,11 @@ import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 abstract class MorphBaseDataTranslator(
-        val md: MorphBaseMappingDocument,
+        val md: R2RMLMappingDocument,
         val materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
         val dataSourceReader: MorphBaseDataSourceReader,
@@ -31,13 +31,13 @@ abstract class MorphBaseDataTranslator(
         properties: MorphProperties) {
 
     val logger = Logger.getLogger(this.getClass().getName());
-    
+
     /**
      * Generate triples in the current model of the data materializer, based
      * on the current triples map: this consists in calculating the query, running it
      * against the database, translating results in RDF terms and making the triples.
      */
-    def generateRDFTriples(triplesMap: MorphBaseClassMapping)
+    def generateRDFTriples(triplesMap: R2RMLTriplesMap)
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

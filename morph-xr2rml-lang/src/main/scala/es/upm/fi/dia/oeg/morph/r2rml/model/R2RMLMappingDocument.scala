@@ -18,15 +18,23 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 
-class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
-        extends MorphBaseMappingDocument(classMappings) {
+class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
 
-    override val logger = Logger.getLogger(this.getClass());
+    var dbMetaData: Option[MorphDatabaseMetaData] = None;
+
+    var id: String = null;
+
+    var mappingDocumentPrefixMap: Map[String, String] = Map.empty;
+
+    var mappingDocumentPath: String = null;
+
+    val logger = Logger.getLogger(this.getClass());
+
+    def getPropertyMappingsByPropertyURI(propertyURI: String): Iterable[R2RMLPredicateObjectMap] = {
+        this.classMappings.map(cm => cm.getPropertyMappings(propertyURI)).flatten
+    }
 
     private def buildMetaData(conn: GenericConnection, databaseName: String, databaseType: String) = {
         if (conn.isRelationalDB) {
@@ -40,11 +48,19 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         }
     }
 
+    def getClassMappingByPropertyURIs(propertyURIs: Iterable[String]): Iterable[R2RMLTriplesMap] =
+        this.classMappings.filter(cm =>
+            propertyURIs.toSet.subsetOf(cm.predicateObjectMaps.flatMap(_.getMappedPredicateNames).toSet)
+        )
+
+    def getClassMappingsByClassURI(classURI: String) =
+        this.classMappings.filter(_.getMappedClassURIs.exists(_.equals(classURI)))
+
     /**
      * Find the list of predicates that are used in all PredicateObjectMaps of all TriplesMaps of the document
      * @return a list of predicate names
      */
-    override def getMappedProperties(): Iterable[String] = {
+    def getMappedProperties(): Iterable[String] = {
         val cms = this.classMappings.toList;
         val resultAux = cms.map(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap];
@@ -89,7 +105,7 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         }
     }
 
-    override def getPossibleRange(predicateURI: String): Iterable[MorphBaseClassMapping] = {
+    def getPossibleRange(predicateURI: String): Iterable[R2RMLTriplesMap] = {
         val pms = this.getPropertyMappingsByPropertyURI(predicateURI).toList;
         val resultAux = if (pms != null) {
             pms.map(pm => {
@@ -105,7 +121,7 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         resultInSet
     }
 
-    override def getPossibleRange(predicateURI: String, cm: MorphBaseClassMapping): Iterable[MorphBaseClassMapping] = {
+    def getPossibleRange(predicateURI: String, cm: R2RMLTriplesMap): Iterable[R2RMLTriplesMap] = {
         val pms = cm.getPropertyMappings(predicateURI);
         val result = if (pms != null) {
             pms.toList.map(pm => {
@@ -121,14 +137,14 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         resultInSet;
     }
 
-    override def getPossibleRange(pm: MorphBasePropertyMapping): Iterable[MorphBaseClassMapping] = {
+    def getPossibleRange(pm: R2RMLPredicateObjectMap): Iterable[R2RMLTriplesMap] = {
 
         val pom = pm.asInstanceOf[R2RMLPredicateObjectMap];
         val om = pom.getObjectMap(0);
         val rom = pom.getRefObjectMap(0);
         val cms = this.classMappings
 
-        val result: Iterable[MorphBaseClassMapping] = if (om != null && rom == null) {
+        val result: Iterable[R2RMLTriplesMap] = if (om != null && rom == null) {
             val inferredTermType = om.inferTermType;
             if (Constants.R2RML_IRI_URI.equals(inferredTermType)) {
                 if (cms != null) {
@@ -184,14 +200,14 @@ class R2RMLMappingDocument(classMappings: Iterable[R2RMLTriplesMap])
         resultInSet
     }
 
-    def getClassMappingsByInstanceTemplate(templateValue: String): Iterable[MorphBaseClassMapping] = {
+    def getClassMappingsByInstanceTemplate(templateValue: String): Iterable[R2RMLTriplesMap] = {
         this.classMappings.filter(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap]
             tm.subjectMap.templateString.startsWith(templateValue)
         })
     }
 
-    def getClassMappingsByInstanceURI(instanceURI: String): Iterable[MorphBaseClassMapping] = {
+    def getClassMappingsByInstanceURI(instanceURI: String): Iterable[R2RMLTriplesMap] = {
         this.classMappings.filter(cm => {
             val possibleInstance = cm.isPossibleInstance(instanceURI)
             possibleInstance

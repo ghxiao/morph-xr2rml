@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asScalaBuffer
 
 import org.apache.log4j.Logger
 
@@ -9,7 +9,7 @@ import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.rdf.model.Resource
 import com.hp.hpl.jena.util.FileManager
 
-class R2RMLMappingDocument(mappingFile: String) {
+class R2RMLMapping(mappingFile: String) {
     val logger = Logger.getLogger(this.getClass());
 
     val XSDIntegerURI = XSDDatatype.XSDinteger.getURI();

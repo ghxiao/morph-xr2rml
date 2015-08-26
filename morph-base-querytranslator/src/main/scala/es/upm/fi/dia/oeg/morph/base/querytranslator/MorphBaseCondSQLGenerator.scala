@@ -1,31 +1,34 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asJavaCollection
+import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
-import org.apache.log4j.Logger
-import Zql.ZConstant
-import Zql.ZExp
-import Zql.ZExpression
-import Zql.ZSelectItem
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
+
+import Zql.ZConstant
+import Zql.ZExp
+import Zql.ZExpression
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphTriple
 import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.base.model.MorphBasePropertyMapping
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseClassMapping
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
-abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:MorphBaseUnfolder) {
+abstract class MorphBaseCondSQLGenerator(md:R2RMLMappingDocument, unfolder:MorphBaseUnfolder) {
 	val logger = Logger.getLogger(this.getClass().getName());
 	//val dbType = md.configurationProperties.databaseType;
 		
 	def  genCondSQL(tp:Triple, alphaResult:MorphAlphaResult
-	    , betaGenerator:MorphBaseBetaGenerator, cm:MorphBaseClassMapping
+	    , betaGenerator:MorphBaseBetaGenerator, cm:R2RMLTriplesMap
 	    ,  predicateURI:String, mapVarNotNull:Map[Node, Boolean]) : MorphCondSQLResult =  {
 
 		val condSQLSubject = this.genCondSQLSubject(tp, alphaResult, betaGenerator, cm);
@@ -57,7 +60,7 @@ abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:M
 	}
 
 	def genCondSQLPredicateObject(tp:Triple, alphaResult:MorphAlphaResult 
-	    , betaGenerator:MorphBaseBetaGenerator, cm:MorphBaseClassMapping
+	    , betaGenerator:MorphBaseBetaGenerator, cm:R2RMLTriplesMap
 	    , predicateURI:String, mapVarNotNull:Map[Node, Boolean]) : Iterable[ZExpression] = {
 		
 		//var exps : Set[ZExpression] = Set.empty;
@@ -261,7 +264,7 @@ abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:M
 
 
 	def genCondSQLSubject(tp:Triple , alphaResult:MorphAlphaResult, betaGenerator:MorphBaseBetaGenerator 
-	    , cm:MorphBaseClassMapping ) : ZExpression = {
+	    , cm:R2RMLTriplesMap ) : ZExpression = {
 		
 		val subject = tp.getSubject();
 		val betaSubjectSelectItems = betaGenerator.calculateBetaSubject(tp, cm, alphaResult);
@@ -305,10 +308,10 @@ abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:M
 		result1;
 	}
 
-	def genCondSQLSubjectURI(tpSubject:Node , alphaResult:MorphAlphaResult, cm:MorphBaseClassMapping) : ZExpression;
+	def genCondSQLSubjectURI(tpSubject:Node , alphaResult:MorphAlphaResult, cm:R2RMLTriplesMap) : ZExpression;
 
 	def  genCondSQLSTG(stg:List[Triple], alphaResult:MorphAlphaResult , betaGenerator:MorphBaseBetaGenerator 
-			, cm:MorphBaseClassMapping, mapVarNotNull:Map[Node, Boolean] ) : MorphCondSQLResult = {
+			, cm:R2RMLTriplesMap, mapVarNotNull:Map[Node, Boolean] ) : MorphCondSQLResult = {
 
 		//var exps : Set[ZExpression] = Set.empty;
 		val firstTriple = stg.get(0);
@@ -380,7 +383,7 @@ abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:M
 	}
 
 	private def genCondSQL(tp1:Triple , tp2:Triple ,alphaResult:MorphAlphaResult 
-	    , betaGenerator:MorphBaseBetaGenerator , cm:MorphBaseClassMapping ) : ZExpression = {
+	    , betaGenerator:MorphBaseBetaGenerator , cm:R2RMLTriplesMap ) : ZExpression = {
 		var exps : Set[ZExpression] = Set.empty;
 
 		val tp1Subject = tp1.getSubject();
@@ -469,6 +472,6 @@ abstract class MorphBaseCondSQLGenerator(md:MorphBaseMappingDocument, unfolder:M
 	}
 
 	def genCondSQLPredicateObject(tp:Triple ,alphaResult:MorphAlphaResult , betaGenerator:MorphBaseBetaGenerator 
-	    ,cm:MorphBaseClassMapping , pm:MorphBasePropertyMapping ) : ZExpression 
+	    ,cm:R2RMLTriplesMap , pm:R2RMLPredicateObjectMap ) : ZExpression 
 	
 }

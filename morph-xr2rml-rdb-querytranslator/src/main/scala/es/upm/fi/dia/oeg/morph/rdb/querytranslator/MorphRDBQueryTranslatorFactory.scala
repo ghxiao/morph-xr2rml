@@ -6,7 +6,6 @@ import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslatorFactory
-import es.upm.fi.dia.oeg.morph.base.model.MorphBaseMappingDocument
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseBetaGenerator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseCondSQLGenerator
@@ -18,12 +17,12 @@ import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
 class MorphRDBQueryTranslatorFactory extends IQueryTranslatorFactory {
 
     def createQueryTranslator(
-        abstractMappingDocument: MorphBaseMappingDocument,
+        abstractMappingDocument: R2RMLMappingDocument,
         properties: MorphProperties): IQueryTranslator = {
         this.createQueryTranslator(abstractMappingDocument, null, properties);
     }
 
-    def createQueryTranslator(abstractMappingDocument: MorphBaseMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
+    def createQueryTranslator(abstractMappingDocument: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
         val md = abstractMappingDocument.asInstanceOf[R2RMLMappingDocument];
         val unfolder = new MorphRDBUnfolder(md, properties);
 

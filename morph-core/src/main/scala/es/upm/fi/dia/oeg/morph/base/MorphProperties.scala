@@ -1,9 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import java.util.Properties
 import java.io.File
 import org.apache.log4j.Logger
-import java.sql.Connection
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException

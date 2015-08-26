@@ -3,34 +3,21 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<artifactId>morph-xr2rml</artifactId>
 		<groupId>fr.unice.i3s</groupId>
+		<artifactId>morph-xr2rml</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>morph-xr2rml-jsondoc</artifactId>
 	<name>${project.artifactId}</name>
+	<packaging>jar</packaging>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>fr.unice.i3s</groupId>
-			<artifactId>morph-xr2rml-lang</artifactId>
+			<artifactId>morph-base</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
-
-		<dependency>
-			<groupId>org.mongodb</groupId>
-			<artifactId>mongo-java-driver</artifactId>
-			<version>2.12.4</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jongo</groupId>
-			<artifactId>jongo</artifactId>
-			<version>1.2</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>
