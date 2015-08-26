@@ -27,9 +27,8 @@ class MorphBaseRunner(
         dataTranslator: Option[MorphBaseDataTranslator],
         val queryTranslator: Option[IQueryTranslator],
         val queryResultTranslator: Option[AbstractQueryResultTranslator],
-        var outputStream: Writer) {
-
-    var sparqlQuery: Option[Query] = None
+        var outputStream: Writer,
+        var sparqlQuery: Option[Query]) {
 
     val logger = Logger.getLogger(this.getClass());
 

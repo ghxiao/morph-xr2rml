@@ -118,13 +118,8 @@ object Constants {
     
     val QUERY_TRANSLATOR_FACTORY_CLASSNAME = "querytranslatorfactory.class.name";
     val QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslatorFactory";
-    val QUERY_RESULT_TRANSLATOR_CLASSNAME = "queryresulttranslator.class.name";
-    val QUERY_RESULT_TRANSLATOR_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.base.querytranslator.engine.DefaultQueryResultTranslatorFactory";
 
     val RUNNER_FACTORY_CLASSNAME = "runner_factory.class.name";
-    val DATASOURCE_READER_CLASSNAME = "datasourcereader.class.name";
-    val QUERY_RESULT_WRITER_FACTORY_CLASSNAME = "queryresultwriterfactory.class.name";
-    val QUERY_RESULT_WRITER_FACTORY_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.base.querytranslator.engine.XMLQueryResultWriterFactory";
 
     val QUERY_RESULT_XMLWRITER_OUTPUT_DEFAULT = "output.rdf.xml";
     val QUERY_OPTIMIZER_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.obdi.core.engine.QueryTranslationOptimizer";

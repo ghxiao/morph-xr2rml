@@ -22,49 +22,6 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
 
     override val logger = Logger.getLogger(this.getClass().getName())
 
-    override def createRunner(
-        mappingDocument: R2RMLMappingDocument,
-        unfolder: MorphBaseUnfolder,
-        dataTranslator: Option[MorphBaseDataTranslator],
-        queryTranslator: Option[IQueryTranslator],
-        resultProcessor: Option[AbstractQueryResultTranslator],
-        outputStream: Writer): MorphBaseRunner = {
-
-        new MorphBaseRunner(
-            mappingDocument.asInstanceOf[R2RMLMappingDocument],
-            unfolder.asInstanceOf[MorphJsondocUnfolder],
-            dataTranslator.asInstanceOf[Option[MorphJsondocDataTranslator]],
-            queryTranslator,
-            resultProcessor,
-            outputStream)
-    }
-
-    override def readMappingDocumentFile(mappingDocumentFile: String, props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
-        val mappingDocument = R2RMLMappingDocument(mappingDocumentFile, props, connection);
-        mappingDocument
-    }
-
-    override def createUnfolder(md: R2RMLMappingDocument, props: MorphProperties): MorphJsondocUnfolder = {
-        val unfolder = new MorphJsondocUnfolder(md.asInstanceOf[R2RMLMappingDocument], props);
-        unfolder.dbType = props.databaseType;
-        unfolder;
-    }
-
-    override def createDataTranslator(
-        mappingDocument: R2RMLMappingDocument,
-        materializer: MorphBaseMaterializer,
-        unfolder: MorphBaseUnfolder,
-        dataSourceReader: MorphBaseDataSourceReader,
-        connection: GenericConnection,
-        properties: MorphProperties): MorphBaseDataTranslator = {
-        new MorphJsondocDataTranslator(
-            mappingDocument.asInstanceOf[R2RMLMappingDocument],
-            materializer,
-            unfolder.asInstanceOf[MorphJsondocUnfolder],
-            null, // dataSourceReader.asInstanceOf[MorphJsondocDataSourceReader]: unused in data materialization
-            connection, properties);
-    }
-
     /**
      * Return a valid connection to the database or raises a run time exception if anything goes wrong
      */
@@ -82,4 +39,36 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
         }
         cnx
     }
+
+    override def createUnfolder(props: MorphProperties, md: R2RMLMappingDocument): MorphJsondocUnfolder = {
+        val unfolder = new MorphJsondocUnfolder(md.asInstanceOf[R2RMLMappingDocument], props);
+        unfolder.dbType = props.databaseType;
+        unfolder;
+    }
+
+    override def createDataSourceReader(
+        properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader = { null }
+
+    override def createDataTranslator(
+        mappingDocument: R2RMLMappingDocument,
+        materializer: MorphBaseMaterializer,
+        unfolder: MorphBaseUnfolder,
+        dataSourceReader: MorphBaseDataSourceReader,
+        connection: GenericConnection,
+        properties: MorphProperties): MorphBaseDataTranslator = {
+
+        new MorphJsondocDataTranslator(
+            mappingDocument, materializer, unfolder.asInstanceOf[MorphJsondocUnfolder], dataSourceReader, connection, properties);
+    }
+
+    override def createQueryTranslator(
+        properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator = { null }
+
+    override def createQueryResultTranslator(
+        properties: MorphProperties,
+        md: R2RMLMappingDocument,
+        connection: GenericConnection,
+        dataSourceReader: MorphBaseDataSourceReader,
+        queryTranslator: Option[IQueryTranslator],
+        outputStream: Writer): Option[AbstractQueryResultTranslator] = { None }
 }

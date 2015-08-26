@@ -25,9 +25,7 @@ import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
 
 class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: Boolean)
         extends Rewrite {
-    def logger = Logger.getLogger("MorphQueryRewriter");
-    //private Map<Node, Set<AbstractConceptMapping>> mapInferredTypes;
-    //	var reorderSTG = false;
+    def logger = Logger.getLogger(this.getClass());
 
     def rewrite(op: Op): Op = {
         val result: Op = op match {
@@ -53,12 +51,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
 
                 val tfc = new TransformFilterConjunction();
                 Optimize.apply("test", tfc, opFilter);
-
-                //			Op op2 = null;
-                //			if(subOp instanceof OpBGP) {
-                //				BasicPattern basicPattern = ((OpBGP) subOp).getPattern();
-                //				op2 = TransformFilterPlacement.transform(exprs, basicPattern);
-                //			}
                 val subOpRewritten = this.rewrite(subOp);
                 OpFilter.filter(exprs, subOpRewritten);
             }
@@ -86,14 +78,8 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                 op;
             }
         }
-
         result;
     }
-
-    //	public void setMapInferredTypes(
-    //			Map<Node, Set<AbstractConceptMapping>> mapInferredTypes) {
-    //		this.mapInferredTypes = mapInferredTypes;
-    //	}
 
     def reorderSTGs(triples: List[Triple]): List[Triple] = {
 
@@ -140,20 +126,12 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
             val triplesSubjects = SPARQLUtility.getSubjects(triples).distinct;
             if (mapNodeTableSize != null && mapNodeTableSize.size() == triplesSubjects.size()) {
 
-                //val mapNodeTableSizeResorted = QueryTranslatorUtility.sortByValue(mapNodeTableSize);
-                //			  	val nodeTableSizeResorted = mapNodeTableSizeResorted.keySet();
-                //				for(node <- nodeTableSizeResorted) {
-                //					result = result ::: mapNodeTriples.get(node);
-                //				}
-
                 val mapNodeTableSizeResorted = mapNodeTableSize.toList sortBy { _._2 };
                 for (tuple <- mapNodeTableSizeResorted) {
                     result = result ::: mapNodeTriples(tuple._1)
                 }
-
-            } else {
+            } else
                 result = triples;
-            }
         }
 
         result;
@@ -186,8 +164,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                     val leftChildTriples = leftChildRewrittenBGP.getPattern().getList().toList;
                     val leftChildSubjects = SPARQLUtility.getSubjects(leftChildTriples);
                     val leftChildObjects = SPARQLUtility.getObjects(leftChildTriples);
-                    //					val needsPhantomTP = leftChildObjects.contains(rightTpSubject) && 
-                    //							!leftChildSubjects.contains(rightTpSubject) ;
                     val needsPhantomTP = !leftChildSubjects.contains(rightTpSubject);
 
                     if (needsPhantomTP) {
@@ -209,7 +185,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                                 case e: Exception => {
                                     val errorMesssage = "error occured while reodering STG.";
                                     logger.warn(errorMesssage);
-                                    //result = bgpGrouped;
                                     val basicPattern = BasicPattern.wrap(triplesGrouped);
                                     new OpBGP(basicPattern);
                                 }
@@ -225,8 +200,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                             val rightEtp = new MorphTriple(rightTpSubject, rightTpPredicate, rightTpObject, true);
                             val newLeftChildRewrittenTPList = leftChildRewrittenTPList ::: List(rightEtp);
 
-                            //val bgpGrouped = SPARQLUtility.groupBGPBySubject(leftChildRewrittenBGP);
-                            //val triplesGrouped = bgpGrouped.getPattern().getList().toList;
                             val bgpGrouped = SPARQLUtility.groupTriplesBySubject(newLeftChildRewrittenTPList);
                             val triplesGrouped = bgpGrouped.toList;
 
@@ -246,8 +219,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                         } else {
                             OpLeftJoin.create(leftChildRewritten, rightChildRewritten, exprList);
                         }
-                        //List<Triple> leftChildTriplesList = leftChildRewrittenBGP.getPattern().getList();
-                        //SortedSet<Triple> leftChildTriplesListSorted = new TreeSet<Triple>(leftChildTriplesList);
                     }
                 } else {
                     OpLeftJoin.create(leftChildRewritten, rightChildRewritten, exprList);
@@ -273,7 +244,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                 BasicPattern.wrap(triplesGrouped);
             }
         }
-
         val result = new OpBGP(basicPattern);
         result;
     }
@@ -287,9 +257,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
             if (leftChildRewritten.isInstanceOf[OpBGP] && rightChildRewritten.isInstanceOf[OpBGP]) {
                 val leftChildRewrittenBGP = leftChildRewritten.asInstanceOf[OpBGP];
                 val rightChildRewrittenBGP = rightChildRewritten.asInstanceOf[OpBGP];
-                //					leftChildRewrittenBGP.getPattern().addAll(rightChildRewrittenBGP.getPattern());
-                //					result = leftChildRewrittenBGP;
-
                 val leftChildRewrittenBGPTriplesList = leftChildRewrittenBGP.getPattern().getList().toList;
                 val rightChildRewrittenBGPTriplesList = rightChildRewrittenBGP.getPattern().getList().toList;
                 val newTriplesList = leftChildRewrittenBGPTriplesList ::: rightChildRewrittenBGPTriplesList;
@@ -300,7 +267,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
             }
         }
         result;
-
     }
 }
 

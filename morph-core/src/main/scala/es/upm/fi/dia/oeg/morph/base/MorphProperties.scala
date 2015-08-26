@@ -23,8 +23,6 @@ class MorphProperties extends java.util.Properties {
 
     //query translator
     var queryTranslatorFactoryClassName: String = null;
-    var queryEvaluatorClassName: String = null;
-    var queryResultWriterFactoryClassName: String = null;
 
     //query optimizer
     var reorderSTG = true;
@@ -165,12 +163,6 @@ class MorphProperties extends java.util.Properties {
 
         this.queryTranslatorFactoryClassName = this.readString(Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME, null);
         logger.info("QueryTranslatorFactory = " + queryTranslatorFactoryClassName);
-
-        this.queryEvaluatorClassName = this.readString(Constants.DATASOURCE_READER_CLASSNAME, null);
-        logger.info("QueryEvaluator = " + queryEvaluatorClassName);
-
-        this.queryResultWriterFactoryClassName = this.readString(Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME, Constants.QUERY_RESULT_WRITER_FACTORY_CLASSNAME_DEFAULT);
-        logger.info("QueryResultWriterFactory = " + queryResultWriterFactoryClassName);
 
         this.literalRemoveStrangeChars = this.readBoolean(Constants.REMOVE_STRANGE_CHARS_FROM_LITERAL, true);
         logger.info("Remove Strange Chars From Literal Column = " + this.literalRemoveStrangeChars);

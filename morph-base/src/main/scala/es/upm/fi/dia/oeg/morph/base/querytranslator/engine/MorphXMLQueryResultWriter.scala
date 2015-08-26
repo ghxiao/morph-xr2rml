@@ -26,8 +26,6 @@ class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStre
     val xmlDoc = XMLUtility.createNewXMLDocument();
     val resultsElement = xmlDoc.createElement("results");
 
-    //var outputFileName:String = null;
-
     override def initialize() = {}
 
     private def transformToLexical(originalValue: String, pDatatype: Option[String]): String = {
@@ -119,6 +117,7 @@ class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStre
             i = i + 1;
         }
         val status = i + " instance(s) retrieved ";
+        logger.debug("Results: " + this.resultSet)
         logger.info(status);
 
     }

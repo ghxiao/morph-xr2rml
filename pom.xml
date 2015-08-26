@@ -16,7 +16,6 @@
 		<module>morph-xr2rml-jsondoc</module>
 		<module>morph-xr2rml-rdb</module>
 		<module>morph-xr2rml-dist</module>
-		<module>morph-base-querytranslator</module>
 		<module>morph-xr2rml-rdb-querytranslator</module>
 	</modules>
 

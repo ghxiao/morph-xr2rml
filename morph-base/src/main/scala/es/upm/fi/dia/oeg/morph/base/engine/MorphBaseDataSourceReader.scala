@@ -30,18 +30,3 @@ class MorphBaseDataSourceReader() {
         throw new Exception("Operation not supported.")
     }
 }
-
-object MorphBaseDataSourceReader {
-
-    def apply(className: String, connection: GenericConnection, timeout: Int): MorphBaseDataSourceReader = {
-        if (className == null || className.equals("")) {
-            new MorphBaseDataSourceReader()
-        } else {
-            val classInstance = Class.forName(className).newInstance()
-            val reader = classInstance.asInstanceOf[MorphBaseDataSourceReader];
-            reader.setConnection(connection);
-            reader.setTimeout(timeout)
-            reader
-        }
-    }
-}
