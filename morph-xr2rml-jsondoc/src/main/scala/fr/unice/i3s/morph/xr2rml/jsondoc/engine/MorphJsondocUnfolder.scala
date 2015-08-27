@@ -1,7 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.jsondoc.engine
 
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -13,6 +12,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
+import Zql.ZExpression
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
+import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 
 class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) {
@@ -55,4 +57,12 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
         }
         query
     }
+
+    override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = { null }
+
+    def unfoldJoinConditions(
+        joinConditions: Set[R2RMLJoinCondition],
+        childTableAlias: String,
+        joinQueryAlias: String,
+        dbType: String): ZExpression = { null }
 }

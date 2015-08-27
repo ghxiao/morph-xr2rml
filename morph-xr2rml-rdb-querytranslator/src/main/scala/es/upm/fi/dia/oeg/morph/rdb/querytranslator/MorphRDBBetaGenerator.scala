@@ -1,7 +1,6 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import com.hp.hpl.jena.graph.Triple
-
 import Zql.ZConstant
 import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
@@ -11,9 +10,9 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 
-class MorphRDBBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolder)
+class MorphRDBBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
         extends MorphBaseBetaGenerator(md, unfolder) {
 
     override def calculateBetaObject(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, alphaResult: MorphAlphaResult, pm: R2RMLPredicateObjectMap): List[ZSelectItem] = {

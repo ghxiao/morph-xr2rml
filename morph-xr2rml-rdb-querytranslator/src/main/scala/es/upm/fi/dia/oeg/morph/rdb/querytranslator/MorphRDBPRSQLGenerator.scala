@@ -22,9 +22,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
 
-class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolder)
+class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
         extends MorphBasePRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
     override val logger = Logger.getLogger("MorphPRSQLGenerator");
 

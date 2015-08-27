@@ -3,15 +3,11 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
-
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
-
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -32,6 +28,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -43,43 +40,11 @@ class MorphRDBDataTranslator(
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties) {
 
     if (!genCnx.isRelationalDB)
-        throw new Exception("Database connection type does not mathc relational database")
+        throw new MorphException("Database connection type does not match relational database")
 
     private val connection = genCnx.concreteCnx.asInstanceOf[Connection]
 
     override val logger = Logger.getLogger(this.getClass().getName())
-
-    override def generateRDFTriples(cm: R2RMLTriplesMap) = {
-        try {
-            val triplesMap = cm
-
-            val query = this.unfolder.unfoldConceptMapping(triplesMap)
-            if (!query.isSqlQuery)
-                throw new Exception("Unsupported query type: should be an SQL query")
-            val logicalTable = triplesMap.logicalSource
-            val sm = triplesMap.subjectMap
-            val poms = triplesMap.predicateObjectMaps
-
-            this.generateRDFTriples(logicalTable, sm, poms, query.concreteQuery.asInstanceOf[IQuery])
-        } catch {
-            case e: MorphException => {
-                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
-                e.printStackTrace()
-            }
-            case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private def generateRDFTriples(cm: R2RMLTriplesMap, iQuery: IQuery): Unit = {
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
-        val logicalTable = triplesMap.getLogicalSource().asInstanceOf[xR2RMLLogicalSource]
-        val sm = triplesMap.subjectMap
-        val poms = triplesMap.predicateObjectMaps
-        this.generateRDFTriples(logicalTable, sm, poms, iQuery)
-    }
 
     /**
      * Query the database and build triples from the result. For each row of the result set,
@@ -90,7 +55,7 @@ class MorphRDBDataTranslator(
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
     @throws[MorphException]
-    private def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], iQuery: IQuery) = {
+    override def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
 
         logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {
@@ -100,6 +65,7 @@ class MorphRDBDataTranslator(
         }
 
         // Run the query against the database
+        val iQuery = query.concreteQuery.asInstanceOf[IQuery]
         val rows = DBUtility.execute(this.connection, iQuery.toString(), this.properties.databaseTimeout);
         // logger.trace(DBUtility.resultSetToString(rows)) // debug only, it consumes the cursor and can't be reset afterwards
 
@@ -320,35 +286,6 @@ class MorphRDBDataTranslator(
         rows.close();
     }
 
-    def translateData(triplesMap: R2RMLTriplesMap): Unit = {
-        val query = this.unfolder.unfoldConceptMapping(triplesMap)
-        this.generateRDFTriples(triplesMap, query.concreteQuery.asInstanceOf[IQuery])
-    }
-
-    def translateData(triplesMaps: Iterable[R2RMLTriplesMap]): Unit = {
-        for (triplesMap <- triplesMaps) {
-            try {
-                this.translateData(triplesMap)
-                null
-            } catch {
-                case e: Exception => {
-                    logger.error("error while translating data of triplesMap : " + triplesMap);
-                    if (e.getMessage() != null)
-                        logger.error("error message = " + e.getMessage());
-                    throw new Exception(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    def translateData(mappingDocument: R2RMLMappingDocument): Unit = {
-        val conn = this.connection
-
-        val triplesMaps = mappingDocument.classMappings
-        if (triplesMaps != null) {
-            this.translateData(triplesMaps)
-        }
-    }
 
     /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:

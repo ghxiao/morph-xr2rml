@@ -94,13 +94,13 @@ abstract class MorphBaseRunnerFactory {
         runner;
     }
 
-    def createConnection(configurationProperties: MorphProperties): GenericConnection;
+    def createConnection(configurationProperties: MorphProperties): GenericConnection
 
-    def createUnfolder(properties: MorphProperties, md: R2RMLMappingDocument): MorphBaseUnfolder;
+    def createUnfolder(properties: MorphProperties, md: R2RMLMappingDocument): MorphBaseUnfolder
 
-    def createDataSourceReader(properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader;
+    def createDataSourceReader(properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader
 
-    def createDataTranslator(md: R2RMLMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, dataSourceReader: MorphBaseDataSourceReader, connection: GenericConnection, properties: MorphProperties): MorphBaseDataTranslator;
+    def createDataTranslator(md: R2RMLMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, dataSourceReader: MorphBaseDataSourceReader, connection: GenericConnection, properties: MorphProperties): MorphBaseDataTranslator
 
     def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator
 

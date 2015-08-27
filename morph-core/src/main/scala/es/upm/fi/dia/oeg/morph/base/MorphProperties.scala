@@ -21,9 +21,6 @@ class MorphProperties extends java.util.Properties {
     var databaseType: String = null;
     var runnerFactoryClassName: String = null;
 
-    //query translator
-    var queryTranslatorFactoryClassName: String = null;
-
     //query optimizer
     var reorderSTG = true;
     var selfJoinElimination = true;
@@ -160,9 +157,6 @@ class MorphProperties extends java.util.Properties {
             System.exit(-1)
         }
         logger.info("RunnerFactory = " + runnerFactoryClassName);
-
-        this.queryTranslatorFactoryClassName = this.readString(Constants.QUERY_TRANSLATOR_FACTORY_CLASSNAME, null);
-        logger.info("QueryTranslatorFactory = " + queryTranslatorFactoryClassName);
 
         this.literalRemoveStrangeChars = this.readBoolean(Constants.REMOVE_STRANGE_CHARS_FROM_LITERAL, true);
         logger.info("Remove Strange Chars From Literal Column = " + this.literalRemoveStrangeChars);

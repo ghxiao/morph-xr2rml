@@ -116,9 +116,6 @@ object Constants {
     val SUBQUERY_AS_VIEW = "querytranslator.subqueryasview";
     val CACHE_QUERY_RESULT = "querytranslator.cachequeryresult";
     
-    val QUERY_TRANSLATOR_FACTORY_CLASSNAME = "querytranslatorfactory.class.name";
-    val QUERY_TRANSLATOR_FACTORY_CLASSNAME_DEFAULT = "es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslatorFactory";
-
     val RUNNER_FACTORY_CLASSNAME = "runner_factory.class.name";
 
     val QUERY_RESULT_XMLWRITER_OUTPUT_DEFAULT = "output.rdf.xml";

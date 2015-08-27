@@ -1,15 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import scala.collection.JavaConversions.asJavaIterator
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
@@ -18,11 +15,15 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 abstract class MorphBaseDataTranslator(
         val md: R2RMLMappingDocument,
         val materializer: MorphBaseMaterializer,
-        unfolder: MorphBaseUnfolder,
+        val unfolder: MorphBaseUnfolder,
         val dataSourceReader: MorphBaseDataSourceReader,
 
         /** The connection object can be anything: java.sql.Connection for an RDB, MongoDB context etc. */
@@ -33,11 +34,58 @@ abstract class MorphBaseDataTranslator(
     val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Generate triples in the current model of the data materializer, based
-     * on the current triples map: this consists in calculating the query, running it
+     * Loop on all triples maps of the mapping graph and generate triples in the current model of the data materializer, based
+     * on the triples map: this consists in calculating the query, running it
      * against the database, translating results in RDF terms and making the triples.
      */
-    def generateRDFTriples(triplesMap: R2RMLTriplesMap)
+    def translateData(mappingDocument: R2RMLMappingDocument): Unit = {
+        val triplesMaps = mappingDocument.classMappings
+        for (triplesMap <- triplesMaps) {
+            logger.info("===============================================================================");
+            logger.info("Starting data materialization of triples map " + triplesMap.id);
+            try {
+                this.generateRDFTriples(triplesMap)
+                null
+            } catch {
+                case e: Exception => {
+                    logger.error("error while translating data of triplesMap : " + triplesMap);
+                    if (e.getMessage() != null)
+                        logger.error("error message = " + e.getMessage());
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    /**
+     * Generate triples in the current model of the data materializer, based
+     * on the triples map: this consists in calculating the query, running it
+     * against the database, translating results in RDF terms and making the triples.
+     */
+    def generateRDFTriples(cm: R2RMLTriplesMap): Unit = {
+        try {
+            val query = this.unfolder.unfoldConceptMapping(cm);
+            val logicalTable = cm.logicalSource;
+            val sm = cm.subjectMap;
+            val poms = cm.predicateObjectMaps;
+
+            this.generateRDFTriples(logicalTable, sm, poms, query);
+        } catch {
+            case e: MorphException => {
+                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
+                e.printStackTrace()
+            }
+            case e: Exception => {
+                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Query the database and build triples from the result: this is the method where the database-specific query will be done
+     */
+    def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

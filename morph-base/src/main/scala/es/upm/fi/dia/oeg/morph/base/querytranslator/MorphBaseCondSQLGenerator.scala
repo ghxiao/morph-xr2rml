@@ -23,7 +23,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 abstract class MorphBaseCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
     val logger = Logger.getLogger(this.getClass().getName());
-    //val dbType = md.configurationProperties.databaseType;
 
     def genCondSQL(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, cm: R2RMLTriplesMap, predicateURI: String, mapVarNotNull: Map[Node, Boolean]): MorphCondSQLResult = {
 
@@ -41,9 +40,6 @@ abstract class MorphBaseCondSQLGenerator(md: R2RMLMappingDocument, unfolder: Mor
             }
         }
 
-        //val condSQLTP = List(condSQLSubject, condSQLPredicateObject);
-        //val condSQL = MorphSQLUtility.combineExpresions(condSQLTP, Constants.SQL_LOGICAL_OPERATOR_AND);
-        //logger.debug("genCondSQL = " + condSQL);
         new MorphCondSQLResult(List(condSQLSubject), condSQLPredicateObject);
     }
 
@@ -55,9 +51,6 @@ abstract class MorphBaseCondSQLGenerator(md: R2RMLMappingDocument, unfolder: Mor
 
     def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, cm: R2RMLTriplesMap, predicateURI: String, mapVarNotNull: Map[Node, Boolean]): Iterable[ZExpression] = {
 
-        //var exps : Set[ZExpression] = Set.empty;
-
-        //val mapColumnMetaData = cm.getLogicalTable().getColumnsMetaData();
         val tableMetaData = cm.getLogicalSource().tableMetaData;
 
         val isRDFTypeStatement = RDF.`type`.getURI().equals(predicateURI);

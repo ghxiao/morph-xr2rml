@@ -16,10 +16,9 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUtility
+import es.upm.fi.dia.oeg.morph.rdb.MorphRDBUtility
 
-class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolder)
+class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
         extends MorphBaseCondSQLGenerator(md, unfolder: MorphBaseUnfolder) {
     override val logger = Logger.getLogger("MorphCondSQLGenerator");
 

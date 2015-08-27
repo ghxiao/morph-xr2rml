@@ -1,9 +1,7 @@
-package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
+package es.upm.fi.dia.oeg.morph.rdb
 
 import java.io.ByteArrayInputStream
-
 import org.apache.log4j.Logger
-
 import Zql.ZConstant
 import Zql.ZExpression
 import Zql.ZQuery
@@ -16,7 +14,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphRDBUtility {
-
 }
 
 object MorphRDBUtility {

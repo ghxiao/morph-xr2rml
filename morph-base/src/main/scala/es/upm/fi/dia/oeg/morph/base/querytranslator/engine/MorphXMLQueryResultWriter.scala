@@ -1,17 +1,14 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator.engine
 
 import java.io.Writer
-
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseQueryResultWriter
 import es.upm.fi.dia.oeg.morph.base.materializer.XMLUtility
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStream: Writer)
         extends MorphBaseQueryResultWriter(queryTranslator, xmlOutputStream) {
@@ -20,7 +17,7 @@ class MorphXMLQueryResultWriter(queryTranslator: IQueryTranslator, xmlOutputStre
     val logger = Logger.getLogger(this.getClass().getName());
 
     if (queryTranslator == null) {
-        throw new Exception("Query Translator is not set yet!");
+        throw new MorphException("Query Translator is not set yet!");
     }
 
     val xmlDoc = XMLUtility.createNewXMLDocument();

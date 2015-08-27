@@ -35,6 +35,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
+import es.upm.fi.dia.oeg.morph.rdb.MorphRDBUtility
 
 class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) {
@@ -63,7 +64,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * @return instance of SQLFromItem or SQLQuery
      */
     @throws[MorphException]
-    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+    override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
 
         val result = logicalTable.logicalTableType match {
@@ -316,7 +317,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                             }
 
                             // Add a left join clause for columns in join conditions of RefObjectMaps
-                            val onExpression = MorphRDBUnfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType);
+                            val onExpression = this.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType);
                             val joinQuery = new SQLJoinTable(sqlParentLogSrc, Constants.JOINS_TYPE_LEFT, onExpression);
                             result.addFromItem(joinQuery);
                         }
@@ -420,9 +421,6 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             Nil
         result.toList
     }
-}
-
-object MorphRDBUnfolder {
 
     /**
      * Build a set of SQL join conditions like "child = parent" to reflect a RefObjectMap's joins conditions.
@@ -431,7 +429,7 @@ object MorphRDBUnfolder {
      * then no join condition is returned: in that case, the join will have to be computed by the xR2RML processor.
      * But the child and parent columns are then added as select items.
      */
-    def unfoldJoinConditions(
+    override def unfoldJoinConditions(
         joinConditions: Set[R2RMLJoinCondition],
         childTableAlias: String,
         joinQueryAlias: String,

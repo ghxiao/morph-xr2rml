@@ -8,6 +8,10 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import Zql.ZExpression
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
 
 abstract class MorphBaseUnfolder(md: R2RMLMappingDocument, properties: MorphProperties) {
 
@@ -17,4 +21,12 @@ abstract class MorphBaseUnfolder(md: R2RMLMappingDocument, properties: MorphProp
 
     @throws[MorphException]
     def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery;
+    
+    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable;
+    
+    def unfoldJoinConditions(
+        joinConditions: Set[R2RMLJoinCondition],
+        childTableAlias: String,
+        joinQueryAlias: String,
+        dbType: String): ZExpression;
 }

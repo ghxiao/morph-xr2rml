@@ -28,8 +28,6 @@ abstract class MorphBasePRSQLGenerator(md: R2RMLMappingDocument, unfolder: Morph
         val tpPredicate = tp.getPredicate();
         val tpObject = tp.getObject();
 
-        //var prList : List[ZSelectItem ]= Nil;
-
         val selectItemsSubjectsAux = this.genPRSQLSubject(tp, alphaResult, betaGenerator, nameGenerator, cmSubject);
         val selectItemSubjects = if (selectItemsSubjectsAux != null) { selectItemsSubjectsAux.toList }
         else { Nil }

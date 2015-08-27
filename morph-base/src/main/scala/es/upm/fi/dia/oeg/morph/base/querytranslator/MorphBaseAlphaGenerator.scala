@@ -100,5 +100,5 @@ abstract class MorphBaseAlphaGenerator(md: R2RMLMappingDocument, unfolder: Morph
     }
 
     def calculateAlphaPredicateObjectSTG(tp: Triple, cm: R2RMLTriplesMap, tpPredicateURI: String, logicalTableAlias: String): List[(SQLJoinTable, String)];
-
 }
+

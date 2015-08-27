@@ -41,11 +41,16 @@ class MorphBaseRunner(
         var status: String = null;
 
         if (!this.sparqlQuery.isDefined) {
-            // No SPARQL query => materialization mode
+            // RDF Triples materialization
             this.materializeMappingDocuments(mappingDocument);
+
         } else {
-            //Translate SPARQL query into SQL
-            val mapSparqlSql = this.translateSPARQLQueriesIntoSQLQueries(List(sparqlQuery.get));
+            // Translate SPARQL query into SQL
+            val sqlQuery = this.queryTranslator.get.translate(sparqlQuery.get);
+            logger.info("SPARQL Query = \n" + sparqlQuery);
+            logger.info("SQL Query = \n" + sqlQuery);
+
+            val mapSparqlSql = Map((sparqlQuery.get -> sqlQuery))
             this.queryResultTranslator.get.translateResult(mapSparqlSql);
         }
 
@@ -65,33 +70,16 @@ class MorphBaseRunner(
             logger.error(errorMessage);
             throw new MorphException(errorMessage)
         }
-
         val startGeneratingModel = System.currentTimeMillis();
-        val cms = md.classMappings;
-        cms.foreach(cm => {
-            logger.info("===============================================================================");
-            logger.info("Starting data materialization of triples map " + cm.id);
 
-            // Run the query and generate triples
-            this.dataTranslator.get.generateRDFTriples(cm);
-        })
+        // Run the query and generate triples
+        this.dataTranslator.get.translateData(mappingDocument)
 
         // Write the result to the output file
         this.dataTranslator.get.materializer.materialize();
 
         val durationGeneratingModel = (System.currentTimeMillis() - startGeneratingModel);
         logger.info("Data materialization process lasted " + (durationGeneratingModel) + "ms.");
-    }
-
-    private def translateSPARQLQueriesIntoSQLQueries(sparqlQueries: Iterable[Query]): Map[Query, IQuery] = {
-        val sqlQueries = sparqlQueries.map(sparqlQuery => {
-            logger.info("SPARQL Query = \n" + sparqlQuery);
-            val sqlQuery = this.queryTranslator.get.translate(sparqlQuery);
-            logger.info("SQL Query = \n" + sqlQuery);
-            (sparqlQuery -> sqlQuery);
-        })
-
-        sqlQueries.toMap
     }
 }
 

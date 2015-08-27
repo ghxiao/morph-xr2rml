@@ -9,6 +9,8 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
 
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
@@ -17,9 +19,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.r2rml.rdb.engine.MorphRDBUnfolder
 
-class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolder)
+class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
         extends MorphBaseAlphaGenerator(md, unfolder) {
     val databaseType = if (md.dbMetaData.isDefined) { md.dbMetaData.get.dbType; }
     else { Constants.DATABASE_DEFAULT }
@@ -99,8 +100,7 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphRDBUnfolde
                 val joinQueryAlias = sqlParentLogicalTableAuxAlias;
 
                 val joinConditions = refObjectMap.joinConditions;
-                val onExpression = MorphRDBUnfolder.unfoldJoinConditions(
-                    joinConditions, logicalTableAlias, joinQueryAlias, databaseType);
+                val onExpression = unfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, databaseType);
                 if (onExpression != null) {
                     sqlParentLogicalTable.onExpression = onExpression;
                 }

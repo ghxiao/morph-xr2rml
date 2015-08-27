@@ -36,6 +36,9 @@ class MorphJsondocDataTranslator(
 
         extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties) {
 
+    if (!connection.isMongoDB)
+        throw new MorphException("Database connection type does not match MongoDB")
+
     /** Store already executed queries to avoid running them several times. The key of the hashmap is the query string itself. */
     private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
 
@@ -43,28 +46,6 @@ class MorphJsondocDataTranslator(
     private var queries: scala.collection.mutable.Map[String, GenericQuery] = new scala.collection.mutable.HashMap
 
     override val logger = Logger.getLogger(this.getClass().getName());
-
-    override def generateRDFTriples(cm: R2RMLTriplesMap) = {
-        try {
-            val triplesMap = cm.asInstanceOf[R2RMLTriplesMap];
-
-            val query = this.unfolder.unfoldConceptMapping(triplesMap);
-            val logicalTable = triplesMap.logicalSource;
-            val sm = triplesMap.subjectMap;
-            val poms = triplesMap.predicateObjectMaps;
-
-            this.generateRDFTriples(logicalTable, sm, poms, query);
-        } catch {
-            case e: MorphException => {
-                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
-                e.printStackTrace()
-            }
-            case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
-                e.printStackTrace()
-            }
-        }
-    }
 
     /**
      * Query the database and build triples from the result. For each document of the result set:
@@ -74,7 +55,8 @@ class MorphJsondocDataTranslator(
      * and a list of resources representing target graphs mentioned in the predicate-object map.
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
-    private def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
+    @throws[MorphException]
+    override def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit = {
 
         logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {

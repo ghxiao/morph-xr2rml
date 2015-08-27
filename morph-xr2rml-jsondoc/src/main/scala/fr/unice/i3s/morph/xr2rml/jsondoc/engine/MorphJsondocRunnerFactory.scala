@@ -26,7 +26,6 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
      * Return a valid connection to the database or raises a run time exception if anything goes wrong
      */
     override def createConnection(configurationProperties: MorphProperties): GenericConnection = {
-
         if (configurationProperties.noOfDatabase == 0)
             throw new Exception("No database connection parameters found in the configuration.")
 

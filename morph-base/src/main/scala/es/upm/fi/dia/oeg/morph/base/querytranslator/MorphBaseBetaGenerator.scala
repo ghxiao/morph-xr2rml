@@ -25,12 +25,6 @@ abstract class MorphBaseBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphB
     val alphaGenerator: MorphBaseAlphaGenerator = null;
     var owner: MorphBaseQueryTranslator = null;
 
-    //	val databaseType = {
-    //		if(this.owner == null) {null}
-    //		else {this.owner.getDatabaseType();}
-    //	}
-    //val dbType = md.configurationProperties.databaseType;
-
     def calculateBeta(tp: Triple, pos: Constants.MorphPOS.Value, cm: R2RMLTriplesMap, predicateURI: String, alphaResult: MorphAlphaResult): List[ZSelectItem] = {
         val result: List[ZSelectItem] = {
             if (pos == Constants.MorphPOS.sub) {
@@ -72,7 +66,6 @@ abstract class MorphBaseBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphB
                 this.calculateBetaObject(triple, cm, predicateURI, alphaResult, pm).toList;
             }
         }
-
         return betaObjects;
     }
 
