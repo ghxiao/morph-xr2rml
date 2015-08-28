@@ -3,11 +3,8 @@ package es.upm.fi.dia.oeg.morph.base.engine
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.io.Writer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.query.QueryFactory
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -15,6 +12,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
 
 abstract class MorphBaseRunnerFactory {
     val logger = Logger.getLogger(this.getClass());
@@ -49,14 +47,7 @@ abstract class MorphBaseRunnerFactory {
         val dataSourceReader = this.createDataSourceReader(properties, connection);
 
         // Building DATA TRANSLATOR
-        val dataTranslator = try {
-            Some(this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, connection, properties))
-        } catch {
-            case e: Exception => {
-                logger.error("Error building data translator: " + e.getMessage());
-                throw e
-            }
-        }
+        val dataTranslator = this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, connection, properties)
 
         // ---------------------------------------------------------------------------------
         // The Query Translator, Query Result Writer, Result Processor, are only applicable 
@@ -65,22 +56,10 @@ abstract class MorphBaseRunnerFactory {
 
         // Building QUERY TRANSLATOR
         logger.info("Building query translator...");
-        val queryTranslator =
-            try {
-                val qtAux = this.createQueryTranslator(properties, mappingDocument, connection)
-                if (qtAux != null)
-                    Some(qtAux)
-                else None
-            } catch {
-                case e: Exception => {
-                    logger.warn("Error building query translator: " + e.getMessage());
-                    e.printStackTrace()
-                    None
-                }
-            }
+        val queryTranslator = this.createQueryTranslator(properties, mappingDocument, connection)
 
-        // Building QUERY RESULT WRITER and RESULT PROCESSOR
-        val resultProcessor = this.createQueryResultTranslator(properties, mappingDocument, connection, dataSourceReader, queryTranslator, outputStream)
+        // Building RESULT PROCESSOR to translate the SQL result set into a SPARQL result set and serialize it into a file
+        val resultProcessor = this.createQueryResultProcessor(properties, mappingDocument, connection, dataSourceReader, queryTranslator, outputStream)
 
         // ---------------------------------------------------------------------------------
         // Creation of final runner object
@@ -104,13 +83,13 @@ abstract class MorphBaseRunnerFactory {
 
     def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator
 
-    def createQueryResultTranslator(
+    def createQueryResultProcessor(
         properties: MorphProperties,
         md: R2RMLMappingDocument,
         connection: GenericConnection,
         dataSourceReader: MorphBaseDataSourceReader,
-        queryTranslator: Option[IQueryTranslator],
-        outputStream: Writer): Option[AbstractQueryResultTranslator];
+        queryTranslator: IQueryTranslator,
+        outputStream: Writer): MorphBaseQueryResultProcessor;
 
     private def buildMaterializer(configurationProperties: MorphProperties, mappingDocument: R2RMLMappingDocument, outputStream: Writer): MorphBaseMaterializer = {
         val jenaMode = configurationProperties.jenaMode;

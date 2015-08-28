@@ -6,27 +6,19 @@ import java.io.IOException
 import java.io.PrintWriter
 import java.io.Writer
 
-import scala.collection.JavaConversions.asJavaCollection
-import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.query.Query
-import com.hp.hpl.jena.query.QueryFactory
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseRunner(
         mappingDocument: R2RMLMappingDocument,
         unfolder: MorphBaseUnfolder,
-        dataTranslator: Option[MorphBaseDataTranslator],
-        val queryTranslator: Option[IQueryTranslator],
-        val queryResultTranslator: Option[AbstractQueryResultTranslator],
+        dataTranslator: MorphBaseDataTranslator,
+        val queryTranslator: IQueryTranslator,
+        val queryResultProcessor: MorphBaseQueryResultProcessor,
         var outputStream: Writer,
         var sparqlQuery: Option[Query]) {
 
@@ -45,13 +37,24 @@ class MorphBaseRunner(
             this.materializeMappingDocuments(mappingDocument);
 
         } else {
+            if (this.queryTranslator == null) {
+                val errorMessage = "No query translator initialized. Cannot run in query rewriting mode.";
+                logger.fatal(errorMessage);
+                throw new MorphException(errorMessage)
+            }
+            if (this.queryResultProcessor == null) {
+                val errorMessage = "No query result processor initialized. Cannot run in query rewriting mode.";
+                logger.fatal(errorMessage);
+                throw new MorphException(errorMessage)
+            }
+
             // Translate SPARQL query into SQL
-            val sqlQuery = this.queryTranslator.get.translate(sparqlQuery.get);
+            val sqlQuery = this.queryTranslator.translate(sparqlQuery.get);
             logger.info("SPARQL Query = \n" + sparqlQuery);
             logger.info("SQL Query = \n" + sqlQuery);
 
             val mapSparqlSql = Map((sparqlQuery.get -> sqlQuery))
-            this.queryResultTranslator.get.translateResult(mapSparqlSql);
+            this.queryResultProcessor.translateResult(mapSparqlSql);
         }
 
         val end = System.currentTimeMillis();
@@ -65,21 +68,21 @@ class MorphBaseRunner(
      */
     def materializeMappingDocuments(md: R2RMLMappingDocument) {
 
-        if (!this.dataTranslator.isDefined) {
-            val errorMessage = "Data Translator has not been defined yet.";
-            logger.error(errorMessage);
+        if (this.dataTranslator == null) {
+            val errorMessage = "No data translator defined. Cannot run in data materialization.";
+            logger.fatal(errorMessage);
             throw new MorphException(errorMessage)
         }
-        val startGeneratingModel = System.currentTimeMillis();
+        val start = System.currentTimeMillis();
 
         // Run the query and generate triples
-        this.dataTranslator.get.translateData(mappingDocument)
+        this.dataTranslator.translateData(mappingDocument)
 
         // Write the result to the output file
-        this.dataTranslator.get.materializer.materialize();
+        this.dataTranslator.materializer.materialize();
 
-        val durationGeneratingModel = (System.currentTimeMillis() - startGeneratingModel);
-        logger.info("Data materialization process lasted " + (durationGeneratingModel) + "ms.");
+        val duration = (System.currentTimeMillis() - start);
+        logger.info("Data materialization process lasted " + (duration) + "ms.");
     }
 }
 

@@ -7,17 +7,16 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.engine.QueryTranslationOptimizer
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphXMLQueryResultWriter
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.QueryResultTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphXMLQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBAlphaGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBBetaGenerator
@@ -63,7 +62,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         properties: MorphProperties): MorphBaseDataTranslator = {
 
         new MorphRDBDataTranslator(
-            mappingDocument, materializer, unfolder.asInstanceOf[MorphRDBUnfolder], 
+            mappingDocument, materializer, unfolder.asInstanceOf[MorphRDBUnfolder],
             dataSourceReader.asInstanceOf[MorphRDBDataSourceReader],
             connection, properties);
     }
@@ -102,27 +101,19 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
             queryTranslator.connection = conn.concreteCnx.asInstanceOf[Connection];
         }
         queryTranslator.mappingDocument = md;
-
         queryTranslator;
     }
 
-    override def createQueryResultTranslator(
+    override def createQueryResultProcessor(
         properties: MorphProperties,
         md: R2RMLMappingDocument,
         connection: GenericConnection,
         dataSourceReader: MorphBaseDataSourceReader,
-        queryTranslator: Option[IQueryTranslator],
-        outputStream: Writer): Option[AbstractQueryResultTranslator] = {
+        queryTranslator: IQueryTranslator,
+        outputStream: Writer): MorphBaseQueryResultProcessor = {
 
-        // Building QUERY RESULT WRITER
-        val queryResultWriter = if (queryTranslator.isDefined)
-            Some(new MorphXMLQueryResultWriter(queryTranslator.get, outputStream))
-        else None
-
-        // Building RESULT PROCESSOR
-        val resultProcessor = if (queryResultWriter.isDefined)
-            Some(new QueryResultTranslator(dataSourceReader, queryResultWriter.get))
-        else None
-        resultProcessor
+        val queryResultProc = new MorphXMLQueryResultProcessor(md, properties, outputStream, dataSourceReader)
+        queryResultProc.prSQLGenerator  = queryTranslator.getPRSQLGen
+        queryResultProc
     }
 }

@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base.materializer
+package es.upm.fi.dia.oeg.morph.base
 
 import org.w3c.dom.Document
 import javax.xml.parsers.DocumentBuilderFactory

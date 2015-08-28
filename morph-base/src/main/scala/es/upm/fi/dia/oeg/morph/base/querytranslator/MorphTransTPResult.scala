@@ -16,25 +16,28 @@ import Zql.ZDelete
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
 import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
 
-class MorphTransTPResult(val alphaResult: MorphAlphaResult, val condSQLResult: MorphCondSQLResult, val prSQLResult: MorphPRSQLResult) {
+/**
+ * This class is the container for the result of the translation of a triple pattern into a query.
+ * It contains a SELECT part (prSQL), a FROM part (alpha) and a WHERE part (condSQL)
+ */
+class MorphTransTPResult(
+        val alphaResult: MorphAlphaResult,
+        val condSQLResult: MorphCondSQLResult,
+        val prSQLResult: MorphPRSQLResult) {
 
     val logger = Logger.getLogger(this.getClass());
 
     def toQuery(optimizer: QueryTranslationOptimizer, databaseType: String): IQuery = {
-        val alphaResult = this.alphaResult
         val alphaSubject = alphaResult.alphaSubject;
         val alphaPredicateObjects = alphaResult.alphaPredicateObjects.flatMap(
             x => { if (x._1 != null) { Some(x._1) } else { None } });
-        val prSQLResult = this.prSQLResult;
         val prSQL = prSQLResult.toList;
-        val condSQLResult = this.condSQLResult;
         val condSQL = {
             if (condSQLResult != null) { condSQLResult.toExpression; }
             else { null }
         }
 
         val resultAux = {
-            //don't do subquery elimination here! why?
             if (optimizer != null && optimizer.subQueryElimination) {
                 try {
                     SQLQuery.createQuery(alphaSubject, alphaPredicateObjects, prSQL, condSQL, databaseType);
@@ -157,5 +160,4 @@ class MorphTransTPResult(val alphaResult: MorphAlphaResult, val condSQLResult: M
 
         zDelete
     }
-
 }

@@ -24,10 +24,20 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
+
         extends MorphBasePRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
+
     override val logger = Logger.getLogger("MorphPRSQLGenerator");
 
-    override def genPRSQLObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, nameGenerator: NameGenerator, cmSubject: R2RMLTriplesMap, predicateURI: String, columnType: String): List[ZSelectItem] = {
+    override def genPRSQLObject(
+        tp: Triple,
+        alphaResult: MorphAlphaResult,
+        betaGenerator: MorphBaseBetaGenerator,
+        nameGenerator: NameGenerator,
+        cmSubject: R2RMLTriplesMap,
+        predicateURI: String,
+        columnType: String): List[ZSelectItem] = {
+
         val tpObject = tp.getObject();
 
         val result: List[ZSelectItem] = {
@@ -113,7 +123,6 @@ class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
                         Nil
                     }
                 }
-
             } else {
                 Nil;
             }

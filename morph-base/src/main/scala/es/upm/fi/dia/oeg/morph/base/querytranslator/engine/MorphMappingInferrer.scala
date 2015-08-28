@@ -70,6 +70,10 @@ class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
         this.mapInferredTypes;
     }
 
+    /**
+     * Build a set of triples maps that can potentially create triples matching the given a
+     * query pattern (triple pattern, basic graph pattern, etc.)
+     */
     def infer(opQueryPattern: Op): Map[Node, Set[R2RMLTriplesMap]] = {
         if (this.mapInferredTypes.isEmpty) {
 
@@ -82,9 +86,7 @@ class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
             val mapSubjectTypesBySubjectUri = this.inferSubjectTypesBySubjectURI(opQueryPattern);
             if (logger.isTraceEnabled()) logger.trace("mapSubjectTypesBySubjectUri: " + mapSubjectTypesBySubjectUri)
 
-            val listSubjectMapNodes = List(mapSubjectTypesByRdfType,
-                mapSubjectTypesByPredicatesURIs,
-                mapSubjectTypesBySubjectUri)
+            val listSubjectMapNodes = List(mapSubjectTypesByRdfType, mapSubjectTypesByPredicatesURIs, mapSubjectTypesBySubjectUri)
             val mapSubjectTypes = MorphQueryTranslatorUtility.mapsIntersection(listSubjectMapNodes);
             if (logger.isDebugEnabled()) logger.debug("Mappings for SubjectTypes: " + mapSubjectTypes)
 

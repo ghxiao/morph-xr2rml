@@ -17,13 +17,22 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 abstract class MorphBasePRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
+    
     val logger = Logger.getLogger(this.getClass());
     val dbType = if (md.dbMetaData.isDefined) { md.dbMetaData.get.dbType; }
     else { Constants.DATABASE_DEFAULT }
 
     var mapHashCodeMapping: Map[Integer, Object] = Map.empty
 
-    def genPRSQL(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, nameGenerator: NameGenerator, cmSubject: R2RMLTriplesMap, predicateURI: String, unboundedPredicate: Boolean): MorphPRSQLResult = {
+    def genPRSQL(
+        tp: Triple,
+        alphaResult: MorphAlphaResult,
+        betaGenerator: MorphBaseBetaGenerator,
+        nameGenerator: NameGenerator,
+        cmSubject: R2RMLTriplesMap,
+        predicateURI: String,
+        unboundedPredicate: Boolean): MorphPRSQLResult = {
+
         val tpSubject = tp.getSubject();
         val tpPredicate = tp.getPredicate();
         val tpObject = tp.getObject();
@@ -65,7 +74,14 @@ abstract class MorphBasePRSQLGenerator(md: R2RMLMappingDocument, unfolder: Morph
         prSQLResult;
     }
 
-    def genPRSQLObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphBaseBetaGenerator, nameGenerator: NameGenerator, cmSubject: R2RMLTriplesMap, predicateURI: String, columnType: String): List[ZSelectItem] = {
+    def genPRSQLObject(
+        tp: Triple,
+        alphaResult: MorphAlphaResult,
+        betaGenerator: MorphBaseBetaGenerator,
+        nameGenerator: NameGenerator,
+        cmSubject: R2RMLTriplesMap,
+        predicateURI: String,
+        columnType: String): List[ZSelectItem] = {
 
         val betaObjSelectItems = betaGenerator.calculateBetaObject(tp, cmSubject, predicateURI, alphaResult);
         val selectItems = for (i <- 0 until betaObjSelectItems.size()) yield {
@@ -173,9 +189,6 @@ abstract class MorphBasePRSQLGenerator(md: R2RMLMappingDocument, unfolder: Morph
                 }
             }
         }
-
-        //		val prList = selectItemsSubjects.toList ::: selectItemsSTGPredicates.toList ::: selectItemsSTGObjects.toList;
-        //		prList;
 
         val prSQLResult = new MorphPRSQLResult(selectItemsSubjects.toList, selectItemsSTGPredicates.toList, selectItemsSTGObjects.toList);
         prSQLResult

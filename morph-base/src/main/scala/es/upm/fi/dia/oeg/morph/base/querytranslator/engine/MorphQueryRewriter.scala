@@ -1,28 +1,34 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator.engine
 
-import com.hp.hpl.jena.graph.query.Rewrite
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
-import scala.collection.JavaConversions._
+import com.hp.hpl.jena.graph.Triple
+import com.hp.hpl.jena.graph.query.Rewrite
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
-import com.hp.hpl.jena.sparql.core.BasicPattern
-import com.hp.hpl.jena.graph.Triple
+import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
+import com.hp.hpl.jena.sparql.algebra.op.OpFilter
 import com.hp.hpl.jena.sparql.algebra.op.OpJoin
 import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
-import com.hp.hpl.jena.sparql.algebra.op.OpUnion
-import com.hp.hpl.jena.sparql.algebra.op.OpFilter
-import com.hp.hpl.jena.sparql.algebra.optimize.TransformFilterConjunction
-import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
+import com.hp.hpl.jena.sparql.algebra.op.OpOrder
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
-import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
-import com.hp.hpl.jena.sparql.algebra.op.OpOrder
-import com.hp.hpl.jena.vocabulary.RDFS
+import com.hp.hpl.jena.sparql.algebra.op.OpUnion
+import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
+import com.hp.hpl.jena.sparql.algebra.optimize.TransformFilterConjunction
+import com.hp.hpl.jena.sparql.core.BasicPattern
 import com.hp.hpl.jena.vocabulary.RDF
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
-import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
+import com.hp.hpl.jena.vocabulary.RDFS
 
+import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
+
+/** Utility methods to rewrite SPARQL queries */
 class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: Boolean)
         extends Rewrite {
     def logger = Logger.getLogger(this.getClass());
@@ -81,7 +87,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
         result;
     }
 
-    def reorderSTGs(triples: List[Triple]): List[Triple] = {
+    private def reorderSTGs(triples: List[Triple]): List[Triple] = {
 
         var result: List[Triple] = Nil;
 
@@ -137,7 +143,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
         result;
     }
 
-    def rewriteLeftJoin(opLeftJoin: OpLeftJoin): Op = {
+    private def rewriteLeftJoin(opLeftJoin: OpLeftJoin): Op = {
 
         val exprList = opLeftJoin.getExprs();
         val leftChild = opLeftJoin.getLeft();
@@ -232,7 +238,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
         result
     }
 
-    def rewriteBGP(bgp: OpBGP): Op = {
+    private def rewriteBGP(bgp: OpBGP): Op = {
         val bgpTriples = bgp.getPattern().getList().toList;
         val triplesGrouped = SPARQLUtility.groupTriplesBySubject(bgpTriples);
 
@@ -248,7 +254,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
         result;
     }
 
-    def rewriteJoin(opJoin: OpJoin): Op = {
+    private def rewriteJoin(opJoin: OpJoin): Op = {
         val leftChild = opJoin.getLeft();
         val rightChild = opJoin.getRight();
         val leftChildRewritten = this.rewrite(leftChild);

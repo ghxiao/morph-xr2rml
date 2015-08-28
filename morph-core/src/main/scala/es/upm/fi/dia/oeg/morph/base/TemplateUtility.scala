@@ -20,6 +20,9 @@ object TemplateUtility {
     val TemplatePatternCapGrpPat = Pattern.compile(Constants.R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP);
 
     /**
+     * Match an URI with a template string. The result is a set of couples where the 
+     * key is the column in the template string, and the value is the corresponding value in the given URI
+     * 
      * CAUTION ### This method was not updated to support Mixed-syntax paths ###
      * Query rewriting only works with standard column references
      */

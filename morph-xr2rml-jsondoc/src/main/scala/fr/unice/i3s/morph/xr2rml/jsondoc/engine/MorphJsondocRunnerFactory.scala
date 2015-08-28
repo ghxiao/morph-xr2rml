@@ -7,11 +7,10 @@ import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.AbstractQueryResultTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
@@ -63,11 +62,11 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
     override def createQueryTranslator(
         properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator = { null }
 
-    override def createQueryResultTranslator(
+    override def createQueryResultProcessor(
         properties: MorphProperties,
         md: R2RMLMappingDocument,
         connection: GenericConnection,
         dataSourceReader: MorphBaseDataSourceReader,
-        queryTranslator: Option[IQueryTranslator],
-        outputStream: Writer): Option[AbstractQueryResultTranslator] = { None }
+        queryTranslator: IQueryTranslator,
+        outputStream: Writer): MorphBaseQueryResultProcessor = { null }
 }
