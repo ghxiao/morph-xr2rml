@@ -10,7 +10,6 @@ import com.hp.hpl.jena.vocabulary.RDF
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseAlphaGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
@@ -21,7 +20,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
+
         extends MorphBaseAlphaGenerator(md, unfolder) {
+
     val databaseType = if (md.dbMetaData.isDefined) { md.dbMetaData.get.dbType; }
     else { Constants.DATABASE_DEFAULT }
 
@@ -62,12 +63,9 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
                     }
 
                 }
-
                 new MorphAlphaResult(alphaSubject, alphaPredicateObjects);
-
             }
         }
-
         alphaResult;
     }
 
@@ -82,8 +80,6 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
 
         val result: SQLJoinTable = {
             if (refObjectMap != null) {
-                //				val parentLogicalTable = refObjectMap.getParentLogicalTable().asInstanceOf[R2RMLLogicalTable];
-                //val md = this.owner.getMappingDocument().asInstanceOf[R2RMLMappingDocument];
                 val parentTriplesMap = md.getParentTriplesMap(refObjectMap);
                 val parentLogicalTable = parentTriplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
 
@@ -163,7 +159,6 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
                 }
             }
         }
-
         alphaPredicateObjects;
     }
 }

@@ -4,9 +4,8 @@ import java.sql.Connection
 
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseResultSet
-import es.upm.fi.dia.oeg.morph.base.engine.RDBResultSet
 
 /**
  * This class is used in case of the query rewriting access method,
@@ -19,7 +18,7 @@ class MorphRDBDataSourceReader() extends MorphBaseDataSourceReader {
 
     override def execute(query: String): MorphBaseResultSet = {
         val rs = DBUtility.execute(this.sqlCnx, query, this.timeout);
-        val abstractResultSet = new RDBResultSet(rs);
+        val abstractResultSet = new MorphRDBResultSet(rs);
         abstractResultSet;
     }
 

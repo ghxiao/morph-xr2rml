@@ -13,6 +13,8 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 
 abstract class MorphBaseRunnerFactory {
     val logger = Logger.getLogger(this.getClass());

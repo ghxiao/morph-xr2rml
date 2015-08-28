@@ -1,27 +1,21 @@
-package es.upm.fi.dia.oeg.morph.base.engine
+package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import java.io.OutputStream
 import java.io.Writer
 import com.hp.hpl.jena.query.Query
-import scala.collection.JavaConversions.asJavaCollection
-import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.collection.JavaConversions.mapAsJavaMap
-import scala.collection.JavaConversions.seqAsJavaList
-import scala.collection.JavaConversions.setAsJavaSet
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.TermMapResult
 import java.util.regex.Pattern
-import java.util.Collection
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import java.util.regex.Matcher
 import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 
 abstract class MorphBaseQueryResultProcessor(
         var mappingDocument: R2RMLMappingDocument,
@@ -157,7 +151,7 @@ abstract class MorphBaseQueryResultProcessor(
                                         var i = 0;
                                         val replaceMentAux = templateAttributes.map(templateAttribute => {
                                             val columnName = {
-                                                if (columnNames == null || columnNames.isEmpty()) {
+                                                if (columnNames == null || columnNames.isEmpty) {
                                                     varName;
                                                 } else {
                                                     varName + "_" + i;
@@ -170,7 +164,7 @@ abstract class MorphBaseQueryResultProcessor(
                                         })
                                         val replacements = replaceMentAux.toMap;
 
-                                        val templateResult = if (replacements.size() > 0) {
+                                        val templateResult = if (replacements.size > 0) {
                                             TemplateUtility.replaceTemplateGroups(templateString, List(List(replacements)))
                                         } else {
                                             logger.debug("no replacements found for the R2RML template!");

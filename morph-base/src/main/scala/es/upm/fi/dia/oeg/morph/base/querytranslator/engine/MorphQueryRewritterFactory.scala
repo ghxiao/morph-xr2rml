@@ -5,6 +5,7 @@ import com.hp.hpl.jena.sparql.algebra.optimize.Rewrite;
 import com.hp.hpl.jena.sparql.util.Context;
 
 class MorphQueryRewritterFactory extends RewriterFactory {
+
     def create(arg0: Context) = {
         val result = new MorphQueryRewriter(null, true);
         result.asInstanceOf[Rewrite];

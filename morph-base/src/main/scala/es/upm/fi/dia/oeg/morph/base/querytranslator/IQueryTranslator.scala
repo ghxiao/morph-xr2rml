@@ -1,13 +1,12 @@
-package es.upm.fi.dia.oeg.morph.base.engine
+package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.sql.Connection
+
 import com.hp.hpl.jena.query.Query
-import com.hp.hpl.jena.sparql.algebra.Op
+
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.TermMapResult
 import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
 
 trait IQueryTranslator {
     var connection: Connection = null;

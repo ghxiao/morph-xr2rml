@@ -5,13 +5,12 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.PrintWriter
 import java.io.Writer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.query.Query
-
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 
 class MorphBaseRunner(
         mappingDocument: R2RMLMappingDocument,

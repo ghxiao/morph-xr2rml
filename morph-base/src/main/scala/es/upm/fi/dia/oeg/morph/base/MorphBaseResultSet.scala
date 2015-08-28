@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base.engine
+package es.upm.fi.dia.oeg.morph.base
 
 abstract class MorphBaseResultSet {
     var columnNames: List[String] = null;

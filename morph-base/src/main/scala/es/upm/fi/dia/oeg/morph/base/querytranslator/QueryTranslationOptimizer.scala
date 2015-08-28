@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base.engine
+package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 class QueryTranslationOptimizer {
     var selfJoinElimination = true;

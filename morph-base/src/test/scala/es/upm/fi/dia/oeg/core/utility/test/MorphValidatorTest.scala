@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.core.utility.test
 
-import es.upm.fi.dia.oeg.morph.base.TriplePatternPredicateBounder
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TriplePatternPredicateBounder
 
 
 object MorphValidatorTest extends App {

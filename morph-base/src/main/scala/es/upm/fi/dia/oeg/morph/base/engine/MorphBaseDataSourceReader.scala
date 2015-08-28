@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.morph.base.engine
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 
 /**
  * A data source reader is used in case of the query rewriting access method,

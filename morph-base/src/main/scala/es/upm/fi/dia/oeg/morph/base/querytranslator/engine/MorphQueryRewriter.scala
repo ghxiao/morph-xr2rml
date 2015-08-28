@@ -25,12 +25,14 @@ import com.hp.hpl.jena.sparql.core.BasicPattern
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.RDFS
 
-import es.upm.fi.dia.oeg.morph.base.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
 
 /** Utility methods to rewrite SPARQL queries */
 class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: Boolean)
+
         extends Rewrite {
+
     def logger = Logger.getLogger(this.getClass());
 
     def rewrite(op: Op): Op = {

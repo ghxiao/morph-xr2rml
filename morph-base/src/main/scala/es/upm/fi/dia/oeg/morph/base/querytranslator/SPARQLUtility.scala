@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base
+package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.sparql.algebra.Op
@@ -13,7 +13,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
 import com.hp.hpl.jena.sparql.algebra.op.OpOrder
-import scala.collection.mutable.LinkedHashMap
 import com.hp.hpl.jena.sparql.core.BasicPattern
 import org.apache.log4j.Logger
 

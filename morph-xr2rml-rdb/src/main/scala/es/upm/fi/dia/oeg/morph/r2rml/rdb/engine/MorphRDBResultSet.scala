@@ -1,11 +1,12 @@
-package es.upm.fi.dia.oeg.morph.base.engine
+package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.sql.ResultSet
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 
 /**
  * A helper class that encapsulates an SQL result set
  */
-class RDBResultSet(rs: ResultSet) extends MorphBaseResultSet {
+class MorphRDBResultSet(rs: ResultSet) extends MorphBaseResultSet {
     override def next(): Boolean = {
         try { this.rs.next(); }
         catch {

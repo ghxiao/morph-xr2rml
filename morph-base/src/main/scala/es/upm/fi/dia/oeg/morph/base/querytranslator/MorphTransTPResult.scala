@@ -1,20 +1,18 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConversions._
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
-import es.upm.fi.dia.oeg.morph.base.engine.QueryTranslationOptimizer
+
+import Zql.ZConstant
+import Zql.ZDelete
+import Zql.ZExpression
+import Zql.ZInsert
 import Zql.ZUpdate
 import es.upm.fi.dia.oeg.morph.base.Constants
-import Zql.ZInsert
-import Zql.ZExpression
-import Zql.ZConstant
+import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import Zql.ZDelete
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
+import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
+import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 
 /**
  * This class is the container for the result of the translation of a triple pattern into a query.
