@@ -14,22 +14,26 @@ r2rml.rdb.engine.MorphRDBRunnerFactory < base.engine.MorphBaseRunnerFactory
       that consists of a set of classMappings, namely triples maps (R2RMLTriplesMap).
     - a DB connection
     - a data source reader (MorphBaseDataSourceReader) of which concrete class name (MorphRDBDataSourceReader) 
-      is passed as construct parameter. The data source reader provides methods to open, configure, and close the connection, 
-      run queries against the DB, and possibly manage strategies to store results to avoid executing the same query several times in the case of joint queries.
+      is passed as construct parameter. The data source reader provides methods to open, configure and close the connection,
+      run queries against the DB, and possibly manage strategies to store results to avoid executing the same query several
+      times in the case of joint queries.
     - an unfolder (MorphRDBUnfolder < MorphBaseUnfolder) to create SQL queries from a triples map
-    - a data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) that actually makes the translation: it runs
-      SQL queries created by the unfolder, then generates RDF triples from the results.
+    - a data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) that actually makes the translation
+      in the data materialization case: it runs SQL queries created by the unfolder, then generates RDF triples from the results.
     - a data materializer (MorphBaseMaterializer) basically consists of a properly initialized JENA model (name space, etc.),
       either in mem or db. The model is used to store statements created from subjects, predicates and objects read
       from the database.
-    - a query translator, query result writer and query result processor that are used in the query rewriting mode only.
+    - a query translator and query result processor are used in the query rewriting mode only. The query translator rewrites
+      a SPARQL query into a SQL query, the query result processor runs the SQL query against the database and translates the
+      SQL result set into an XML SPARQL result set.
     
 fr.unice.i3s.morph.xr2rml.engine.MorphRunner provides the main class to run the process:
     - Load the properties
     - Create a singleton MorphBaseRunner using the MorphRDBRunnerFactory that creates
       a R2RMLMappingDocument, MorphRDBUnfolder, MorphRDBDataMaterializer and MorphRDBDataTranslator (see above).
     - Run the process using either materialization (MorphBaseRunner.materializeMappingDocuments) or query rewriting
-    - Load the RDF graph produced in a JENA model and save a serialization into a file using the requested RDF syntax.
+    - In the data materialization case, load the RDF graph produced in a JENA model and save a serialization into a 
+      file using the requested RDF syntax.
 
 Materialization process (MorphBaseRunner.materializeMappingDocuments):
     For each class mapping (R2RMLTriplesMap) of the mapping document (R2RMLMappingDocument),
