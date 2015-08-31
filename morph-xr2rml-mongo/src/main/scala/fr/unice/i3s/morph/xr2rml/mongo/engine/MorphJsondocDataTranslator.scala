@@ -1,4 +1,4 @@
-package fr.unice.i3s.morph.xr2rml.jsondoc.engine
+package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
 
@@ -25,7 +25,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
+import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 
 class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
@@ -412,7 +412,6 @@ class MorphJsondocDataTranslator(
      *
      * Major drawback: memory consumption, this is not appropriate for very big databases.
      */
-    @throws[MorphException]
     private def executeQueryAndIteraotr(query: GenericQuery, logSrcIterator: Option[String]): List[String] = {
 
         // A query is simply and uniquely identified by its concrete string value
@@ -422,10 +421,7 @@ class MorphJsondocDataTranslator(
                 executedQueries(queryMapId)
             } else {
                 // Execute the query against the database, choose the execution method depending on the db type
-                val resultSet: List[String] = this.connection.dbType match {
-                    case Constants.DatabaseType.MongoDB => { MongoUtils.execute(this.connection, query).toList }
-                    case _ => { throw new MorphException("Unsupported query type: should be an MongoDB query") }
-                }
+                val resultSet = MongoUtils.execute(this.connection, query).toList
 
                 // Save the result of this query in case it is asked again later (in a join)
                 // @TODO USE WITH CARE: this needs to be strongly improved with the use of a real cache library, 

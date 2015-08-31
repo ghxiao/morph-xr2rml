@@ -20,13 +20,13 @@ abstract class MorphBaseUnfolder(md: R2RMLMappingDocument, properties: MorphProp
     var dbType = Constants.DATABASE_MYSQL;
 
     @throws[MorphException]
-    def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery;
-    
-    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable;
-    
+    def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery
+
+    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable
+
     def unfoldJoinConditions(
         joinConditions: Set[R2RMLJoinCondition],
         childTableAlias: String,
         joinQueryAlias: String,
-        dbType: String): ZExpression;
+        dbType: String): Object
 }

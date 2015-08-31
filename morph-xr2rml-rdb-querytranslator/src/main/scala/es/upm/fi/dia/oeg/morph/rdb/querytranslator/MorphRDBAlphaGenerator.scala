@@ -1,13 +1,10 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import scala.collection.JavaConversions.asJavaCollection
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.vocabulary.RDF
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
@@ -18,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import Zql.ZExpression
 
 class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder)
 
@@ -96,7 +94,7 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
                 val joinQueryAlias = sqlParentLogicalTableAuxAlias;
 
                 val joinConditions = refObjectMap.joinConditions;
-                val onExpression = unfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, databaseType);
+                val onExpression = unfolder.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, databaseType).asInstanceOf[ZExpression]
                 if (onExpression != null) {
                     sqlParentLogicalTable.onExpression = onExpression;
                 }

@@ -1,4 +1,4 @@
-package fr.unice.i3s.morph.xr2rml.jsondoc.mongo
+package fr.unice.i3s.morph.xr2rml.mongo
 
 import org.jongo.ResultHandler
 import com.mongodb.DBObject

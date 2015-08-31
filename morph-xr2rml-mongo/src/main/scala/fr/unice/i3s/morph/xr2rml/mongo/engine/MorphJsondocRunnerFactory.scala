@@ -1,4 +1,4 @@
-package fr.unice.i3s.morph.xr2rml.jsondoc.engine
+package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import java.io.Writer
 
@@ -15,7 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
+import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 
 class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -24,14 +24,14 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
     /**
      * Return a valid connection to the database or raises a run time exception if anything goes wrong
      */
-    override def createConnection(configurationProperties: MorphProperties): GenericConnection = {
-        if (configurationProperties.noOfDatabase == 0)
+    override def createConnection(props: MorphProperties): GenericConnection = {
+        if (props.noOfDatabase == 0)
             throw new Exception("No database connection parameters found in the configuration.")
 
-        val dbType = configurationProperties.databaseType
+        val dbType = props.databaseType
         val cnx = dbType match {
             case Constants.DATABASE_MONGODB =>
-                MongoUtils.createConnection(configurationProperties)
+                MongoUtils.createConnection(props)
             case _ =>
                 throw new Exception("Database type not supported: " + dbType)
         }
@@ -39,9 +39,16 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
     }
 
     override def createUnfolder(props: MorphProperties, md: R2RMLMappingDocument): MorphJsondocUnfolder = {
-        val unfolder = new MorphJsondocUnfolder(md.asInstanceOf[R2RMLMappingDocument], props);
-        unfolder.dbType = props.databaseType;
-        unfolder;
+        val dbType = props.databaseType
+        val cnx = dbType match {
+            case Constants.DATABASE_MONGODB =>
+                MongoUtils.createConnection(props)
+            case _ =>
+                throw new Exception("Database type not supported: " + dbType)
+        }
+        val unfolder = new MorphJsondocUnfolder(md.asInstanceOf[R2RMLMappingDocument], props)
+        unfolder.dbType = dbType
+        unfolder
     }
 
     override def createDataSourceReader(

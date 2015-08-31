@@ -1,4 +1,4 @@
-package fr.unice.i3s.morph.xr2rml.jsondoc.mongo
+package fr.unice.i3s.morph.xr2rml.mongo
 
 import java.net.URI
 import scala.collection.JavaConversions.asScalaIterator
@@ -26,13 +26,13 @@ object MongoUtils {
      * Create a Jongo context from a MongoDB connection
      * @return an instance of GenericConnection with dbtype = Constants.DatabaseType.MongoDB
      */
-    def createConnection(configurationProperties: MorphProperties): GenericConnection = {
+    def createConnection(props: MorphProperties): GenericConnection = {
 
-        val userName = configurationProperties.databaseUser;
-        val dbName = configurationProperties.databaseName;
-        val userPwd = configurationProperties.databasePassword;
+        val userName = props.databaseUser;
+        val dbName = props.databaseName;
+        val userPwd = props.databasePassword;
         //val dbDriver = configurationProperties.databaseDriver;
-        val dbUrl = configurationProperties.databaseURL;
+        val dbUrl = props.databaseURL;
 
         try {
             val uri = new URI(dbUrl);

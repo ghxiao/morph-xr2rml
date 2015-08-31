@@ -21,7 +21,7 @@
 
 		<dependency>
 			<groupId>fr.unice.i3s</groupId>
-			<artifactId>morph-xr2rml-jsondoc</artifactId>
+			<artifactId>morph-xr2rml-mongo</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 

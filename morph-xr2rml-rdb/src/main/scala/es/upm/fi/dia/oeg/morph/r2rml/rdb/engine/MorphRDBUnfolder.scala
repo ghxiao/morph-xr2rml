@@ -317,7 +317,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                             }
 
                             // Add a left join clause for columns in join conditions of RefObjectMaps
-                            val onExpression = this.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType);
+                            val onExpression = this.unfoldJoinConditions(joinConditions, logicalTableAlias, joinQueryAlias, dbType).asInstanceOf[ZExpression];
                             val joinQuery = new SQLJoinTable(sqlParentLogSrc, Constants.JOINS_TYPE_LEFT, onExpression);
                             result.addFromItem(joinQuery);
                         }
@@ -433,7 +433,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         joinConditions: Set[R2RMLJoinCondition],
         childTableAlias: String,
         joinQueryAlias: String,
-        dbType: String): ZExpression = {
+        dbType: String): Object = {
 
         val joinConds =
             if (joinConditions == null) Nil

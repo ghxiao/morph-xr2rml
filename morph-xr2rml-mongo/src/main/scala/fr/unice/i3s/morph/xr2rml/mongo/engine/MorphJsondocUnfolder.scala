@@ -1,20 +1,20 @@
-package fr.unice.i3s.morph.xr2rml.jsondoc.engine
+package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
-import fr.unice.i3s.morph.xr2rml.jsondoc.mongo.MongoUtils
-import Zql.ZExpression
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
-import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
+import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 
 class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) {
@@ -46,16 +46,9 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
             case _ => { throw new MorphException("Unknown logical table/source type: " + logicalSrc) }
         }
 
-        val query = dbType match {
-            case Constants.DATABASE_MONGODB => {
-                val mongoQuery = MongoUtils.parseQueryString(logicalSrcQuery)
-                logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
-                new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
-            }
-            case _ =>
-                throw new MorphException("Database type not supported: " + dbType)
-        }
-        query
+        val mongoQuery = MongoUtils.parseQueryString(logicalSrcQuery)
+        logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
+        new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
     }
 
     override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = { null }
@@ -64,5 +57,5 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
         joinConditions: Set[R2RMLJoinCondition],
         childTableAlias: String,
         joinQueryAlias: String,
-        dbType: String): ZExpression = { null }
+        dbType: String): Object = { null }
 }
