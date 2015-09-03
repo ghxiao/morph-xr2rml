@@ -5,7 +5,7 @@ import org.junit.Test
 
 class MongoQueryNodeTest {
 
-    @Test def test() = {
+    @Test def test() {
 
         var node: MongoQueryNode = null
 
@@ -73,5 +73,7 @@ class MongoQueryNodeTest {
         println(node.toQueryString)
         assertEquals("""$and: [{'p.q': {$exists: true}}, {$where: 'this.p.q[this.p.q.length - 1] == "val"'}]""",
             node.toQueryString)
+
+        // -------------------------------------------------------------
     }
 }
