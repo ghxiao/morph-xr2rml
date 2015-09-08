@@ -18,4 +18,17 @@ object MongoQueryNode {
     object CondType extends Enumeration {
         val Equals, IsNotNull = Value
     }
+
+    /**
+     * Returns a MongoDB path consisting of a concatenation of single field names and array indexes in dot notation.
+     * It removes the optional heading dot. E.g. dotNotation(.p[5]r) => p.5.r
+     */
+    def dotNotation(path: String): String = {
+        var result =
+            if (path.startsWith("."))
+                path.substring(1)
+            else path
+        result = result.replace("[", ".").replace("]", "")
+        result
+    }
 }

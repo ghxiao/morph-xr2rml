@@ -29,7 +29,14 @@
 			<groupId>org.jongo</groupId>
 			<artifactId>jongo</artifactId>
 			<version>1.2</version>
-		</dependency>		
+		</dependency>
+
+		<dependency>
+			<groupId>org.mozilla</groupId>
+			<artifactId>rhino</artifactId>
+			<version>1.7.6</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

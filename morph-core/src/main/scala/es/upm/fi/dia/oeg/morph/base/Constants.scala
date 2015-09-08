@@ -11,6 +11,8 @@ class Constants {
 
 object Constants {
 
+    val SEPARATOR = System.getProperty("line.separator")
+
     object MorphTermMapType extends Enumeration {
         type MorphTermMapType = Value
         val ConstantTermMap, ColumnTermMap, TemplateTermMap, ReferenceTermMap, InvalidTermMapType = Value
@@ -115,7 +117,7 @@ object Constants {
     val TRANSSTG_SUBQUERY_ELIMINATION = "querytranslator.transstg.subqueryelimination";
     val SUBQUERY_AS_VIEW = "querytranslator.subqueryasview";
     val CACHE_QUERY_RESULT = "querytranslator.cachequeryresult";
-    
+
     val RUNNER_FACTORY_CLASSNAME = "runner_factory.class.name";
 
     val QUERY_RESULT_XMLWRITER_OUTPUT_DEFAULT = "output.rdf.xml";

@@ -1,11 +1,13 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 
 class JsonPathToMongoTranslator {
 
@@ -42,7 +44,7 @@ object JsonPathToMongoTranslator {
     final val JSONPATH_FIELD_NAME_ARRAY_NOTATION = """^\["(\p{Alnum}+)"\]""".r
 
     /**
-     *  Regex for a JSONPath field name in double-quoted in an alternatives: "q","r"
+     *  Regex for a JSONPath field name in double-quoted in an alternatives: "q"
      *  The full match will be like "p" (including double-quotes), the first capturing group will only the p
      *  (without the double-quotes)
      */
@@ -73,25 +75,38 @@ object JsonPathToMongoTranslator {
     final val JSONPATH_ARRAY_IDX_ALTERNATIVE = """^(\[\p{Digit}+(?:,\p{Digit}+)+\])""".r
 
     /**
-     * Regex for rule r2 matching JSONPath expressions like: <JPpath_ns>["p","q",...]<JPexpr>
+     *  Regex for a JSONPath wildcard with heading dot: .*
      */
-    final val R2_REGEXP = ("^(" + JSONPATH_PATH_NS + ")(" + JSONPATH_FIELD_ALTERNATIVE + ")(.*)").r
+    final val JSONPATH_WILDCARD_DOTTED = """^\.\*""".r
 
+    /**
+     *  Regex for a JSONPath wildcard in array notation: [*]
+     */
+    final val JSONPATH_WILDCARD_ARRAY_NOTATION = """^\[\*]""".r
+
+    /**
+     * Entry point of the translation of a JSONPath expression with a given condition into a MongoDB query.
+     * Refer to the algorithm for the meaning of each rule.
+     * 
+     * @return a MongoQueryNode instance representing the top-level object of the MongoDB query. 
+     * The result may be null in case no rule matched.
+     * 
+     */
     def trans(jpPath: String, cond: MongoQueryNodeCond): MongoQueryNode = {
         if (logger.isTraceEnabled()) logger.trace("trans(" + jpPath + ", " + cond.toQueryString + ")")
 
         // Clean string: remove spaces, use only double-quotes
         val path = jpPath.trim().replace("'", "\"").replaceAll("""\p{Space}""", "")
 
-        // ------ Rule 0
+        // ------ Rule r0
         if (path.isEmpty())
             return cond
 
-        // ------ Rule 1
+        // ------ Rule r1
         if (path.charAt(0) == '$')
             return trans(path.substring(1), cond)
 
-        // ------ Rule 2: Field alternative or array index alternative
+        // ------ Rule r2: Field alternative or array index alternative
         {
             // First, try to match <JPpath_ns> at the beginning of the path
             val match0_JPpath_ns = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(path).toList
@@ -101,13 +116,13 @@ object JsonPathToMongoTranslator {
                 val match0 = match0_JPpath_ns(0).group(0)
                 val after_match0 = match0_JPpath_ns(0).after(0)
 
-                // ------ Rule 2a:
+                // ------ Rule r2a:
                 // trans(<JPpath_ns>["p","q",...]<JPexpr>, <cond>) :-
                 //        OR( trans(<JPpath_ns>.p<JPexpr>, <cond>), trans(<JPpath_ns>.q<JPexpr>, <cond>), ... )
                 var result = translateFieldAlternative(match0, after_match0.toString(), cond)
                 if (result.isDefined) return result.get
 
-                // ------ Rule 2b:
+                // ------ Rule r2b:
                 // trans(<JPpath_ns>[1,3,...]<JPexpr>, <cond>) :-
                 //        OR( trans(<JPpath_ns>.1<JPexpr>, <cond>), trans(<JPpath_ns>.3<JPexpr>, <cond>), ... )
                 result = translateArrayIndexAlternative(match0, after_match0.toString(), cond)
@@ -115,51 +130,76 @@ object JsonPathToMongoTranslator {
             }
         }
 
-        // ------ Rule 3: Heading field alternative or array index alternative
+        // ------ Rule r3: Heading field alternative or array index alternative
         {
-            // ------ Rule 3a:
+            // ------ Rule r3a:
             // trans(["p","q",...]<JPexpr>, <cond>) :-
             //        OR( trans(.p<JPexpr>, <cond>), trans(.q<JPexpr>, <cond>), ... )
             var result = translateFieldAlternative("", path, cond)
             if (result.isDefined) return result.get
 
-            // ------ Rule 3b:
+            // ------ Rule r3b:
             // trans([1,3,...]<JPexpr>, <cond>) :-
             //        OR( trans(.1<JPexpr>, <cond>), 
             //            trans(.3<JPexpr>, <cond>), ... )
             result = translateArrayIndexAlternative("", path, cond)
             if (result.isDefined) return result.get
         }
+        
+        // ------ Rule r4: Javascript condition, e.g. $.p[?(@.q == @.r)].r
+        // 		  trans(<JPpath_ns>[?(<script_expr>)]<JPexpr>, <cond>) :-
+        //			   AND(trans(<JPpath_ns><JPexpr>, <cond>), transJS(replaceAt(this<JPpath_ns>, <script_expr>)))
+        /** @TODO */
+        
+        // ------ Rule r5: Heading Javascript condition, e.g. $.[?(@.q)].r
+        // 		  trans([?(<script_expr>)]<JPexpr>, <cond>) :- AND(trans(<JPexpr>, <cond>), transJS(replaceAt(this, <script_expr>)))
+        /** @TODO */
+        
+        // ------ Rule r7: Heading wildcard
+        //		  trans(.*<JPexpr>, <cond>) :- ELEMMATCH(trans(<JPexpr>, <cond>))
+        {
+            var fieldMatch: String = ""
+            var afterMatch: String = ""
 
-        // ------ Rule 8: Heading field name or array index
+            // Try to match .*
+            var matched = JsonPathToMongoTranslator.JSONPATH_WILDCARD_DOTTED.findAllMatchIn(path).toList
+            if (matched.isEmpty) {
+                // Try to match [*]
+                matched = JsonPathToMongoTranslator.JSONPATH_WILDCARD_ARRAY_NOTATION.findAllMatchIn(path).toList
+            }
+
+            if (!matched.isEmpty) {
+                fieldMatch = matched(0).group(0)
+                afterMatch = matched(0).after(0).toString
+                if (logger.isTraceEnabled()) logger.trace("Rule 7, matched: " + fieldMatch + ", afterMatch: " + afterMatch);
+                return new MongoQueryNodeElemMatch(trans(afterMatch, cond))
+            }
+        }
+
+        // ------ Rule r8: Heading field name or array index
+        //		  trans(.p<JPpath>, <cond>) :- FIELD(p) | trans(<JPpath>, <cond>)
         {
             var fieldMatch: String = ""
             var afterMatch: String = ""
 
             // Try to match .p
             var matched = JsonPathToMongoTranslator.JSONPATH_FIELD_NAME_DOTTED.findAllMatchIn(path).toList
-            if (!matched.isEmpty) {
-                fieldMatch = matched(0).group(1)
-                afterMatch = matched(0).after(0).toString
+            if (matched.isEmpty) {
+                // Try to match ["p"]
+                matched = JsonPathToMongoTranslator.JSONPATH_FIELD_NAME_ARRAY_NOTATION.findAllMatchIn(path).toList
+                if (matched.isEmpty) {
+                    // Try to match [5]
+                    matched = JsonPathToMongoTranslator.JSONPATH_ARRAY_IDX_ARRAY_NOTATION.findAllMatchIn(path).toList
+                }
             }
 
-            // Try to match ["p"]
-            matched = JsonPathToMongoTranslator.JSONPATH_FIELD_NAME_ARRAY_NOTATION.findAllMatchIn(path).toList
             if (!matched.isEmpty) {
                 fieldMatch = matched(0).group(1)
-                afterMatch = matched(0).after(0).toString
-            }
-
-            // Try to match [5]
-            matched = JsonPathToMongoTranslator.JSONPATH_ARRAY_IDX_ARRAY_NOTATION.findAllMatchIn(path).toList
-            if (!matched.isEmpty) {
-                fieldMatch = matched(0).group(1)
-                afterMatch = matched(0).after(0).toString
-            }
-
-            if (!fieldMatch.isEmpty) {
-                if (logger.isTraceEnabled()) logger.trace("Rule 8, matched: " + fieldMatch);
-                return new MongoQueryNodeField(fieldMatch, trans(afterMatch, cond))
+                if (!fieldMatch.isEmpty) {
+                    afterMatch = matched(0).after(0).toString
+                    if (logger.isTraceEnabled()) logger.trace("Rule 8, matched: " + fieldMatch + ", afterMatch: " + afterMatch);
+                    return new MongoQueryNodeField(fieldMatch, trans(afterMatch, cond))
+                }
             }
         }
 

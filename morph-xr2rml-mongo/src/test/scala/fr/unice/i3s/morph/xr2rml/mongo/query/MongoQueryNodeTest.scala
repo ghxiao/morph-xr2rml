@@ -58,7 +58,7 @@ class MongoQueryNodeTest {
                 new MongoQueryNodeAnd(List(
                     new MongoQueryNodeExists("p.0"),
                     new MongoQueryNodeWhere("this.p[0] == 0"),
-                    new MongoQueryNodeCompare("p", MongoQueryNodeCompare.Operator.SIZE, new Integer(10))
+                    new MongoQueryNodeCompare("p", MongoQueryNodeCompare.Operator.SIZE, "10")
                 ))
             ))
         println(node.toQueryString)
