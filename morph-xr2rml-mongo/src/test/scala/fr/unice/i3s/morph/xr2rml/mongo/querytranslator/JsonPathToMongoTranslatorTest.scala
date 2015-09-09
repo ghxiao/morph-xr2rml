@@ -1,10 +1,11 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
-import java.lang.Boolean
 
 class JsonPathToMongoTranslatorTest {
 
@@ -78,7 +79,7 @@ class JsonPathToMongoTranslatorTest {
         println("------ test_R4")
 
         var jpExpr = """$.p[?(@.q == 10)].r"""
-        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, Boolean.TRUE)
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, java.lang.Boolean.TRUE)
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println(query.toQueryString)
         assertEquals(cleanString("$and: [{'p.r': {$eq: true}}, {'p.q': {$eq: 10}}]"), cleanString(query.toQueryString))
@@ -88,16 +89,50 @@ class JsonPathToMongoTranslatorTest {
         println("------ test_R5")
 
         var jpExpr = """$[?(@.q == 10)].r"""
-        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, Boolean.TRUE)
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, java.lang.Boolean.TRUE)
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println(query.toQueryString)
         assertEquals(cleanString("$and: [{'r': {$eq: true}}, {'q': {$eq: 10}}]"), cleanString(query.toQueryString))
 
-        jpExpr = """$[?(@.p >= @.q)].r"""
-        cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, Boolean.TRUE)
+        jpExpr = """$[?(@.p[5] >= @.q)].r"""
+        cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, java.lang.Boolean.TRUE)
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'r': {$eq: true}}, {'q': {$eq: 10}}]"), cleanString(query.toQueryString))
+        assertTrue(cleanString(query.toQueryString).startsWith(cleanString("$and: [{'r': {$eq: true}}, {$and: [{")))
+        assertTrue(cleanString(query.toQueryString).contains(cleanString("{'p.5': {$exists: true}}")))
+        assertTrue(cleanString(query.toQueryString).contains(cleanString("{$where: 'this.p[5] >= this.q'}")))
+    }
+
+    @Test def test_R6a() {
+        println("------ test_R6a")
+
+        var jpExpr = """$.p[(@.q + @.r)]"""
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
+        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println(query.toQueryString)
+        assertEquals(cleanString("$and: [{'p': {$exists: true}}, {$where: 'this.p[this.p.q + this.p.r] == 2'}]"), cleanString(query.toQueryString))
+
+        jpExpr = """$.p[0][(@.length -1)]"""
+        cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
+        query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println(query.toQueryString)
+        assertEquals(cleanString("$and: [{'p.0': {$exists: true}}, {$where: 'this.p[0][this.p[0].length - 1] == 2'}]"), cleanString(query.toQueryString))
+    }
+
+    @Test def test_R6b() {
+        println("------ test_R6b")
+
+        var jpExpr = """$.p[(@.q + @.r)].s"""
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
+        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println(query.toQueryString)
+        assertEquals(cleanString("$and: [{'p': {$exists: true}}, {$where: 'this.p[this.p.q + this.p.r].s == 2'}]"), cleanString(query.toQueryString))
+
+        jpExpr = """$.p[0][(@.length -1)].s"""
+        cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
+        query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println(query.toQueryString)
+        assertEquals(cleanString("$and: [{'p.0': {$exists: true}}, {$where: 'this.p[0][this.p[0].length - 1].s == 2'}]"), cleanString(query.toQueryString))
     }
 
     @Test def test_R7_R8() {
