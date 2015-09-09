@@ -23,7 +23,6 @@ class MorphJsondocDataTranslatorTest {
                 println(tok)
             val queryStr = tokens(1).substring(0, tokens(1).length - 1)
             println("queryStr: [" + queryStr + "]")
-
         }
     }
 }
