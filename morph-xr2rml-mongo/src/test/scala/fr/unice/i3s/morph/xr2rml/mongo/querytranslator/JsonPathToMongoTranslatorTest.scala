@@ -162,4 +162,20 @@ class JsonPathToMongoTranslatorTest {
         println(query.toQueryString)
         assertEquals(cleanString("'p': {$elemMatch: {'5.r': {$eq: 1}}}"), cleanString(query.toQueryString))
     }
+
+    @Test def test_R9() {
+        println("------ test_R9")
+
+        var jpExpr = """$.p[(@.q-1)].*"""
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
+        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println(query.toQueryString)
+        assertEquals(cleanString("'p': {}"), cleanString(query.toQueryString))
+
+        jpExpr = """$.p.*[(@.q-1)]"""
+        cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
+        query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println(query.toQueryString)
+        assertEquals(cleanString("'p': {$elemMatch: {}}"), cleanString(query.toQueryString))
+    }
 }

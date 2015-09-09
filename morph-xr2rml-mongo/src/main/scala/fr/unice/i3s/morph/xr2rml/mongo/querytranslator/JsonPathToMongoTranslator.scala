@@ -12,6 +12,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNop
 
 class JsonPathToMongoTranslator {
 
@@ -250,17 +251,22 @@ object JsonPathToMongoTranslator {
                     val match1 = match1_JSexpr(0).group(1) // Match 1 = [(<num_expr>)], group(1) = <num_expr>
                     val after_match1 = match1_JSexpr(0).after(0)
 
-                    val wherePart = if (after_match1.length == 0)
-                        // Rule r6a
-                        new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + condJS(cond))
-                    else
-                        // Rule r6b
-                        new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + after_match1 + condJS(cond))
-
-                    // Build the AND query operator
-                    val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
-                    if (logger.isTraceEnabled()) logger.trace("Rule r6a, AND members: " + andMembers.map(m => m.toQueryString))
-                    return new MongoQueryNodeAnd(andMembers)
+                    if (after_match1.length == 0) {
+                        // Rule r6a - Build the AND query operator
+                        val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + condJS(cond))
+                        val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
+                        if (logger.isTraceEnabled()) logger.trace("Rule r6a, AND members: " + andMembers.map(m => m.toQueryString))
+                        return new MongoQueryNodeAnd(andMembers)
+                    } else {
+                        val match2_JPpath_ns2 = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(after_match1).toList
+                        if (!match2_JPpath_ns2.isEmpty) {
+                            // Rule r6b - Build the AND query operator
+                            val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + after_match1 + condJS(cond))
+                            val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
+                            if (logger.isTraceEnabled()) logger.trace("Rule r6a, AND members: " + andMembers.map(m => m.toQueryString))
+                            return new MongoQueryNodeAnd(andMembers)
+                        }
+                    }
                 }
             }
         }
@@ -312,7 +318,9 @@ object JsonPathToMongoTranslator {
             }
         }
 
-        null
+        // ------ Rule r9: The path did not match any rule?
+        logger.warn("JSONPath expression [" + path + "] did not match any rule. It is ignored.")
+        new MongoQueryNodeNop(path)
     }
 
     /**
