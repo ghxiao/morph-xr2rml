@@ -17,14 +17,14 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[5].q["a", "b", "c"].r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'p.5.q.a.r': {$eq: 'v'}}, {'p.5.q.b.r': {$eq: 'v'}}, {'p.5.q.c.r': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'p.5.q.a.r': {$eq: 'v'}}, {'p.5.q.b.r': {$eq: 'v'}}, {'p.5.q.c.r': {$eq: 'v'}}]"), cleanString(query.toString))
 
         jpExpr = """$.p.q["a", "b", "c"]"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'p.q.a': {$eq: 'v'}}, {'p.q.b': {$eq: 'v'}}, {'p.q.c': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'p.q.a': {$eq: 'v'}}, {'p.q.b': {$eq: 'v'}}, {'p.q.c': {$eq: 'v'}}]"), cleanString(query.toString))
     }
 
     @Test def test_R2b() {
@@ -33,14 +33,14 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[5].q[1,3,5].r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'p.5.q.1.r': {$eq: 'v'}}, {'p.5.q.3.r': {$eq: 'v'}}, {'p.5.q.5.r': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'p.5.q.1.r': {$eq: 'v'}}, {'p.5.q.3.r': {$eq: 'v'}}, {'p.5.q.5.r': {$eq: 'v'}}]"), cleanString(query.toString))
 
         jpExpr = """$.p.q[1,3,5]"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'p.q.1': {$eq: 'v'}}, {'p.q.3': {$eq: 'v'}}, {'p.q.5': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'p.q.1': {$eq: 'v'}}, {'p.q.3': {$eq: 'v'}}, {'p.q.5': {$eq: 'v'}}]"), cleanString(query.toString))
     }
 
     @Test def test_R3a() {
@@ -49,14 +49,14 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$["a", "b", "c"].r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'a.r': {$eq: 'v'}}, {'b.r': {$eq: 'v'}}, {'c.r': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'a.r': {$eq: 'v'}}, {'b.r': {$eq: 'v'}}, {'c.r': {$eq: 'v'}}]"), cleanString(query.toString))
 
         jpExpr = """$["a", "b", "c"]"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'a': {$eq: 'v'}}, {'b': {$eq: 'v'}}, {'c': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'a': {$eq: 'v'}}, {'b': {$eq: 'v'}}, {'c': {$eq: 'v'}}]"), cleanString(query.toString))
     }
 
     @Test def test_R3b() {
@@ -65,14 +65,14 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$[1,3,5].r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'1.r': {$eq: 'v'}}, {'3.r': {$eq: 'v'}}, {'5.r': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'1.r': {$eq: 'v'}}, {'3.r': {$eq: 'v'}}, {'5.r': {$eq: 'v'}}]"), cleanString(query.toString))
 
         jpExpr = """$[1,3,5]"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "v")
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$or: [{'1': {$eq: 'v'}}, {'3': {$eq: 'v'}}, {'5': {$eq: 'v'}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$or: [{'1': {$eq: 'v'}}, {'3': {$eq: 'v'}}, {'5': {$eq: 'v'}}]"), cleanString(query.toString))
     }
 
     @Test def test_R4() {
@@ -81,8 +81,8 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[?(@.q == 10)].r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, java.lang.Boolean.TRUE)
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'p.r': {$eq: true}}, {'p.q': {$eq: 10}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$and: [{'p.r': {$eq: true}}, {'p.q': {$eq: 10}}]"), cleanString(query.toString))
     }
 
     @Test def test_R5() {
@@ -91,16 +91,17 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$[?(@.q == 10)].r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, java.lang.Boolean.TRUE)
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'r': {$eq: true}}, {'q': {$eq: 10}}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$and: [{'r': {$eq: true}}, {'q': {$eq: 10}}]"), cleanString(query.toString))
 
         jpExpr = """$[?(@.p[5] >= @.q)].r"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, java.lang.Boolean.TRUE)
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertTrue(cleanString(query.toQueryString).startsWith(cleanString("$and: [{'r': {$eq: true}}, {$and: [{")))
-        assertTrue(cleanString(query.toQueryString).contains(cleanString("{'p.5': {$exists: true}}")))
-        assertTrue(cleanString(query.toQueryString).contains(cleanString("{$where: 'this.p[5] >= this.q'}")))
+        println(query.toString)
+        assertTrue(cleanString(query.toString).startsWith(cleanString("$and: [{'r': {$eq: true}}, ")))
+        assertTrue(cleanString(query.toString).contains(cleanString("{'q': {$exists: true}}")))
+        assertTrue(cleanString(query.toString).contains(cleanString("{'p.5': {$exists: true}}")))
+        assertTrue(cleanString(query.toString).contains(cleanString("{$where: 'this.p[5] >= this.q'}")))
     }
 
     @Test def test_R6a() {
@@ -109,14 +110,14 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[(@.q + @.r)]"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'p': {$exists: true}}, {$where: 'this.p[this.p.q + this.p.r] == 2'}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$and: [{'p': {$exists: true}}, {$where: 'this.p[this.p.q + this.p.r] == 2'}]"), cleanString(query.toString))
 
         jpExpr = """$.p[0][(@.length -1)]"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'p.0': {$exists: true}}, {$where: 'this.p[0][this.p[0].length - 1] == 2'}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$and: [{'p.0': {$exists: true}}, {$where: 'this.p[0][this.p[0].length - 1] == 2'}]"), cleanString(query.toString))
     }
 
     @Test def test_R6b() {
@@ -125,14 +126,14 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[(@.q + @.r)].s"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'p': {$exists: true}}, {$where: 'this.p[this.p.q + this.p.r].s == 2'}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$and: [{'p': {$exists: true}}, {$where: 'this.p[this.p.q + this.p.r].s == 2'}]"), cleanString(query.toString))
 
         jpExpr = """$.p[0][(@.length -1)].s"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("$and: [{'p.0': {$exists: true}}, {$where: 'this.p[0][this.p[0].length - 1].s == 2'}]"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("$and: [{'p.0': {$exists: true}}, {$where: 'this.p[0][this.p[0].length - 1].s == 2'}]"), cleanString(query.toString))
     }
 
     @Test def test_R7_R8() {
@@ -141,26 +142,26 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[5].q.r"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.IsNotNull, null)
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("'p.5.q.r': {$exists: true, $ne: null}"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("'p.5.q.r': {$exists: true, $ne: null}"), cleanString(query.toString))
 
         jpExpr = """$.p[5].q.r"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(1))
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("'p.5.q.r': {$eq: 1}"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("'p.5.q.r': {$eq: 1}"), cleanString(query.toString))
 
         jpExpr = """$.p[5].*.r"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.IsNotNull, null)
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("'p.5': {$elemMatch: {'r': {$exists: true, $ne: null}}}"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("'p.5': {$elemMatch: {'r': {$exists: true, $ne: null}}}"), cleanString(query.toString))
 
         jpExpr = """$.p[*][5].r"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(1))
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("'p': {$elemMatch: {'5.r': {$eq: 1}}}"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("'p': {$elemMatch: {'5.r': {$eq: 1}}}"), cleanString(query.toString))
     }
 
     @Test def test_R9() {
@@ -169,13 +170,30 @@ class JsonPathToMongoTranslatorTest {
         var jpExpr = """$.p[(@.q-1)].*"""
         var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("'p': {}"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("'p': {}"), cleanString(query.toString))
 
         jpExpr = """$.p.*[(@.q-1)]"""
         cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, new Integer(2))
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println(query.toQueryString)
-        assertEquals(cleanString("'p': {$elemMatch: {}}"), cleanString(query.toQueryString))
+        println(query.toString)
+        assertEquals(cleanString("'p': {$elemMatch: {}}"), cleanString(query.toString))
+    }
+
+    @Test def test_Complex() {
+        println("------ test_Complex")
+        var jpExpr = """$[?(@.q.length == 5 || @.q.length < 3)].r"""
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "val")
+        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println("Query: " + query.toString)
+    }
+    
+    @Test def test_Complex2() {
+        println("------ test_Complex2")
+
+        var jpExpr = """$[?(@.q.length > 5 || (@.q.length == 3 && @.r.length > 6))].r"""
+        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "val")
+        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        println("Query: " + query.toString)
     }
 }

@@ -8,5 +8,9 @@ class MongoQueryNodeExists(val path: String) extends MongoQueryNode {
 
     val dotNotedPath = MongoQueryNode.dotNotation(path)
 
+    override def equals(q: Any): Boolean = {
+        q.isInstanceOf[MongoQueryNodeExists] && this.path == q.asInstanceOf[MongoQueryNodeExists].path
+    }
+
     override def toQueryStringNotFirst() = { "'" + dotNotedPath + "': {$exists: true}" }
 }

@@ -1,13 +1,20 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
 /**
- * A MongoQueryNodeCompare node in a abstract MongoDB query is used to represent a JavaScript filter coming from a JSONPath expression.
+ * A MongoQueryNodeCompare node in a abstract MongoDB query used to represent a JavaScript filter coming from a JSONPath expression.
  * E.g.: In the JSONPath expression "$.p.q[?(@.r <= 5)]", the JavaScript part shall be translated into a piece if MongoDB
  * query condition like: "p.q.r: {$lte: 5}"
  */
 class MongoQueryNodeCompare(val path: String, val operator: MongoQueryNodeCompare.Operator.Value, val value: String) extends MongoQueryNode {
 
     val dotNotedPath = MongoQueryNode.dotNotation(path)
+
+    override def equals(q: Any): Boolean = {
+        if (q.isInstanceOf[MongoQueryNodeCompare]) {
+            val qc = q.asInstanceOf[MongoQueryNodeCompare]
+            this.path == qc.path && this.operator == qc.operator && this.value == qc.value
+        } else false
+    }
 
     override def toQueryStringNotFirst() = {
         if (operator == MongoQueryNodeCompare.Operator.REGEX)

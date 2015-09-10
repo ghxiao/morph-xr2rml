@@ -14,11 +14,10 @@ import org.mozilla.javascript.ast.AstRoot
 import org.mozilla.javascript.ast.NodeVisitor
 
 /**
- * This utility class creates abstract representations of JavaScript boolean expressions, based on the Rhino AstNode class
+ * This utility object creates abstract representations of JavaScript boolean expressions, based on the Rhino AstNode class
+ *
+ * @author Franck Michel (franck.michel@cnrs.fr)
  */
-class AbstractJsExprFactory {
-}
-
 object JavascriptBoolExprFactory {
 
     val logger = Logger.getLogger(this.getClass().getName());

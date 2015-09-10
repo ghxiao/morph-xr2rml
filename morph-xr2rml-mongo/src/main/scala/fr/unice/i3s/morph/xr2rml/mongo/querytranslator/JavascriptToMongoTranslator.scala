@@ -14,9 +14,18 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExpr
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExprFactory
 
-class JavascriptToMongoTranslator {
-}
-
+/**
+ * In the process of translating a JSONPath expression and a top-level condition into a MongoDB query,
+ * it can be needed to translate JavaScript parts into equivalent MongoDB query operators.
+ * This happens when a JSONPath expression contains a JavaScript boolean expression like:
+ * 		$.p[?(@.p == 10)]
+ * or a numerical JavaScript expression like:
+ * 		$.p[(@.length - 1)]
+ *   
+ * To understand this code, you must have read and understood the algorithm first. Ask the author for the reference.
+ * 
+ * @author Franck Michel (franck.michel@cnrs.fr)
+ */
 object JavascriptToMongoTranslator {
 
     val logger = Logger.getLogger(this.getClass().getName());
@@ -68,13 +77,13 @@ object JavascriptToMongoTranslator {
         // ------ Rule j1: expr1 || expr2
         // 	 	  transJS(<JS_expr1> || <JS_expr2>) :- OR(transJS(<JS_expr1>), transJS(<JS_expr2>))
         if (jsExpr.astNode.getType == Token.OR) {
-            if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j2")
+            if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j1")
             val orMembers = jsExpr.children.toList.map(node => JavascriptToMongoTranslator.transJS(node))
             return new MongoQueryNodeOr(orMembers)
         }
 
         // ------ Rule j2: this<JS_expr1> <op> this<JS_expr2>, with <op> in {==, ===, !=, !== <=, <, >=, >}
-        //		  transJS(this<JS_expr1> <op> this<JS_expr2>) :- AND(EXISTS(<JS_expr1>), EXISTS(<JS_expr2>), WHERE("this<JS_expr1> <op> this<JS_expr2>")
+        //		  transJS(this<JS_expr1> <op> this<JS_expr2>) :- AND(EXISTS(<JS_expr1>), EXISTS(<JS_expr2>), WHERE("this<JS_expr1> <op> this<JS_expr2>"))
         if (jsExpr hasTypeIn List(Token.EQ, Token.SHEQ, Token.NE, Token.SHNE, Token.LE, Token.LT, Token.GE, Token.GT)) {
             val child0 = jsExpr.children(0)
             val child1 = jsExpr.children(1)
