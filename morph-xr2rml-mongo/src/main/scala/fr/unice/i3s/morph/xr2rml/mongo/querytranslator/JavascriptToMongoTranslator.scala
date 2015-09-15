@@ -2,7 +2,6 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
 import org.mozilla.javascript.Token
-
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
@@ -13,6 +12,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExpr
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExprFactory
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 
 /**
  * In the process of translating a JSONPath expression and a top-level condition into a MongoDB query,
@@ -21,9 +21,9 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExprFact
  * 		$.p[?(@.p == 10)]
  * or a numerical JavaScript expression like:
  * 		$.p[(@.length - 1)]
- *   
+ *
  * To understand this code, you must have read and understood the algorithm first. Ask the author for the reference.
- * 
+ *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
 object JavascriptToMongoTranslator {
@@ -92,12 +92,13 @@ object JavascriptToMongoTranslator {
                 val child0Src = child0.astNode.toSource
                 val child1Src = child1.astNode.toSource
                 if (child0Src.startsWith("this") && child1Src.startsWith("this")) {
-                    if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j2")
-                    return new MongoQueryNodeAnd(List(
+                    logger.warn("Unupported JS expression [" + jsExpr.astNode.toSource + "], rule j2: pattern \"this<JS_expr> <op> this<JS_expr>\".")
+                    return new MongoQueryNodeNotSupported(jsExpr.astNodeToString)
+                    /* return new MongoQueryNodeAnd(List(
                         new MongoQueryNodeExists(child0Src.substring(4)),
                         new MongoQueryNodeExists(child1Src.substring(4)),
                         new MongoQueryNodeWhere(jsExpr.astNode.toSource)
-                    ))
+                    )) */
                 }
             }
         }
@@ -154,7 +155,7 @@ object JavascriptToMongoTranslator {
             }
         }
 
-        // ------ Rule j5 (b): this<JSpath>.length <op>== <i>, with <op> in {!=, <=, <, >=, >}
+        // ------ Rule j5 (b): this<JSpath>.length <op> <i>, with <op> in {!=, <=, <, >=, >}
         //		  transJS(this<JSpath>.length <op> <i>) :- WHERE(this<JSpath>.length <op> <i>)
         if (jsExpr hasTypeIn List(Token.NE, Token.LE, Token.LT, Token.GE, Token.GT)) {
             val child0 = jsExpr.children(0)
@@ -175,8 +176,9 @@ object JavascriptToMongoTranslator {
 
                 val pathSrc = path.astNode.toSource
                 if (pathSrc.startsWith("this") && pathSrc.endsWith(".length") && !pathSrc.equals("this.length")) {
-                    if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j5")
-                    return new MongoQueryNodeWhere(jsExpr.astNode.toSource)
+                    logger.warn("Unupported JS expression [" + jsExpr.astNode.toSource + "], rule j5: pattern \"this<JSpath>.length <op> <i>\" with <op> not being ==.")
+                    return new MongoQueryNodeNotSupported(jsExpr.astNodeToString)
+                    //return new MongoQueryNodeWhere(jsExpr.astNode.toSource)
                 }
             }
         }
@@ -210,8 +212,9 @@ object JavascriptToMongoTranslator {
 
         // ------- Rule j7: applies when no other rule applies
         //		   transJS(<bool_expr>) :- WHERE("<bool_expr>")
-        if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j7")
-        return new MongoQueryNodeWhere(jsExpr.astNode.toSource)
+        logger.warn("Unupported JS expression [" + jsExpr.astNode.toSource + "], rule j7.")
+        return new MongoQueryNodeNotSupported(jsExpr.astNodeToString)
+        //return new MongoQueryNodeWhere(jsExpr.astNode.toSource)
     }
 
     /**

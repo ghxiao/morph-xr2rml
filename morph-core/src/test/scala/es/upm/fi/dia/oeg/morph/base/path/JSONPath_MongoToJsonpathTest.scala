@@ -19,14 +19,28 @@ class JSONPath_MongoToJsonpathTest {
             } """
         jpExpr = "$.p.['t'].u"
         println(new JSONPath_PathExpression(jpExpr).evaluate(json))
-        jpExpr = "$.p.['s', 't'].u"
+        jpExpr = "$.p.['s', 't']"
         println(new JSONPath_PathExpression(jpExpr).evaluate(json))
 
         json = """{ "p": ["valp", "valq", "valr"] }"""
-        jpExpr = "$.p[?(@[0] == 'valp')]"
+        jpExpr = "$.p[?(@ == 'valp')]"
         println(new JSONPath_PathExpression(jpExpr).evaluate(json))
-        jpExpr = "$.p[?(@.length == 3)]"
+        jpExpr = "$[?(@.length == 3)]"
         println(new JSONPath_PathExpression(jpExpr).evaluate(json))
 
+        json = """{ 
+            "a": [ {"p1": "valp1", p2: "valp2"} ], 
+            "b": [ {"q1": "valq1", q2: "valq2"} ]
+            }"""
+        jpExpr = "$.*[?(@.q1)].q2"
+        println(new JSONPath_PathExpression(jpExpr).evaluate(json))
+        
+        
+        json = """{ 
+            "a": [ {"p": "val", q: "val", r: "valr1"}, {"p": "valp2", "q": "valq2", "r": "valr2"} ]
+            }"""
+        jpExpr = "$.a[?(@.p == @.q)].r"
+        println(new JSONPath_PathExpression(jpExpr).evaluate(json))
+        
     }
 }

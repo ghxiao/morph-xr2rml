@@ -66,13 +66,13 @@ abstract class MongoQueryNode {
 
             case a: MongoQueryNodeNotExists => a
 
-            case a: MongoQueryNodeNop => a
+            case a: MongoQueryNodeNotSupported => a
 
             case a: MongoQueryNodeWhere => a
 
             case a: MongoQueryNodeField => new MongoQueryNodeField(a.field, a.next.optimizeQuery)
 
-            case a: MongoQueryNodeElemMatch => new MongoQueryNodeElemMatch(a.next.optimizeQuery)
+            case a: MongoQueryNodeElemMatch => new MongoQueryNodeElemMatch(a.members.map(m => m.optimizeQuery))
 
             case a: MongoQueryNodeAnd =>
                 val optMembers = a.flattenAnds.groupWheres.members

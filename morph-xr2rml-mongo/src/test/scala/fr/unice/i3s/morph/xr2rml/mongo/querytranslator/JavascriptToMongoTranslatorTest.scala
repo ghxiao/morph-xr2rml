@@ -3,8 +3,9 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 
 class JavascriptToMongoTranslatorTest {
 
@@ -31,12 +32,12 @@ class JavascriptToMongoTranslatorTest {
         var jsExpr: String = null
         var mq: MongoQueryNode = null
 
-        jsExpr = """(this.s == "thy") || ("ujy" == "ujy")""";
+        jsExpr = """(this.s == "thy") || (this.q == "ujy")""";
         mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
         println(mq.toString)
         assertTrue(
-            cleanString(""" $or: [{'s': {$eq: 'thy'}}, {$where: '"ujy" == "ujy"'}]""").equals(cleanString(mq.toString)) ||
-                cleanString(""" $or: [{$where: '"ujy" == "ujy"'}, {'s': {$eq: 'thy'}}]""").equals(cleanString(mq.toString)))
+            cleanString(""" $or: [{'s': {$eq: 'thy'}}, {'q': {$eq:'ujy'}}]""").equals(cleanString(mq.toString)) ||
+                cleanString(""" $or: [{'q': {$eq:'ujy'}}, {'s': {$eq: 'thy'}}]""").equals(cleanString(mq.toString)))
 
         jsExpr = """this.p[0].r || this.p[0].s""";
         mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
@@ -44,6 +45,12 @@ class JavascriptToMongoTranslatorTest {
         assertTrue(
             cleanString(""" $or: [{'p.0.r': {$exists: true}}, {'p.0.s': {$exists: true}}]""").equals(cleanString(mq.toString)) ||
                 cleanString(""" $or: [{'p.0.s': {$exists: true}}, {'p.0.r': {$exists: true}}]""").equals(cleanString(mq.toString)))
+
+        jsExpr = """this.p.r || this.p < this.s""";
+        mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
+        println(mq.toString)
+        val members = mq.asInstanceOf[MongoQueryNodeOr].members
+        assertTrue(members(0).isInstanceOf[MongoQueryNodeNotSupported] || members(1).isInstanceOf[MongoQueryNodeNotSupported])
     }
 
     @Test def test_j2() {
@@ -55,18 +62,20 @@ class JavascriptToMongoTranslatorTest {
         jsExpr = """this.s <= this.p[1] """;
         mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
         println(mq.toString)
-        assertTrue(cleanString(mq.toString).contains("$and:["))
+        /* assertTrue(cleanString(mq.toString).contains("$and:["))
         assertTrue(cleanString(mq.toString).contains("""{$where:'this.s<=this.p[1]'}"""))
         assertTrue(cleanString(mq.toString).contains("""{'s':{$exists:true}}"""))
-        assertTrue(cleanString(mq.toString).contains("""{'p.1':{$exists:true}}"""))
+        assertTrue(cleanString(mq.toString).contains("""{'p.1':{$exists:true}}""")) */
+        assertTrue(mq.isInstanceOf[MongoQueryNodeNotSupported])
 
         jsExpr = """this.s === this.p[1] """;
         mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
         println(mq.toString)
-        assertTrue(cleanString(mq.toString).contains("$and:["))
+        /* assertTrue(cleanString(mq.toString).contains("$and:["))
         assertTrue(cleanString(mq.toString).contains("""{$where:'this.s===this.p[1]'}"""))
         assertTrue(cleanString(mq.toString).contains("""{'s':{$exists:true}}"""))
-        assertTrue(cleanString(mq.toString).contains("""{'p.1':{$exists:true}}"""))
+        assertTrue(cleanString(mq.toString).contains("""{'p.1':{$exists:true}}""")) */
+        assertTrue(mq.isInstanceOf[MongoQueryNodeNotSupported])
     }
 
     @Test def test_j3() {
@@ -107,7 +116,8 @@ class JavascriptToMongoTranslatorTest {
         jsExpr = """this.p.length > 10""";
         mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
         println(mq.toString)
-        assertEquals(cleanString("$where: 'this.p.length > 10'"), cleanString(mq.toString))
+        //assertEquals(cleanString("$where: 'this.p.length > 10'"), cleanString(mq.toString))
+        assertTrue(mq.isInstanceOf[MongoQueryNodeNotSupported])
     }
 
     @Test def test_j6() {
@@ -141,6 +151,7 @@ class JavascriptToMongoTranslatorTest {
         jsExpr = """this.s + this.p[1] == 20""";
         mq = JavascriptToMongoTranslator.transJS(jsExpr).getOrElse(null)
         println(mq.toString)
-        assertEquals(cleanString(""" $where: 'this.s + this.p[1] == 20' """), cleanString(mq.toString))
+        //assertEquals(cleanString(""" $where: 'this.s + this.p[1] == 20' """), cleanString(mq.toString))
+        assertTrue(mq.isInstanceOf[MongoQueryNodeNotSupported])
     }
 }

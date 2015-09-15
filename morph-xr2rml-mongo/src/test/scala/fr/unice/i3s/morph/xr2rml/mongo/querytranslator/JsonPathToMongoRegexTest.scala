@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 
 /**
  * Tests of the Regex expressions in JsonPathToMongoTranslator
@@ -130,9 +129,18 @@ class JsonPathToMongoRegexTest {
         var jpExpr = """[?(@.p == 4)]"""
         var result = JsonPathToMongoTranslator.JSONPATH_JS_BOOL_EXPRESSION.findAllMatchIn(jpExpr).toList
         println(result)
-        val resultL = result.toList
+        var resultL = result.toList
         assertEquals(1, result.length)
         assertEquals("@.p == 4", result(0).group(1))
+
+        jpExpr = """[?(@.q.length==5||(@.q && @.r))].r.[?(@.q)]"""
+        result = JsonPathToMongoTranslator.JSONPATH_JS_BOOL_EXPRESSION.findAllMatchIn(jpExpr).toList
+        println(result)
+        resultL = result.toList
+        println(result(0).group(0))
+        assertEquals("[?(@.q.length==5||(@.q && @.r))]", result(0).group(0))
+        println(result(0).group(1))
+        assertEquals("@.q.length==5||(@.q && @.r)", result(0).group(1))
     }
 
     @Test def test_dotNotation() {
@@ -143,4 +151,5 @@ class JsonPathToMongoRegexTest {
         println(dotNoted)
         assertEquals("p.5.q.r", dotNoted)
     }
+
 }

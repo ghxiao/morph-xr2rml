@@ -12,7 +12,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNop
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotExists
 import scala.collection.mutable.Queue
@@ -32,17 +32,17 @@ object JsonPathToMongoTranslator {
 
     /**
      * Regex for JSONPath expressions containing a concatenation of single field names (with tailing-dot or in array notation)
-     * and array indexes, i.e. one of: .p, ["p"] or [i]. E.g. '.p.q.r', '.p[10]["r"]'
-     * '*' is NOT allowed. Field alternatives (["q","r"]) and array index alternatives ([1,2]) are NOT allowed.
+     * array indexes and wildcard, i.e. one of: .p, ["p"], [i], .* or [*].
+     * Field alternatives (["q","r"]) and array index alternatives ([1,2]) are NOT allowed.
      */
-    final val JSONPATH_PATH_NS = """^(\.\p{Alnum}+|\["\p{Alnum}+"\]|\[\p{Digit}+\])+""".r
+    final val JSONPATH_PATH = """^(\.\p{Alnum}+|\["\p{Alnum}+"\]|\[\p{Digit}+\]|\[\*\]|\.\*)+""".r
 
     /**
      * Regex for JSONPath expressions containing a concatenation of single field names (with tailing-dot or in array notation)
      * and array indexes, i.e. one of: .p, ["p"] or [i]. E.g. '.p.q.r', '.p[10]["r"]'
      * '*' is NOT allowed. Field alternatives (["q","r"]) and array index alternatives ([1,2]) are NOT allowed.
      */
-    final val JSONPATH_PATH = """^(\.\p{Alnum}+|\["\p{Alnum}+"\]|\[\p{Digit}+\]|\[\*\]|\.\*)+""".r
+    final val JSONPATH_PATH_NS = """^(\.\p{Alnum}+|\["\p{Alnum}+"\]|\[\p{Digit}+\])+""".r
 
     /**
      *  Regex for a JSONPath field name with heading dot: .p
@@ -102,30 +102,56 @@ object JsonPathToMongoTranslator {
      *  This regex is not 100% safe. If the JS expression contains things like [( or )]
      *  then the behavior quite unpredictable.
      */
-    final val JSONPATH_JS_BOOL_EXPRESSION = """^\[\?\((.+)\)\]""".r
+    final val JSONPATH_JS_BOOL_EXPRESSION = """^\[\?\((((?!\)\]).)+)\)\]""".r
 
     /**
      *  Regex for a JSONPath JavaScript condition: [(<JS_expression>)]
      *  This regex is not 100% safe. If the JS expression contains things like [( or )]
      *  then the behavior quite unpredictable.
      */
-    final val JSONPATH_JS_NUM_EXPRESSION = """^\[\((.+)\)\]""".r
+    final val JSONPATH_JS_NUM_EXPRESSION = """^\[\((((?!\)\]).)+)\)\]""".r
+
+    /**
+     * Regex for any JSONPAth JavaScript condition [(<JS_expression>)] at any place
+     */
+    final val JSONPATH_JS_NUM_EXPRESSION_ANYPLACE = """\[\(((?!\)\]).)+\)\]""".r
 
     /**
      * Entry point of the translation of a JSONPath expression with a top-level condition into a MongoDB query.
+     * the resulting query is not optimized. To get it optimized, call the optimize method or use
+     * the other trans() method.
      *
+     * @param jpPath the JSONPath to translate, may be empty or null
      * @return a MongoQueryNode instance representing the top-level object of the MongoDB query.
      * The result may be null in case no rule matched.
      *
      */
     def trans(jpPath: String, cond: MongoQueryNodeCond): MongoQueryNode = {
-        transJsonPathToMongo(jpPath, cond).optimize
+        trans(jpPath, cond, false)
+    }
+
+    /**
+     * Entry point of the translation of a JSONPath expression with a top-level condition into a MongoDB query.
+     *
+     * @param jpPath the JSONPath to translate, may be empty or null
+     * @param optimize true if query must be optimized
+     * @return a MongoQueryNode instance representing the top-level object of the MongoDB query.
+     * The result may be null in case no rule matched.
+     *
+     */
+    def trans(jpPath: String, cond: MongoQueryNodeCond, optimize: Boolean): MongoQueryNode = {
+        val path = if (jpPath == null) "" else jpPath
+        if (optimize)
+            transJsonPathToMongo(path, cond).optimize
+        else
+            transJsonPathToMongo(path, cond)
     }
 
     /**
      * Application of the translation rules R0 to R9, to translate a JSONPath expression with a given top-level condition
      * into a MongoDB query. Refer to the algorithm for the meaning of each rule.
      *
+     * @param jpPath the JSONPath to translate, may be empty or null
      * @return a MongoQueryNode instance representing the top-level object of the MongoDB query.
      * The result CAN'T be null, but a MongoQueryNodeNop is returned in case no rule matched.
      *
@@ -141,6 +167,12 @@ object JsonPathToMongoTranslator {
             return cond
 
         // ------ Rule r1
+        if (path.startsWith("$.*") ||
+            (path.startsWith("$[") && !path.startsWith("$[\"") && !path.startsWith("$['"))) { // $[i] nok, but $["p", "q"] ok 
+
+            logger.error("Invalid JSONPath expression [" + path + "]: MongoDB root document cannot be an array")
+            return new MongoQueryNodeNotSupported(path)
+        }
         if (path.charAt(0) == '$') {
             if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r1")
             return trans(path.substring(1), cond)
@@ -197,95 +229,102 @@ object JsonPathToMongoTranslator {
             }
         }
 
-        // ------ Rule r4: JavaScript boolean expression, e.g. $.p[?(@.q == @.r)].r
-        // 		  trans(<JPpath_ws>[?(<script_expr>)]<JPexpr>, <cond>) :-
-        //			   AND(trans(<JPpath_ws><JPexpr>, <cond>), transJS(replaceAt(this<JPpath_ws>, <script_expr>)))
-        {
-            // First, try to match <JPpath_ws> at the beginning of the path
-            val match0_JPpath_ws = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(path).toList
-            if (!match0_JPpath_ws.isEmpty) {
-                val match0 = match0_JPpath_ws(0).group(0) // Match0 is a <JPpath_ws>
-                val after_match0 = match0_JPpath_ws(0).after(0)
-
-                // Next, try to find the JavaScript boolean expression
-                val match1_JSexpr = JsonPathToMongoTranslator.JSONPATH_JS_BOOL_EXPRESSION.findAllMatchIn(after_match0).toList
-                if (!match1_JSexpr.isEmpty) {
-                    if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r4")
-                    val match1 = match1_JSexpr(0).group(1) // Match 1 = [?(<script_expr>)], group(1) = <script_expr>
-                    val after_match1 = match1_JSexpr(0).after(0)
-
-                    // Build the AND query operator
-                    val jsExprToMongoQ = JavascriptToMongoTranslator.transJS(replaceAt("this" + match0, match1))
-                    if (jsExprToMongoQ.isDefined) {
-                        val andMembers = List(trans(match0 + after_match1, cond), jsExprToMongoQ.get)
-                        if (logger.isTraceEnabled()) logger.trace("Rule 4, AND members: " + andMembers.map(m => m.toString))
-                        return new MongoQueryNodeAnd(andMembers)
-                    } else {
-                        logger.warn("Rule r4: JS expression [" + replaceAt("this" + match0, match1) + "] could not be translated into a MongoDB query. Ignoring it.")
-                        return trans(match0 + after_match1, cond)
-                    }
-                }
-            }
-        }
-
-        // ------ Rule r5: Heading JavaScript boolean expression, e.g. $.[?(@.q)].r
-        // 		  trans([?(<script_expr>)]<JPexpr>, <cond>) :- AND(trans(<JPexpr>, <cond>), transJS(replaceAt(this, <script_expr>)))
+        // ------ Rule r4: Heading JavaScript filter on array elements, e.g. $.[?(@.q)].r
+        // 		  trans([?(<script_expr>)]<JPpath_alt_nw><JPpath_alt_filt>, <cond>) :-
+        //			    ELEMMATCH(trans(<JPpath_alt_nw><JPpath_alt_filt>, <cond>), transJS(replaceAt(this, <script_expr>)))
         {
             // Find the JavaScript boolean expression
             val match0_JSexpr = JsonPathToMongoTranslator.JSONPATH_JS_BOOL_EXPRESSION.findAllMatchIn(path).toList
             if (!match0_JSexpr.isEmpty) {
-                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r5")
+
                 val match0 = match0_JSexpr(0).group(1) // Match 0 = [?(<script_expr>)], group(1) = <script_expr>
                 val after_match0 = match0_JSexpr(0).after(0)
 
-                // Build the AND query operator
+                // Unsupported case: $.p[?(@.q)].* or $.p[?(@.q)][*], because @.q means elements of p are documents but we apply a '*' to them.
+                // But and $.p[?(@.q)].p.* are ok.
+                if ((after_match0.toString.startsWith(".*") || after_match0.toString.startsWith("[*]"))) {
+                    logger.warn("Unsupported JSONPath expression [" + path + "]: the JavaScript filter means that elements are documents, and the wildcard is not applicable to documents")
+                    return new MongoQueryNodeNotSupported(path)
+                }
+
+                // Next, try to find the remaining part: it should not contain any script expression [()]
+                if (!JsonPathToMongoTranslator.JSONPATH_JS_NUM_EXPRESSION_ANYPLACE.findAllMatchIn(after_match0).toList.isEmpty) {
+                    logger.warn("Unsupported JSONPath expression [" + path + "]: a JavaScript filter [?(...)] cannot be followed by a JavaScript calculated index [(...)]")
+                    return new MongoQueryNodeNotSupported(path)
+                }
+
+                // Build the ELEMMATCH query operator
+                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r4")
                 val jsExprToMongoQ = JavascriptToMongoTranslator.transJS(replaceAt("this", match0))
                 if (jsExprToMongoQ.isDefined) {
-                    val andMembers = List(trans(after_match0.toString, cond), jsExprToMongoQ.get)
-                    if (logger.isTraceEnabled()) logger.trace("Rule 5, AND members: " + andMembers.map(m => m.toString))
-                    return new MongoQueryNodeAnd(andMembers)
+                    val members = List(trans(after_match0.toString, cond), jsExprToMongoQ.get)
+                    if (logger.isTraceEnabled()) logger.trace("Rule 4, ELEMMATCH members: " + members.map(m => m.toString))
+                    return new MongoQueryNodeElemMatch(members)
                 } else {
-                    logger.warn("Rule r5: JS expression [" + replaceAt("this", match0) + "] could not be translated into a MongoDB query. Ignoring it.")
+                    logger.error("Rule r4: JS expression [" + replaceAt("this", match0) + "] could not be translated into a MongoDB query. Ignoring it.")
                     return trans(after_match0.toString, cond)
                 }
+
             }
         }
 
-        // ------ Rule r6: Calculated array index, e.g. $.p[(@.length - 1), $.p[(@.q + @.r)]
-        //		  (a) trans(<JPpath_ws1>[(<num_expr>)]<JPpath_ws2>, <cond>) :- 
-        //				AND(EXISTS(JPpath_ws1), WHERE('this<JPpath_ws1>[replaceAt("this<JPpath_ws1>", <num_expr>)]<JPpath_ws2> CONDJS(<cond>')))
-        //		  (b) trans(<JPpath_ws1>[(<num_expr>)], <cond>) :- 
-        //		        AND(EXISTS(JPpath_ws1), WHERE('this<JPpath_ws1>[replaceAt("this<JPpath_ws1>", <num_expr>)] CONDJS(<cond>')))
+        // ------ Rule r6: Calculated array index, e.g. $.p[(@.length - 1)
+        //		  (a) trans(<JPpath_nw1>[(<num_expr>)]<JPpath_nw2>, <cond>) :- 
+        //				AND(EXISTS(JPpath_nw1), WHERE('this<JPpath_nw1>[replaceAt("this<JPpath_nw1>", <num_expr>)]<JPpath_nw2> CONDJS(<cond>')))
+        //		  (b) trans(<JPpath_nw1>[(<num_expr>)], <cond>) :- 
+        //		        AND(EXISTS(JPpath_nw1), WHERE('this<JPpath_nw1>[replaceAt("this<JPpath_nw1>", <num_expr>)] CONDJS(<cond>')))
         {
-            // First, try to match <JPpath_ws> at the beginning of the path
-            val match0_JPpath_ws1 = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(path).toList
-            if (!match0_JPpath_ws1.isEmpty) {
-                val match0 = match0_JPpath_ws1(0).group(0) // Match0 is a <JPpath_ws1>
-                val after_match0 = match0_JPpath_ws1(0).after(0)
+            // First, try to match <JPpath_nw> at the beginning of the path: in fact we match
+            // a <JPpath>, i.e. including the '*', and later on we'll check if there is a wildcard, so as to be 
+            // able to report the warning about the wildcard used with a calculated array index
+
+            val match0_JPpath_nw1 = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(path).toList
+            if (!match0_JPpath_nw1.isEmpty) {
+
+                val match0 = match0_JPpath_nw1(0).group(0) // Match0 is a <JPpath_nw1>
+                val after_match0 = match0_JPpath_nw1(0).after(0)
 
                 // Next, try to find the JavaScript calculated array index
                 val match1_JSexpr = JsonPathToMongoTranslator.JSONPATH_JS_NUM_EXPRESSION.findAllMatchIn(after_match0).toList
                 if (!match1_JSexpr.isEmpty) {
-                    if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r6")
+
+                    if (match0.toString.contains('*')) { // $.p.*[(<num_expr>)] not supported
+                        logger.warn("Unsupported JSONPath expression [" + path + "]: wildcad not supported before a calculated array index")
+                        return new MongoQueryNodeNotSupported(path)
+                    }
+
                     val match1 = match1_JSexpr(0).group(1) // Match 1 = [(<num_expr>)], group(1) = <num_expr>
                     val after_match1 = match1_JSexpr(0).after(0)
 
                     if (after_match1.length == 0) {
+
                         // Rule r6a - Build the AND query operator
+                        if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r6a")
                         val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + condJS(cond))
                         val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
                         if (logger.isTraceEnabled()) logger.trace("Rule r6a, AND members: " + andMembers.map(m => m.toString))
+
                         return new MongoQueryNodeAnd(andMembers)
                     } else {
-                        val match2_JPpath_ws2 = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(after_match1).toList
-                        if (!match2_JPpath_ws2.isEmpty) {
+                        val match2_JPpath_nw2 = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(after_match1).toList
+                        if (!match2_JPpath_nw2.isEmpty) {
+                            val match2 = match2_JPpath_nw2(0).group(1)
+
+                            if (match2.toString.contains('*')) { // $.p[(<num_expr>)].* not supported
+                                logger.warn("Unsupported JSONPath expression [" + path + "]: wildcad not supported after a calculated array index")
+                                return new MongoQueryNodeNotSupported(path)
+                            }
+
                             // Rule r6b - Build the AND query operator
+                            if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r6b")
                             val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + after_match1 + condJS(cond))
                             val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
                             if (logger.isTraceEnabled()) logger.trace("Rule r6a, AND members: " + andMembers.map(m => m.toString))
+
                             return new MongoQueryNodeAnd(andMembers)
                         }
                     }
+
                 }
             }
         }
@@ -339,7 +378,7 @@ object JsonPathToMongoTranslator {
 
         // ------ Rule r9: The path did not match any rule?
         logger.warn("JSONPath expression [" + path + "] did not match any rule. It is ignored.")
-        new MongoQueryNodeNop(path)
+        new MongoQueryNodeNotSupported(path)
     }
 
     /**

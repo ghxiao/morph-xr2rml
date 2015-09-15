@@ -176,8 +176,8 @@ class MongoQueryNodeTest {
         assertFalse(new MongoQueryNodeField("p", new MongoQueryNodeExists("q")) == new MongoQueryNodeField("r", new MongoQueryNodeExists("q")))
         assertFalse(new MongoQueryNodeField("p", new MongoQueryNodeExists("q")) == new MongoQueryNodeField("p", new MongoQueryNodeExists("r")))
 
-        assertTrue(new MongoQueryNodeNop("p") == new MongoQueryNodeNop("p"))
-        assertFalse(new MongoQueryNodeNop("p") == new MongoQueryNodeNop("q"))
+        assertTrue(new MongoQueryNodeNotSupported("p") == new MongoQueryNodeNotSupported("p"))
+        assertFalse(new MongoQueryNodeNotSupported("p") == new MongoQueryNodeNotSupported("q"))
 
         assertTrue(new MongoQueryNodeWhere("p") == new MongoQueryNodeWhere("p"))
         assertFalse(new MongoQueryNodeWhere("p") == new MongoQueryNodeWhere("q"))
