@@ -30,7 +30,7 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
     }
 
     /**
-     * Flatten several nested ORs into a single one
+     * Flatten several nested ANDs into a single one
      */
     def flattenAnds: MongoQueryNodeAnd = {
         val optMembers = new Queue[MongoQueryNode]

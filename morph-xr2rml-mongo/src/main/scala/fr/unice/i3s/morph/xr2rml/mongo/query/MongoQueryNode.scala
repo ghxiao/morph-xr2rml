@@ -39,8 +39,8 @@ abstract class MongoQueryNode {
         var q = this
         var qopt = q.optimizeQuery
 
-        // The query optimization changes things than can allow for new optimizations. Therefore 
-        // we call the optimize method until there is no more changes
+        // Each time the query optimization changes something, it can open the opportunity for new optimizations. 
+        // Therefore we call the optimize method until there is no more changes
         while (q != qopt) {
             q = qopt
             qopt = qopt.optimizeQuery
@@ -53,7 +53,11 @@ abstract class MongoQueryNode {
      * <ul>
      * 	<li>flatten nested ANDs</li>
      * 	<li>flatten nested ORs</li>
+     *  <li>merge ELEMMATCH with nested AND elements</li>
      * 	<li>in ORs and ANDs, groups several WHERE conditions into a single one</li>
+     *  <li>Replace AND of 1 term by the term itself, and OR of 1 term by the term itself</li>
+     *  <li>Remove NOT_SUPPORTED nodes</li>
+     *  <li>Replace empty ANDs, empty ORs and empty ELEMMATCHs with NOT_SUPPORTED</li>
      * </ul>
      */
     private def optimizeQuery: MongoQueryNode = {
@@ -70,17 +74,62 @@ abstract class MongoQueryNode {
 
             case a: MongoQueryNodeWhere => a
 
-            case a: MongoQueryNodeField => new MongoQueryNodeField(a.field, a.next.optimizeQuery)
+            case a: MongoQueryNodeField => {
+                // Remove the FIELD node if the next is a NOT_SUPPORTED element
+                if (a.next.isInstanceOf[MongoQueryNodeNotSupported])
+                    new MongoQueryNodeNotSupported("Emptry FIELD")
+                else
+                    new MongoQueryNodeField(a.field, a.next.optimizeQuery)
+            }
 
-            case a: MongoQueryNodeElemMatch => new MongoQueryNodeElemMatch(a.members.map(m => m.optimizeQuery))
+            case a: MongoQueryNodeElemMatch => {
+                // Merge nested ANDs with the ELEMMATCH
+                var optMembers = a.flattenAnds.members
 
-            case a: MongoQueryNodeAnd =>
-                val optMembers = a.flattenAnds.groupWheres.members
-                new MongoQueryNodeAnd(optMembers.map(m => m.optimizeQuery))
+                // Remove NOT_SUPPORTED elements and optimize members
+                optMembers = optMembers.filterNot(_.isInstanceOf[MongoQueryNodeNotSupported]).map(m => m.optimizeQuery)
+                if (optMembers.isEmpty)
+                    new MongoQueryNodeNotSupported("Emptry ELEMMATCH")
+                else
+                    new MongoQueryNodeElemMatch(optMembers)
+            }
 
-            case a: MongoQueryNodeOr =>
-                val optMembers = a.flattenOrs.groupWheres.members
-                new MongoQueryNodeOr(optMembers.map(m => m.optimizeQuery))
+            case a: MongoQueryNodeAnd => {
+                // Flatten nested ANDs and group WHEREs
+                var optMembers = a.flattenAnds.groupWheres.members
+
+                // Remove NOT_SUPPORTED elements and optimize members
+                optMembers = optMembers.filterNot(_.isInstanceOf[MongoQueryNodeNotSupported]).map(m => m.optimizeQuery)
+
+                if (optMembers.isEmpty)
+                    new MongoQueryNodeNotSupported("Emptry AND")
+
+                // Replace AND of 1 term with the term itself
+                if (optMembers.length == 1)
+                    optMembers(0)
+                else
+                    new MongoQueryNodeAnd(optMembers)
+            }
+
+            case a: MongoQueryNodeOr => {
+                // Flatten nested ORs and group WHEREs
+                var optMembers = a.flattenOrs.groupWheres.members
+
+                // Remove the OR is there is at least one NOT_SUPPORTED element in it
+                val notSupportedMembers = optMembers.filter(_.isInstanceOf[MongoQueryNodeNotSupported])
+                if (!notSupportedMembers.isEmpty) {
+                    logger.warn("Removing OR node due to NOT_SUPPORTED element: " + a.toString)
+                    new MongoQueryNodeNotSupported("OR node with NOT_SUPPORTED element")
+                } else {
+                    // Optimize members
+                    optMembers = optMembers.map(m => m.optimizeQuery)
+
+                    // Replace OR of 1 term with the term itself
+                    if (optMembers.length == 1)
+                        optMembers(0)
+                    else new MongoQueryNodeOr(optMembers)
+                }
+            }
         }
     }
 }
