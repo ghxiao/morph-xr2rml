@@ -83,61 +83,6 @@ class MongoQueryNodeTest {
             node.toString)
     }
 
-    @Test def testOptimizeFlattenAnds() {
-        println("------------------------------------------------- testOptimizeFlattenAnds")
-        val node: MongoQueryNode =
-            new MongoQueryNodeAnd(List(
-                new MongoQueryNodeExists("p"),
-                new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeExists("q"),
-                    new MongoQueryNodeExists("r")))))
-        println(node.toString)
-        // Raw
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$and: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
-        // Optimized
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), cleanString(node.optimize.toString))
-    }
-
-    @Test def testOptimizeFlattenOrs() {
-        println("------------------------------------------------- testOptimizeFlattenOrs")
-        val node: MongoQueryNode =
-            new MongoQueryNodeOr(List(
-                new MongoQueryNodeExists("p"),
-                new MongoQueryNodeOr(List(
-                    new MongoQueryNodeExists("q"),
-                    new MongoQueryNodeExists("r")))))
-        println(node.toString)
-        // Raw
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$or: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
-        // Optimized
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), cleanString(node.optimize.toString))
-    }
-
-    @Test def testOptimizeGroupWheres() {
-        println("------------------------------------------------- testOptimizeGroupWheres")
-        var node: MongoQueryNode =
-            new MongoQueryNodeAnd(List(
-                new MongoQueryNodeExists("p"),
-                new MongoQueryNodeWhere("a == b"),
-                new MongoQueryNodeWhere("@.q < @.p")))
-        println(node.toString)
-        // Raw
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$where: 'a == b'}, {$where: '@.q < @.p'}]"""), cleanString(node.toString))
-        // Optimized
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$where: '(a == b) && (@.q < @.p)'}]"""), cleanString(node.optimize.toString))
-
-        node =
-            new MongoQueryNodeOr(List(
-                new MongoQueryNodeExists("p"),
-                new MongoQueryNodeWhere("a == b"),
-                new MongoQueryNodeWhere("@.q < @.p")))
-        println(node.toString)
-        // Raw
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$where: 'a == b'}, {$where: '@.q < @.p'}]"""), cleanString(node.toString))
-        // Optimized
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$where: '(a == b) || (@.q < @.p)'}]"""), cleanString(node.optimize.toString))
-    }
-
     @Test def testEquals() {
         println("------------------------------------------------- testEquals")
         var node1: MongoQueryNode = null
@@ -233,5 +178,4 @@ class MongoQueryNodeTest {
         assertTrue(node1 == node1)
         assertFalse(node1 == node2)
     }
-
 }
