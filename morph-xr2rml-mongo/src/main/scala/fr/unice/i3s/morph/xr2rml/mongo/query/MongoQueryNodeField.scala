@@ -29,6 +29,6 @@ class MongoQueryNodeField(val field: String, val next: MongoQueryNode) extends M
         if (next.isField)
             field + next.toQueryStringNotFirst()
         else
-            field + "': {" + next.toQueryStringNotFirst() + "}"
+            field + "': {" + next.toString() + "}"
     }
 }

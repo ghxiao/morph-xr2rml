@@ -14,9 +14,21 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
         q.isInstanceOf[MongoQueryNodeAnd] && this.members == q.asInstanceOf[MongoQueryNodeAnd].members
     }
 
+    def queryMembersToString: String = {
+        var str = ""
+        var first = true
+        members.foreach(m => {
+            if (first)
+                first = false
+            else
+                str += ", "
+            str += m
+        })
+        str
+    }
     override def toQueryStringNotFirst() = {
-        var str = "$and: ["
 
+        var str = ""
         var first = true
         members.foreach(m => {
             if (first)
@@ -25,8 +37,8 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
                 str += ", "
             str += "{" + m + "}"
         })
-        str += "]"
-        str
+
+        "$and: [" + str + "]"
     }
 
     /**

@@ -26,14 +26,35 @@ abstract class MongoQueryNode {
     def isWhere: Boolean = false
 
     /**
+     * Build the final concrete query string corresponding to that abstract query object.<br>
+     * An AND is returned as it members separated by a comma: MongoDB implicitly makes an AND
+     * between the fields of the top-level query document.<br>
+     * A UNION is returned as a list of its members: they have to be executed separately.
+     * In all other the toString method is applied.<br>
+     */
+    def toTopLevelQuery: List[String] = {
+        if (this.isAnd)
+            List("{" + this.asInstanceOf[MongoQueryNodeAnd].queryMembersToString + "}")
+        else if (this.isUnion)
+            this.asInstanceOf[MongoQueryNodeUnion].members.flatMap(m => m.toTopLevelQuery)
+        else if (this.isInstanceOf[MongoQueryNodeNotSupported])
+            List("{}")
+        else
+            List("{" + this.toString + "}")
+    }
+
+    /**
      * Build the concrete query string corresponding to that abstract query object
-     * when it is the top-level query object (the root)
+     * when it is a top-level query object, either the root, or it is inside
+     * an AND, OR, ELEMMATCH or UNION.
      */
     override def toString(): String = { toQueryStringNotFirst() }
 
     /**
      * Build the concrete query string corresponding to that abstract query object
-     * when it is not the top-level query object
+     * when it is not a top-level query object.
+     * It is used essentially to differentiate between the first field of a series of fields
+     * and the subsequent ones.
      */
     def toQueryStringNotFirst(): String
 
@@ -161,7 +182,7 @@ abstract class MongoQueryNode {
             case a: MongoQueryNodeCompare => a
             case a: MongoQueryNodeExists => a
             case a: MongoQueryNodeNotExists => a
-            case a: MongoQueryNodeNotSupported => throw new MorphException("There should no longer be any NOT_SUPPORTED node at this stage")
+            case a: MongoQueryNodeNotSupported => a
             case a: MongoQueryNodeField => a
             case a: MongoQueryNodeElemMatch => a
             case a: MongoQueryNodeWhere => a

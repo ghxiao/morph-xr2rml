@@ -240,21 +240,4 @@ class JsonPathToMongoTranslatorTest {
         println(query.toString)
         assertTrue(query.isInstanceOf[MongoQueryNodeNotSupported])
     }
-
-    @Test def test_Complex() {
-        println("------ test_Complex")
-        var jpExpr = """$.a[?(@.q.length == 5 || @.q.length == 3)].r"""
-        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "val")
-        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println("Query: " + query.toString)
-    }
-
-    @Test def test_Complex2() {
-        println("------ test_Complex2")
-
-        var jpExpr = """$.a[?( @.q.length == 5 || (@.q.length >= 3 && @.r.length <= 6) )].r"""
-        var cond = new MongoQueryNodeCond(MongoQueryNode.CondType.Equals, "val")
-        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
-        println("Query: " + query.toString)
-    }
 }
