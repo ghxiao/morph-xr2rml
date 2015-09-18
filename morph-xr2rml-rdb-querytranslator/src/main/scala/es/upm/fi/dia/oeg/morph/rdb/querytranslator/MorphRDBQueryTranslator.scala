@@ -1,6 +1,8 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
+import java.sql.Connection
 import java.util.regex.Matcher
+
 import scala.collection.JavaConversions.asJavaCollection
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaSet
@@ -9,12 +11,13 @@ import scala.collection.JavaConversions.mutableSetAsJavaSet
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.JavaConversions.setAsJavaSet
 import scala.collection.mutable.LinkedHashSet
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
-import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
@@ -50,6 +53,7 @@ import com.hp.hpl.jena.sparql.expr.aggregate.AggMin
 import com.hp.hpl.jena.sparql.expr.aggregate.AggSum
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.XSD
+
 import Zql.ZConstant
 import Zql.ZExp
 import Zql.ZExpression
@@ -58,6 +62,7 @@ import Zql.ZOrderBy
 import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
@@ -68,7 +73,6 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TriplePatternPredicateBounde
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryTranslatorUtility
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphSQLSelectItemGenerator
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
@@ -78,7 +82,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import java.sql.Connection
 
 class MorphRDBQueryTranslator(
     nameGenerator: NameGenerator,
@@ -95,8 +98,6 @@ class MorphRDBQueryTranslator(
 
     var mapAggreatorAlias: Map[String, ZSelectItem] = Map.empty; //varname - selectitem
 
-    def getPRSQLGen(): MorphRDBPRSQLGenerator = { prSQLGenerator }
-
     val functionsMap: Map[String, String] = Map(
         "E_Bound" -> "IS NOT NULL", "E_LogicalNot" -> "NOT", "E_LogicalOr" -> "OR", "E_LogicalAnd" -> "AND", "E_Regex" -> "LIKE", "E_OneOf" -> "IN")
 
@@ -106,29 +107,64 @@ class MorphRDBQueryTranslator(
     private var mapTemplateMatcher: Map[String, Matcher] = Map.empty;
     private var mapTemplateAttributes: Map[String, List[String]] = Map.empty;
 
-    /**
-     * For a node representing a URI, get the first (why?) triples map candidate of that node,
-     * and return the list of values from the URI that match the columns in the template string
-     * of the subject map of that triples map.
-     */
-    private def transIRI(node: Node): List[ZExp] = {
-        val cms = mapInferredTMs(node);
-        val cm = cms.iterator().next();
-        val mapColumnsValues = cm.subjectMap.getTemplateValues(node.getURI());
-        val result: List[ZExp] = {
-            if (mapColumnsValues == null || mapColumnsValues.size() == 0) {
-                //do nothing
-                Nil
-            } else {
-                val resultAux = mapColumnsValues.keySet.map(column => {
-                    val value = mapColumnsValues(column);
-                    val constant = new ZConstant(value, ZConstant.UNKNOWN);
-                    constant;
+    def getPRSQLGen(): MorphRDBPRSQLGenerator = { prSQLGenerator }
+
+    private def rdbOptimizer(): MorphRDBQueryOptimizer = { this.optimizer.asInstanceOf[MorphRDBQueryOptimizer] }
+
+    override def translate(op: Op): GenericQuery = {
+        logger.debug("opSparqlQuery = " + op);
+
+        // Find candidate triples maps
+        val typeInferrer = new MorphMappingInferrer(this.mappingDocument);
+        this.mapInferredTMs = typeInferrer.infer(op);
+        logger.info("Inferred Types : \n" + typeInferrer.printInferredTypes());
+
+        // Set not-null conditions for all variables
+        this.initializeMapVarIsNullable(op);
+
+        val resultQuery = {
+            // Eliminate self-joins from the SPARQL query before translation
+            if (this.rdbOptimizer != null && this.rdbOptimizer.selfJoinElimination) {
+                val mapNodeLogicalTableSize = mapInferredTMs.keySet.map(node => {
+                    val cms = this.mapInferredTMs(node);
+                    val cm = cms.iterator.next();
+                    val logicalTableSize = cm.getLogicalTableSize();
+                    (node -> logicalTableSize);
                 })
-                resultAux.toList;
-            }
+
+                val reorderSTG =
+                    if (this.properties != null)
+                        this.properties.reorderSTG;
+                    else
+                        true
+
+                val queryRewritter = new MorphQueryRewriter(mapNodeLogicalTableSize.toMap, reorderSTG);
+                val opSparqlQuery2 = {
+                    try {
+                        queryRewritter.rewrite(op);
+                    } catch {
+                        case e: Exception => {
+                            e.printStackTrace();
+                            op;
+                        }
+                    }
+                }
+                logger.debug("Query rewritten after self join elimintation = \n" + opSparqlQuery2);
+
+                // Do the actual query translation
+                this.trans(opSparqlQuery2);
+            } else
+                // Do the actual query translation
+                this.trans(op);
         }
-        result;
+
+        if (resultQuery != null) {
+            resultQuery.cleanupSelectItems();
+            resultQuery.cleanupOrderBy();
+        }
+
+        logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
+        new GenericQuery(Constants.DatabaseType.Relational, resultQuery)
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {
@@ -263,11 +299,11 @@ class MorphRDBQueryTranslator(
                 val triples = bgp.getPattern().getList().toList;
                 val isSTG = MorphQueryTranslatorUtility.isSTG(bgp);
 
-                if (this.optimizer != null && this.optimizer.selfJoinElimination && isSTG) {
+                if (this.rdbOptimizer != null && this.rdbOptimizer.selfJoinElimination && isSTG) {
                     this.transSTG(triples);
                 } else {
                     val separationIndex = {
-                        if (this.optimizer != null && this.optimizer.selfJoinElimination) {
+                        if (this.rdbOptimizer != null && this.rdbOptimizer.selfJoinElimination) {
                             MorphQueryTranslatorUtility.getFirstTBEndIndex(triples);
                         } else {
                             1
@@ -330,7 +366,7 @@ class MorphRDBQueryTranslator(
         val exprList = opFilter.getExprs();
 
         val resultFrom = {
-            if (this.optimizer != null && this.optimizer.subQueryAsView) {
+            if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
                 val conn = this.connection;
                 val subQueryViewName = "sqf" + Math.abs(opFilterSubOp.hashCode());
                 val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -353,7 +389,7 @@ class MorphRDBQueryTranslator(
         val exprListSQL = this.transExprList(opFilterSubOp, exprList, subOpSelectItems, subOpSQL.getAlias());
 
         val transFilterSQL = {
-            if (this.optimizer != null && this.optimizer.subQueryElimination) {
+            if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryElimination) {
                 subOpSQL.pushFilterDown(exprListSQL);
                 subOpSQL;
             } else {
@@ -531,7 +567,7 @@ class MorphRDBQueryTranslator(
         val newSelectItemsVar = newSelectItemsTuple.map(tuple => tuple._1);
         val newSelectItemsMappingId = newSelectItemsTuple.map(tuple => tuple._2);
 
-        if (this.optimizer != null && this.optimizer.subQueryAsView) {
+        if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
             val conn = this.connection;
             val subQueryViewName = "sqp" + Math.abs(opProject.hashCode());
             val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -547,7 +583,7 @@ class MorphRDBQueryTranslator(
 
         val newSelectItems: List[ZSelectItem] = newSelectItemsVar.flatten.toList ::: newSelectItemsMappingId.flatten.toList;
         val transProjectSQL = {
-            if (this.optimizer != null && this.optimizer.subQueryElimination) {
+            if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryElimination) {
                 //push group by down
                 opProjectSubOpSQL.pushGroupByDown();
 
@@ -635,12 +671,9 @@ class MorphRDBQueryTranslator(
                 val selectItemsC1 = selectItemGenerator.generateSelectItems(termsC, r1Alias, r1SelectItems, false);
                 MorphSQLUtility.setDefaultAlias(selectItemsC1);
 
-                val a1MappingIdSelectItems = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                    termsA.toList, r1SelectItems, r1Alias, this.databaseType);
-                val b1MappingIdSelectItems = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                    termsB.toList, r2SelectItems, r2Alias, this.databaseType);
-                val c1MappingIdSelectItems = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                    termsC.toList, r1SelectItems, r1Alias, this.databaseType);
+                val a1MappingIdSelectItems = this.generateMappingIdSelectItems(termsA.toList, r1SelectItems, r1Alias, this.databaseType);
+                val b1MappingIdSelectItems = this.generateMappingIdSelectItems(termsB.toList, r2SelectItems, r2Alias, this.databaseType);
+                val c1MappingIdSelectItems = this.generateMappingIdSelectItems(termsC.toList, r1SelectItems, r1Alias, this.databaseType);
                 val selectItemsMappingId1 = a1MappingIdSelectItems ::: b1MappingIdSelectItems ::: c1MappingIdSelectItems;
 
                 val query1 = new SQLQuery();
@@ -663,12 +696,9 @@ class MorphRDBQueryTranslator(
                 val selectItemsC2 = selectItemGenerator.generateSelectItems(termsCList, r3Alias + ".", r3SelectItems, false);
                 MorphSQLUtility.setDefaultAlias(selectItemsC2);
 
-                val a2MappingIdSelectItems = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                    termsA.toList, r1SelectItems, r4Alias, this.databaseType);
-                val b2MappingIdSelectItems = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                    termsB.toList, r2SelectItems, r3Alias, this.databaseType);
-                val c2MappingIdSelectItems = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                    termsC.toList, r1SelectItems, r3Alias, this.databaseType);
+                val a2MappingIdSelectItems = this.generateMappingIdSelectItems(termsA.toList, r1SelectItems, r4Alias, this.databaseType);
+                val b2MappingIdSelectItems = this.generateMappingIdSelectItems(termsB.toList, r2SelectItems, r3Alias, this.databaseType);
+                val c2MappingIdSelectItems = this.generateMappingIdSelectItems(termsC.toList, r1SelectItems, r3Alias, this.databaseType);
                 val selectItemsMappingId2 = a2MappingIdSelectItems ::: b2MappingIdSelectItems ::: c2MappingIdSelectItems;
 
                 val query2 = new SQLQuery();
@@ -704,7 +734,7 @@ class MorphRDBQueryTranslator(
             if (tpPredicate.isURI()) {
                 try {
                     val transTPResult = this.transTP(tp, cm, tpPredicate.getURI(), false);
-                    transTPResult.toQuery(optimizer, databaseType);
+                    transTPResult.toQuery(this.rdbOptimizer, databaseType);
                 } catch {
                     case e: Exception => {
                         logger.debug("InsatisfiableSQLExpression for tp: " + tp);
@@ -732,7 +762,7 @@ class MorphRDBQueryTranslator(
                         if (boundedTriplePatternErrorMessages == null || boundedTriplePatternErrorMessages.isEmpty()) {
                             try {
                                 val transTPResult = this.transTP(tp, cm, predicateURI, true);
-                                val sqlQuery = transTPResult.toQuery(optimizer, databaseType);
+                                val sqlQuery = transTPResult.toQuery(this.rdbOptimizer, databaseType);
                                 Some(sqlQuery);
                             } catch {
                                 case e: Exception => {
@@ -817,6 +847,31 @@ class MorphRDBQueryTranslator(
         }
 
         return result;
+    }
+
+    /**
+     * For a node representing a URI, get the first (why?) triples map candidate of that node,
+     * and return the list of values from the URI that match the columns in the template string
+     * of the subject map of that triples map.
+     */
+    private def transIRI(node: Node): List[ZExp] = {
+        val cms = mapInferredTMs(node);
+        val cm = cms.iterator().next();
+        val mapColumnsValues = cm.subjectMap.getTemplateValues(node.getURI());
+        val result: List[ZExp] = {
+            if (mapColumnsValues == null || mapColumnsValues.size() == 0) {
+                //do nothing
+                Nil
+            } else {
+                val resultAux = mapColumnsValues.keySet.map(column => {
+                    val value = mapColumnsValues(column);
+                    val constant = new ZConstant(value, ZConstant.UNKNOWN);
+                    constant;
+                })
+                resultAux.toList;
+            }
+        }
+        result;
     }
 
     private def transExpr(op: Op, expr: Expr, subOpSelectItems: List[ZSelectItem], prefix: String): List[ZExp] = {
@@ -1085,7 +1140,7 @@ class MorphRDBQueryTranslator(
 
             val transGP1Alias = transGP1SQL.generateAlias();
             val transGP1FromItem = {
-                if (this.optimizer != null && this.optimizer.subQueryAsView) {
+                if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
                     val conn = this.connection;
                     val subQueryViewName = "sql" + Math.abs(gp1.hashCode());
                     val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -1103,7 +1158,7 @@ class MorphRDBQueryTranslator(
 
             val transGP2Alias = transGP2SQL.generateAlias();
             val transGP2FromItem = {
-                if (this.optimizer != null && this.optimizer.subQueryAsView) {
+                if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
                     val conn = this.connection;
                     val subQueryViewName = "sqr" + Math.abs(gp2.hashCode());
                     val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -1125,12 +1180,9 @@ class MorphRDBQueryTranslator(
             val termsB = termsGP2.diff(termsGP1)
             val termsC = termsGP1.intersect(termsGP2);
 
-            val mappingsSelectItemA = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                termsA.toList, gp1SelectItems, transGP1Alias, this.databaseType);
-            val mappingsSelectItemB = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                termsB.toList, gp2SelectItems, transGP2Alias, this.databaseType);
-            val mappingsSelectItemC = MorphQueryTranslatorUtility.generateMappingIdSelectItems(
-                termsC.toList, gp1SelectItems, transGP1Alias, this.databaseType);
+            val mappingsSelectItemA = this.generateMappingIdSelectItems(termsA.toList, gp1SelectItems, transGP1Alias, this.databaseType);
+            val mappingsSelectItemB = this.generateMappingIdSelectItems(termsB.toList, gp2SelectItems, transGP2Alias, this.databaseType);
+            val mappingsSelectItemC = this.generateMappingIdSelectItems(termsC.toList, gp1SelectItems, transGP1Alias, this.databaseType);
 
             val mappingsSelectItems = mappingsSelectItemA ::: mappingsSelectItemB ::: mappingsSelectItemC;
             MorphSQLUtility.setDefaultAlias(mappingsSelectItems);
@@ -1227,9 +1279,9 @@ class MorphRDBQueryTranslator(
             }
 
             val transJoin: ISqlQuery = {
-                if (this.optimizer != null) {
+                if (this.rdbOptimizer != null) {
                     val isTransJoinSubQueryElimination =
-                        this.optimizer.transJoinSubQueryElimination;
+                        this.rdbOptimizer.transJoinSubQueryElimination;
                     if (isTransJoinSubQueryElimination) {
                         try {
                             if (transGP1SQL.isInstanceOf[SQLQuery] && transGP2SQL.isInstanceOf[SQLQuery]) {
@@ -1382,7 +1434,7 @@ class MorphRDBQueryTranslator(
                 this.trans(opJoin);
             } else {
                 val transSTGResult = this.transSTGUnionFree(stg, cm);
-                transSTGResult.toQuery(optimizer, databaseType);
+                transSTGResult.toQuery(this.rdbOptimizer, databaseType);
             }
         }
 
@@ -1537,71 +1589,34 @@ class MorphRDBQueryTranslator(
         }
     }
 
-    private def translate(op: Op): ISqlQuery = {
-        logger.debug("opSparqlQuery = " + op);
-
-        // Find candidate triples maps
-        val typeInferrer = new MorphMappingInferrer(this.mappingDocument);
-        this.mapInferredTMs = typeInferrer.infer(op);
-        logger.info("Inferred Types : \n" + typeInferrer.printInferredTypes());
-
-        // Set not-null conditions for all variables
-        this.initializeMapVarIsNullable(op);
-
-        val resultQuery = {
-            // Eliminate self-joins from the SPARQL query before translation
-            if (this.optimizer != null && this.optimizer.selfJoinElimination) {
-                val mapNodeLogicalTableSize = mapInferredTMs.keySet.map(node => {
-                    val cms = this.mapInferredTMs(node);
-                    val cm = cms.iterator.next();
-                    val logicalTableSize = cm.getLogicalTableSize();
-                    (node -> logicalTableSize);
-                })
-
-                val reorderSTG =
-                    if (this.properties != null)
-                        this.properties.reorderSTG;
-                    else
-                        true
-
-                val queryRewritter = new MorphQueryRewriter(mapNodeLogicalTableSize.toMap, reorderSTG);
-                val opSparqlQuery2 = {
-                    try {
-                        queryRewritter.rewrite(op);
-                    } catch {
-                        case e: Exception => {
-                            e.printStackTrace();
-                            op;
-                        }
-                    }
+    private def generateMappingIdSelectItems(nodes: List[Node], selectItems: List[ZSelectItem], pPrefix: String, dbType: String): List[ZSelectItem] = {
+        val prefix = {
+            if (pPrefix == null) {
+                "";
+            } else {
+                if (!pPrefix.endsWith(".")) {
+                    pPrefix + ".";
+                } else {
+                    pPrefix
                 }
-                logger.debug("Query rewritten after self join elimintation = \n" + opSparqlQuery2);
-
-                // Do the actual query translation
-                this.trans(opSparqlQuery2);
-            } else
-                // Do the actual query translation
-                this.trans(op);
+            }
         }
 
-        if (resultQuery != null) {
-            resultQuery.cleanupSelectItems();
-            resultQuery.cleanupOrderBy();
-        }
+        val result = nodes.map(term => {
+            if (term.isVariable()) {
+                val mappingsSelectItemsAux = MorphSQLUtility.getSelectItemsMapPrefix(
+                    selectItems, term, prefix, dbType);
+                mappingsSelectItemsAux.map(mappingsSelectItemAux => {
+                    val mappingSelectItemAuxAlias = mappingsSelectItemAux.getAlias();
+                    val newSelectItem = MorphSQLSelectItem.apply(
+                        mappingSelectItemAuxAlias, prefix, dbType, null);
+                    newSelectItem;
+                })
+            } else {
+                Nil
+            }
+        })
 
-        logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        resultQuery;
+        result.flatten;
     }
-
-    /**
-     * High level method to start the translation process
-     */
-    override def translate(sparqlQuery: Query): ISqlQuery = {
-        val start = System.currentTimeMillis();
-        val opSparqlQuery = Algebra.compile(sparqlQuery);
-        val result = this.translate(opSparqlQuery);
-        logger.info("Query translation time = " + (System.currentTimeMillis() - start) + "ms.");
-        result
-    }
-
 }

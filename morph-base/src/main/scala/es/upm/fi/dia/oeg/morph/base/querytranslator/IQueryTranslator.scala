@@ -6,11 +6,12 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 trait IQueryTranslator {
     var genCnx: GenericConnection = null;
 
-    var optimizer: QueryTranslationOptimizer = null;
+    var optimizer: MorphBaseQueryOptimizer = null;
 
     var properties: MorphProperties = null;
 
@@ -18,7 +19,7 @@ trait IQueryTranslator {
 
     var mappingDocument: R2RMLMappingDocument = null;
 
-    def translate(query: Query): ISqlQuery;
+    def translate(query: Query): GenericQuery;
 
     def getPRSQLGen(): MorphBaseProjectionGenerator
 

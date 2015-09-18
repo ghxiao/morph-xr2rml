@@ -2,7 +2,6 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.io.Writer
 import java.sql.Connection
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
@@ -15,14 +14,16 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.QueryTranslationOptimizer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphXMLQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBAlphaGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBBetaGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBCondSQLGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBPRSQLGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslator
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryOptimizer
 
 class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -66,7 +67,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
 
     override def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator = {
 
-        val queryOptimizer = new QueryTranslationOptimizer()
+        val queryOptimizer = new MorphRDBQueryOptimizer()
         queryOptimizer.selfJoinElimination = properties.selfJoinElimination;
         queryOptimizer.subQueryElimination = properties.subQueryElimination;
         queryOptimizer.transJoinSubQueryElimination = properties.transJoinSubQueryElimination;
@@ -109,7 +110,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         queryTranslator: IQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor = {
 
-        val queryResultProc = new MorphXMLQueryResultProcessor(md, properties, outputStream, dataSourceReader)
+        val queryResultProc = new MorphRDBQueryResultProcessor(md, properties, outputStream, dataSourceReader)
         queryResultProc.projectionGenerator = queryTranslator.getPRSQLGen
         queryResultProc
     }

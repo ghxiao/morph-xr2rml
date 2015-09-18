@@ -17,10 +17,9 @@ import com.hp.hpl.jena.sparql.core.BasicPattern
 import org.apache.log4j.Logger
 
 object SPARQLUtility {
-    val logger = Logger.getLogger("SPARQLUtility");
+    val logger = Logger.getLogger(this.getClass().getName());
 
     def groupTriplesBySubject(triples: java.util.List[Triple]): java.util.List[Triple] = {
-        //val triples = basicPattern.getList().toList;
         var result: List[Triple] = Nil;
         if (triples == null || triples.size() == 0) {
             result = Nil;

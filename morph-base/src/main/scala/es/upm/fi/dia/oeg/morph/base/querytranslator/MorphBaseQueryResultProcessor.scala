@@ -1,21 +1,24 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.io.Writer
-import com.hp.hpl.jena.query.Query
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.TemplateUtility
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.TermMapResult
-import java.util.regex.Pattern
-import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+
+import com.hp.hpl.jena.query.Query
+
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
-import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.TemplateUtility
+import es.upm.fi.dia.oeg.morph.base.TermMapResult
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 
 abstract class MorphBaseQueryResultProcessor(
         var mappingDocument: R2RMLMappingDocument,
@@ -31,68 +34,15 @@ abstract class MorphBaseQueryResultProcessor(
 
     val logger = Logger.getLogger(this.getClass());
 
-    /**
-     * Initialize the XML tree for the SPARQL result set with one variable node
-     * for each projected variable in  the SPARQL query
-     * <pre>
-     * 	<sparql>
-     *  	<head>
-     *   		</variable name="var1>
-     *   		</variable name="var2>
-     *     		...
-     *  	</head>
-     * 	</sparql>
-     * </pre>
-     */
     def preProcess(sparqlQuery: Query): Unit;
 
-    /**
-     * Create the body of the SPARQL result set
-     * <pre>
-     * <result>
-     * 	 <binding name="var1"> <uri>...</uri> </binding>
-     * 	 <binding name="var2"> <literal>...</literal> </binding>
-     *   ...
-     * </result>
-     * ...
-     * </pre>
-     *
-     */
     def process(sparqlQuery: Query, resultSet: MorphBaseResultSet): Unit;
 
-    /** Save the XML document to a file */
     def postProcess(): Unit;
 
     def getOutput(): Object;
 
-    def translateResult(mapSparqlSql: Map[Query, ISqlQuery]) {
-        val start = System.currentTimeMillis();
-        var i = 0;
-        mapSparqlSql.foreach(mapElement => {
-            val sparqlQuery = mapElement._1
-            val iQuery = mapElement._2
-
-            // Execution of the concrete SQL query against the database
-            val abstractResultSet = this.dataSourceReader.execute(iQuery.toString());
-            val columnNames = iQuery.getSelectItemAliases();
-            abstractResultSet.setColumnNames(columnNames);
-
-            // Write the XMl result set to the output
-            if (i == 0) {
-                // The first time, initialize the XML document of the SPARQL result set
-                this.preProcess(sparqlQuery);
-            }
-            this.process(sparqlQuery, abstractResultSet);
-            i = i + 1;
-        })
-
-        if (i > 0) {
-            this.postProcess();
-        }
-
-        val end = System.currentTimeMillis();
-        logger.info("Result generation time = " + (end - start) + " ms.");
-    }
+    def translateResult(mapSparqlSql: Map[Query, GenericQuery])
 
     protected def translateResultSet(varName: String, rs: MorphBaseResultSet): TermMapResult = {
         val result: TermMapResult = {

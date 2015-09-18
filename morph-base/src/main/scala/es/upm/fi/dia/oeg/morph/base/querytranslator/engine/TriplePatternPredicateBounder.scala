@@ -21,7 +21,7 @@ class TriplePatternPredicateBounder(tableMetaData: Option[MorphTableMetaData]) {
     val constants = new Constants();
 
     /**
-     * Return a (possibly empty) list of error messages regarding the possibility of the object of 
+     * Return a (possibly empty) list of error messages regarding the possibility of the object of
      * triple pattern tp to be matched with one of the object maps of the triples map.
      * If no error message is returned then the triples map can match the triple pattern.
      */
@@ -31,7 +31,7 @@ class TriplePatternPredicateBounder(tableMetaData: Option[MorphTableMetaData]) {
     }
 
     private def checkExpandedTriplePatternList(tp: Triple,
-                                       tmRes: Resource, pomResources: List[Resource]): java.util.Map[Resource, java.util.List[String]] = {
+                                               tmRes: Resource, pomResources: List[Resource]): java.util.Map[Resource, java.util.List[String]] = {
         val result: Map[Resource, java.util.List[String]] = {
             if (pomResources.isEmpty) {
                 Map();
@@ -48,7 +48,7 @@ class TriplePatternPredicateBounder(tableMetaData: Option[MorphTableMetaData]) {
     }
 
     private def checkExpandedTriplePattern(tp: Triple, tmRes: Resource,
-                                   pomResource: Resource): java.util.List[String] = {
+                                           pomResource: Resource): java.util.List[String] = {
         val tpObject = tp.getObject();
         var result: List[String] = Nil;
         val omResource = R2RMLMappingUtility.getObjectMapResource(pomResource);

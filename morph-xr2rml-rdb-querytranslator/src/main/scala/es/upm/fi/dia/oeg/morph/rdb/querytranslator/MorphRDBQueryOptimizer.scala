@@ -1,6 +1,9 @@
-package es.upm.fi.dia.oeg.morph.base.querytranslator
+package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
-class QueryTranslationOptimizer {
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+
+class MorphRDBQueryOptimizer extends MorphBaseQueryOptimizer {
+
     var selfJoinElimination = true;
     var transJoinSubQueryElimination = true;
     var transSTGSubQueryElimination = true;

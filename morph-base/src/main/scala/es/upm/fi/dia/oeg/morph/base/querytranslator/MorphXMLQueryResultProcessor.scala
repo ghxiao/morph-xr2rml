@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base.querytranslator.engine
+package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.io.Writer
 
@@ -10,14 +10,13 @@ import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.query.Query
 
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.XMLUtility
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
-class MorphXMLQueryResultProcessor(
+abstract class MorphXMLQueryResultProcessor(
     mappingDocument: R2RMLMappingDocument,
     properties: MorphProperties,
     xmlOutputStream: Writer,

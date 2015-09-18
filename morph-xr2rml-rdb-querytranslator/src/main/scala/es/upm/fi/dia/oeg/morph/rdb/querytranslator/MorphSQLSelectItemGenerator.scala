@@ -1,11 +1,10 @@
-package es.upm.fi.dia.oeg.morph.base.querytranslator.engine
+package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import Zql.ZConstant
 import Zql.ZSelectItem
 import org.apache.log4j.Logger
 import com.hp.hpl.jena.graph.Node
 import scala.collection.JavaConversions._
-import scala.collection.mutable.LinkedHashSet
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
 

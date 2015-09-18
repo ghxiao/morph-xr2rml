@@ -166,36 +166,4 @@ object MorphQueryTranslatorUtility {
 
         result;
     }
-
-    def generateMappingIdSelectItems(nodes: List[Node], selectItems: List[ZSelectItem], pPrefix: String, dbType: String): List[ZSelectItem] = {
-        val prefix = {
-            if (pPrefix == null) {
-                "";
-            } else {
-                if (!pPrefix.endsWith(".")) {
-                    pPrefix + ".";
-                } else {
-                    pPrefix
-                }
-            }
-        }
-
-        val result = nodes.map(term => {
-            if (term.isVariable()) {
-                val mappingsSelectItemsAux = MorphSQLUtility.getSelectItemsMapPrefix(
-                    selectItems, term, prefix, dbType);
-                mappingsSelectItemsAux.map(mappingsSelectItemAux => {
-                    val mappingSelectItemAuxAlias = mappingsSelectItemAux.getAlias();
-                    val newSelectItem = MorphSQLSelectItem.apply(
-                        mappingSelectItemAuxAlias, prefix, dbType, null);
-                    newSelectItem;
-                })
-            } else {
-                Nil
-            }
-        })
-
-        result.flatten;
-    }
-
 }
