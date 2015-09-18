@@ -24,7 +24,6 @@ abstract class MorphBaseDataTranslator(
         val md: R2RMLMappingDocument,
         val materializer: MorphBaseMaterializer,
         val unfolder: MorphBaseUnfolder,
-        val dataSourceReader: MorphBaseDataSourceReader,
 
         /** The connection object can be anything: java.sql.Connection for an RDB, MongoDB context etc. */
         connection: GenericConnection,

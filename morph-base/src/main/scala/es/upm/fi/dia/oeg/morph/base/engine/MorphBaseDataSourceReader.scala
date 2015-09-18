@@ -9,25 +9,17 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
  * to execute queries on the fly.
  * It is not used in the data materialization access method.
  */
-class MorphBaseDataSourceReader() {
+abstract class MorphBaseDataSourceReader() {
 
     var timeout: Int = 60
     var connection: GenericConnection = null
     var dbType: String = null;
 
-    def execute(query: String): MorphBaseResultSet = {
-        throw new Exception("Operation not supported.")
-    }
+    def execute(query: String): MorphBaseResultSet
 
-    def setConnection(connection: GenericConnection) {
-        throw new Exception("Operation not supported.")
-    }
+    def setConnection(connection: GenericConnection)
 
-    def setTimeout(timeout: Int) {
-        throw new Exception("Operation not supported.")
-    }
+    def setTimeout(timeout: Int)
 
-    def closeConnection() {
-        throw new Exception("Operation not supported.")
-    }
+    def closeConnection()
 }

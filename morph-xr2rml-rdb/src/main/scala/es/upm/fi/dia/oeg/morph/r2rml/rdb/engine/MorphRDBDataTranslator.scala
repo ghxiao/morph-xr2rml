@@ -34,10 +34,9 @@ class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphRDBUnfolder,
-    dataSourceReader: MorphRDBDataSourceReader,
     genCnx: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, genCnx, properties) {
+        extends MorphBaseDataTranslator(md, materializer, unfolder, genCnx, properties) {
 
     if (!genCnx.isRelationalDB)
         throw new MorphException("Database connection type does not match relational database")

@@ -58,12 +58,11 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
         mappingDocument: R2RMLMappingDocument,
         materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
-        dataSourceReader: MorphBaseDataSourceReader,
         connection: GenericConnection,
         properties: MorphProperties): MorphBaseDataTranslator = {
 
         new MorphJsondocDataTranslator(
-            mappingDocument, materializer, unfolder.asInstanceOf[MorphJsondocUnfolder], dataSourceReader, connection, properties);
+            mappingDocument, materializer, unfolder.asInstanceOf[MorphJsondocUnfolder], connection, properties);
     }
 
     override def createQueryTranslator(

@@ -31,11 +31,12 @@ class MorphBaseRunner(
 
         var status: String = null;
 
-        if (!this.sparqlQuery.isDefined) {
+        if (this.sparqlQuery.isEmpty) {
             // RDF Triples materialization
             this.materializeMappingDocuments(mappingDocument);
 
         } else {
+            // Query translation mode
             if (this.queryTranslator == null) {
                 val errorMessage = "No query translator initialized. Cannot run in query rewriting mode.";
                 logger.fatal(errorMessage);
@@ -48,12 +49,12 @@ class MorphBaseRunner(
             }
 
             // Translate SPARQL query into SQL
-            val sqlQuery = this.queryTranslator.translate(sparqlQuery.get);
+            val rewrittenQuery = this.queryTranslator.translate(sparqlQuery.get);
             logger.info("SPARQL Query = \n" + sparqlQuery);
-            logger.info("SQL Query = \n" + sqlQuery);
+            logger.info("Rewrtitten Query = \n" + rewrittenQuery);
 
-            val mapSparqlSql = Map((sparqlQuery.get -> sqlQuery))
-            this.queryResultProcessor.translateResult(mapSparqlSql);
+            val mapSparqlRewritten = Map((sparqlQuery.get -> rewrittenQuery))
+            this.queryResultProcessor.translateResult(mapSparqlRewritten);
         }
 
         val end = System.currentTimeMillis();

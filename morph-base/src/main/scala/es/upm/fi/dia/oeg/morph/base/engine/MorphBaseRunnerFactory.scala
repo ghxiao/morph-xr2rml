@@ -45,16 +45,16 @@ abstract class MorphBaseRunnerFactory {
             else new StringWriter
         val materializer = this.buildMaterializer(properties, mappingDocument, outputStream);
 
-        // Building DATA SOURCE READER (query rewriting mode only)
-        val dataSourceReader = this.createDataSourceReader(properties, connection);
-
         // Building DATA TRANSLATOR
-        val dataTranslator = this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, connection, properties)
+        val dataTranslator = this.createDataTranslator(mappingDocument, materializer, unfolder, connection, properties)
 
         // ---------------------------------------------------------------------------------
-        // The Query Translator, Query Result Writer, Result Processor, are only applicable 
+        // The Data Source Reader, Query Translator, Query Result Writer, Result Processor, are only applicable
         // in the case of query rewriting access mode, i.e. not in data materialization.
         // ---------------------------------------------------------------------------------
+        
+        // Building DATA SOURCE READER
+        val dataSourceReader = this.createDataSourceReader(properties, connection);
 
         // Building QUERY TRANSLATOR
         logger.info("Building query translator...");
@@ -81,7 +81,7 @@ abstract class MorphBaseRunnerFactory {
 
     def createDataSourceReader(properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader
 
-    def createDataTranslator(md: R2RMLMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, dataSourceReader: MorphBaseDataSourceReader, connection: GenericConnection, properties: MorphProperties): MorphBaseDataTranslator
+    def createDataTranslator(md: R2RMLMappingDocument, materializer: MorphBaseMaterializer, unfolder: MorphBaseUnfolder, connection: GenericConnection, properties: MorphProperties): MorphBaseDataTranslator
 
     def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator
 

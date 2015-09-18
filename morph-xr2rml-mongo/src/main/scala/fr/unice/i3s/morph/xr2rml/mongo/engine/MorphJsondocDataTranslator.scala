@@ -31,10 +31,9 @@ class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphJsondocUnfolder,
-    dataSourceReader: MorphBaseDataSourceReader,
     connection: GenericConnection, properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, dataSourceReader, connection, properties) {
+        extends MorphBaseDataTranslator(md, materializer, unfolder, connection, properties) {
 
     if (!connection.isMongoDB)
         throw new MorphException("Database connection type does not match MongoDB")
@@ -424,7 +423,7 @@ class MorphJsondocDataTranslator(
                 val resultSet = MongoUtils.execute(this.connection, query).toList
 
                 // Save the result of this query in case it is asked again later (in a join)
-                // @TODO USE WITH CARE: this needs to be strongly improved with the use of a real cache library, 
+                // @TODO USE WITH CARE: this would need to be strongly improved with the use of a real cache library,
                 // and memory-consumption-based eviction.
                 if (properties.cacheQueryResult)
                     executedQueries += (queryMapId -> resultSet)
