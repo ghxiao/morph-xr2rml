@@ -81,7 +81,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         queryTranslator
     }
 
-    def createQueryTranslator(abstractMappingDocument: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
+    private def createQueryTranslator(abstractMappingDocument: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
         val md = abstractMappingDocument.asInstanceOf[R2RMLMappingDocument];
         val unfolder = new MorphRDBUnfolder(md, properties);
 
@@ -110,7 +110,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         outputStream: Writer): MorphBaseQueryResultProcessor = {
 
         val queryResultProc = new MorphXMLQueryResultProcessor(md, properties, outputStream, dataSourceReader)
-        queryResultProc.prSQLGenerator = queryTranslator.getPRSQLGen
+        queryResultProc.projectionGenerator = queryTranslator.getPRSQLGen
         queryResultProc
     }
 }

@@ -6,7 +6,7 @@ import Zql.ZSelectItem
 import Zql.ZOrderBy
 import Zql.ZExp
 
-trait IQuery extends SQLLogicalTable {
+trait ISqlQuery extends SQLLogicalTable {
 
     //SELECT ITEM IS AN ORDERED LIST
     def setSelectItems(newSelectItems: List[ZSelectItem]);

@@ -8,7 +8,7 @@ import Zql.ZExpression
 import Zql.ZInsert
 import Zql.ZUpdate
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
 import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
@@ -25,7 +25,7 @@ class MorphTransTPResult(
 
     val logger = Logger.getLogger(this.getClass());
 
-    def toQuery(optimizer: QueryTranslationOptimizer, databaseType: String): IQuery = {
+    def toQuery(optimizer: QueryTranslationOptimizer, databaseType: String): ISqlQuery = {
         val alphaSubject = alphaResult.alphaSubject;
         val alphaPredicateObjects = alphaResult.alphaPredicateObjects.flatMap(
             x => { if (x._1 != null) { Some(x._1) } else { None } });

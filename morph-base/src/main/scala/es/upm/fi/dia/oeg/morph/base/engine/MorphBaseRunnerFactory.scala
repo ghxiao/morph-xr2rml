@@ -3,18 +3,18 @@ package es.upm.fi.dia.oeg.morph.base.engine
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.io.Writer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.QueryFactory
-import es.upm.fi.dia.oeg.morph.base.Constants
+
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBasePRSQLGenerator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 abstract class MorphBaseRunnerFactory {
     val logger = Logger.getLogger(this.getClass());

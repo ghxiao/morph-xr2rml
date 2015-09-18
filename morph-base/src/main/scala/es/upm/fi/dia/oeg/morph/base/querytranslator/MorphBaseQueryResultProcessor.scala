@@ -13,9 +13,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import java.util.regex.Matcher
 import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 
 abstract class MorphBaseQueryResultProcessor(
         var mappingDocument: R2RMLMappingDocument,
@@ -23,7 +23,7 @@ abstract class MorphBaseQueryResultProcessor(
         var outputStream: Writer,
         var dataSourceReader: MorphBaseDataSourceReader) {
 
-    var prSQLGenerator: MorphBasePRSQLGenerator = null
+    var projectionGenerator: MorphBaseProjectionGenerator = null
 
     private var mapTemplateMatcher: Map[String, Matcher] = Map.empty;
 
@@ -65,7 +65,7 @@ abstract class MorphBaseQueryResultProcessor(
 
     def getOutput(): Object;
 
-    def translateResult(mapSparqlSql: Map[Query, IQuery]) {
+    def translateResult(mapSparqlSql: Map[Query, ISqlQuery]) {
         val start = System.currentTimeMillis();
         var i = 0;
         mapSparqlSql.foreach(mapElement => {
@@ -248,9 +248,9 @@ abstract class MorphBaseQueryResultProcessor(
 
             //IN CASE OF UNION, A VARIABLE MAY BE MAPPED TO MULTIPLE MAPPINGS
             if (mappingHashCode == null)
-                this.prSQLGenerator.getMappedMapping(varName.hashCode())
+                this.projectionGenerator.getMappedMapping(varName.hashCode())
             else
-                this.prSQLGenerator.getMappedMapping(mappingHashCode)
+                this.projectionGenerator.getMappedMapping(mappingHashCode)
         } catch {
             case e: Exception => {
                 null

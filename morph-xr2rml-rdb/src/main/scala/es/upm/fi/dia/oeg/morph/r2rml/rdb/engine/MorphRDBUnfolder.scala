@@ -18,7 +18,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
 import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
@@ -199,7 +199,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         triplesMapId: String,
         logicalSrc: xR2RMLLogicalSource,
         subjectMap: R2RMLSubjectMap,
-        poms: Collection[R2RMLPredicateObjectMap]): IQuery = {
+        poms: Collection[R2RMLPredicateObjectMap]): ISqlQuery = {
 
         val result = new SQLQuery();
         result.setDatabaseType(this.dbType);
@@ -349,7 +349,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         result;
     }
 
-    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): IQuery = {
+    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): ISqlQuery = {
         val logicalTable = triplesMap.getLogicalSource().asInstanceOf[xR2RMLLogicalSource];
         val subjectMap = triplesMap.subjectMap;
         val predicateObjectMaps = triplesMap.predicateObjectMaps;
@@ -371,7 +371,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         result;
     }
 
-    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): IQuery = {
+    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): ISqlQuery = {
         this.unfoldTriplesMap(triplesMap, null);
     }
 

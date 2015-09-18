@@ -16,7 +16,7 @@ import java.util.Random
 import scala.collection.mutable.LinkedHashMap
 import Zql.ZGroupBy
 
-class SQLQuery extends ZQuery with IQuery {
+class SQLQuery extends ZQuery with ISqlQuery {
     val logger = Logger.getLogger(this.getClass().getName());
 
     var alias: String = null;
@@ -34,7 +34,7 @@ class SQLQuery extends ZQuery with IQuery {
         this.addLogicalTable(logicalTable);
     }
 
-    def this(logicalTable: IQuery) = {
+    def this(logicalTable: ISqlQuery) = {
         this();
         val joinQuery = new SQLJoinTable(logicalTable);
         this.addFromItem(joinQuery);
@@ -68,7 +68,7 @@ class SQLQuery extends ZQuery with IQuery {
     def addLogicalTable(logicalTable: SQLLogicalTable) = {
         val result = logicalTable match {
             case zFromItem: ZFromItem => { this.addFromItem(zFromItem); }
-            case iQuery: IQuery => {
+            case iQuery: ISqlQuery => {
                 val joinQuery = new SQLJoinTable(logicalTable);
                 this.addFromItem(joinQuery);
             }
@@ -304,7 +304,7 @@ class SQLQuery extends ZQuery with IQuery {
                             case _: SQLFromItem => {
                                 fromSQL += separator + logicalTable.toString();
                             }
-                            case _: IQuery => {
+                            case _: ISqlQuery => {
                                 fromSQL += separator + " ( " + logicalTable.print(false) + " ) " + logicalTable.getAlias();
                             }
                             case _ => {}

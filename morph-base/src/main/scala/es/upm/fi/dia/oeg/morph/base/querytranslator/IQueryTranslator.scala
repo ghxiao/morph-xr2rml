@@ -1,15 +1,14 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.sql.Connection
-
 import com.hp.hpl.jena.query.Query
-
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 trait IQueryTranslator {
-    var connection: Connection = null;
+    var genCnx: GenericConnection = null;
 
     var optimizer: QueryTranslationOptimizer = null;
 
@@ -19,9 +18,9 @@ trait IQueryTranslator {
 
     var mappingDocument: R2RMLMappingDocument = null;
 
-    def translate(query: Query): IQuery;
+    def translate(query: Query): ISqlQuery;
 
-    def getPRSQLGen(): MorphBasePRSQLGenerator
+    def getPRSQLGen(): MorphBaseProjectionGenerator
 
     //def translate(op: Op): IQuery;
 

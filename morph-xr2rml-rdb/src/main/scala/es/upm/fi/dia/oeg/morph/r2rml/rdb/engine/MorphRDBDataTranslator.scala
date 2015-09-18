@@ -3,16 +3,21 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
@@ -20,15 +25,13 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
-import es.upm.fi.dia.oeg.morph.base.sql.IQuery
+import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -64,7 +67,7 @@ class MorphRDBDataTranslator(
         }
 
         // Run the query against the database
-        val iQuery = query.concreteQuery.asInstanceOf[IQuery]
+        val iQuery = query.concreteQuery.asInstanceOf[ISqlQuery]
         val rows = DBUtility.execute(this.connection, iQuery.toString(), this.properties.databaseTimeout);
         // logger.trace(DBUtility.resultSetToString(rows)) // debug only, it consumes the cursor and can't be reset afterwards
 
@@ -284,7 +287,6 @@ class MorphRDBDataTranslator(
         logger.info(i + " instances retrieved.");
         rows.close();
     }
-
 
     /**
      * Apply a term map to the current row of the result set, and generate a list of RDF terms:

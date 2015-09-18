@@ -7,7 +7,7 @@ import Zql.ZGroupBy
 import Zql.ZSelectItem
 import Zql.ZExp
 
-class SQLUnion(val unionQueries: Iterable[SQLQuery]) extends IQuery {
+class SQLUnion(val unionQueries: Iterable[SQLQuery]) extends ISqlQuery {
     var alias: String = null;
     var orderByConditions: List[ZOrderBy] = List.empty;
     var joinType: String = null;
@@ -230,7 +230,7 @@ class SQLUnion(val unionQueries: Iterable[SQLQuery]) extends IQuery {
 }
 
 object SQLUnion {
-    def apply(newUnionQueries: Iterable[_ <: IQuery]): SQLUnion = {
+    def apply(newUnionQueries: Iterable[_ <: ISqlQuery]): SQLUnion = {
         val queries = newUnionQueries.flatMap(newUnionQuery => {
             newUnionQuery match {
                 case sqlQuery: SQLQuery => {
