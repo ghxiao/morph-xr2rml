@@ -252,6 +252,7 @@ object R2RMLMappingDocument {
                 tm;
             })
         } else {
+            logger.warn("The mapping graph contains NO TriplesMap definition.")
             Set.empty
         }
 

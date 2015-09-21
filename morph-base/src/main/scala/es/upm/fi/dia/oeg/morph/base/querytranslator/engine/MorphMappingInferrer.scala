@@ -25,10 +25,15 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
+
     val logger = Logger.getLogger(this.getClass());
+
     var mapInferredTypes: Map[Node, Set[R2RMLTriplesMap]] = Map.empty
 
-    private def addToInferredTypes(mapNodeTypes: Map[Node, Set[R2RMLTriplesMap]], node: Node, cms: Set[R2RMLTriplesMap]): Map[Node, Set[R2RMLTriplesMap]] = {
+    private def addToInferredTypes(
+        mapNodeTypes: Map[Node, Set[R2RMLTriplesMap]],
+        node: Node, cms: Set[R2RMLTriplesMap]): Map[Node, Set[R2RMLTriplesMap]] = {
+
         val newVal = mapNodeTypes.get(node).map(_.intersect(cms)).getOrElse(cms)
         mapNodeTypes + (node -> newVal)
     }
@@ -68,16 +73,6 @@ class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
                 })
         }
         genericInferBGP(bgpHelper _)(op)
-    }
-
-    def infer(query: Query): Map[Node, Set[R2RMLTriplesMap]] = {
-        if (this.mapInferredTypes.isEmpty) {
-            val queryPattern = query.getQueryPattern();
-            val opQueryPattern = Algebra.compile(queryPattern);
-            this.mapInferredTypes = this.infer(opQueryPattern);
-        }
-
-        this.mapInferredTypes;
     }
 
     /**
@@ -263,6 +258,9 @@ class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
     private def inferByURI(uri: String): Set[R2RMLTriplesMap] =
         this.mappingDocument.classMappings.filter(_.isPossibleInstance(uri)).toSet
 
+    /**
+     * Debug method
+     */
     def printInferredTypes(): String = {
         var result = new StringBuffer();
         for (key <- this.mapInferredTypes.keySet) {

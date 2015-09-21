@@ -1,21 +1,17 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConversions.asJavaCollection
-import scala.collection.JavaConversions.setAsJavaSet
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
-import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
-import com.hp.hpl.jena.vocabulary.RDF
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
-import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
-import es.upm.fi.dia.oeg.morph.base.Constants
 import com.hp.hpl.jena.sparql.algebra.Op
+import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
+
+import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
+import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 abstract class MorphBaseQueryTranslator extends IQueryTranslator {
 
@@ -24,81 +20,31 @@ abstract class MorphBaseQueryTranslator extends IQueryTranslator {
     /** Map of nodes of a SPARQL query and the candidate triples maps for each node **/
     var mapInferredTMs: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
 
-    var mapTripleAlias: Map[Triple, String] = Map.empty;
-
-    /** Set of not-null conditions for variable in a SPARQL query */
-    var mapVarNotNull: Map[Node, Boolean] = Map.empty;
-
     Optimize.setFactory(new MorphQueryRewritterFactory());
 
     /**
-     * High level method to start the translation process
+     * High level method to start the translation process.
+     * The result is a UnionOfGenericQueries, i.e. a set of concrete queries
+     * whereof results must be UNIONed.<br>
+     * Since SQL supports UNION with no restriction, in the case of a RDB the result consists
+     * of exactly one query.<br>
+     * Conversely, MongoDB does support UNIONs (by means of the $or operator), but only if there
+     * is no $where as members of the $or. Therefore it is not always possible to create a since
+     * MongoDB query that is equivalent to the SPARQL query. In this case, several concrete queries
+     * are returned, and the xR2RML processor shall compute the union itself.
+     *
+     * @param sparqlQuery the SPARQL query to translate
+     * @return set of concrete database queries of which results of be "UNIONed". 
+     * The result may be empty but not null. 
      */
-    def translate(sparqlQuery: Query): GenericQuery = {
+    def translate(sparqlQuery: Query): UnionOfGenericQueries = {
 
-        val start = System.currentTimeMillis();
-
+        val start = System.currentTimeMillis()
         val result = this.translate(Algebra.compile(sparqlQuery));
         logger.info("Query translation time = " + (System.currentTimeMillis() - start) + "ms.");
         result
     }
 
-    protected def translate(op: Op): GenericQuery
+    protected def translate(op: Op): UnionOfGenericQueries
 
-    /**
-     * Translation of a triple pattern into a union of SQL queries,
-     * with one query in the union for each candidate triples map.
-     */
-    protected def transTP(tp: Triple): ISqlQuery = {
-        val tpSubject = tp.getSubject();
-        val tpPredicate = tp.getPredicate();
-        val tpObject = tp.getObject();
-
-        val skipRDFTypeStatement = false;
-
-        val result = {
-            if (tpPredicate.isURI() && RDF.`type`.getURI().equals(tpPredicate.getURI())
-                && tpObject.isURI() && skipRDFTypeStatement) {
-                null;
-            } else {
-                // Get the candidate triple maps for the subject of the triple pattern 
-                val cmsOption = this.mapInferredTMs.get(tpSubject);
-                val cms = {
-                    if (cmsOption.isDefined) {
-                        cmsOption.get;
-                    } else {
-                        logger.warn("Undefined triplesMap for triple : " + tp + ". All triple patterns will be used");
-                        val cmsAux = this.mappingDocument.classMappings;
-                        if (cmsAux == null || cmsAux.size() == 0)
-                            logger.warn("Mapping document doesn't contain any triple pattern mapping");
-                        cmsAux.toSet
-                    }
-                }
-
-                // Build a union of per-triples-map queries
-                val unionOfQueries = cms.flatMap(cm => {
-                    val resultAux = this.transTP(tp, cm);
-                    if (resultAux != null) {
-                        Some(resultAux);
-                    } else
-                        None
-                })
-
-                if (unionOfQueries.size() == 0)
-                    null;
-                else if (unionOfQueries.size() == 1)
-                    unionOfQueries.head;
-                else if (unionOfQueries.size() > 1)
-                    SQLUnion(unionOfQueries);
-                else
-                    null
-            }
-        }
-        result;
-    }
-
-    /**
-     * Translation of a triple pattern into a SQL query based on a candidate triples map.
-     */
-    protected def transTP(tp: Triple, cm: R2RMLTriplesMap): ISqlQuery
 }

@@ -63,6 +63,7 @@ import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
@@ -92,26 +93,36 @@ class MorphRDBQueryTranslator(
 
         extends MorphBaseQueryTranslator {
 
-    override val logger = Logger.getLogger(this.getClass());
-
+    /** Connection to the RDB */
     var connection: Connection = null
 
     var mapAggreatorAlias: Map[String, ZSelectItem] = Map.empty; //varname - selectitem
 
-    val functionsMap: Map[String, String] = Map(
-        "E_Bound" -> "IS NOT NULL", "E_LogicalNot" -> "NOT", "E_LogicalOr" -> "OR", "E_LogicalAnd" -> "AND", "E_Regex" -> "LIKE", "E_OneOf" -> "IN")
+    var mapTripleAlias: Map[Triple, String] = Map.empty;
+
+    /** Is-Null of Is-Not-null conditions for variables in a SPARQL query */
+    var mapVarNotNull: Map[Node, Boolean] = Map.empty;
+
+    override val logger = Logger.getLogger(this.getClass());
 
     this.alphaGenerator.owner = this;
     this.betaGenerator.owner = this;
 
     private var mapTemplateMatcher: Map[String, Matcher] = Map.empty;
+
     private var mapTemplateAttributes: Map[String, List[String]] = Map.empty;
+
+    val functionsMap: Map[String, String] = Map(
+        "E_Bound" -> "IS NOT NULL", "E_LogicalNot" -> "NOT", "E_LogicalOr" -> "OR", "E_LogicalAnd" -> "AND", "E_Regex" -> "LIKE", "E_OneOf" -> "IN")
 
     def getPRSQLGen(): MorphRDBPRSQLGenerator = { prSQLGenerator }
 
     private def rdbOptimizer(): MorphRDBQueryOptimizer = { this.optimizer.asInstanceOf[MorphRDBQueryOptimizer] }
 
-    override def translate(op: Op): GenericQuery = {
+    /**
+     * High level method to start the translation process
+     */
+    override def translate(op: Op): UnionOfGenericQueries = {
         logger.debug("opSparqlQuery = " + op);
 
         // Find candidate triples maps
@@ -132,11 +143,7 @@ class MorphRDBQueryTranslator(
                     (node -> logicalTableSize);
                 })
 
-                val reorderSTG =
-                    if (this.properties != null)
-                        this.properties.reorderSTG;
-                    else
-                        true
+                val reorderSTG = this.properties.reorderSTG;
 
                 val queryRewritter = new MorphQueryRewriter(mapNodeLogicalTableSize.toMap, reorderSTG);
                 val opSparqlQuery2 = {
@@ -164,7 +171,8 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        new GenericQuery(Constants.DatabaseType.Relational, resultQuery)
+        new UnionOfGenericQueries(
+            Constants.DatabaseType.Relational, new GenericQuery(Constants.DatabaseType.Relational, resultQuery))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {
@@ -241,7 +249,7 @@ class MorphRDBQueryTranslator(
                 case bgp: OpBGP => {
                     if (bgp.getPattern().size() == 1) {
                         val tp = bgp.getPattern().get(0);
-                        this.transTP(tp);
+                        this.transTP(tp)
                     } else
                         this.transBGP(bgp);
                 }
@@ -725,9 +733,63 @@ class MorphRDBQueryTranslator(
     }
 
     /**
+     * Translation of a triple pattern into an SQL UNION query,
+     * with one sub-query in the union for each candidate triples map.
+     */
+    private def transTP(tp: Triple): ISqlQuery = {
+        val tpSubject = tp.getSubject();
+        val tpPredicate = tp.getPredicate();
+        val tpObject = tp.getObject();
+
+        val skipRDFTypeStatement = false;
+
+        val result = {
+            if (tpPredicate.isURI() && RDF.`type`.getURI().equals(tpPredicate.getURI())
+                && tpObject.isURI() && skipRDFTypeStatement) {
+                null;
+            } else {
+                // Get the candidate triple maps for the subject of the triple pattern 
+                val tmOption = this.mapInferredTMs.get(tpSubject);
+                val triplesMaps = {
+                    if (tmOption.isDefined) {
+                        tmOption.get;
+                    } else {
+                        logger.warn("Undefined TriplesMap for triple: " + tp + ". All triple patterns will be used");
+                        this.mappingDocument.classMappings.toSet
+                    }
+                }
+
+                // Build a union of per-triples-map queries:
+                // In the RDB case each tp is associated with a list of one query, possibly an SQL UNION. 
+                // The flatMap will flatten those lists into a single list of queries
+
+                // Build a union of per-triples-map queries
+                val unionOfQueries = triplesMaps.flatMap(cm => {
+                    val resultAux = this.transTP(tp, cm);
+                    if (resultAux != null) {
+                        Some(resultAux);
+                    } else
+                        None
+                })
+
+                if (unionOfQueries.size() == 0)
+                    null;
+                else if (unionOfQueries.size() == 1)
+                    unionOfQueries.head;
+                else if (unionOfQueries.size() > 1)
+                    SQLUnion(unionOfQueries);
+                else
+                    null
+
+            }
+        }
+        result
+    }
+
+    /**
      * Translation of a triple pattern into a SQL query based on a candidate triples map.
      */
-    override def transTP(tp: Triple, cm: R2RMLTriplesMap): ISqlQuery = {
+    private def transTP(tp: Triple, cm: R2RMLTriplesMap): ISqlQuery = {
         val tpPredicate = tp.getPredicate();
 
         val result: ISqlQuery = {
@@ -1532,56 +1594,31 @@ class MorphRDBQueryTranslator(
                 }
             }
             case opJoin: OpJoin => { // AND pattern
-                this.initializeMapVarIsNullable(opJoin.getLeft());
-                this.initializeMapVarIsNullable(opJoin.getRight());
+                this.initializeMapVarIsNullable(opJoin.getLeft())
+                this.initializeMapVarIsNullable(opJoin.getRight())
             }
             case opLeftJoin: OpLeftJoin => { //OPT pattern
-                val leftChild = opLeftJoin.getLeft();
-                this.initializeMapVarIsNullable(leftChild);
-                val rightChild = opLeftJoin.getRight();
-                rightChild match {
-                    case rightBGP: OpBGP => {
-                        if (rightBGP.getPattern().size() == 1) {
-                            val tp = rightBGP.getPattern().get(0);
-                            val tpSubject = tp.getSubject();
-                            if (tpSubject.isVariable()) {
-                                this.mapVarNotNull += (tpSubject -> true);
-                            }
-                        } else if (rightBGP.getPattern().size() > 1) {
-                            this.initializeMapVarIsNullable(rightChild);
-                        } else {
-                            this.initializeMapVarIsNullable(rightChild);
-                        }
-                    }
-                    case _ => { this.initializeMapVarIsNullable(rightChild); }
-                }
+                this.initializeMapVarIsNullable(opLeftJoin.getLeft())
+                this.initializeMapVarIsNullable(opLeftJoin.getRight())
             }
             case opUnion: OpUnion => { //UNION pattern
-                val leftChild = opUnion.getLeft();
-                val rightChild = opUnion.getRight();
-                val leftChildRewritten = this.initializeMapVarIsNullable(leftChild);
-                val rightChildRewritten = this.initializeMapVarIsNullable(rightChild);
+                this.initializeMapVarIsNullable(opUnion.getLeft())
+                this.initializeMapVarIsNullable(opUnion.getRight())
             }
             case opFilter: OpFilter => { //FILTER pattern
-                val exprs = opFilter.getExprs();
-                val subOp = opFilter.getSubOp();
-                val subOpRewritten = this.initializeMapVarIsNullable(subOp);
+                val subOpRewritten = this.initializeMapVarIsNullable(opFilter.getSubOp)
             }
             case opProject: OpProject => {
-                val subOp = opProject.getSubOp();
-                val subOpRewritten = this.initializeMapVarIsNullable(subOp);
+                val subOpRewritten = this.initializeMapVarIsNullable(opProject.getSubOp)
             }
             case opSlice: OpSlice => {
-                val subOp = opSlice.getSubOp();
-                val subOpRewritten = this.initializeMapVarIsNullable(subOp);
+                val subOpRewritten = this.initializeMapVarIsNullable(opSlice.getSubOp)
             }
             case opDistinct: OpDistinct => {
-                val subOp = opDistinct.getSubOp();
-                val subOpRewritten = this.initializeMapVarIsNullable(subOp);
+                val subOpRewritten = this.initializeMapVarIsNullable(opDistinct.getSubOp)
             }
             case opOrder: OpOrder => {
-                val subOp = opOrder.getSubOp();
-                val subOpRewritten = this.initializeMapVarIsNullable(subOp);
+                val subOpRewritten = this.initializeMapVarIsNullable(opOrder.getSubOp)
             }
             case _ => {
                 //op;

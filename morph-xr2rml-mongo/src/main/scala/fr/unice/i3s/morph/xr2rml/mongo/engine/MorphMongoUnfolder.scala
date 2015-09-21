@@ -1,7 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -15,8 +14,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
+import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 
-class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
+class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         extends MorphBaseUnfolder(md, properties) {
 
     val logger = Logger.getLogger(this.getClass().getName());
@@ -46,7 +46,7 @@ class MorphJsondocUnfolder(md: R2RMLMappingDocument, properties: MorphProperties
             case _ => { throw new MorphException("Unknown logical table/source type: " + logicalSrc) }
         }
 
-        val mongoQuery = MongoUtils.parseQueryString(logicalSrcQuery)
+        val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery)
         logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
         new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
     }

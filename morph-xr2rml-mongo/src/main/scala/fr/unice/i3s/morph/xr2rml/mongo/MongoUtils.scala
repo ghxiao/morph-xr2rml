@@ -61,27 +61,6 @@ object MongoUtils {
     }
 
     /**
-     * A query string looks like this: db.myCollection.find({ 'a': { $exists: true} })
-     * This method return a MongoDBQuery instance where collection = myCollection
-     * and query string = "{ 'a': { $exists: true} }"
-     */
-    def parseQueryString(query: String): MongoDBQuery = {
-
-        var tokens = query.split("\\.")
-        if (!tokens(0).equals("db")) {
-            logger.error("Invalid query string: " + query)
-            return null
-        }
-        val collection = tokens(1)
-
-        // The query string starts after the '(' and finished before the trailing ')'
-        tokens = query.split("\\(")
-        val queryStr = tokens(1).substring(0, tokens(1).length - 1)
-
-        new MongoDBQuery(collection, queryStr)
-    }
-
-    /**
      * Execute a MongoDB query against the connection.
      * Returns a list or results as JSON strings
      */

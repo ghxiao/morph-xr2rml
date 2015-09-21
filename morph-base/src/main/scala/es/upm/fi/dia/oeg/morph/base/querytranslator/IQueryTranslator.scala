@@ -7,6 +7,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
 
 trait IQueryTranslator {
     var genCnx: GenericConnection = null;
@@ -19,9 +20,7 @@ trait IQueryTranslator {
 
     var mappingDocument: R2RMLMappingDocument = null;
 
-    def translate(query: Query): GenericQuery;
-
-    def getPRSQLGen(): MorphBaseProjectionGenerator
+    def translate(query: Query): UnionOfGenericQueries;
 
     //def translate(op: Op): IQuery;
 

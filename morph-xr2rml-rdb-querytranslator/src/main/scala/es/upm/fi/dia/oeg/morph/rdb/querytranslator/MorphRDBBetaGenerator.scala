@@ -33,7 +33,7 @@ class MorphRDBBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolde
 
     val alphaGenerator: MorphRDBAlphaGenerator = null;
 
-    var owner: MorphBaseQueryTranslator = null;
+    var owner: MorphRDBQueryTranslator = null;
 
     def calculateBetaObject(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, alphaResult: MorphAlphaResult, pm: R2RMLPredicateObjectMap): List[ZSelectItem] = {
 

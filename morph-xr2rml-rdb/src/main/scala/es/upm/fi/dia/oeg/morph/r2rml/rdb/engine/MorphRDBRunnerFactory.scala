@@ -110,8 +110,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         queryTranslator: IQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor = {
 
-        val queryResultProc = new MorphRDBQueryResultProcessor(md, properties, outputStream, dataSourceReader)
-        queryResultProc.projectionGenerator = queryTranslator.getPRSQLGen
+        val queryResultProc = new MorphRDBQueryResultProcessor(md, properties, outputStream, dataSourceReader, queryTranslator)
         queryResultProc
     }
 }

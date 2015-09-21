@@ -29,7 +29,7 @@ class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
 
     val logger = Logger.getLogger("MorphQueryTranslator");
 
-    var owner: MorphBaseQueryTranslator = null;
+    var owner: MorphRDBQueryTranslator = null;
 
     def calculateAlpha(tp: Triple, abstractConceptMapping: R2RMLTriplesMap, predicateURI: String): MorphAlphaResult = {
         //ALPHA SUBJECT

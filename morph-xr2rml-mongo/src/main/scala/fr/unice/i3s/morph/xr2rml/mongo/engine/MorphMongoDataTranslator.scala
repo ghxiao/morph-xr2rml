@@ -30,7 +30,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 class MorphJsondocDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
-    unfolder: MorphJsondocUnfolder,
+    unfolder: MorphMongoUnfolder,
     connection: GenericConnection, properties: MorphProperties)
 
         extends MorphBaseDataTranslator(md, materializer, unfolder, connection, properties) {

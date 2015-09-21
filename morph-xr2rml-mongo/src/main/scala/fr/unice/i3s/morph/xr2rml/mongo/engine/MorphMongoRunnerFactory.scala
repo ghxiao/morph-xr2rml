@@ -17,7 +17,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcesso
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 
-class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
+class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
 
     override val logger = Logger.getLogger(this.getClass().getName())
 
@@ -38,7 +38,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
         cnx
     }
 
-    override def createUnfolder(props: MorphProperties, md: R2RMLMappingDocument): MorphJsondocUnfolder = {
+    override def createUnfolder(props: MorphProperties, md: R2RMLMappingDocument): MorphMongoUnfolder = {
         val dbType = props.databaseType
         val cnx = dbType match {
             case Constants.DATABASE_MONGODB =>
@@ -46,7 +46,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
             case _ =>
                 throw new Exception("Database type not supported: " + dbType)
         }
-        val unfolder = new MorphJsondocUnfolder(md.asInstanceOf[R2RMLMappingDocument], props)
+        val unfolder = new MorphMongoUnfolder(md.asInstanceOf[R2RMLMappingDocument], props)
         unfolder.dbType = dbType
         unfolder
     }
@@ -62,7 +62,7 @@ class MorphJsondocRunnerFactory extends MorphBaseRunnerFactory {
         properties: MorphProperties): MorphBaseDataTranslator = {
 
         new MorphJsondocDataTranslator(
-            mappingDocument, materializer, unfolder.asInstanceOf[MorphJsondocUnfolder], connection, properties);
+            mappingDocument, materializer, unfolder.asInstanceOf[MorphMongoUnfolder], connection, properties);
     }
 
     override def createQueryTranslator(
