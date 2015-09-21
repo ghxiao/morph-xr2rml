@@ -26,6 +26,13 @@ class R2RMLPredicateObjectMap(
 
     var alias: String = null;
 
+    def getMappedPredicateNames(): Iterable[String] = {
+        val result = this.predicateMaps.map(pm => {
+            pm.getOriginalValue();
+        });
+        result;
+    }
+
     def getMappedPredicateName(index: Int): String = {
         val result = if (this.predicateMaps != null && !this.predicateMaps.isEmpty()) {
             this.predicateMaps.get(index).getOriginalValue();
@@ -65,15 +72,12 @@ class R2RMLPredicateObjectMap(
         result;
     }
 
-    override def toString(): String = {
-        val result = "R2RMLPredicateObjectMap[predicateMaps=" + predicateMaps + ", objectMaps=" + objectMaps + ", refObjectMaps=" + refObjectMaps + "]";
-        result;
+    def hasRefObjectMap(): Boolean = {
+        (this.refObjectMaps != null && !this.refObjectMaps.isEmpty())
     }
 
-    def getMappedPredicateNames(): Iterable[String] = {
-        val result = this.predicateMaps.map(pm => {
-            pm.getOriginalValue();
-        });
+    override def toString(): String = {
+        val result = "R2RMLPredicateObjectMap[predicateMaps=" + predicateMaps + ", objectMaps=" + objectMaps + ", refObjectMaps=" + refObjectMaps + "]";
         result;
     }
 }

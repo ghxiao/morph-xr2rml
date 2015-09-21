@@ -128,7 +128,7 @@ abstract class R2RMLTermMap(
 
     /**
      * Return the list of column names (strings) referenced by the term map.
-     * Nil in case of a constant-valued term-map, a list of one string for a column-valued term map,
+     * Nil in case of a constant-valued term-map, a list of one string for a column-valued term map or reference-valued term map,
      * and a list of several strings for a template-valued term map.
      *
      * @return list of strings representing column names. Cannot return null
@@ -153,6 +153,31 @@ abstract class R2RMLTermMap(
         result
     }
 
+    /**
+     * Return the list of references (strings) referenced by the term map.
+     * Nil in case of a constant-valued term-map, one string for a column-valued term map or reference-valued term map,
+     * and a list of several strings for a template-valued term map.
+     * 
+     * Each reference is returned as it appears in the mapping, may it be a mixed syntax path or not. 
+     *
+     * @return list of strings representing references. Cannot return null.
+     */
+    def getReferences(): List[String] = {
+        val result = this.termMapType match {
+            case Constants.MorphTermMapType.ConstantTermMap => { Nil }
+            case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
+            case Constants.MorphTermMapType.ReferenceTermMap => {
+                // Parse reference as a mixed syntax path and return the column referenced in the first path "Column()" 
+                List(MixedSyntaxPath(this.reference, refFormulaion).getReferencedColumn.get)
+            }
+            case Constants.MorphTermMapType.TemplateTermMap => {
+                // Get the list of template strings
+                TemplateUtility.getTemplateColumns(this.templateString)
+            }
+            case _ => { throw new Exception("Invalid term map type") }
+        }
+        result
+    }
     def getOriginalValue(): String = {
         val result = this.termMapType match {
             case Constants.MorphTermMapType.ConstantTermMap => { this.constantValue; }
@@ -368,7 +393,6 @@ object R2RMLTermMap {
                     }
                 })
             } else { Nil }
-        
 
         // Extract term map introduced with constant properties rr:subject, rr:predicate, rr:object and rr:graph
         val constProperties = termPos match {
