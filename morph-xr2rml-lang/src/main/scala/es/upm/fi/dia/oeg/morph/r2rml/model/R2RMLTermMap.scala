@@ -127,6 +127,29 @@ abstract class R2RMLTermMap(
     }
 
     /**
+     * Return the list of references (strings) referenced by the term map.
+     * Nil in case of a constant-valued term-map, one string for a column-valued term map or reference-valued term map,
+     * and a list of several strings for a template-valued term map.
+     *
+     * Each reference is returned as it appears in the mapping, may it be a mixed syntax path or not.
+     *
+     * @return list of strings representing references. Cannot return null.
+     */
+    def getReferences(): List[String] = {
+        val result = this.termMapType match {
+            case Constants.MorphTermMapType.ConstantTermMap => { Nil }
+            case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
+            case Constants.MorphTermMapType.ReferenceTermMap => { List(this.reference) }
+            case Constants.MorphTermMapType.TemplateTermMap => {
+                // Get the list of template strings
+                TemplateUtility.getTemplateGroups(this.templateString)
+            }
+            case _ => { throw new Exception("Invalid term map type") }
+        }
+        result
+    }
+
+    /**
      * Return the list of column names (strings) referenced by the term map.
      * Nil in case of a constant-valued term-map, a list of one string for a column-valued term map or reference-valued term map,
      * and a list of several strings for a template-valued term map.
@@ -153,31 +176,6 @@ abstract class R2RMLTermMap(
         result
     }
 
-    /**
-     * Return the list of references (strings) referenced by the term map.
-     * Nil in case of a constant-valued term-map, one string for a column-valued term map or reference-valued term map,
-     * and a list of several strings for a template-valued term map.
-     * 
-     * Each reference is returned as it appears in the mapping, may it be a mixed syntax path or not. 
-     *
-     * @return list of strings representing references. Cannot return null.
-     */
-    def getReferences(): List[String] = {
-        val result = this.termMapType match {
-            case Constants.MorphTermMapType.ConstantTermMap => { Nil }
-            case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
-            case Constants.MorphTermMapType.ReferenceTermMap => {
-                // Parse reference as a mixed syntax path and return the column referenced in the first path "Column()" 
-                List(MixedSyntaxPath(this.reference, refFormulaion).getReferencedColumn.get)
-            }
-            case Constants.MorphTermMapType.TemplateTermMap => {
-                // Get the list of template strings
-                TemplateUtility.getTemplateColumns(this.templateString)
-            }
-            case _ => { throw new Exception("Invalid term map type") }
-        }
-        result
-    }
     def getOriginalValue(): String = {
         val result = this.termMapType match {
             case Constants.MorphTermMapType.ConstantTermMap => { this.constantValue; }
@@ -227,6 +225,28 @@ abstract class R2RMLTermMap(
             case _ => { throw new Exception("Cannot build a MixedSyntaxPath with a term map of type " + this.termMapType) }
         }
     }
+
+    def isConstantValued: Boolean = {
+        this.termMapType == Constants.MorphTermMapType.ConstantTermMap
+    }
+
+    def isColumnValued: Boolean = {
+        this.termMapType == Constants.MorphTermMapType.ColumnTermMap
+    }
+
+    def isReferenceValued: Boolean = {
+        this.termMapType == Constants.MorphTermMapType.ReferenceTermMap
+    }
+
+    def isTemplateValued: Boolean = {
+        this.termMapType == Constants.MorphTermMapType.TemplateTermMap
+    }
+
+    def isReferenceOrTemplateValued: Boolean = {
+        this.termMapType == Constants.MorphTermMapType.ReferenceTermMap ||
+            this.termMapType == Constants.MorphTermMapType.TemplateTermMap
+    }
+
 }
 
 object R2RMLTermMap {

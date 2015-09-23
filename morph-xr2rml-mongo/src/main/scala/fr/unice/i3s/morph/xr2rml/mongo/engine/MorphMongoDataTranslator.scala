@@ -27,7 +27,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 
-class MorphJsondocDataTranslator(
+class MorphMongoDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphMongoUnfolder,

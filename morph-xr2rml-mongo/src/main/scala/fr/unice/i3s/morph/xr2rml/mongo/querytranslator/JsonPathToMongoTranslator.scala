@@ -17,6 +17,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotExists
 import scala.collection.mutable.Queue
 import oracle.jrockit.jfr.Logger
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphConditionType
 
 /**
  * This object implements the algorithm that translates a JSONPath expression and a top-level condition
@@ -471,8 +473,8 @@ object JsonPathToMongoTranslator {
      */
     private def condJS(cond: MongoQueryNodeCond): String = {
         cond.cond match {
-            case MongoQueryNode.CondType.IsNotNull => " != null"
-            case MongoQueryNode.CondType.Equals => " == " + cond.value
+            case MorphConditionType.IsNotNull => " != null"
+            case MorphConditionType.Equals => " == " + cond.value
         }
     }
 }

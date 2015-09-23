@@ -22,7 +22,7 @@ class R2RMLRefObjectMap(val parentTriplesMapResource: Resource, val joinConditio
     }
 
     override def toString(): String = {
-        this.parentTriplesMapResource.toString();
+        this.parentTriplesMapResource.toString() + ": " + joinConditions;
     }
 
     def isR2RMLTermType(): Boolean = {
@@ -79,7 +79,9 @@ object R2RMLRefObjectMap {
 
     /**
      * Create a set of ReferencingObjectMaps by checking the rr:objectMap properties of a PredicateObjectMap
+     *
      * @param resource A Jena node representing a PredicateObjectMap instance
+     * @return a possibly empty set of R2RMLRefObjectMap's
      */
     def extractRefObjectMaps(resource: Resource): Set[R2RMLRefObjectMap] = {
 

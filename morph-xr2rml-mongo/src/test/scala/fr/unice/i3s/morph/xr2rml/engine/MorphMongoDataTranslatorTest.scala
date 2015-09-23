@@ -3,9 +3,9 @@ package fr.unice.i3s.morph.xr2rml.engine
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphJsondocDataTranslator
+import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 
-class MorphJsondocDataTranslatorTest {
+class MorphMongoDataTranslatorTest {
 
     @Test def parseQueryString() = {
 

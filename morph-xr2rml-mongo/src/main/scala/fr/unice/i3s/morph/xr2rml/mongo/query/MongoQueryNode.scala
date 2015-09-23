@@ -232,10 +232,7 @@ abstract class MongoQueryNode {
 }
 
 object MongoQueryNode {
-    object CondType extends Enumeration {
-        val Equals, IsNotNull = Value
-    }
-
+    
     /**
      * Returns a MongoDB path consisting of a concatenation of single field names and array indexes in dot notation.
      * It removes the optional heading dot. E.g. dotNotation(.p[5]r) => p.5.r

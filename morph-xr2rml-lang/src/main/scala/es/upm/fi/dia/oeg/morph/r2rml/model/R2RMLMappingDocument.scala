@@ -213,6 +213,16 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
             possibleInstance
         })
     }
+
+    def getClassMappingsByName(name: String): R2RMLTriplesMap = {
+        val filtered = this.classMappings.filter(cm => {
+            cm.asInstanceOf[R2RMLTriplesMap].name == name
+        })
+        if (filtered.isEmpty)
+            null
+        else filtered.head
+    }
+
 }
 
 object R2RMLMappingDocument {
@@ -261,7 +271,8 @@ object R2RMLMappingDocument {
         md.mappingDocumentPath = mdPath;
 
         // Build METADATA
-        md.buildMetaData(connection, props.databaseName, props.databaseType);
+        if (connection != null)
+            md.buildMetaData(connection, props.databaseName, props.databaseType);
 
         md.mappingDocumentPrefixMap = model.getNsPrefixMap().toMap;
         md

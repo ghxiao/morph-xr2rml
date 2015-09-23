@@ -36,7 +36,6 @@ object R2RMLJoinCondition {
             throw new MorphException(errorMessage);
         }
         val parentRef = parentStatement.getObject().toString();
-
         new R2RMLJoinCondition(childRef, parentRef);
     }
 }

@@ -1,0 +1,46 @@
+@prefix xrr: <http://i3s.unice.fr/xr2rml#> .
+@prefix rr:  <http://www.w3.org/ns/r2rml#> .
+@prefix ex:  <http://example.com/> .
+@prefix rml: <http://semweb.mmlab.be/ns/rml#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#Movies>
+   xrr:logicalSource [ 
+      xrr:query "db.movies.find({decade:{$exists:true}})";
+      rml:iterator "$.movies.*"
+   ];
+   
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
+   
+   rr:predicateObjectMap [
+      rr:predicate ex:starring;
+      rr:objectMap [ xrr:reference "$.actors.*" ];
+   ].
+
+<#Directors>
+   xrr:logicalSource [ xrr:query "db.directors.find({})" ];
+   
+   rr:subjectMap [ rr:template "http://example.org/dir/{$.name}" ];
+   
+   rr:predicateObjectMap [
+      rr:predicate ex:directed;
+      rr:objectMap [
+         rr:parentTriplesMap <#Movies>;
+         rr:joinCondition [
+            rr:child "$.directed.*";
+            rr:parent "$.name";
+         ]
+      ]
+   ].
+   
+<#Other>
+   xrr:logicalSource [ xrr:query "db.othercollection.find({any_query})" ];
+   
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
+   
+   rr:predicateObjectMap [
+      rr:predicateMap [ rr:template "http://example.org/property/{$.relation.prop}" ];
+      rr:objectMap [ xrr:reference "$.relation.actors.*" ];
+   ].
+
+   

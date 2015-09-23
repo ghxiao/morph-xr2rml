@@ -27,6 +27,11 @@ class MongoDBQuery(
         else
             "MongoDBQuery[Collection: " + collection + ". Query: " + query + "]"
     }
+    
+    override def equals(a: Any): Boolean = {
+        val m = a.asInstanceOf[MongoDBQuery]
+        this.collection == m.collection && this.query == m.query && this.iterator == m.iterator 
+    }
 }
 
 object MongoDBQuery {

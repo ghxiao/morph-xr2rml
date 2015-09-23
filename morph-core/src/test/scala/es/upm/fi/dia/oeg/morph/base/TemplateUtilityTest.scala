@@ -57,6 +57,25 @@ class TemplateUtilityTest {
         assertEquals("NAME", colRefs(3))
     }
 
+    @Test def TestGetTemplateMatching() {
+        println("------------------ TestGetTemplateMatching ------------------")
+        
+        var groups = TemplateUtility.getTemplateMatching("http://example.org/student/{ID1}/{ID2}/{ID1}", "http://example.org/student/id1/id2/id1")
+        println("groups: " + groups)
+        assertEquals("id1", groups.get("ID1").get)
+        assertEquals("id2", groups.get("ID2").get)
+
+        
+        val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
+        val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
+        val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
+        var tpl = "http://example.org/student/{ID1}/{" + mixedPath + "}/{ID2}"
+
+        groups = TemplateUtility.getTemplateMatching(tpl, "http://example.org/student/id1/mixedPath1/id2")
+        println("groups: " + groups)
+
+    }
+
     @Test def TestCartesianProduct() {
         println("------------------ TestCartesianProduct ------------------")
         val lists: List[List[Object]] = List(List("1", "2", "3"), List("4"), List("5", "6"))

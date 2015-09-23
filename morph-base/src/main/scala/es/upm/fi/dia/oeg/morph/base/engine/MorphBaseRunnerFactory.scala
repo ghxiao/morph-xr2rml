@@ -20,8 +20,7 @@ abstract class MorphBaseRunnerFactory {
     val logger = Logger.getLogger(this.getClass());
 
     def createRunner(configurationDirectory: String, configurationFile: String): MorphBaseRunner = {
-        val configurationProperties = MorphProperties.apply(
-            configurationDirectory, configurationFile);
+        val configurationProperties = MorphProperties.apply(configurationDirectory, configurationFile);
         this.createRunner(configurationProperties);
     }
 
@@ -52,7 +51,7 @@ abstract class MorphBaseRunnerFactory {
         // The Data Source Reader, Query Translator, Query Result Writer, Result Processor, are only applicable
         // in the case of query rewriting access mode, i.e. not in data materialization.
         // ---------------------------------------------------------------------------------
-        
+
         // Building DATA SOURCE READER
         val dataSourceReader = this.createDataSourceReader(properties, connection);
 

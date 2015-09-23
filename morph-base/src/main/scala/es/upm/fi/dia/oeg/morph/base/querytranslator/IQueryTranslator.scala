@@ -22,21 +22,4 @@ trait IQueryTranslator {
 
     def translate(query: Query): UnionOfGenericQueries;
 
-    //def translate(op: Op): IQuery;
-
-    //def translateFromQueryFile(queryFilePath: String): IQuery;
-
-    //def translateFromString(queryString: String): IQuery;
-
-    //def translateUpdate(stg: OpBGP): ZUpdate;
-
-    //def translateInsert(stg: OpBGP): ZInsert;
-
-    //def translateDelete(stg: OpBGP): ZDelete;
-
-    //def setConnection(conn: Connection) = { this.connection = conn }
-
-    //def setOptimizer(optimizer: QueryTranslationOptimizer) = { this.optimizer = optimizer }
-
-    //def setDatabaseType(dbType: String) = { this.databaseType = dbType }
 }

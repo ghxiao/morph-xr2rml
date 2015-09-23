@@ -53,6 +53,13 @@ object R2RMLObjectMap {
         om;
     }
 
+    /**
+     * Create a set of ObjectMaps by checking the rr:objectMap properties of a PredicateObjectMap
+     * 
+     * @param resource A Jena node representing a PredicateObjectMap instance
+     * @param refFormulation the current reference formulation given in the configuration file
+     * @return a possibly empty set of R2RMLRefObjectMap's
+     */
     def extractObjectMaps(resource: Resource, refFormulation: String): Set[R2RMLObjectMap] = {
         logger.trace("Looking for object maps")
         val tms = R2RMLTermMap.extractTermMaps(resource, Constants.MorphPOS.obj, refFormulation);

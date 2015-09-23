@@ -61,7 +61,7 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
         connection: GenericConnection,
         properties: MorphProperties): MorphBaseDataTranslator = {
 
-        new MorphJsondocDataTranslator(
+        new MorphMongoDataTranslator(
             mappingDocument, materializer, unfolder.asInstanceOf[MorphMongoUnfolder], connection, properties);
     }
 

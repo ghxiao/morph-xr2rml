@@ -65,15 +65,14 @@ class R2RMLPredicateObjectMap(
     }
 
     def getRefObjectMap(index: Int): R2RMLRefObjectMap = {
-        val result = if (this.refObjectMaps != null && !this.refObjectMaps.isEmpty()) {
-            this.refObjectMaps.get(index);
+        if (this.refObjectMaps != null && !this.refObjectMaps.isEmpty) {
+            this.refObjectMaps(index);
         } else
             null;
-        result;
     }
 
     def hasRefObjectMap(): Boolean = {
-        (this.refObjectMaps != null && !this.refObjectMaps.isEmpty())
+        (this.refObjectMaps != null && !this.refObjectMaps.isEmpty)
     }
 
     override def toString(): String = {
