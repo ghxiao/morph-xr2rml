@@ -46,7 +46,7 @@ class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             case _ => { throw new MorphException("Unknown logical table/source type: " + logicalSrc) }
         }
 
-        val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery)
+        val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery, false)
         logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
         new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
     }

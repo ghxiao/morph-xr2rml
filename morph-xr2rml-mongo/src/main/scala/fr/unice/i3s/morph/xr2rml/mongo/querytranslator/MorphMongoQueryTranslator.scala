@@ -1,11 +1,9 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
@@ -22,12 +20,22 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import com.hp.hpl.jena.sparql.algebra.op.OpUnion
+import com.hp.hpl.jena.sparql.algebra.op.OpFilter
+import com.hp.hpl.jena.sparql.algebra.op.OpBGP
+import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
+import com.hp.hpl.jena.sparql.algebra.op.OpSlice
+import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
+import com.hp.hpl.jena.sparql.algebra.op.OpOrder
+import com.hp.hpl.jena.sparql.algebra.op.OpJoin
+import com.hp.hpl.jena.sparql.algebra.op.OpGroup
+import com.hp.hpl.jena.sparql.algebra.op.OpExtend
+import com.hp.hpl.jena.sparql.algebra.op.OpProject
 
 /**
  * This class assumes that the xR2RML mapping is normalized, that is, a triples map
  * has not more that one predicate-object map, and each predicate-object map has
  * exactly one predicate and one object map.
- *
  * In the code this assumption is mentioned by the annotation @NORMALIZED_ASSUMPTION
  */
 class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQueryTranslator {
@@ -43,8 +51,19 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      *
      */
     override def translate(op: Op): UnionOfGenericQueries = {
+        if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
-        throw new Exception("Method not implemented")
+        // WARNING ####################################################################
+        // This is totally adhoc code meant to test the whole process of running Morph-xR2RML with
+        // a query of one triple pattern
+        val tmMovies = md.getClassMappingsByName("Movies")
+        val tmDirectors = md.getClassMappingsByName("Directors")
+
+        // Do the translation of the first triple pattern
+        val bgp = op.asInstanceOf[OpProject].getSubOp().asInstanceOf[OpBGP]
+        val triples = bgp.getPattern().getList()
+        this.transTP(triples.get(0), tmDirectors)
+        // ####################################################################
     }
 
     /**
@@ -119,14 +138,14 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     def genFrom(tm: R2RMLTriplesMap): Map[TargetQuery.Value, MongoDBQuery] = {
 
         val logSrc = tm.getLogicalSource
-        val childQuery = MongoDBQuery.parseQueryString(logSrc.getValue, logSrc.docIterator)
+        val childQuery = MongoDBQuery.parseQueryString(logSrc.getValue, logSrc.docIterator, true)
         val pom = tm.getPropertyMappings.head // @NORMALIZED_ASSUMPTION
 
         val result =
             if (pom.hasRefObjectMap) {
                 val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
                 val parentTMLogSrc = md.getParentTriplesMap(rom).getLogicalSource
-                val parentQuery = MongoDBQuery.parseQueryString(parentTMLogSrc.getValue, parentTMLogSrc.docIterator)
+                val parentQuery = MongoDBQuery.parseQueryString(parentTMLogSrc.getValue, parentTMLogSrc.docIterator, true)
                 Map(TargetQuery.Child -> childQuery, TargetQuery.Parent -> parentQuery)
             } else
                 Map(TargetQuery.Child -> childQuery)
@@ -237,10 +256,11 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
             if (tpTerm.isLiteral) {
                 // Add an equality condition for each reference in the term map
-                val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
-                if (termMap.isReferenceOrTemplateValued)
-                    conditions = conditions ++ genEqualityConditions(TargetQuery.Child, termMap, tpTerm)
-
+                if (!pom.objectMaps.isEmpty) { // if there is no ObjectMap then the triples map does not really match tp. Earlier error?
+                    val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
+                    if (termMap.isReferenceOrTemplateValued)
+                        conditions = conditions ++ genEqualityConditions(TargetQuery.Child, termMap, tpTerm)
+                }
             } else if (tpTerm.isURI) {
 
                 if (pom.hasRefObjectMap) {
@@ -259,9 +279,11 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                             jc.parentRef, md.getParentTriplesMap(rom).logicalSource.docIterator)
                 } else {
                     // tp.obj is a constant IRI and there is no RefObjectMap: add an equality condition for each reference in the term map
-                    val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
-                    if (termMap.isReferenceOrTemplateValued)
-                        conditions = conditions ++ genEqualityConditions(TargetQuery.Child, termMap, tpTerm)
+                    if (!pom.objectMaps.isEmpty) { // if there is no ObjectMap then the triples map does not really match tp. Earlier error?
+                        val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
+                        if (termMap.isReferenceOrTemplateValued)
+                            conditions = conditions ++ genEqualityConditions(TargetQuery.Child, termMap, tpTerm)
+                    }
                 }
 
             } else if (tpTerm.isVariable) {
@@ -288,7 +310,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
             }
         }
 
-        if (logger.isDebugEnabled()) logger.debug("Translation of tp: [" + tp + "] with triples map " + tm + ": conditions = " + conditions)
+        if (logger.isDebugEnabled()) logger.debug("Translation returns conditions: " + conditions)
         conditions
     }
 
@@ -352,7 +374,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                     cond.reference.replace("$", iter.get)
                 else
                     cond.reference
-                    
+
             // Run the translation into a concrete MongoDB query
             if (cond.condType == ConditionType.IsNotNull)
                 JsonPathToMongoTranslator.trans(condRefIter, new MongoQueryNodeCond(ConditionType.IsNotNull, null), true)

@@ -1,41 +1,34 @@
 @prefix xrr: <http://i3s.unice.fr/xr2rml#> .
 @prefix rr:  <http://www.w3.org/ns/r2rml#> .
-@prefix ex:  <http://example.com/> .
 @prefix rml: <http://semweb.mmlab.be/ns/rml#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:  <http://example.org/> .
 
 <#Movies>
-    a rr:TriplesMap;
-    xrr:logicalSource [
-        xrr:query "db.movies.find( { movies: { $exists: true} } )";
-        rml:iterator "$.movies.*";
-    ];
-    rr:subjectMap [ 
-        rr:template "http://example.org/movies/{$.title}"; 
-		rr:class ex:Movie;
-    ].
+   xrr:logicalSource [ 
+      xrr:query "db.movies.find({decade:{$exists:true}})";
+      rml:iterator "$.movies.*"
+   ];
+   
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
+   
+   rr:predicateObjectMap [
+      rr:predicate ex:starring;
+      rr:objectMap [ xrr:reference "$.actors.*" ];
+   ].
 
 <#Directors>
-    a rr:TriplesMap;
-    xrr:logicalSource [
-        xrr:query "db.movies.find( { directors: { $exists: true} } )";
-        rml:iterator "$.directors.*";
-    ];
-    rr:subjectMap [ rr:template "http://example.org/director/{$.name}"; ];
-    
-    rr:predicateObjectMap [
-        rr:predicate ex:name;
-        rr:objectMap [ xrr:reference "$.name" ];
-    ];
-    rr:predicateObjectMap [
-        rr:predicate ex:directed;
-        rr:objectMap [
-            rr:parentTriplesMap <#Movies>;
-            rr:joinCondition [
-                rr:child "$.movies.*";
-                rr:parent "$.title";
-            ];
-            rr:termType xrr:RdfList;
-        ];
-    ].
+   xrr:logicalSource [ xrr:query "db.directors.find({})" ];
    
+   rr:subjectMap [ rr:template "http://example.org/dir/{$.name}" ];
+   
+   rr:predicateObjectMap [
+      rr:predicate ex:directed;
+      rr:objectMap [
+         rr:parentTriplesMap <#Movies>;
+         rr:joinCondition [
+            rr:child "$.directed.*";
+            rr:parent "$.name";
+         ]
+      ]
+   ].

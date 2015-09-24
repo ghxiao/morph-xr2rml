@@ -555,8 +555,8 @@ class MorphRDBQueryTranslator(
     }
 
     private def transProject(opProject: OpProject): ISqlQuery = {
-        val selectItemGenerator = new MorphSQLSelectItemGenerator(
-            this.nameGenerator, this.databaseType);
+        
+        val selectItemGenerator = new MorphSQLSelectItemGenerator(this.nameGenerator, this.databaseType);
         val opProjectSubOp = opProject.getSubOp();
         val opProjectSubOpSQL = this.trans(opProjectSubOp);
         val oldSelectItems = opProjectSubOpSQL.getSelectItems().toList;

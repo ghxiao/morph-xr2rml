@@ -82,8 +82,8 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         queryTranslator
     }
 
-    private def createQueryTranslator(abstractMappingDocument: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
-        val md = abstractMappingDocument.asInstanceOf[R2RMLMappingDocument];
+    private def createQueryTranslator(md: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
+
         val unfolder = new MorphRDBUnfolder(md, properties);
 
         val queryTranslator = new MorphRDBQueryTranslator(
@@ -93,11 +93,10 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
             new MorphRDBCondSQLGenerator(md, unfolder),
             new MorphRDBPRSQLGenerator(md, unfolder));
 
-        if (conn != null) {
-            if (!conn.isRelationalDB)
-                throw new Exception("Invalid connection type: should be a relational db connection")
-            queryTranslator.connection = conn.concreteCnx.asInstanceOf[Connection];
-        }
+        if (conn == null || !conn.isRelationalDB)
+            throw new Exception("Invalid connection type: should be a relational db connection")
+        
+        queryTranslator.connection = conn.concreteCnx.asInstanceOf[Connection];
         queryTranslator.mappingDocument = md;
         queryTranslator;
     }

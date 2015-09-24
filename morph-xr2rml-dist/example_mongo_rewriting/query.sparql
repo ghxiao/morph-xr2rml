@@ -1,9 +1,9 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX ex: <http://example.com/>
+PREFIX ex: <http://example.org/>
 
-SELECT ?s ?h
+SELECT ?x
 WHERE {
-    ?s a ex:Student ;
-       ex:hobbies ?h .
+    # ?x ex:starring "T. Leung".
+    ?x ex:directed <http://example.org/movie/Manh> .
 }

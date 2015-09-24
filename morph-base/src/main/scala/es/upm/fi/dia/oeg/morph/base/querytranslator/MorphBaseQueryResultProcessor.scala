@@ -7,7 +7,6 @@ import com.hp.hpl.jena.query.Query
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 /**
@@ -16,8 +15,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 abstract class MorphBaseQueryResultProcessor(
         var mappingDocument: R2RMLMappingDocument,
         var properties: MorphProperties,
-        var outputStream: Writer,
-        var dataSourceReader: MorphBaseDataSourceReader) {
+        var outputStream: Writer) {
 
     def preProcess(sparqlQuery: Query): Unit;
 

@@ -45,7 +45,7 @@ object MongoDBQuery {
      * This method return a MongoDBQuery instance where collection = myCollection
      * and query string = "{ 'a': { $exists: true} }"
      */
-    def parseQueryString(query: String): MongoDBQuery = {
+    def parseQueryString(query: String, stripCurlyBracket: Boolean): MongoDBQuery = {
 
         var tokens = query.trim.split("\\.")
         if (!tokens(0).equals("db")) {
@@ -58,8 +58,9 @@ object MongoDBQuery {
         tokens = query.split("\\(")
         var queryStr = tokens(1).substring(0, tokens(1).length - 1).trim
 
-        if (queryStr.startsWith("{") && queryStr.endsWith("}"))
-            queryStr = queryStr.substring(1, queryStr.length - 1).trim
+        if (stripCurlyBracket)
+            if (queryStr.startsWith("{") && queryStr.endsWith("}"))
+                queryStr = queryStr.substring(1, queryStr.length - 1).trim
 
         new MongoDBQuery(collection, queryStr)
     }
@@ -67,7 +68,7 @@ object MongoDBQuery {
     /**
      * Create a MongoDBQuery and initialize the iterator.
      */
-    def parseQueryString(query: String, iterator: Option[String]): MongoDBQuery = {
-        parseQueryString(query).setIterator(iterator)
+    def parseQueryString(query: String, iterator: Option[String], stripCurlyBracket: Boolean): MongoDBQuery = {
+        parseQueryString(query, stripCurlyBracket).setIterator(iterator)
     }
 }

@@ -31,8 +31,7 @@ class MorphRDBQueryResultProcessor(
         extends MorphXMLQueryResultProcessor(
             mappingDocument: R2RMLMappingDocument,
             properties: MorphProperties,
-            xmlOutputStream: Writer,
-            dataSourceReader: MorphBaseDataSourceReader) {
+            xmlOutputStream: Writer) {
 
     override val logger = Logger.getLogger(this.getClass().getName());
 

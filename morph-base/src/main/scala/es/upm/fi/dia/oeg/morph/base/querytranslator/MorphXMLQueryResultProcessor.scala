@@ -17,14 +17,12 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 abstract class MorphXMLQueryResultProcessor(
     mappingDocument: R2RMLMappingDocument,
     properties: MorphProperties,
-    xmlOutputStream: Writer,
-    dataSourceReader: MorphBaseDataSourceReader)
+    xmlOutputStream: Writer)
 
         extends MorphBaseQueryResultProcessor(
             mappingDocument,
             properties,
-            xmlOutputStream,
-            dataSourceReader) {
+            xmlOutputStream) {
 
     this.outputStream = xmlOutputStream;
 

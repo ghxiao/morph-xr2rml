@@ -1,9 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import java.io.Writer
-
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -15,7 +13,13 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
 import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
+import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
 
 class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -66,7 +70,10 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     }
 
     override def createQueryTranslator(
-        properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator = { null }
+        properties: MorphProperties, md: R2RMLMappingDocument, cnx: GenericConnection): IQueryTranslator = {
+
+        new MorphMongoQueryTranslator(md)
+    }
 
     override def createQueryResultProcessor(
         properties: MorphProperties,
@@ -74,5 +81,11 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
         connection: GenericConnection,
         dataSourceReader: MorphBaseDataSourceReader,
         queryTranslator: IQueryTranslator,
-        outputStream: Writer): MorphBaseQueryResultProcessor = { null }
+        outputStream: Writer): MorphBaseQueryResultProcessor = {
+
+        if (connection == null || !connection.isMongoDB)
+            throw new Exception("Invalid connection type: should be a MongoDB connection")
+
+        new MorphMongoQueryResultProcessor(md, properties, outputStream)
+    }
 }
