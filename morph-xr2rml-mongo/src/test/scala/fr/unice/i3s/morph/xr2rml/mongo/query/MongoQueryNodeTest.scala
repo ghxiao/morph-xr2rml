@@ -4,8 +4,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphConditionType
+
+import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 
 class MongoQueryNodeTest {
 
@@ -19,7 +19,7 @@ class MongoQueryNodeTest {
                     new MongoQueryNodeElemMatch(
                         new MongoQueryNodeField("p3",
                             new MongoQueryNodeElemMatch(
-                                new MongoQueryNodeCond(MorphConditionType.Equals, new Integer(3)))))))
+                                new MongoQueryNodeCond(ConditionType.Equals, new Integer(3)))))))
         println(node.toString)
         assertEquals("""'p1.p2': {$elemMatch: {'p3': {$elemMatch: {$eq: 3}}}}""", node.toString)
     }
@@ -33,23 +33,23 @@ class MongoQueryNodeTest {
                         new MongoQueryNodeField("0",
                             new MongoQueryNodeField("q",
                                 new MongoQueryNodeField("1",
-                                    new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))),
+                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
                     new MongoQueryNodeField("p",
                         new MongoQueryNodeField("0",
                             new MongoQueryNodeField("q",
                                 new MongoQueryNodeField("3",
-                                    new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))))),
+                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))))),
                 new MongoQueryNodeOr(List(
                     new MongoQueryNodeField("p",
                         new MongoQueryNodeField("2",
                             new MongoQueryNodeField("q",
                                 new MongoQueryNodeField("1",
-                                    new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))),
+                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
                     new MongoQueryNodeField("p",
                         new MongoQueryNodeField("2",
                             new MongoQueryNodeField("q",
                                 new MongoQueryNodeField("3",
-                                    new MongoQueryNodeCond(MorphConditionType.IsNotNull, null)))))))
+                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
             ))
         println(node.toString)
         assertEquals("""$or: [{'p.0.q.1': {$exists: true, $ne: null}}, {'p.0.q.3': {$exists: true, $ne: null}}, {'p.2.q.1': {$exists: true, $ne: null}}, {'p.2.q.3': {$exists: true, $ne: null}}]""",
@@ -62,7 +62,7 @@ class MongoQueryNodeTest {
             new MongoQueryNodeAnd(List(
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeElemMatch(
-                        new MongoQueryNodeCond(MorphConditionType.Equals, new Integer(1)))),
+                        new MongoQueryNodeCond(ConditionType.Equals, new Integer(1)))),
                 new MongoQueryNodeAnd(List(
                     new MongoQueryNodeExists("p.0"),
                     new MongoQueryNodeWhere("this.p[0] == 0"),
@@ -135,23 +135,23 @@ class MongoQueryNodeTest {
                     new MongoQueryNodeField("0",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))),
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeField("0",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("3",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))))),
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))))),
             new MongoQueryNodeOr(List(
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeField("2",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))),
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeField("2",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("3",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null)))))))
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
         ))
         node1 = new MongoQueryNodeOr(List(
             new MongoQueryNodeOr(List(
@@ -159,23 +159,23 @@ class MongoQueryNodeTest {
                     new MongoQueryNodeField("0",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))),
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeField("0",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("3",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))))),
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))))),
             new MongoQueryNodeOr(List(
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeField("2",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null))))),
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
                 new MongoQueryNodeField("p",
                     new MongoQueryNodeField("2",
                         new MongoQueryNodeField("q",
                             new MongoQueryNodeField("4",
-                                new MongoQueryNodeCond(MorphConditionType.IsNotNull, null)))))))
+                                new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
         ))
         assertTrue(node1 == node1)
         assertFalse(node1 == node2)

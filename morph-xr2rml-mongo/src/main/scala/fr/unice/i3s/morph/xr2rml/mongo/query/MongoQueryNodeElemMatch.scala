@@ -8,6 +8,8 @@ import scala.collection.mutable.Queue
  */
 class MongoQueryNodeElemMatch(val members: List[MongoQueryNode]) extends MongoQueryNode {
 
+    override def isElemMatch: Boolean = true
+
     def this(member: MongoQueryNode) = this(List(member))
 
     override def equals(q: Any): Boolean = {

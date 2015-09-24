@@ -13,4 +13,6 @@ class GenericQuery(
     def isMongoDBQuery: Boolean = {
         dbType == Constants.DatabaseType.MongoDB
     }
+
+    override def toString: String = { concreteQuery.toString }
 }

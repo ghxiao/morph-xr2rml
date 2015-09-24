@@ -52,8 +52,8 @@ class MorphRDBQueryResultProcessor(
         var i = 0;
         mapSparqlSql.foreach(mapElement => {
             val sparqlQuery = mapElement._1
-            // In the RDB case there should be only one element in the UnionOfGenericQueries
-            val iQuery = mapElement._2.head.concreteQuery.asInstanceOf[ISqlQuery]
+            // In the RDB case there should be only a child set of queries, and one query in it
+            val iQuery = mapElement._2.childHead.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database
             val abstractResultSet = this.dataSourceReader.execute(iQuery.toString());

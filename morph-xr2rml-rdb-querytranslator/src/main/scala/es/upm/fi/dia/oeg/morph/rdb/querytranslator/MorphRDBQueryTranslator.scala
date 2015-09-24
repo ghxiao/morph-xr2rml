@@ -171,8 +171,7 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        new UnionOfGenericQueries(
-            Constants.DatabaseType.Relational, new GenericQuery(Constants.DatabaseType.Relational, resultQuery))
+        UnionOfGenericQueries(new GenericQuery(Constants.DatabaseType.Relational, resultQuery))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

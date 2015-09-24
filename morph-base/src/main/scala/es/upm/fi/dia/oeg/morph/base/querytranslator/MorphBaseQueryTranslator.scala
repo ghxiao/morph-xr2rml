@@ -13,6 +13,9 @@ import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
+/**
+ * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
+ */
 abstract class MorphBaseQueryTranslator extends IQueryTranslator {
 
     val logger = Logger.getLogger(this.getClass());
@@ -23,15 +26,18 @@ abstract class MorphBaseQueryTranslator extends IQueryTranslator {
     Optimize.setFactory(new MorphQueryRewritterFactory());
 
     /**
-     * High level method to start the translation process.
-     * The result is a UnionOfGenericQueries, i.e. a set of concrete queries
-     * whereof results must be UNIONed.<br>
-     * Since SQL supports UNION with no restriction, in the case of a RDB the result consists
-     * of exactly one query.<br>
-     * Conversely, MongoDB does support UNIONs (by means of the $or operator), but only if there
-     * is no $where as members of the $or. Therefore it is not always possible to create a since
-     * MongoDB query that is equivalent to the SPARQL query. In this case, several concrete queries
-     * are returned, and the xR2RML processor shall compute the union itself.
+     * <p>High level method to start the translation process.
+     * The result is a UnionOfGenericQueries, i.e. two sets of concrete queries: a child and optionally a parent set. 
+     * Within each set, results of all concrete queries must be UNIONed.</p>
+     * 
+     * <p>In the RDB case, the UnionOfGenericQueries is a bit exaggerated ;-): it should contain only
+     * a child query (there is no need to split child and parent queries since SQL supports joins),
+     * and exactly one element in the child query (since SQL supports the UNION).</p>
+     *
+     * <p>Conversely, MongoDB does not support the JOIN, therefore there may be a child <em>and</em> a parent query.
+     * MongoDB does support UNIONs (by means of the $or operator), but only if there is no $where as members of the $or.
+     * Therefore it is not always possible to create a single MongoDB query that is equivalent to the SPARQL query. 
+     * In this case, several concrete queries are returned, and the xR2RML processor shall compute the union itself.</p>
      *
      * @param sparqlQuery the SPARQL query to translate
      * @return set of concrete database queries of which results of be "UNIONed". 
@@ -46,5 +52,4 @@ abstract class MorphBaseQueryTranslator extends IQueryTranslator {
     }
 
     protected def translate(op: Op): UnionOfGenericQueries
-
 }

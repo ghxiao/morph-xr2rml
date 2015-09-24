@@ -1,7 +1,8 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphConditionType
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 
 /**
  * MongoDB query element representing an equality or not null condition on a field.
@@ -12,7 +13,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphConditionType
  * For a not null condition:
  * 		$exists: true, $ne: null
  */
-class MongoQueryNodeCond(val cond: MorphConditionType.Value, val value: Object) extends MongoQueryNode {
+class MongoQueryNodeCond(val cond: ConditionType.Value, val value: Object) extends MongoQueryNode {
 
     override def equals(q: Any): Boolean = {
         q.isInstanceOf[MongoQueryNodeCond] && this.cond == q.asInstanceOf[MongoQueryNodeCond].cond && this.value == q.asInstanceOf[MongoQueryNodeCond].value
@@ -20,13 +21,26 @@ class MongoQueryNodeCond(val cond: MorphConditionType.Value, val value: Object) 
 
     override def toQueryStringNotFirst() = {
         cond match {
-            case MorphConditionType.IsNotNull => "$exists: true, $ne: null"
+            case ConditionType.IsNotNull => "$exists: true, $ne: null"
 
-            case MorphConditionType.Equals =>
+            case ConditionType.Equals =>
                 if (value.isInstanceOf[String])
                     "$eq: '" + value + "'"
                 else
                     "$eq: " + value
+        }
+    }
+}
+
+object MongoQueryNodeCond {
+    /**
+     *  Create a MongoQueryNodeCond from a generic MorphBaseQueryCondition
+     */
+    def apply(cond: MorphBaseQueryCondition): MongoQueryNodeCond = {
+        cond.condType match {
+            case ConditionType.IsNotNull => new MongoQueryNodeCond(ConditionType.IsNotNull, null)
+            case ConditionType.Equals => new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue)
+            case ConditionType.Join => throw new MorphException("No equivalent Mongo condition for a Join condition")
         }
     }
 }

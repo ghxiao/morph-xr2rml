@@ -27,10 +27,10 @@ class MongoDBQuery(
         else
             "MongoDBQuery[Collection: " + collection + ". Query: " + query + "]"
     }
-    
+
     override def equals(a: Any): Boolean = {
         val m = a.asInstanceOf[MongoDBQuery]
-        this.collection == m.collection && this.query == m.query && this.iterator == m.iterator 
+        this.collection == m.collection && this.query == m.query && this.iterator == m.iterator
     }
 }
 
@@ -56,7 +56,10 @@ object MongoDBQuery {
 
         // The query string starts after the '(' and finished before the trailing ')'
         tokens = query.split("\\(")
-        val queryStr = tokens(1).substring(0, tokens(1).length - 1)
+        var queryStr = tokens(1).substring(0, tokens(1).length - 1).trim
+
+        if (queryStr.startsWith("{") && queryStr.endsWith("}"))
+            queryStr = queryStr.substring(1, queryStr.length - 1).trim
 
         new MongoDBQuery(collection, queryStr)
     }

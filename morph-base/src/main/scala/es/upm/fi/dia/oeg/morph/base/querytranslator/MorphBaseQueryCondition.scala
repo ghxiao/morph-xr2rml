@@ -3,64 +3,54 @@ package es.upm.fi.dia.oeg.morph.base.querytranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
- * Equality or not-null condition on a field.
+ * <p>Abstract representation of a condition created during the rewriting process by matching terms of a triple pattern
+ * with references from a term map. This class represents 2 types: Equality and Not-null.</p>
+ *
+ * Attribute <em>reference<em> is the reference (e.g. column name or JSONPath expression) on which the condition applies,
+ * attribute <em>eqValue<em> is used in case of an Equality condition.
  */
 class MorphBaseQueryCondition(
         /**
-         * The reference on which this condition applies. Typically the column name or JSONPath expression
-         *  from xrr:reference or rr:template
+         * The reference on which this condition applies, typically the column name or JSONPath expression
+         * from a xrr:reference or rr:template property
          */
-        val childRef: MorphBaseQueryConditionReference,
+        val reference: String,
+
+        /** Query on which the reference applies: child or parent. Necessarily Child in case of a Join condition. */
+        val targetQuery: TargetQuery.Value,
 
         /** The type of condition */
-        val cond: MorphConditionType.Value,
+        val condType: ConditionType.Value,
 
         /** The value in case of an equality condition */
-        val eqValue: Object,
-
-        /** the parent reference in case of a join condition */
-        val parentRef: MorphBaseQueryConditionReference) {
+        val eqValue: Object) extends IQueryCondition {
 
     override def toString: String = {
-        cond match {
-            case MorphConditionType.IsNotNull => "NotNull(" + childRef + ")"
-            case MorphConditionType.Equals => "Equals(" + childRef + ", " + eqValue.toString + ")"
-            case MorphConditionType.Join => "Join(" + childRef + ", " + parentRef + ")"
+        condType match {
+            case ConditionType.IsNotNull => "NotNull(" + targetQuery + "/" + reference + ")"
+            case ConditionType.Equals => "Equals(" + targetQuery + "/" + reference + ", " + eqValue.toString + ")"
+            case ConditionType.Join => throw new MorphException("Join condition not supported by class MorphBaseQueryCondition")
         }
     }
 
     override def equals(a: Any): Boolean = {
-        val m = a.asInstanceOf[MorphBaseQueryCondition]
-        this.childRef == m.childRef && this.cond == m.cond && this.eqValue == m.eqValue && this.parentRef == m.parentRef
+        if (a.isInstanceOf[MorphBaseQueryCondition]) {
+            val m = a.asInstanceOf[MorphBaseQueryCondition]
+            this.reference == m.reference && this.condType == m.condType && this.eqValue == m.eqValue
+        }
+        else false
     }
-}
-
-object MorphConditionType extends Enumeration {
-    val Equals, IsNotNull, Join = Value
 }
 
 object MorphBaseQueryCondition {
 
-    /** Constructor for a Not-Null condition on a reference of the child query*/
-    def notNull(targetQuery: SourceQuery.Value, ref: String) = {
-        new MorphBaseQueryCondition(
-            MorphBaseQueryConditionReference(targetQuery, ref),
-            MorphConditionType.IsNotNull, null, null)
+    /** Constructor for a Not-Null condition */
+    def notNull(targetQuery: TargetQuery.Value, ref: String) = {
+        new MorphBaseQueryCondition(ref, targetQuery, ConditionType.IsNotNull, null)
     }
 
     /** Constructor for an Equality condition */
-    def equality(targetQuery: SourceQuery.Value, ref: String, value: String) = {
-        new MorphBaseQueryCondition(
-            MorphBaseQueryConditionReference(targetQuery, ref),
-            MorphConditionType.Equals, value, null)
-    }
-
-    /** Constructor for an Join condition */
-    def join(childRef: String, parentRef: String) = {
-        new MorphBaseQueryCondition(
-            MorphBaseQueryConditionReference(SourceQuery.Child, childRef),
-            MorphConditionType.Join, null,
-            MorphBaseQueryConditionReference(SourceQuery.Parent, parentRef)
-        )
+    def equality(targetQuery: TargetQuery.Value, ref: String, value: String) = {
+        new MorphBaseQueryCondition(ref, targetQuery, ConditionType.Equals, value)
     }
 }

@@ -1,6 +1,6 @@
 @prefix xrr: <http://i3s.unice.fr/xr2rml#> .
 @prefix rr:  <http://www.w3.org/ns/r2rml#> .
-@prefix ex:  <http://example.com/> .
+@prefix ex:  <http://example.org/> .
 @prefix rml: <http://semweb.mmlab.be/ns/rml#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -43,4 +43,17 @@
       rr:objectMap [ xrr:reference "$.relation.actors.*" ];
    ].
 
+<#TM_NoPOM>
+   xrr:logicalSource [ xrr:query "db.othercollection.find({any_query})" ];
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ].
    
+<#TM_MultiplePOM>
+   xrr:logicalSource [ xrr:query "db.othercollection.find({any_query})" ];
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:prop;
+      rr:object "value";
+      rr:predicate ex:prop2;
+      rr:object "value2";
+   ].
+      

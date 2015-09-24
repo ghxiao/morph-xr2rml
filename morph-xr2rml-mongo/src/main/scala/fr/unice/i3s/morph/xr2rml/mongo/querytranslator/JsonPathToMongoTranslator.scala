@@ -1,24 +1,18 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotExists
-import scala.collection.mutable.Queue
-import oracle.jrockit.jfr.Logger
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphConditionType
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 
 /**
  * This object implements the algorithm that translates a JSONPath expression and a top-level condition
@@ -473,8 +467,8 @@ object JsonPathToMongoTranslator {
      */
     private def condJS(cond: MongoQueryNodeCond): String = {
         cond.cond match {
-            case MorphConditionType.IsNotNull => " != null"
-            case MorphConditionType.Equals => " == " + cond.value
+            case ConditionType.IsNotNull => " != null"
+            case ConditionType.Equals => " == " + cond.value
         }
     }
 }

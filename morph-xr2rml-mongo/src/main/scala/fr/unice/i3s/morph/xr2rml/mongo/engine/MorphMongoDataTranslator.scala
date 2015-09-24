@@ -48,11 +48,14 @@ class MorphMongoDataTranslator(
 
     /**
      * Query the database and build triples from the result. For each document of the result set:
-     * (1) create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,
-     * (2) loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
+     * 
+     * <ol>
+     * <li>create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,</li>
+     * <li>loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
      * a list of resources from the subject map of a parent object map in case there are referencing object maps,
-     * and a list of resources representing target graphs mentioned in the predicate-object map.
-     * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
+     * and a list of resources representing target graphs mentioned in the predicate-object map.</li>
+     * <li>Finally combine all subject, graph, predicate and object resources to generate triples.</li>
+     * </ol>
      */
     @throws[MorphException]
     override def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit = {

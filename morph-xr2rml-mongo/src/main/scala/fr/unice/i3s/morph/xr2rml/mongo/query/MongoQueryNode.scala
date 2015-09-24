@@ -25,6 +25,9 @@ abstract class MongoQueryNode {
     /** Is the current abstract node a WHERE node? */
     def isWhere: Boolean = false
 
+    /** Is the current abstract node a FIELD node? */
+    def isElemMatch: Boolean = false
+
     /**
      * Build the final concrete query string corresponding to that abstract query object.<br>
      * An AND is returned as it members separated by a comma: MongoDB implicitly makes an AND
@@ -229,10 +232,11 @@ abstract class MongoQueryNode {
             optd
         } else this
     }
+
 }
 
 object MongoQueryNode {
-    
+
     /**
      * Returns a MongoDB path consisting of a concatenation of single field names and array indexes in dot notation.
      * It removes the optional heading dot. E.g. dotNotation(.p[5]r) => p.5.r
@@ -244,5 +248,49 @@ object MongoQueryNode {
             else path
         result = result.replace("[", ".").replace("]", "")
         result
+    }
+
+    /**
+     * @TODO TO be continued
+     */
+    def fusionQueries(qs: List[MongoQueryNode]): List[MongoQueryNode] = {
+        if (qs.isEmpty || qs.length == 1)
+            return qs
+        else if (qs.length == 2)
+            fusionTwoQueries(qs(0), qs(1))
+        else
+            fusionQueries(qs.tail.tail)
+    }
+
+    /**
+     * @TODO TO be continued
+     *
+     * A quite quickly written method that is definitely not complete.
+     * The goal is that if at the very end of the process we have come up with
+     * the following 2 members in the top-level query:
+     *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}}
+     *   'movies': {$elemMatch: {'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
+     * we can fuse them into only one:
+     *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}, 'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
+     */
+    def fusionTwoQueries(q1: MongoQueryNode, q2: MongoQueryNode): List[MongoQueryNode] = {
+
+        if (q1.isField && q2.isField) {
+            val q1Field = q1.asInstanceOf[MongoQueryNodeField]
+            val q2Field = q2.asInstanceOf[MongoQueryNodeField]
+            if (q1Field.field == q2Field.field) {
+                val fused = fusionTwoQueries(q1Field.next, q2Field.next)
+                if (fused.length == 1)
+                    return List(new MongoQueryNodeField(q1Field.field, fused(0)))
+            }
+        }
+
+        if (q1.isElemMatch && q2.isElemMatch) {
+            val q1EM = q1.asInstanceOf[MongoQueryNodeElemMatch]
+            val q2EM = q2.asInstanceOf[MongoQueryNodeElemMatch]
+            return List(new MongoQueryNodeElemMatch(q1EM.members ++ q2EM.members))
+        }
+
+        return List(q1, q2)
     }
 }
