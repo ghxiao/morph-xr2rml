@@ -48,7 +48,7 @@ class MorphMongoDataTranslator(
 
     /**
      * Query the database and build triples from the result. For each document of the result set:
-     * 
+     *
      * <ol>
      * <li>create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,</li>
      * <li>loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
@@ -58,7 +58,7 @@ class MorphMongoDataTranslator(
      * </ol>
      */
     @throws[MorphException]
-    override def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit = {
+    override def generateRDFTriples(logicalSrc: Option[xR2RMLLogicalSource], sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit = {
 
         logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {
@@ -68,7 +68,11 @@ class MorphMongoDataTranslator(
         }
 
         // Execute the query against the database and apply the iterator
-        val resultSet = executeQueryAndIteraotr(query, logicalSrc.docIterator)
+        val resultSet =
+            if (logicalSrc.isDefined)
+                executeQueryAndIteraotr(query, logicalSrc.get.docIterator)
+            else
+                executeQueryAndIteraotr(query, None)
 
         // Main loop: iterate and process each result document of the result set
         var i = 0;

@@ -41,7 +41,7 @@ object MongoQueryNodeCond {
         cond.condType match {
             case ConditionType.IsNotNull => new MongoQueryNodeCond(ConditionType.IsNotNull, null)
             case ConditionType.Equals => new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue)
-            case ConditionType.Join => throw new MorphException("No equivalent Mongo condition for a Join condition")
+            case ConditionType.SparqlFilter => throw new MorphException("No equivalent Mongo condition for a SPARQL filter condition")
         }
     }
 }

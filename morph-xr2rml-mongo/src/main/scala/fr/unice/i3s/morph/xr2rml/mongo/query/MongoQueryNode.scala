@@ -266,11 +266,11 @@ object MongoQueryNode {
      * @TODO TO be continued
      *
      * A quite quickly written method that is definitely not complete.
-     * The goal is that if at the very end of the process we have come up with
+     * The goal is that, if at the very end of the translation process, we have come up with
      * the following 2 members in the top-level query:
      *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}}
      *   'movies': {$elemMatch: {'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
-     * we can fuse them into only one:
+     * we can merge them into a single one:
      *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}, 'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
      */
     def fusionTwoQueries(q1: MongoQueryNode, q2: MongoQueryNode): List[MongoQueryNode] = {

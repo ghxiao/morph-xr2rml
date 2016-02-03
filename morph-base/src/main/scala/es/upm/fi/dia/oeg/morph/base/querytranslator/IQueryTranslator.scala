@@ -1,13 +1,11 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import java.sql.Connection
 import com.hp.hpl.jena.query.Query
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 
 trait IQueryTranslator {
     var genCnx: GenericConnection = null;
@@ -20,6 +18,6 @@ trait IQueryTranslator {
 
     var mappingDocument: R2RMLMappingDocument = null;
 
-    def translate(query: Query): UnionOfGenericQueries;
+    def translate(query: Query): AbstractQuery;
 
 }

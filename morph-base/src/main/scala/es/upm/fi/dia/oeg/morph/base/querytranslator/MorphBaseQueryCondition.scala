@@ -16,9 +16,6 @@ class MorphBaseQueryCondition(
          */
         val reference: String,
 
-        /** Query on which the reference applies: child or parent. Necessarily Child in case of a Join condition. */
-        val targetQuery: TargetQuery.Value,
-
         /** The type of condition */
         val condType: ConditionType.Value,
 
@@ -27,9 +24,9 @@ class MorphBaseQueryCondition(
 
     override def toString: String = {
         condType match {
-            case ConditionType.IsNotNull => "NotNull(" + targetQuery + "/" + reference + ")"
-            case ConditionType.Equals => "Equals(" + targetQuery + "/" + reference + ", " + eqValue.toString + ")"
-            case ConditionType.Join => throw new MorphException("Join condition not supported by class MorphBaseQueryCondition")
+            case ConditionType.IsNotNull => "NotNull(" + reference + ")"
+            case ConditionType.Equals => "Equals(" + reference + ", " + eqValue.toString + ")"
+            case ConditionType.SparqlFilter => throw new MorphException("Join condition not supported by class MorphBaseQueryCondition")
         }
     }
 
@@ -37,20 +34,19 @@ class MorphBaseQueryCondition(
         if (a.isInstanceOf[MorphBaseQueryCondition]) {
             val m = a.asInstanceOf[MorphBaseQueryCondition]
             this.reference == m.reference && this.condType == m.condType && this.eqValue == m.eqValue
-        }
-        else false
+        } else false
     }
 }
 
 object MorphBaseQueryCondition {
 
     /** Constructor for a Not-Null condition */
-    def notNull(targetQuery: TargetQuery.Value, ref: String) = {
-        new MorphBaseQueryCondition(ref, targetQuery, ConditionType.IsNotNull, null)
+    def notNull(ref: String) = {
+        new MorphBaseQueryCondition(ref, ConditionType.IsNotNull, null)
     }
 
     /** Constructor for an Equality condition */
-    def equality(targetQuery: TargetQuery.Value, ref: String, value: String) = {
-        new MorphBaseQueryCondition(ref, targetQuery, ConditionType.Equals, value)
+    def equality(ref: String, value: String) = {
+        new MorphBaseQueryCondition(ref, ConditionType.Equals, value)
     }
 }

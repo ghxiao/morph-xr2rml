@@ -6,7 +6,7 @@ import com.hp.hpl.jena.query.Query
 
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
+import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 /**
@@ -38,6 +38,6 @@ abstract class MorphBaseQueryResultProcessor(
      * Therefore it is not always possible to create a MongoDB query that is equivalent to the SPARQL query. 
      * In this case, several concrete queries are returned, and the xR2RML processor shall compute the union itself.</p>
      */
-    def translateResult(mapSparqlSql: Map[Query, UnionOfGenericQueries])
+    def translateResult(mapSparqlSql: Map[Query, AbstractQuery])
 
 }

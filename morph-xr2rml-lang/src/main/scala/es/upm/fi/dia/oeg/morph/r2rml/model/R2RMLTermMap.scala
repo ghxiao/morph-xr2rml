@@ -137,7 +137,7 @@ abstract class R2RMLTermMap(
      */
     def getReferences(): List[String] = {
         val result = this.termMapType match {
-            case Constants.MorphTermMapType.ConstantTermMap => { Nil }
+            case Constants.MorphTermMapType.ConstantTermMap => { List(this.constantValue) }
             case Constants.MorphTermMapType.ColumnTermMap => { List(this.columnName) }
             case Constants.MorphTermMapType.ReferenceTermMap => { List(this.reference) }
             case Constants.MorphTermMapType.TemplateTermMap => {

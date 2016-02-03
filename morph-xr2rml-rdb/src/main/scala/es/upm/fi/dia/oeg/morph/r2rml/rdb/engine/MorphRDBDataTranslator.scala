@@ -57,11 +57,16 @@ class MorphRDBDataTranslator(
      * (3) Finally combine all subject, graph, predicate and object resources to generate triples.
      */
     @throws[MorphException]
-    override def generateRDFTriples(logicalSrc: xR2RMLLogicalSource, sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
+    override def generateRDFTriples(logicalSrc: Option[xR2RMLLogicalSource], sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery) = {
 
         logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {
             val errorMessage = "Error: no SubjectMap is defined with LogicalSource " + logicalSrc;
+            logger.error(errorMessage);
+            throw new MorphException(errorMessage);
+        }
+        if (!logicalSrc.isDefined) {
+            val errorMessage = "Error: no LogicalSource is defined";
             logger.error(errorMessage);
             throw new MorphException(errorMessage);
         }
@@ -103,13 +108,13 @@ class MorphRDBDataTranslator(
             logger.debug("Row " + i + ": " + DBUtility.resultSetCurrentRowToString(rows))
             try {
                 // Create the subject resource
-                val subjects = this.translateData(sm, rows, logicalSrc.alias, mapXMLDatatype);
+                val subjects = this.translateData(sm, rows, logicalSrc.get.alias, mapXMLDatatype);
                 if (subjects == null) { throw new Exception("null value in the subject triple") }
                 logger.debug("Row " + i + " subjects: " + subjects)
 
                 // Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.map(sgmElement => {
-                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalSrc.alias, mapXMLDatatype)
+                    val subjectGraphValue = this.translateData(sgmElement, rows, logicalSrc.get.alias, mapXMLDatatype)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
                         case Constants.R2RML_IRI_URI => { subjectGraphValue }
@@ -142,7 +147,7 @@ class MorphRDBDataTranslator(
                 // Internal loop on each predicate-object map
                 poms.foreach(pom => {
 
-                    val alias = if (pom.alias == null) { logicalSrc.alias; }
+                    val alias = if (pom.alias == null) { logicalSrc.get.alias; }
                     else { pom.alias }
 
                     // ----- Make a list of resources for the predicate maps of this predicate-object map
@@ -181,7 +186,7 @@ class MorphRDBDataTranslator(
                                 // by the database in an SQL join query: all columns have been retrieved and we now have to do the join
 
                                 // Evaluate the child value against the child reference
-                                val childColFromResultSet = getColumnNameFromResultSet(childMsp.getReferencedColumn.get, logicalSrc.alias)
+                                val childColFromResultSet = getColumnNameFromResultSet(childMsp.getReferencedColumn.get, logicalSrc.get.alias)
                                 val childDbValue = this.getResultSetValue(rows, childColFromResultSet);
                                 val childValues: List[Object] = childMsp.evaluate(childDbValue).map(e => e.toString)
 

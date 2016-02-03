@@ -1,25 +1,29 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
-import scala.collection.JavaConversions.asScalaBuffer
+
 import java.io.Writer
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
+import scala.collection.JavaConversions.asScalaBuffer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.Query
+
+import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.TermMapResult
-import es.upm.fi.dia.oeg.morph.base.UnionOfGenericQueries
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseProjectionGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 
 class MorphRDBQueryResultProcessor(
     mappingDocument: R2RMLMappingDocument,
@@ -46,13 +50,13 @@ class MorphRDBQueryResultProcessor(
      * In the RDB case the UnionOfGenericQueries should contain only one element, since
      * the UNION is supported in SQL.<br>
      */
-    def translateResult(mapSparqlSql: Map[Query, UnionOfGenericQueries]) {
+    def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
         val start = System.currentTimeMillis();
         var i = 0;
         mapSparqlSql.foreach(mapElement => {
             val sparqlQuery = mapElement._1
-            // In the RDB case there should be only a child set of queries, and one query in it
-            val iQuery = mapElement._2.childHead.concreteQuery.asInstanceOf[ISqlQuery]
+            // In the RDB case there should be only a query, and one query in it
+            val iQuery = mapElement._2.head.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database
             val abstractResultSet = this.dataSourceReader.execute(iQuery.toString());
