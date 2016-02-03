@@ -27,9 +27,8 @@ class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * @return GenericQuery instance corresponding to the query provided in the logical source
      */
     @throws[MorphException]
-    override def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery = {
+    override def unfoldConceptMapping(triplesMap: R2RMLTriplesMap): GenericQuery = {
 
-        val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         if (logger.isDebugEnabled()) logger.debug("Unfolding triples map " + triplesMap.toString)
         val logicalSrc = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
 
@@ -47,13 +46,13 @@ class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         }
 
         val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery, false)
-        logger.info("Query for triples map " + cm.id + ": " + mongoQuery.toString)
+        logger.info("Query for triples map " + triplesMap.id + ": " + mongoQuery.toString)
         new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
     }
 
     override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = { null }
 
-    def unfoldJoinConditions(
+    override def unfoldJoinConditions(
         joinConditions: Set[R2RMLJoinCondition],
         childTableAlias: String,
         joinQueryAlias: String,

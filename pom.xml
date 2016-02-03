@@ -67,8 +67,8 @@
 
 		<repository>
 			<name>Third-party libraries</name>
-			<id>dropbox-third-party</id>
-			<url>http://nyx.unice.fr:9007/nexus/content/repositories/i3s-public/</url>
+			<id>third-party</id>
+			<url>http://nyx.unice.fr/nexus/content/repositories/i3s-public/</url>
 		</repository>
 	</repositories>
 

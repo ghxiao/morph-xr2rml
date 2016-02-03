@@ -4,6 +4,6 @@ PREFIX ex: <http://example.org/>
 
 SELECT ?x
 WHERE {
-    # ?x ex:starring "T. Leung".
-    ?x ex:directed <http://example.org/movie/Manh> .
+    ?x ex:starring "T. Leung".
+    # ?x ex:directed <http://example.org/movie/Manh> .
 }

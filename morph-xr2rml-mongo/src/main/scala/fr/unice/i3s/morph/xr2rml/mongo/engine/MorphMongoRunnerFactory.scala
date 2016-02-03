@@ -26,7 +26,7 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     override val logger = Logger.getLogger(this.getClass().getName())
 
     /**
-     * Return a valid connection to the database or raises a run time exception if anything goes wrong
+     * Return a valid connection to the database or raises a runtime exception if anything goes wrong
      */
     override def createConnection(props: MorphProperties): GenericConnection = {
         if (props.noOfDatabase == 0)
@@ -44,13 +44,7 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
 
     override def createUnfolder(props: MorphProperties, md: R2RMLMappingDocument): MorphMongoUnfolder = {
         val dbType = props.databaseType
-        val cnx = dbType match {
-            case Constants.DATABASE_MONGODB =>
-                MongoUtils.createConnection(props)
-            case _ =>
-                throw new Exception("Database type not supported: " + dbType)
-        }
-        val unfolder = new MorphMongoUnfolder(md.asInstanceOf[R2RMLMappingDocument], props)
+        val unfolder = new MorphMongoUnfolder(md, props)
         unfolder.dbType = dbType
         unfolder
     }

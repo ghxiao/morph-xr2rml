@@ -16,7 +16,8 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 class MongoQueryNodeCond(val cond: ConditionType.Value, val value: Object) extends MongoQueryNode {
 
     override def equals(q: Any): Boolean = {
-        q.isInstanceOf[MongoQueryNodeCond] && this.cond == q.asInstanceOf[MongoQueryNodeCond].cond && this.value == q.asInstanceOf[MongoQueryNodeCond].value
+        q.isInstanceOf[MongoQueryNodeCond] && this.cond == q.asInstanceOf[MongoQueryNodeCond].cond &&
+            this.value == q.asInstanceOf[MongoQueryNodeCond].value
     }
 
     override def toQueryStringNotFirst() = {

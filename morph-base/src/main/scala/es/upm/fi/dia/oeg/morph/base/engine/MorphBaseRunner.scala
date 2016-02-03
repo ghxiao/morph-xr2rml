@@ -16,9 +16,9 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcesso
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseRunner(
-        mappingDocument: R2RMLMappingDocument,
-        unfolder: MorphBaseUnfolder,
-        dataTranslator: MorphBaseDataTranslator,
+        val mappingDocument: R2RMLMappingDocument,
+        val unfolder: MorphBaseUnfolder,
+        val dataTranslator: MorphBaseDataTranslator,
         val queryTranslator: IQueryTranslator,
         val queryResultProcessor: MorphBaseQueryResultProcessor,
         var outputStream: Writer,

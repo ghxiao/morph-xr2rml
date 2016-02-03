@@ -1,8 +1,36 @@
+Maven Projects Inheritance:
+
+                morph-core
+                    |
+             morph-xr2rml-lang
+                    |
+                morph-base
+                  /    \
+  morph-xr2rml-mongo   morph-xr2rml-rdb-querytranslator
+               |         |
+               |       morph-xr2rml-rdb
+               \         /
+            morph-xr2rml-dist
+
+
+**morph-core**: brings major global definitions: constants, utility classes (properties, exceptions,
+    RDF and XML manipulation and serialization), mixed syntax path utilities, SQL machinery.
+**morph-xr2rml-lang**: the model representing the xR2RML elements (extended from R2RML).
+**morph-base**: abstract classes for major functions of the translation engine: runner factory, runner,
+    source reader, data translator, query unfolder etc., + various utility classes. 
+**morph-xr2rml-mongo**: implementation of the materialization and query rewriting engine for MongoDB.
+**morph-xr2rml-rdb-querytranslator**: implementation of the query rewriting engine for SQL databases.
+**morph-xr2rml-rdb**: implementation of the materialization and query rewriting engine for SQL databases.
+**morph-xr2rml-dist**: includes all MongoDb and RDB engines into a single jar, along with a main class (MorphRunner)
+    and example databases, mapping and engine configuration files.
+
+-----------------------------------------------------------------------------------------------------
+
 Below we describe the architecture of classes regarding the treatment of RDBs. This can easily be adapted to the MongoDB case.
 
 base.MorphProperties
     Is a java.util.Properties.
-    Holds members for each property definable in the configuration file 
+    Holds members for each property definable in the configuration file.
     (defaults to example_mysql/morph.properties, set in project morph-xr2rml-dist, MorphRunner main)
 
 The base.engine.MorphBaseRunnerFactory class is an abstract class that builds an morph.base.engine.MorphBaseRunner.
@@ -13,18 +41,18 @@ r2rml.rdb.engine.MorphRDBRunnerFactory < base.engine.MorphBaseRunnerFactory
     - a mapping document (R2RMLMappingDocument): read the xR2RML mapping file into a JENA model, then create an R2RMLMappingDocument
       that consists of a set of classMappings, namely triples maps (R2RMLTriplesMap).
     - a DB connection
+    - an unfolder (MorphRDBUnfolder < MorphBaseUnfolder) to create SQL queries from a triples map
     - a data source reader (MorphBaseDataSourceReader) of which concrete class name (MorphRDBDataSourceReader) 
       is passed as construct parameter. The data source reader provides methods to open, configure and close the connection,
       run queries against the DB, and possibly manage strategies to store results to avoid executing the same query several
       times in the case of joint queries.
-    - an unfolder (MorphRDBUnfolder < MorphBaseUnfolder) to create SQL queries from a triples map
     - a data translator (MorphRDBDataTranslator < MorphBaseDataTranslator) that actually makes the translation
       in the data materialization case: it runs SQL queries created by the unfolder, then generates RDF triples from the results.
     - a data materializer (MorphBaseMaterializer) basically consists of a properly initialized JENA model (name space, etc.),
       either in mem or db. The model is used to store statements created from subjects, predicates and objects read
       from the database.
     - a query translator and query result processor are used in the query rewriting mode only. The query translator rewrites
-      a SPARQL query into a SQL query, the query result processor runs the SQL query against the database and translates the
+      a SPARQL query into an SQL query, the query result processor runs the SQL query against the database and translates the
       SQL result set into an XML SPARQL result set.
     
 fr.unice.i3s.morph.xr2rml.engine.MorphRunner provides the main class to run the process:
@@ -51,4 +79,8 @@ Materialization process (MorphBaseRunner.materializeMappingDocuments):
           a list of resources from the subject map of a parent object map in case there are referencing object maps,
           and a list of resources representing target graphs mentioned in the predicate-object map.
       (3) Finally combine all subject, graph, predicate and object resources to generate triples.
-      Once all triples have been created in the model, the materializer is used to write them to the output file.
+      Once all triples have been created in the model, the materializer is used to write them to the output file. 
+      The materializer was initially implemented to write triples in the file along their generation, thus avoiding memory space issue.
+      However in the case of xR2RML, the RDF lists and containers makes it necessary to wait until the end (when all is generated) 
+      to be able to serialize the data to a file.
+

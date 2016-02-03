@@ -62,7 +62,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         // Do the translation of the first triple pattern
         val bgp = op.asInstanceOf[OpProject].getSubOp().asInstanceOf[OpBGP]
         val triples = bgp.getPattern().getList()
-        this.transTP(triples.get(0), tmDirectors)
+        this.transTP(triples.get(0), tmMovies)
         // ####################################################################
     }
 
@@ -86,7 +86,8 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         }
 
         val pom = poms.head
-        if (pom.predicateMaps.size != 1 && (pom.objectMaps.size != 1 || pom.refObjectMaps.size != 1)) {
+        if (pom.predicateMaps.size != 1 &&
+            ((pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0))) {
             logger.error("The candidate triples map " + tm.toString + " must have exactly one predicate map and one object map.")
             return UnionOfGenericQueries(List.empty)
         }

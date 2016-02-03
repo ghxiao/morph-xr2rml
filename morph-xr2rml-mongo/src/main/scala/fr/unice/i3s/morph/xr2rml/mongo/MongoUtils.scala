@@ -46,7 +46,7 @@ object MongoUtils {
                     new MongoClient(servAdr, seqAsJavaList(List(cred))).getDB(dbName)
                 }
 
-            // Create a generate connection with a Jongo context
+            // Create a generic connection with a Jongo context
             val jongoCtx = new Jongo(dbCnx)
             new GenericConnection(Constants.DatabaseType.MongoDB, jongoCtx);
 
