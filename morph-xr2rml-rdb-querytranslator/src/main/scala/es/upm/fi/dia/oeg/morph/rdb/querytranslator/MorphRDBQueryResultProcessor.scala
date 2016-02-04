@@ -3,13 +3,9 @@ package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 import java.io.Writer
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.query.Query
-
 import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
@@ -24,6 +20,8 @@ import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
+import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
+import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 
 class MorphRDBQueryResultProcessor(
     mappingDocument: R2RMLMappingDocument,
@@ -47,28 +45,29 @@ class MorphRDBQueryResultProcessor(
 
     /**
      * Execute the query and translate the results from the database into triples.<br>
-     * In the RDB case the UnionOfGenericQueries should contain only one element, since
+     * In the RDB case the AbstractQuery should contain only one element, since
      * the UNION is supported in SQL.<br>
      */
-    def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
+    override def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
         val start = System.currentTimeMillis();
         var i = 0;
         mapSparqlSql.foreach(mapElement => {
             val sparqlQuery = mapElement._1
             // In the RDB case there should be only a query, and one query in it
-            val iQuery = mapElement._2.head.concreteQuery.asInstanceOf[ISqlQuery]
+            val genQuery = mapElement._2.head
+            val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database
-            val abstractResultSet = this.dataSourceReader.execute(iQuery.toString());
+            val resultSet = this.dataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
             val columnNames = iQuery.getSelectItemAliases();
-            abstractResultSet.setColumnNames(columnNames);
+            resultSet.setColumnNames(columnNames);
 
             // Write the XMl result set to the output
             if (i == 0) {
                 // The first time, initialize the XML document of the SPARQL result set
                 this.preProcess(sparqlQuery);
             }
-            this.process(sparqlQuery, abstractResultSet);
+            this.process(sparqlQuery, resultSet);
             i = i + 1;
         })
 
@@ -77,7 +76,7 @@ class MorphRDBQueryResultProcessor(
         }
 
         val end = System.currentTimeMillis();
-        logger.info("Result generation time = " + (end - start) + " ms.");
+        logger.info("Result generation time = " + (end - start) + "ms.");
     }
 
     /**
@@ -92,8 +91,9 @@ class MorphRDBQueryResultProcessor(
      * </pre>
      *
      */
-    override def process(sparqlQuery: Query, resultSet: MorphBaseResultSet) = {
+    override def process(sparqlQuery: Query, absResultSet: MorphBaseResultSet) = {
         var i = 0;
+        val resultSet = absResultSet.asInstanceOf[MorphRDBResultSet]
         while (resultSet.next()) {
             val resultElement = xmlDoc.createElement("result");
             resultsElement.appendChild(resultElement);
@@ -128,18 +128,19 @@ class MorphRDBQueryResultProcessor(
         logger.info(i + " variable result mappings retrieved");
     }
 
-    private def translateResultSet(varName: String, rs: MorphBaseResultSet): TermMapResult = {
+    private def translateResultSet(varName: String, absResultSet: MorphBaseResultSet): TermMapResult = {
+        val resultSet = absResultSet.asInstanceOf[MorphRDBResultSet]
         val result: TermMapResult = {
             try {
-                if (rs != null) {
+                if (resultSet != null) {
                     // Retrieve the columns from the result set, that match this SPARQL variable
-                    val columnNames = this.getElementsStartWith(rs.getColumnNames(), varName + "_");
+                    val columnNames = this.getElementsStartWith(resultSet.getColumnNames(), varName + "_");
 
                     // Retrieve the values, from the result set, that match this SPARQL variable
-                    val mapValue = this.getMappedMappingByVarName(varName, rs);
+                    val mapValue = this.getMappedMappingByVarName(varName, resultSet);
 
                     if (!mapValue.isDefined) {
-                        val originalValue = rs.getString(varName);
+                        val originalValue = resultSet.getString(varName);
                         new TermMapResult(originalValue, null, None)
                     } else {
                         val termMap: R2RMLTermMap = {
@@ -193,7 +194,7 @@ class MorphRDBQueryResultProcessor(
                                             }
                                             i = i + 1;
 
-                                            val dbValue = rs.getString(columnName);
+                                            val dbValue = resultSet.getString(columnName);
                                             templateAttribute -> dbValue;
                                         })
                                         val replacements = replaceMentAux.toMap;
@@ -209,7 +210,7 @@ class MorphRDBQueryResultProcessor(
                                         templateResult(0);
                                     }
                                     case Constants.MorphTermMapType.ColumnTermMap | Constants.MorphTermMapType.ReferenceTermMap => {
-                                        val rsObjectVarName = rs.getObject(varName).toString()
+                                        val rsObjectVarName = resultSet.getObject(varName).toString()
                                         if (rsObjectVarName == null)
                                             null
                                         else
@@ -276,9 +277,10 @@ class MorphRDBQueryResultProcessor(
     /**
      * Retrieve the value of the column corresponding to the SPARQL variable name from the result set
      */
-    private def getMappedMappingByVarName(varName: String, rs: MorphBaseResultSet) = {
+    private def getMappedMappingByVarName(varName: String, absResultSet: MorphBaseResultSet) = {
+        val resultSet = absResultSet.asInstanceOf[MorphRDBResultSet]
         try {
-            val mappingHashCode = rs.getInt(Constants.PREFIX_MAPPING_ID + varName);
+            val mappingHashCode = resultSet.getInt(Constants.PREFIX_MAPPING_ID + varName);
 
             //IN CASE OF UNION, A VARIABLE MAY BE MAPPED TO MULTIPLE MAPPINGS
             if (mappingHashCode == null)

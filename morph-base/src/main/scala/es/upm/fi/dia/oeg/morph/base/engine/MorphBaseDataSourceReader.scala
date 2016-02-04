@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.morph.base.engine
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 
 /**
  * A data source reader is used in case of the query rewriting access method,
@@ -15,7 +16,11 @@ abstract class MorphBaseDataSourceReader() {
     var connection: GenericConnection = null
     var dbType: String = null;
 
-    def execute(query: String): MorphBaseResultSet
+    /**
+     * Execute a target database query against the connection.
+     * @return a concrete instance of MorphBaseResultSet. Must NOT return null, may return an empty result.
+     */
+    def execute(query: GenericQuery): MorphBaseResultSet
 
     def setConnection(connection: GenericConnection)
 

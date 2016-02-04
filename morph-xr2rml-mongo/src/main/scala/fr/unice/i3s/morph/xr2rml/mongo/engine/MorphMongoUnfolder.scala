@@ -1,6 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -13,7 +14,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
-import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 
 class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
@@ -47,7 +47,7 @@ class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
         val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery, false)
         logger.info("Query for triples map " + triplesMap.id + ": " + mongoQuery.toString)
-        new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery)
+        new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery, None)
     }
 
     override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = { null }

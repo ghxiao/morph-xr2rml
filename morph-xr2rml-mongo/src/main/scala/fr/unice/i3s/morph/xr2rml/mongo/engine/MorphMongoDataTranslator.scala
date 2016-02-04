@@ -25,17 +25,17 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 
 class MorphMongoDataTranslator(
     md: R2RMLMappingDocument,
     materializer: MorphBaseMaterializer,
     unfolder: MorphMongoUnfolder,
-    connection: GenericConnection, properties: MorphProperties)
+    dataSourceReader: MorphBaseDataSourceReader,
+    properties: MorphProperties)
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, connection, properties) {
+        extends MorphBaseDataTranslator(md, materializer, unfolder, properties) {
 
-    if (!connection.isMongoDB)
+    if (!dataSourceReader.connection.isMongoDB)
         throw new MorphException("Database connection type does not match MongoDB")
 
     /** Store already executed queries to avoid running them several times. The key of the hashmap is the query string itself. */
@@ -427,7 +427,7 @@ class MorphMongoDataTranslator(
                 executedQueries(queryMapId)
             } else {
                 // Execute the query against the database, choose the execution method depending on the db type
-                val resultSet = MongoUtils.execute(this.connection, query).toList
+                val resultSet = dataSourceReader.execute(query).asInstanceOf[MorphMongoResultSet].resultSet.toList
 
                 // Save the result of this query in case it is asked again later (in a join)
                 // @TODO USE WITH CARE: this would need to be strongly improved with the use of a real cache library,

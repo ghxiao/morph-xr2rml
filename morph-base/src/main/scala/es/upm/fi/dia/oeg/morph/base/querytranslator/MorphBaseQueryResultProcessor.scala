@@ -1,13 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.io.Writer
-
 import com.hp.hpl.jena.query.Query
-
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 
 /**
  * Abstract class for the engine that shall translate results of a SPARQL query into RDF triples
@@ -26,17 +25,14 @@ abstract class MorphBaseQueryResultProcessor(
     def getOutput(): Object;
 
     /**
-     * <p>Execute the query and translate the results from the database into triples.</p>
+     * Execute the query and translate the results from the database into triples.
      *
-     * <p>In the RDB case, the UnionOfGenericQueries is a bit exaggerated ;-): it should contain only
-     * a child query (there is no need to split child and parent queries since SQL supports joins),
-     * and exactly one element in the child query (since SQL supports the UNION).</p>
+     * Execute the query and translate the results from the database into triples.<br>
+     * In the RDB case the AbstractQuery should contain only one element, since
+     * the UNION is supported in SQL.<br>
      *
-     * <p>Conversely, MongoDB does not support the JOIN, therefore there may be a child <em>and</em> a parent query.
-     * and since it does not support UNIONs with WHEREs, there may be several elements in each child of parent queries.
-     * MongoDB does support UNIONs (by means of the $or operator), but only if there is no $where as members of the $or.
-     * Therefore it is not always possible to create a MongoDB query that is equivalent to the SPARQL query. 
-     * In this case, several concrete queries are returned, and the xR2RML processor shall compute the union itself.</p>
+     * Conversely, MongoDB does not support joins, therefore there may be several queries in the AbstractQuery.
+     * In this case the xR2RML processor shall compute the join itself.
      */
     def translateResult(mapSparqlSql: Map[Query, AbstractQuery])
 

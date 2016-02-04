@@ -3,11 +3,11 @@ package fr.unice.i3s.morph.xr2rml.mongo
 import org.apache.log4j.Logger
 
 /**
- * Very simple representation of a Mongo shell query:<br>
+ * Simple representation of a MongoDB shell query:
  *
  * In query: db.collection.find({ 'a': { $exists: true} })
  * 'collection' is the collection name while "{ 'a': { $exists: true} }" is the query string
- * <br>
+ *
  * Optionally, an iterator of the logical source can be set after object creation.
  */
 class MongoDBQuery(

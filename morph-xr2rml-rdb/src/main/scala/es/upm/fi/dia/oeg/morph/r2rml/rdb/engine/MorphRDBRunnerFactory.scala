@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 
 import java.io.Writer
 import java.sql.Connection
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
@@ -14,16 +15,14 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBAlphaGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBBetaGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBCondSQLGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBPRSQLGenerator
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslator
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryResultProcessor
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryOptimizer
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslator
 
 class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -58,14 +57,14 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         mappingDocument: R2RMLMappingDocument,
         materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
-        connection: GenericConnection,
+        dataSourceReader: MorphBaseDataSourceReader,
         properties: MorphProperties): MorphBaseDataTranslator = {
 
         new MorphRDBDataTranslator(
-            mappingDocument, materializer, unfolder.asInstanceOf[MorphRDBUnfolder], connection, properties);
+            mappingDocument, materializer, unfolder.asInstanceOf[MorphRDBUnfolder], dataSourceReader.asInstanceOf[MorphRDBDataSourceReader], properties);
     }
 
-    override def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, connection: GenericConnection): IQueryTranslator = {
+    override def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): IQueryTranslator = {
 
         val queryOptimizer = new MorphRDBQueryOptimizer()
         queryOptimizer.selfJoinElimination = properties.selfJoinElimination;
@@ -74,7 +73,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         queryOptimizer.transSTGSubQueryElimination = properties.transSTGSubQueryElimination;
         queryOptimizer.subQueryAsView = properties.subQueryAsView;
 
-        val queryTranslator = createQueryTranslator(md, connection, properties);
+        val queryTranslator = createQueryTranslator(md, dataSourceReader.connection, properties);
         queryTranslator.properties = properties;
         queryTranslator.optimizer = queryOptimizer;
 
@@ -95,7 +94,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
 
         if (conn == null || !conn.isRelationalDB)
             throw new Exception("Invalid connection type: should be a relational db connection")
-        
+
         queryTranslator.connection = conn.concreteCnx.asInstanceOf[Connection];
         queryTranslator.mappingDocument = md;
         queryTranslator;
@@ -104,8 +103,8 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
     override def createQueryResultProcessor(
         properties: MorphProperties,
         md: R2RMLMappingDocument,
-        connection: GenericConnection,
         dataSourceReader: MorphBaseDataSourceReader,
+        dataTranslator: MorphBaseDataTranslator,
         queryTranslator: IQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor = {
 

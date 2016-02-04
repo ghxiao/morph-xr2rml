@@ -6,8 +6,7 @@
 
 <#Movies>
    xrr:logicalSource [ 
-      xrr:query "db.movies.find({decade:{$exists:true}})";
-      rml:iterator "$.movies.*"
+      xrr:query "db.movies2.find({'name':{$exists:true}})";
    ];
    
    rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
@@ -18,7 +17,7 @@
    ].
 
 <#Directors>
-   xrr:logicalSource [ xrr:query "db.directors.find({})" ];
+   xrr:logicalSource [ xrr:query "db.directors2.find({})" ];
    
    rr:subjectMap [ rr:template "http://example.org/dir/{$.name}" ];
    

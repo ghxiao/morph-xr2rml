@@ -5,17 +5,22 @@ db.createUser( { user: "user", pwd: "user",
     }
 )
 
-# Add documents to collection movies
-db.movies.remove({})
-db.movies.insert([
-    { "directors": [ 
-        { "name": "Wong Kar-wai", "movies": ["2046", "In the Mood for Love", "The Grandmaster"] },
-        { "name": "Woody Allen", "movies": ["Manhattan", "Annie Hall"] } ]},
-    { "movies": [
-       { "title": "Manhattan", "year": "1979" },
-       { "title": "Annie Hall", "year": "1977" },
-       { "title": "2046", "year": "2004" },
-       { "title": "In the Mood for Love", "year": "2000" },
-       { "title": "West Side Story", "year": "1962" } ]}
+# Add documents
+db.directors2.remove({})
+db.directors2.insert([
+    {"name": "Woody Allen", "directed": ["Manhattan", "Annie Hall"]},
+    {"name": "Wong Kar-wai", "directed": ["2046", "In the Mood for Love"]}
 ])
+db.directors2.find()
+
+# Collection movies
+db.movies2.remove({})
+db.movies2.insert([
+    {"name": "2046", "code": "m2046", "actors": ["T. Leung", "G. Li"]},
+    {"name": "In the Mood for Love", "code": "Mood", "actors": ["M. Cheung"]},
+    {"name": "Manhattan", "code": "Manh",  "actors": ["Woody Allen", "Diane Keaton"]},
+    {"name": "Interiors", "code": "Int01", "actors": ["D. Keaton", "G. Page"]}
+])
+db.movies2.find()
+
 

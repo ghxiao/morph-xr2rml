@@ -24,10 +24,6 @@ abstract class MorphBaseDataTranslator(
         val md: R2RMLMappingDocument,
         val materializer: MorphBaseMaterializer,
         val unfolder: MorphBaseUnfolder,
-
-        /** The connection object can be anything: java.sql.Connection for an RDB, MongoDB context etc. */
-        connection: GenericConnection,
-
         properties: MorphProperties) {
 
     val logger = Logger.getLogger(this.getClass().getName());
@@ -58,10 +54,10 @@ abstract class MorphBaseDataTranslator(
 
     /**
      * Generate triples in the current model of the data materializer, based
-     * on the triples map: this consists in calculating the query, running it
-     * against the database, translating results in RDF terms and making the triples.
+     * on the triples map: this consists in calculating the query from the triples map logical source,
+     * running it against the database, translating results in RDF terms and building the triples.
      */
-    def generateRDFTriples(cm: R2RMLTriplesMap): Unit = {
+    private def generateRDFTriples(cm: R2RMLTriplesMap): Unit = {
         try {
             val query = this.unfolder.unfoldConceptMapping(cm);
             val logicalTable = cm.logicalSource;
@@ -82,15 +78,16 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Generate triples in the current model of the data materializer, based
-     * on the triples map and the query: this consists running the query
-     * against the database, translating results in RDF terms and making the triples.
+     * Generate triples in the context of the query rewriting: run the query and apply
+     * the triples map bound to the query (GenericQuery.bondTriplesMap) to create triples.
      */
-    def generateRDFTriples(cm: R2RMLTriplesMap, query: GenericQuery): Unit = {
+    def generateRDFTriples(query: GenericQuery): Unit = {
+        val cm = query.boundTriplesMap.get
         try {
+            val ls = cm.logicalSource ;
             val sm = cm.subjectMap;
             val poms = cm.predicateObjectMaps;
-            this.generateRDFTriples(None, sm, poms, query);
+            this.generateRDFTriples(Some(ls), sm, poms, query);
         } catch {
             case e: MorphException => {
                 logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
@@ -104,9 +101,10 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Query the database and build triples from the result: this is the method where the database-specific query will be done
+     * Query the database and build triples from the result:
+     * this is the method where all the database-specific work will be done
      */
-    def generateRDFTriples(logicalSrc: Option[xR2RMLLogicalSource], sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit
+    protected def generateRDFTriples(logicalSrc: Option[xR2RMLLogicalSource], sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

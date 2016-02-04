@@ -1,7 +1,9 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import java.io.Writer
+
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -14,12 +16,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
-import fr.unice.i3s.morph.xr2rml.mongo.MongoUtils
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
 
 class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -35,7 +32,7 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
         val dbType = props.databaseType
         val cnx = dbType match {
             case Constants.DATABASE_MONGODB =>
-                MongoUtils.createConnection(props)
+                MorphMongoDataSourceReader.createConnection(props)
             case _ =>
                 throw new Exception("Database type not supported: " + dbType)
         }
@@ -50,36 +47,35 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     }
 
     override def createDataSourceReader(
-        properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader = { null }
+        properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader = {
+        val reader = new MorphMongoDataSourceReader()
+        reader.setConnection(connection);
+        reader
+    }
 
     override def createDataTranslator(
         mappingDocument: R2RMLMappingDocument,
         materializer: MorphBaseMaterializer,
         unfolder: MorphBaseUnfolder,
-        connection: GenericConnection,
+        dataSourceReader: MorphBaseDataSourceReader,
         properties: MorphProperties): MorphBaseDataTranslator = {
 
         new MorphMongoDataTranslator(
-            mappingDocument, materializer, unfolder.asInstanceOf[MorphMongoUnfolder], connection, properties);
+            mappingDocument, materializer, unfolder.asInstanceOf[MorphMongoUnfolder], dataSourceReader, properties);
     }
 
     override def createQueryTranslator(
-        properties: MorphProperties, md: R2RMLMappingDocument, cnx: GenericConnection): IQueryTranslator = {
-
+        properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): IQueryTranslator = {
         new MorphMongoQueryTranslator(md)
     }
 
     override def createQueryResultProcessor(
         properties: MorphProperties,
         md: R2RMLMappingDocument,
-        connection: GenericConnection,
         dataSourceReader: MorphBaseDataSourceReader,
+        dataTranslator: MorphBaseDataTranslator,
         queryTranslator: IQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor = {
-
-        if (connection == null || !connection.isMongoDB)
-            throw new Exception("Invalid connection type: should be a MongoDB connection")
-
-        new MorphMongoQueryResultProcessor(md, properties, outputStream)
+        new MorphMongoQueryResultProcessor(md, properties, dataSourceReader, dataTranslator.asInstanceOf[MorphMongoDataTranslator], outputStream)
     }
 }

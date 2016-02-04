@@ -399,7 +399,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
         logger.info("Query for triples map " + cm.id + ": " + resultAux.print(true).replaceAll("\n", " "))
 
-        new GenericQuery(Constants.DatabaseType.Relational, resultAux)
+        new GenericQuery(Constants.DatabaseType.Relational, resultAux, None)
     }
 
     def unfoldMappingDocument() = {

@@ -3,9 +3,12 @@ package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
 import java.sql.Connection
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
+import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 
 /**
  * This class is used in case of the query rewriting access method,
@@ -16,15 +19,16 @@ class MorphRDBDataSourceReader() extends MorphBaseDataSourceReader {
 
     var sqlCnx: Connection = null;
 
-    override def execute(query: String): MorphBaseResultSet = {
-        val rs = DBUtility.execute(this.sqlCnx, query, this.timeout);
-        val abstractResultSet = new MorphRDBResultSet(rs);
-        abstractResultSet;
+    override def execute(query: GenericQuery): MorphBaseResultSet = {
+        val rs = DBUtility.execute(this.sqlCnx, query.concreteQuery.asInstanceOf[ISqlQuery].toString(), this.timeout);
+        val resultSet = new MorphRDBResultSet(rs);
+        resultSet;
     }
 
     override def setConnection(connection: GenericConnection) {
         if (!connection.isRelationalDB)
             throw new MorphException("Connection type is not relational database")
+        this.connection = connection
         this.sqlCnx = connection.concreteCnx.asInstanceOf[Connection]
     }
 

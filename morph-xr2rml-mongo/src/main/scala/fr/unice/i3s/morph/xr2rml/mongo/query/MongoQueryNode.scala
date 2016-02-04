@@ -251,7 +251,7 @@ object MongoQueryNode {
     }
 
     /**
-     * @TODO TO be continued
+     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued  
      */
     def fusionQueries(qs: List[MongoQueryNode]): List[MongoQueryNode] = {
         if (qs.isEmpty || qs.length == 1)
@@ -263,7 +263,7 @@ object MongoQueryNode {
     }
 
     /**
-     * @TODO TO be continued
+     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued  
      *
      * A quite quickly written method that is definitely not complete.
      * The goal is that, if at the very end of the translation process, we have come up with
@@ -273,7 +273,7 @@ object MongoQueryNode {
      * we can merge them into a single one:
      *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}, 'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
      */
-    def fusionTwoQueries(q1: MongoQueryNode, q2: MongoQueryNode): List[MongoQueryNode] = {
+    private def fusionTwoQueries(q1: MongoQueryNode, q2: MongoQueryNode): List[MongoQueryNode] = {
 
         if (q1.isField && q2.isField) {
             val q1Field = q1.asInstanceOf[MongoQueryNodeField]

@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
+package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.ResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
@@ -6,35 +6,49 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 /**
  * A helper class that encapsulates an SQL result set
  */
-class MorphRDBResultSet(rs: ResultSet) extends MorphBaseResultSet {
-    override def next(): Boolean = {
-        try { this.rs.next(); }
+class MorphRDBResultSet(val resultSet: ResultSet) extends MorphBaseResultSet {
+    var columnNames: List[String] = null;
+
+    def next(): Boolean = {
+        try { this.resultSet.next(); }
         catch {
             case e: Exception => { false; }
         }
     }
 
-    override def getObject(columnIndex: Int): Object = {
-        rs.getObject(columnIndex);
+    def getObject(columnIndex: Int): Object = {
+        resultSet.getObject(columnIndex);
     }
 
-    override def getObject(columnLabel: String): Object = {
-        rs.getObject(columnLabel);
+    def getObject(columnLabel: String): Object = {
+        resultSet.getObject(columnLabel);
     }
 
-    override def getString(columnIndex: Int): String = {
-        rs.getString(columnIndex);
+    def getString(columnIndex: Int): String = {
+        resultSet.getString(columnIndex);
     }
 
-    override def getString(columnLabel: String): String = {
-        rs.getString(columnLabel);
+    def getString(columnLabel: String): String = {
+        resultSet.getString(columnLabel);
     }
 
-    override def getInt(columnIndex: Int): Integer = {
-        return rs.getInt(columnIndex);
+    def getInt(columnIndex: Int): Integer = {
+        return resultSet.getInt(columnIndex);
     }
 
-    override def getInt(columnLabel: String): Integer = {
-        rs.getInt(columnLabel);
+    def getInt(columnLabel: String): Integer = {
+        resultSet.getInt(columnLabel);
+    }
+
+    def getColumnNames(): List[String] = {
+        this.columnNames;
+    }
+
+    def setColumnNames(columnNames: List[String]) {
+        this.columnNames = columnNames;
+    }
+
+    def getColumnName(columnIndex: Int) = {
+        this.columnNames(columnIndex);
     }
 }
