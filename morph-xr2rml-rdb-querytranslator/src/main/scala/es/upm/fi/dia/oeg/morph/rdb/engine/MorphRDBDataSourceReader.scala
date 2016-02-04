@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
+package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.Connection
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -8,7 +8,6 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
-import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 
 /**
  * This class is used in case of the query rewriting access method,

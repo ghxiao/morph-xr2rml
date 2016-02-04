@@ -1,12 +1,16 @@
-package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
+package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
@@ -25,7 +29,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,

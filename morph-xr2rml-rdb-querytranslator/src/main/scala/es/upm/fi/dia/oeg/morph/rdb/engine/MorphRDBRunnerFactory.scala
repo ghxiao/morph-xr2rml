@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.r2rml.rdb.engine
+package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.io.Writer
 import java.sql.Connection
