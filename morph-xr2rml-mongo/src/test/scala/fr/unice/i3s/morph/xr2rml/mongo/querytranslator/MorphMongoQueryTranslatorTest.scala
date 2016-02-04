@@ -1,14 +1,16 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
+import org.junit.Assert
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
@@ -24,6 +26,39 @@ class MorphMongoQueryTranslatorTest {
     val tmDirectors = mappingDocument.getClassMappingsByName("Directors")
     val tmOther = mappingDocument.getClassMappingsByName("Other")
 
+    @Test def test_genFrom() {
+        println("------ test_genFrom")
+
+        var from = queryTranslator.genFrom(tmMovies)
+        println(from)
+        assertEquals(new MongoDBQuery("movies", "decade:{$exists:true}").setIterator(Some("$.movies.*")), from)
+
+        from = queryTranslator.genFrom(tmDirectors)
+        println(from)
+        assertEquals(new MongoDBQuery("directors", ""), from)
+    }
+
+    @Test def test_genFromParent() {
+        println("------ test_genFromParent")
+
+        var from = queryTranslator.genFromParent(tmDirectors)
+        println(from)
+        assertEquals(new MongoDBQuery("movies", "decade:{$exists:true}").setIterator(Some("$.movies.*")), from)
+
+        try {
+            from = queryTranslator.genFromParent(tmMovies)
+        } catch {
+            case e: MorphException => {
+                println("Caught exception: " + e.getMessage())
+                assertTrue(true)
+            }
+            case e: Exception => {
+                println(e.getMessage())
+                Assert.fail()
+            }
+        }
+    }
+
     @Test def test_genProjection() {
         println("------ test_genProjection")
 
@@ -32,7 +67,6 @@ class MorphMongoQueryTranslatorTest {
         var p = NodeFactory.createURI("http://example.org/starring")
         var o = NodeFactory.createLiteral("T. Leung")
         var tp = Triple.create(s, p, o)
-
         var proj = queryTranslator.genProjection(tp, tmMovies)
         println(proj)
         assertEquals(List("$.code"), proj)
@@ -42,17 +76,24 @@ class MorphMongoQueryTranslatorTest {
         p = NodeFactory.createURI("http://example.org/starring")
         o = NodeFactory.createVariable("y")
         tp = Triple.create(s, p, o)
-
         proj = queryTranslator.genProjection(tp, tmMovies)
         println(proj)
         assertEquals(List("$.actors.*"), proj)
+
+        // Triple pattern: ex:movieY ?p "T. Leung" - projection of a constant term map
+        s = NodeFactory.createURI("http://example.org/movieY")
+        p = NodeFactory.createVariable("p")
+        o = NodeFactory.createLiteral("T. Leung")
+        tp = Triple.create(s, p, o)
+        proj = queryTranslator.genProjection(tp, tmMovies)
+        println(proj)
+        assertEquals(List("http://example.org/starring"), proj)
 
         // Triple pattern: ?x ?p ?y
         s = NodeFactory.createVariable("x")
         p = NodeFactory.createVariable("p")
         o = NodeFactory.createVariable("y")
         tp = Triple.create(s, p, o)
-
         proj = queryTranslator.genProjection(tp, tmOther)
         println(proj)
         assertTrue(proj.contains("$.code"))
@@ -73,20 +114,25 @@ class MorphMongoQueryTranslatorTest {
         println(proj)
         assertTrue(proj.contains("$.name"))
         assertTrue(proj.contains("$.directed.*"))
-        assertTrue(proj.contains("$.name"))
+        assertFalse(proj.contains("$.dirname"))
+        assertFalse(proj.contains("$.code"))
     }
 
-    @Test def test_genFrom() {
-        println("------ test_genFrom")
+    @Test def test_genProjectionParent() {
+        println("------ test_genProjectionParent")
 
-        var from = queryTranslator.genFrom(tmMovies)
-        println(from)
-        assertEquals(new MongoDBQuery("movies", "decade:{$exists:true}").setIterator(Some("$.movies.*")), from)
+        // Triple pattern: ?x ex:directed <http://example.org/movie/Manh>
+        var s = NodeFactory.createVariable("x")
+        var p = NodeFactory.createURI("http://example.org/directed")
+        var o = NodeFactory.createURI("http://example.org/movie/Manh")
+        var tp = Triple.create(s, p, o)
 
-        from = queryTranslator.genFrom(tmDirectors)
-        println(from)
-        assertEquals(new MongoDBQuery("directors", ""), from)
-        assertEquals(new MongoDBQuery("movies", "decade:{$exists:true}").setIterator(Some("$.movies.*")), from)
+        var proj = queryTranslator.genProjectionParent(tp, tmDirectors)
+        println(proj)
+        assertFalse(proj.contains("$.name"))
+        assertFalse(proj.contains("$.directed.*"))
+        assertTrue(proj.contains("$.dirname"))
+        assertFalse(proj.contains("$.code"))
     }
 
     @Test def test_genCond_equalsLiteral() {
@@ -138,7 +184,43 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(cond.contains(new MorphBaseQueryCondition("$.relation.actors.*", ConditionType.IsNotNull, null)))
     }
 
-    @Test def test_error() {
+    @Test def test_genCondParent_Uri() {
+        println("------ test_genCondParent_Uri")
+
+        // Triple pattern: ?x ex:directed <http://example.org/movie/Manh>
+        var s = NodeFactory.createVariable("x")
+        var p = NodeFactory.createURI("http://example.org/directed")
+        var o = NodeFactory.createURI("http://example.org/movie/Manh")
+        var tp = Triple.create(s, p, o)
+
+        var cond = queryTranslator.genCondParent(tp, tmDirectors )
+        println(cond)
+
+        assertTrue(cond.contains(new MorphBaseQueryCondition("$.dirname", ConditionType.IsNotNull, null)))
+        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.Equals, "Manh")))
+        assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
+        assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
+    }
+    
+    @Test def test_genCondParent_Variable() {
+        println("------ test_genCondParent_Variable")
+
+        // Triple pattern: <http://example.org/tutu> ex:directed ?x 
+        var s = NodeFactory.createURI("http://example.org/tutu")
+        var p = NodeFactory.createURI("http://example.org/directed")
+        var o = NodeFactory.createVariable("x")
+        var tp = Triple.create(s, p, o)
+
+        var cond = queryTranslator.genCondParent(tp, tmDirectors )
+        println(cond)
+
+        assertTrue(cond.contains(new MorphBaseQueryCondition("$.dirname", ConditionType.IsNotNull, null))) // join parent reference
+        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.IsNotNull, null))) // parent subject
+        assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
+        assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
+    }
+
+    @Test def test_NonNormalizedTM() {
         println("------ test_error")
 
         // Triple pattern: ?x ex:starring "T. Leung"

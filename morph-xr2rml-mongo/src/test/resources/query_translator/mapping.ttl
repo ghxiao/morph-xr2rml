@@ -28,7 +28,7 @@
          rr:parentTriplesMap <#Movies>;
          rr:joinCondition [
             rr:child "$.directed.*";
-            rr:parent "$.name";
+            rr:parent "$.dirname";
          ]
       ]
    ].

@@ -79,8 +79,8 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         }
 
         val pom = poms.head
-        if (pom.predicateMaps.size != 1 &&
-            ((pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0))) {
+        if (pom.predicateMaps.size != 1 ||
+            !( (pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0) )) {
             logger.error("The candidate triples map " + tm.toString + " must have exactly one predicate map and one object map.")
             return AbstractQuery()
         }

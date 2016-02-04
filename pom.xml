@@ -14,8 +14,8 @@
 		<module>morph-xr2rml-lang</module>
 		<module>morph-base</module>
 		<module>morph-xr2rml-mongo</module>
+		<module>morph-xr2rml-rdb</module>
 		<module>morph-xr2rml-dist</module>
-		<module>morph-xr2rml-rdb-querytranslator</module>
 	</modules>
 
 	<properties>
