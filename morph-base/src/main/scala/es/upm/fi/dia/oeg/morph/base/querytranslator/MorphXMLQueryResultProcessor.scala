@@ -1,14 +1,10 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.io.Writer
-
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.query.Query
-
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.XMLUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
@@ -17,14 +13,14 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 abstract class MorphXMLQueryResultProcessor(
     mappingDocument: R2RMLMappingDocument,
     properties: MorphProperties,
-    xmlOutputStream: Writer)
+    output: Writer)
 
         extends MorphBaseQueryResultProcessor(
             mappingDocument,
             properties,
-            xmlOutputStream) {
+            output) {
 
-    this.outputStream = xmlOutputStream;
+    this.outputStream = output;
 
     val logger = Logger.getLogger(this.getClass().getName());
 

@@ -6,9 +6,8 @@ Maven Projects Inheritance:
                     |
                 morph-base
                   /    \
-  morph-xr2rml-mongo   morph-xr2rml-rdb-querytranslator
+  morph-xr2rml-mongo   morph-xr2rml-rdb
                |         |
-               |       morph-xr2rml-rdb
                \         /
             morph-xr2rml-dist
 
@@ -19,7 +18,6 @@ Maven Projects Inheritance:
 **morph-base**: abstract classes for major functions of the translation engine: runner factory, runner,
     source reader, data translator, query unfolder etc., + various utility classes. 
 **morph-xr2rml-mongo**: implementation of the materialization and query rewriting engine for MongoDB.
-**morph-xr2rml-rdb-querytranslator**: implementation of the query rewriting engine for SQL databases.
 **morph-xr2rml-rdb**: implementation of the materialization and query rewriting engine for SQL databases.
 **morph-xr2rml-dist**: includes all MongoDb and RDB engines into a single jar, along with a main class (MorphRunner)
     and example databases, mapping and engine configuration files.

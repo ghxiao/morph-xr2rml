@@ -1,9 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base.materializer
 
-import es.upm.fi.dia.oeg.morph.base.Constants
-import java.io.OutputStream
-import java.io.FileOutputStream
 import java.io.Writer
+
 import org.apache.log4j.Logger
 
 object MaterializerFactory {

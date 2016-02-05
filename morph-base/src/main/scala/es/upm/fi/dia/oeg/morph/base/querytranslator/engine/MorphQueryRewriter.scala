@@ -8,7 +8,6 @@ import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
-import com.hp.hpl.jena.graph.query.Rewrite
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
@@ -20,6 +19,7 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
+import com.hp.hpl.jena.sparql.algebra.optimize.Rewrite
 import com.hp.hpl.jena.sparql.algebra.optimize.TransformFilterConjunction
 import com.hp.hpl.jena.sparql.core.BasicPattern
 import com.hp.hpl.jena.vocabulary.RDF
