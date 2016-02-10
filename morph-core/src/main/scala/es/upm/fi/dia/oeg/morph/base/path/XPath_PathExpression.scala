@@ -40,7 +40,7 @@ class XPath_PathExpression(pathExpression: String)
      * a serialization of the XML value.
      * If the XPath expression or the XML value is invalid, an error is logged and the method returns the value as is.
      *
-     * @value the XML value to parse
+     * @param jsonValue the JSON value to parse
      * @return list of values resulting from the evaluation
      */
     def evaluate(value: String): List[Object] = {

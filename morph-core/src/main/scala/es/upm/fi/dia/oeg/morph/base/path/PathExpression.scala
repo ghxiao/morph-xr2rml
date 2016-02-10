@@ -7,7 +7,7 @@ abstract class PathExpression(
     /**
      * Evaluate a value against the path expression and return a list of values
      *
-     * @value the value to parse (XML, JSON, CSV etc.)
+     * @param value the value to parse (XML, JSON, CSV etc.)
      * @return list of values resulting from the evaluation
      */
     def evaluate(value: String): List[Object]

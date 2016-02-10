@@ -82,19 +82,19 @@ abstract class MorphBaseDataTranslator(
      * the triples map bound to the query (GenericQuery.bondTriplesMap) to create triples.
      */
     def generateRDFTriples(query: GenericQuery): Unit = {
-        val cm = query.boundTriplesMap.get
+        val tm = query.boundTriplesMap.get
         try {
-            val ls = cm.logicalSource ;
-            val sm = cm.subjectMap;
-            val poms = cm.predicateObjectMaps;
+            val ls = tm.logicalSource ;
+            val sm = tm.subjectMap;
+            val poms = tm.predicateObjectMaps;
             this.generateRDFTriples(Some(ls), sm, poms, query);
         } catch {
             case e: MorphException => {
-                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
+                logger.error("Error while generatring triples for " + tm + ": " + e.getMessage);
                 e.printStackTrace()
             }
             case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
+                logger.error("Unexpected error while generatring triples for " + tm + ": " + e.getMessage);
                 e.printStackTrace()
             }
         }

@@ -9,7 +9,7 @@ class GenericQuery(
         val concreteQuery: Object,
 
         /** In the query rewriting context, this is a triples map that is 
-         *  bound to the triples map from which we have derived this query */
+         *  bound to the triple pattern from which we have derived this query */
 		val boundTriplesMap: Option[R2RMLTriplesMap]) {
 
     def isSqlQuery: Boolean = {

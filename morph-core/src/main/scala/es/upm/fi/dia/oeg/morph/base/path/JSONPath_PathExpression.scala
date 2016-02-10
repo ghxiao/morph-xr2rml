@@ -35,7 +35,7 @@ class JSONPath_PathExpression(
      * a serialization of the value, like "["a","b"] for an array.
      * If the JSONPath expression or JSON value is invalid, an error is logged and the method returns the value as is.
      *
-     * @value the JSON value to parse
+     * @param jsonValue the JSON value to parse
      * @return list of values resulting from the evaluation
      */
     def evaluate(jsonValue: String): List[Object] = {

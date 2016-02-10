@@ -385,7 +385,7 @@ object JsonPathToMongoTranslator {
      * @param prePath part of the JSONPath before the field alternative. It may be empty or null.
      * @param altPath a JSONPath that should start with a field alternative
      * @param cond the global condition (not null of equality)
-     * @result a MongoQueryNode if altPath was a field alternative, none otherwise.
+     * @return a MongoQueryNode if altPath was a field alternative, none otherwise.
      * @throws MorphException in case of serious parsing issue (probably due to a miscall of this method)
      */
     def translateFieldAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond): Option[MongoQueryNode] = {

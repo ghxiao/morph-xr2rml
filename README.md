@@ -4,8 +4,10 @@ The current implementation supports the xR2RML language for relational databases
 
 The xR2RML mapping language (https://hal.archives-ouvertes.fr/hal-01066663 V3) is an extension of R2RML (http://www.w3.org/TR/r2rml/) and RML (http://semweb.mmlab.be/rml/spec.html).
 
-Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as an extension of the Morph-RDB project (https://github.com/oeg-upm/morph-rdb) which is an implementation of R2RML. Morph-xR2RML supports the data materialization approach (generate RDF instances from data in a database) 
-and the query rewriting approach for relational databases only, but it does not support query rewriting (SPARQL to DB native query language rewriting) for MongoDB.
+Morph-xR2RML was developed by the I3S laboratory (http://www.i3s.unice.fr/) as an extension of the Morph-RDB project (https://github.com/oeg-upm/morph-rdb) which is an implementation of R2RML. 
+Morph-xR2RML supports the data materialization approach (generate RDF instances from data in a database) and the query rewriting approach:
+the SPARQL-to-SQL rewriting is that of Morph-RDB, the SPARQL-to-MongodDB rewriting is a new fully component described in this technical report:
+https://hal.archives-ouvertes.fr/hal-01245883.
 
 ### Limitations
 - The generation of RDF collection and containers is supported in all cases (from a list of values resulting of the evaluation of a mixed syntax path typically, from the result of a join query implied by a referencing object map), except in the case of a regular R2RML join query applied to a relational database: the result of the join SQL query cannot be translated into an RDF collection or container.
@@ -15,6 +17,13 @@ More complex nested term maps (with recursive parse using another nested term ma
 - The query rewriting is implemented only for RDBs, with the restriction that no mixed syntax paths be used. 
 Doing query rewriting with mixed syntax paths is a much more complex problem, that may even not be possible at all. 
 Indeed it requires to "revert" expressions such as JSONPath or XPath to retrieve source data base values.
+
+### Publications
+F. Michel, C. Faron-Zucker, and J. Montagnat. A Generic Mapping-Based Query Translation from SPARQL to Various Target Database Query Languages.
+In Proceedings of the WebIST Conference, 2016.
+
+F. Michel, C. Faron-Zucker, and J. Montagnat. Mapping-based SPARQL access to a MongoDB database. Technical report, CNRS, 2016.
+https://hal.archives-ouvertes.fr/hal-01245883.
 
 ## Build
 

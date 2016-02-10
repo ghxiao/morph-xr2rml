@@ -1,15 +1,13 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 abstract class R2RMLTermMap(
     val termMapType: Constants.MorphTermMapType.Value,
@@ -272,7 +270,7 @@ object R2RMLTermMap {
     /**
      * Deduce the type of the term map (constant, column, reference, template) based on its properties
      * @param rdfNode the term map node
-     * @throws exception in case the term map type cannot be decided
+     * @throws Exception in case the term map type cannot be decided
      */
     def extractTermMapType(rdfNode: RDFNode) = {
         rdfNode match {
@@ -284,7 +282,7 @@ object R2RMLTermMap {
                 else {
                     val errorMessage = "Invalid term map " + resource.getLocalName() + ". Should have one of rr:constant, rr:column, rr:template or xrr:reference.";
                     logger.error(errorMessage);
-                    throw new Exception(errorMessage);
+                    throw new MorphException(errorMessage);
                 }
             }
             case _ => {
