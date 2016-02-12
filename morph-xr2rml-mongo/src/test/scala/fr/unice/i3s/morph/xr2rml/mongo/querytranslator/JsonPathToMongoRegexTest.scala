@@ -143,6 +143,32 @@ class JsonPathToMongoRegexTest {
         assertEquals("@.q.length==5||(@.q && @.r)", result(0).group(1))
     }
 
+    @Test def test_JPpath_Array_Slice() {
+        println("------ test_JPpath_Array_Slice")
+
+        var jpExpr = """[-10:]"""
+        var result = JsonPathToMongoTranslator.JSONPATH_ARRAY_SLICE_NEG_START.findAllMatchIn(jpExpr).toList
+        println(result)
+        var resultL = result.toList
+        assertEquals(1, result.length)
+        assertEquals("-10", result(0).group(1))
+
+        jpExpr = """[:10]"""
+        result = JsonPathToMongoTranslator.JSONPATH_ARRAY_SLICE_END.findAllMatchIn(jpExpr).toList
+        println(result)
+        resultL = result.toList
+        assertEquals(1, result.length)
+        assertEquals("10", result(0).group(1))
+
+        jpExpr = """[0:10]"""
+        result = JsonPathToMongoTranslator.JSONPATH_ARRAY_SLICE_END.findAllMatchIn(jpExpr).toList
+        println(result)
+        resultL = result.toList
+        assertEquals(1, result.length)
+        assertEquals("10", result(0).group(1))
+
+    }
+
     @Test def test_dotNotation() {
         println("------ test_dotNotation")
 

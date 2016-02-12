@@ -5,16 +5,21 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
 import org.junit.Test
-
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
-
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 
 class MorphMongoQueryTranslatorTest {
 
@@ -25,6 +30,8 @@ class MorphMongoQueryTranslatorTest {
     val tmMovies = mappingDocument.getClassMappingsByName("Movies")
     val tmDirectors = mappingDocument.getClassMappingsByName("Directors")
     val tmOther = mappingDocument.getClassMappingsByName("Other")
+
+    private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
     @Test def test_genFrom() {
         println("------ test_genFrom")
@@ -193,7 +200,7 @@ class MorphMongoQueryTranslatorTest {
         var o = NodeFactory.createURI("http://example.org/movie/Manh")
         var tp = Triple.create(s, p, o)
 
-        var cond = queryTranslator.genCondParent(tp, tmDirectors )
+        var cond = queryTranslator.genCondParent(tp, tmDirectors)
         println(cond)
 
         assertTrue(cond.contains(new MorphBaseQueryCondition("$.dirname", ConditionType.IsNotNull, null)))
@@ -201,7 +208,7 @@ class MorphMongoQueryTranslatorTest {
         assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
         assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
     }
-    
+
     @Test def test_genCondParent_Variable() {
         println("------ test_genCondParent_Variable")
 
@@ -211,7 +218,7 @@ class MorphMongoQueryTranslatorTest {
         var o = NodeFactory.createVariable("x")
         var tp = Triple.create(s, p, o)
 
-        var cond = queryTranslator.genCondParent(tp, tmDirectors )
+        var cond = queryTranslator.genCondParent(tp, tmDirectors)
         println(cond)
 
         assertTrue(cond.contains(new MorphBaseQueryCondition("$.dirname", ConditionType.IsNotNull, null))) // join parent reference
@@ -236,6 +243,52 @@ class MorphMongoQueryTranslatorTest {
         tm = mappingDocument.getClassMappingsByName("TM_MultiplePOM")
         res = queryTranslator.transTP(tp, tm)
         assertTrue(res.queries.isEmpty)
+    }
+
+    @Test def test_toConcreteQueries() {
+        var fromPart = new MongoDBQuery("collection", "tititutu")
+
+        val compare = new MongoQueryNodeCompare("a", MongoQueryNodeCompare.Operator.GT, "10")
+        val field = new MongoQueryNodeField("b", new MongoQueryNodeCond(ConditionType.Equals, "bbb"), None)
+        val exists1 = new MongoQueryNodeExists("c")
+        val exists2 = new MongoQueryNodeExists("d")
+        val or = new MongoQueryNodeOr(List(exists1, exists2))
+        val and = new MongoQueryNodeAnd(List(compare, field))
+        val union = new MongoQueryNodeUnion(List(compare, or))
+
+        println("---------------------------------")
+        var result = queryTranslator.toConcreteQueries(fromPart, List(and))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("tititutu"))
+        assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
+        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+
+        println("---------------------------------")
+        result = queryTranslator.toConcreteQueries(fromPart, List(compare, field))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("tititutu"))
+        assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
+        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+
+        println("---------------------------------")
+        result = queryTranslator.toConcreteQueries(fromPart, List(or, and))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("tititutu"))
+        assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
+        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+        assertTrue(cleanString(result(0).query).contains("$or:[{'c':{$exists:true}},{'d':{$exists:true}}]"))
+
+        println("---------------------------------")
+        result = queryTranslator.toConcreteQueries(fromPart, List(union))
+        println(result)
+        assertTrue(result.size == 2)
+        assertTrue(cleanString(result(0).query).contains("tititutu"))
+        assertTrue(cleanString(result(1).query).contains("tititutu"))
+        assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
+        assertTrue(cleanString(result(1).query).contains("$or:[{'c':{$exists:true}},{'d':{$exists:true}}]"))
     }
 
     @Test def test_full() {
@@ -263,4 +316,5 @@ class MorphMongoQueryTranslatorTest {
         val conds = queryTranslator.transTP(tp, tmDirectors)
         println(conds)
     }
+
 }

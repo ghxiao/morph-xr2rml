@@ -21,7 +21,9 @@ class MongoQueryNodeTest {
                             new MongoQueryNodeElemMatch(
                                 new MongoQueryNodeCond(ConditionType.Equals, new Integer(3)))))))
         println(node.toString)
-        assertEquals("""'p1.p2': {$elemMatch: {'p3': {$elemMatch: {$eq: 3}}}}""", node.toString)
+        assertEquals(
+            """'p1.p2': {$elemMatch: {'p3': {$elemMatch: {$eq: 3}}}}""",
+            node.toString)
     }
 
     @Test def test2() {
@@ -52,7 +54,8 @@ class MongoQueryNodeTest {
                                     new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
             ))
         println(node.toString)
-        assertEquals("""$or: [{'p.0.q.1': {$exists: true, $ne: null}}, {'p.0.q.3': {$exists: true, $ne: null}}, {'p.2.q.1': {$exists: true, $ne: null}}, {'p.2.q.3': {$exists: true, $ne: null}}]""",
+        assertEquals(
+            """$or: [{'p.0.q.1': {$exists: true, $ne: null}}, {'p.0.q.3': {$exists: true, $ne: null}}, {'p.2.q.1': {$exists: true, $ne: null}}, {'p.2.q.3': {$exists: true, $ne: null}}]""",
             node.optimize.toString)
     }
 
@@ -70,7 +73,8 @@ class MongoQueryNodeTest {
                 ))
             ))
         println(node.toString)
-        assertEquals("""$and: [{'p': {$elemMatch: {$eq: 1}}}, {'p.0': {$exists: true}}, {$where: 'this.p[0] == 0'}, {'p': {$size: 10}}]""",
+        assertEquals(
+            """$and: [{'p': {$elemMatch: {$eq: 1}}}, {'p.0': {$exists: true}}, {$where: 'this.p[0] == 0'}, {'p': {$size: 10}}]""",
             node.optimize.toString)
     }
 
@@ -81,7 +85,8 @@ class MongoQueryNodeTest {
                 new MongoQueryNodeExists("p.q"),
                 new MongoQueryNodeWhere("""this.p.q[this.p.q.length - 1] == "val"""")))
         println(node.toString)
-        assertEquals("""$and: [{'p.q': {$exists: true}}, {$where: 'this.p.q[this.p.q.length - 1] == "val"'}]""",
+        assertEquals(
+            """$and: [{'p.q': {$exists: true}}, {$where: 'this.p.q[this.p.q.length - 1] == "val"'}]""",
             node.toString)
     }
 

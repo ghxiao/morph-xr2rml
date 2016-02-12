@@ -15,7 +15,8 @@ class JsonPathToMongoTranslatorComplexTest {
         var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
 
-        println("Query optimized  : " + query.optimize.toTopLevelQuery)
+        println("Query unoptimized: " + query.toTopLevelQuery("tititutu"))
+        println("Query optimized  : " + query.optimize.toTopLevelQuery("tititutu"))
     }
 
     @Test def test_ComplexUnsupportedFilter() {
@@ -25,8 +26,8 @@ class JsonPathToMongoTranslatorComplexTest {
         var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
 
-        println("Query optimized  : " + query.optimize.toTopLevelQuery)
-        println("Query unoptimized: " + query.toTopLevelQuery)
+        println("Query optimized  : " + query.optimize.toTopLevelQuery("tititutu"))
+        println("Query unoptimized: " + query.toTopLevelQuery("tititutu"))
     }
 
     @Test def test_ComplexPullupWhere() {
@@ -36,8 +37,8 @@ class JsonPathToMongoTranslatorComplexTest {
         var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
 
-        println("Query optimized  : " + query.optimize.toTopLevelQuery)
-        println("Query unoptimized: " + query.toTopLevelQuery)
+        println("Query optimized  : " + query.optimize)
+        println("Query unoptimized: " + query)
     }
 
     @Test def test_Complex2() {
@@ -47,7 +48,7 @@ class JsonPathToMongoTranslatorComplexTest {
         var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
 
-        println("Query optimized  : " + query.optimize.toTopLevelQuery)
-        println("Query unoptimized: " + query.toTopLevelQuery)
+        println("Query optimized  : " + query.optimize.toTopLevelQuery("tititutu"))
+        println("Query unoptimized: " + query.toTopLevelQuery("tititutu"))
     }
 }

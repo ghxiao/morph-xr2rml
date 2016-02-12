@@ -1,13 +1,11 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
-
 import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
@@ -23,15 +21,17 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
- *   
+ *
  * This class assumes that the xR2RML mapping is normalized, that is, a triples map
  * has not more that one predicate-object map, and each predicate-object map has
  * exactly one predicate and one object map.
  * In the code this assumption is mentioned by the annotation @NORMALIZED_ASSUMPTION
- * 
+ *
  * @TODO The management of logical source iterators is approximate, must be studied in details.
  */
 class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQueryTranslator {
@@ -50,7 +50,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
         // WARNING ####################################################################
         // This is totally adhoc code meant to test the whole process of running Morph-xR2RML with
-        // a query of one triple pattern
+        // a query of one triple pattern. Bindings with triples maps are hard coded here
         val tmMovies = md.getClassMappingsByName("Movies")
         val tmDirectors = md.getClassMappingsByName("Directors")
 
@@ -80,7 +80,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
         val pom = poms.head
         if (pom.predicateMaps.size != 1 ||
-            !( (pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0) )) {
+            !((pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0))) {
             logger.error("The candidate triples map " + tm.toString + " must have exactly one predicate map and one object map.")
             return AbstractQuery()
         }
@@ -108,12 +108,29 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
             filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals).
             map(c => c.asInstanceOf[MorphBaseQueryCondition])
 
-        // Create a concrete query including the logical source query and the translated set of conditions
-        val concreteQuery = toConcreteQuery(fromPart, pushDownConds)
-        val queries =
-            if (concreteQuery.isDefined)
-                List(new GenericQuery(Constants.DatabaseType.MongoDB, concreteQuery.get, Some(tm)))
-            else List.empty
+        // Generate one abstract MongoDB query for each condition
+        val absQueries: List[MongoQueryNode] = pushDownConds.map(cond => {
+            // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
+            val iter = fromPart.iterator
+            val reference =
+                if (iter.isDefined) cond.reference.replace("$", iter.get)
+                else cond.reference
+
+            // Run the translation into an abstract MongoDB query
+            cond.condType match {
+                case ConditionType.IsNotNull =>
+                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.IsNotNull, null))
+                case ConditionType.Equals =>
+                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue))
+                case _ => throw new MorphException("Unsupported condition type " + cond.condType)
+            }
+        })
+
+        if (logger.isTraceEnabled())
+            logger.trace("Conditions translated to abstract MongoDB query:\n" + absQueries)
+
+            // Create the concrete queries from the set of abstract MongoDB queries
+        val queries = toConcreteQueries(fromPart, absQueries).map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, Some(tm)))
 
         if (logger.isDebugEnabled())
             logger.debug("transTP(" + tp + ", " + tm + "):\n" + queries)
@@ -384,52 +401,50 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     }
 
     /**
-     * Translate a set of NotNull or Equality conditions into a concrete MongoDB query
+     * Translate a set of non-optimized MongoQueryNode instances into one or more optimized concrete MongoDB queries.
+     *
+     * All  MongoQueryNodes are grouped under a top-level AND query, unless there was only one condition.
+     * Then the query is optimized, which may come up with a top-level UNION.
+     *
+     * A query string is generated, that contains the initial query string from the logical source.
+     * A UNION is translated into several concrete queries, for any other type of query only one query string is returned.
      *
      * @param fromPart the query of the logical source
-     * @param pushDownConds the actual set of NotNull or Equality conditions to translate into concrete MongoDB queries.
-     * @return a list of MongoDBQuery instances, to be executed separately and UNIONed by the xR2RML engine.
+     * @param absQueries the actual set of NotNull or Equality conditions to translate into concrete MongoDB queries.
+     * @return list of MongoDBQuery instances
      */
-    private def toConcreteQuery(
+    def toConcreteQueries(
         fromPart: MongoDBQuery,
-        pushDownConds: List[MorphBaseQueryCondition]): Option[MongoDBQuery] = {
+        absQueries: List[MongoQueryNode]): List[MongoDBQuery] = {
 
-        if (pushDownConds.isEmpty)
-            return None
-
-        // Generate the abstract MongoDB queries for each condition
-        val conds: List[MongoQueryNode] = pushDownConds.map(cond => {
-            // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
-            val iter = fromPart.iterator
-            val condRefIter =
-                if (iter.isDefined) cond.reference.replace("$", iter.get)
-                else cond.reference
-
-            // Run the translation into an abstract MongoDB query
-            cond.condType match {
-                case ConditionType.IsNotNull =>
-                    JsonPathToMongoTranslator.trans(condRefIter, new MongoQueryNodeCond(ConditionType.IsNotNull, null), true)
-                case ConditionType.Equals =>
-                    JsonPathToMongoTranslator.trans(condRefIter, new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue), true)
-                case _ => throw new MorphException("Unsupported condition type " + cond.condType)
-            }
-        })
+        // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query
+        var Q =
+            if (absQueries.length == 1) absQueries(0).optimize
+            else new MongoQueryNodeAnd(absQueries).optimize
         if (logger.isTraceEnabled())
-            logger.debug("Condtion set was translated into: " + conds)
+            logger.trace("Condtion set was translated into: " + Q)
 
-        // Merge queries with a common root, i.e. applying to the same JSON field
-        val merged = MongoQueryNode.fusionQueries(conds)
+        // @TODO If the query is an AND, merge its members that have a common root JSON field
+        // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}, which is not possible so far
+        // do to the way the MongoQueryNodeField is designed: it can have only one condition.
+        // Example 2. AND('a.b':{$elemMatch:{Q1}}, 'a.b':{$elemMatch:{Q2}}) => 'a.b': {$elemMatch:{$and:[{Q1},{Q2}]}}.
+        // Need to continue function MongoQueryNode.fusionQueries()
+
+        val Qstr: List[MongoDBQuery] =
+            if (Q.isUnion)
+                // For each member of the UNION, convert it to a query string, add the query from the logical source,
+                // and create a MongoDBQuery instance
+                Q.asInstanceOf[MongoQueryNodeUnion].members.map(
+                    q => new MongoDBQuery(
+                        fromPart.collection,
+                        q.toTopLevelQuery(fromPart.query),
+                        q.projection.map(o => o.toString)))
+            else
+                // Convert to a query string, add the query from the logical source, and create a MongoDBQuery instance
+                List(new MongoDBQuery(fromPart.collection, Q.toTopLevelQuery(fromPart.query), Q.projection.map(o => o.toString)))
+                
         if (logger.isTraceEnabled())
-            logger.debug("Condtions merged into: [" + merged + "]")
-
-        // Concatenate all queries into a single concrete query, and add the query from the logical source
-        var concreteMerged = merged.map(q => q.toString).mkString(", ")
-        if (! fromPart.query.isEmpty())
-            concreteMerged = fromPart.query + ", " + concreteMerged
-
-        if (logger.isTraceEnabled())
-            logger.debug("Conditions merged with query from logical source: [" + concreteMerged + "]")
-
-        Some(new MongoDBQuery(fromPart.collection, concreteMerged))
+            logger.trace("Final set of concrete queries: [" + Qstr + "]")
+        Qstr
     }
 }

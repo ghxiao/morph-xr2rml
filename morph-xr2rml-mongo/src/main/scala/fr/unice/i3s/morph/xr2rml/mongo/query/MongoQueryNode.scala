@@ -10,6 +10,8 @@ abstract class MongoQueryNode {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
+    var projection: Option[MongoQueryProjection] = None
+
     /** Is the current abstract node a FIELD node? */
     def isField: Boolean = false
 
@@ -29,21 +31,28 @@ abstract class MongoQueryNode {
     def isElemMatch: Boolean = false
 
     /**
-     * Build the final concrete query string corresponding to that abstract query object.<br>
-     * An AND is returned as it members separated by a comma: MongoDB implicitly makes an AND
-     * between the fields of the top-level query document.<br>
-     * A UNION is returned as a list of its members: they have to be executed separately.
-     * In all other the toString method is applied.<br>
+     * Build the final concrete query string corresponding to that abstract query object.
+     * This does not apply to a UNION query, in which case an exception is thrown.
+     *
+     * An AND is returned as a single result with AND members separated by a comma, because MongoDB
+     * implicitly makes an AND between the fields of the top-level query document.
+     *
+     * @param fromPart the query string that comes from the logical source of the triples map,
+     * to be appended to the query we will produce from this MongoQueryNode instance
      */
-    def toTopLevelQuery: List[String] = {
+    def toTopLevelQuery(fromPart: String): String = {
+        val from =
+            if (fromPart.isEmpty) ""
+            else fromPart + ", "
+
         if (this.isAnd)
-            List("{" + this.asInstanceOf[MongoQueryNodeAnd].queryMembersToString + "}")
-        else if (this.isUnion)
-            this.asInstanceOf[MongoQueryNodeUnion].members.flatMap(m => m.toTopLevelQuery)
+            "{" + from + this.asInstanceOf[MongoQueryNodeAnd].queryMembersToString + "}"
         else if (this.isInstanceOf[MongoQueryNodeNotSupported])
-            List("{}")
+            "{" + from + "}"
+        else if (this.isUnion)
+            throw new MorphException("Unsupported call: toTopLevelQuery cannot apply to a UNION query")
         else
-            List("{" + this.toString + "}")
+            "{" + from + this.toString + "}"
     }
 
     /**
@@ -120,7 +129,7 @@ abstract class MongoQueryNode {
                 // Remove the FIELD node if the next is a NOT_SUPPORTED element
                 if (a.next.isInstanceOf[MongoQueryNodeNotSupported])
                     new MongoQueryNodeNotSupported("Emptry FIELD")
-                else new MongoQueryNodeField(a.field, a.next.optimizeQuery)
+                else new MongoQueryNodeField(a.field, a.next.optimizeQuery, a.arraySlice)
             }
 
             case a: MongoQueryNodeElemMatch => {
@@ -232,7 +241,6 @@ abstract class MongoQueryNode {
             optd
         } else this
     }
-
 }
 
 object MongoQueryNode {
@@ -251,7 +259,7 @@ object MongoQueryNode {
     }
 
     /**
-     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued  
+     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued
      */
     def fusionQueries(qs: List[MongoQueryNode]): List[MongoQueryNode] = {
         if (qs.isEmpty || qs.length == 1)
@@ -263,7 +271,7 @@ object MongoQueryNode {
     }
 
     /**
-     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued  
+     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued
      *
      * A quite quickly written method that is definitely not complete.
      * The goal is that, if at the very end of the translation process, we have come up with
@@ -274,14 +282,13 @@ object MongoQueryNode {
      *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}, 'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
      */
     private def fusionTwoQueries(q1: MongoQueryNode, q2: MongoQueryNode): List[MongoQueryNode] = {
-
         if (q1.isField && q2.isField) {
             val q1Field = q1.asInstanceOf[MongoQueryNodeField]
             val q2Field = q2.asInstanceOf[MongoQueryNodeField]
             if (q1Field.field == q2Field.field) {
                 val fused = fusionTwoQueries(q1Field.next, q2Field.next)
                 if (fused.length == 1)
-                    return List(new MongoQueryNodeField(q1Field.field, fused(0)))
+                    return List(new MongoQueryNodeField(q1Field.field, fused(0), q1Field.arraySlice))
             }
         }
 

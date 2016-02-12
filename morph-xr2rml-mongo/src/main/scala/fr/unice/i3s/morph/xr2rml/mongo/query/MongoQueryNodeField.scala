@@ -10,7 +10,12 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
  * Thus, new MongoQueryNodeField("p1, MongoQueryNodeField("p2", new MongoQueryNodeField("p3", ...))) is
  * translated into: "p1.p2.p3": ...
  */
-class MongoQueryNodeField(val field: String, val next: MongoQueryNode) extends MongoQueryNode {
+class MongoQueryNodeField(val field: String, val next: MongoQueryNode, val arraySlice: Option[MongoQueryProjectionArraySlice]) extends MongoQueryNode {
+
+    this.projection = arraySlice
+
+    /** Constructor without array slice projection */
+    def this(field: String, next: MongoQueryNode) = { this(field, next, None) }
 
     override def isField: Boolean = true
 

@@ -13,7 +13,10 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
  * For a not null condition:
  * 		$exists: true, $ne: null
  */
-class MongoQueryNodeCond(val cond: ConditionType.Value, val value: Object) extends MongoQueryNode {
+class MongoQueryNodeCond(
+    val cond: ConditionType.Value,
+    val value: Object)
+        extends MongoQueryNode {
 
     override def equals(q: Any): Boolean = {
         q.isInstanceOf[MongoQueryNodeCond] && this.cond == q.asInstanceOf[MongoQueryNodeCond].cond &&

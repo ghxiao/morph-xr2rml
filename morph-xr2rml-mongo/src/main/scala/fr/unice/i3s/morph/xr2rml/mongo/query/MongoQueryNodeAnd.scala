@@ -14,18 +14,8 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
         q.isInstanceOf[MongoQueryNodeAnd] && this.members == q.asInstanceOf[MongoQueryNodeAnd].members
     }
 
-    def queryMembersToString: String = {
-        var str = ""
-        var first = true
-        members.foreach(m => {
-            if (first)
-                first = false
-            else
-                str += ", "
-            str += m
-        })
-        str
-    }
+    def queryMembersToString: String = { members.mkString(", ") }
+
     override def toQueryStringNotFirst() = {
 
         var str = ""

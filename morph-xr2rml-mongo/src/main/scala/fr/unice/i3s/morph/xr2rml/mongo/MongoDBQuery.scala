@@ -12,7 +12,11 @@ import org.apache.log4j.Logger
  */
 class MongoDBQuery(
         val collection: String,
-        val query: String) {
+        val query: String,
+        val projection: Option[String]) {
+
+    /** Constructor without projection */ 
+    def this(collection: String, query: String) = this(collection, query, None)
 
     var iterator: Option[String] = None
 

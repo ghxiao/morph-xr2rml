@@ -8,9 +8,8 @@ class GenericQuery(
         /** The concrete instance of query object: ISqlQuery in case of RDB, MongoDBQuery in case of MongoDB, etc. */
         val concreteQuery: Object,
 
-        /** In the query rewriting context, this is a triples map that is 
-         *  bound to the triple pattern from which we have derived this query */
-		val boundTriplesMap: Option[R2RMLTriplesMap]) {
+        /** In the query rewriting context, this is a triples map that is bound to the triple pattern from which we have derived this query */
+        val boundTriplesMap: Option[R2RMLTriplesMap]) {
 
     def isSqlQuery: Boolean = {
         dbType == Constants.DatabaseType.Relational
