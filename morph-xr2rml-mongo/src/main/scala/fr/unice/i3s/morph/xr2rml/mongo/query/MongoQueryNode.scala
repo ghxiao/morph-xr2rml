@@ -60,15 +60,7 @@ abstract class MongoQueryNode {
      * when it is a top-level query object, either the root, or it is inside
      * an AND, OR, ELEMMATCH or UNION.
      */
-    override def toString(): String = { toQueryStringNotFirst() }
-
-    /**
-     * Build the concrete query string corresponding to that abstract query object
-     * when it is not a top-level query object.
-     * It is used essentially to differentiate between the first field of a series of fields
-     * and the subsequent ones.
-     */
-    def toQueryStringNotFirst(): String
+    def toString(): String
 
     /**
      * Apply optimizations to the query repeatedly, and try to pull up WHERE nodes,
@@ -126,20 +118,24 @@ abstract class MongoQueryNode {
             }
 
             case a: MongoQueryNodeField => {
-                // Remove the FIELD node if the next is a NOT_SUPPORTED element
-                if (a.next.isInstanceOf[MongoQueryNodeNotSupported])
-                    new MongoQueryNodeNotSupported("Emptry FIELD")
-                else new MongoQueryNodeField(a.field, a.next.optimizeQuery, a.arraySlice)
+                // Remove NOT_SUPPORTED elements and optimize other members
+                val optMembers = a.members.filterNot(_.isInstanceOf[MongoQueryNodeNotSupported]).map(m => m.optimizeQuery)
+
+                // Remove the FIELD node if all members are NOT_SUPPORTED
+                if (optMembers.isEmpty)
+                    new MongoQueryNodeNotSupported("Empty FIELD after removing a NOT_SUPPORTED")
+                else
+                    new MongoQueryNodeField(a.field, optMembers, a.arraySlice)
             }
 
             case a: MongoQueryNodeElemMatch => {
                 // Merge nested ANDs with the ELEMMATCH
                 var optMembers = a.flattenAnds.members
 
-                // Remove NOT_SUPPORTED elements and optimize members
+                // Remove NOT_SUPPORTED elements and optimize other members
                 optMembers = optMembers.filterNot(_.isInstanceOf[MongoQueryNodeNotSupported]).map(m => m.optimizeQuery)
                 if (optMembers.isEmpty)
-                    new MongoQueryNodeNotSupported("Emptry ELEMMATCH")
+                    new MongoQueryNodeNotSupported("Empty ELEMMATCH after removing a NOT_SUPPORTED")
                 else new MongoQueryNodeElemMatch(optMembers)
             }
 
@@ -147,11 +143,11 @@ abstract class MongoQueryNode {
                 // Flatten nested ANDs and group WHEREs
                 var optMembers = a.flattenAnds.groupWheres.members
 
-                // Remove NOT_SUPPORTED elements and optimize members
+                // Remove NOT_SUPPORTED elements and optimize other members
                 optMembers = optMembers.filterNot(_.isInstanceOf[MongoQueryNodeNotSupported]).map(m => m.optimizeQuery)
 
                 if (optMembers.isEmpty)
-                    new MongoQueryNodeNotSupported("Emptry AND")
+                    new MongoQueryNodeNotSupported("Empty AND")
                 else if (optMembers.length == 1)
                     optMembers(0) // Replace AND of 1 term with the term itself
                 else new MongoQueryNodeAnd(optMembers)
@@ -246,58 +242,90 @@ abstract class MongoQueryNode {
 object MongoQueryNode {
 
     /**
-     * Returns a MongoDB path consisting of a concatenation of single field names and array indexes in dot notation.
-     * It removes the optional heading dot. E.g. dotNotation(.p[5]r) => p.5.r
+     * Translates a JSONPath or JavaScript path like '.p[10].q["r"]' into a MongoDB path 'p.10.q.r'
      */
     def dotNotation(path: String): String = {
-        var result =
-            if (path.startsWith("."))
-                path.substring(1)
-            else path
-        result = result.replace("[", ".").replace("]", "")
-        result
+        // .p[10].q[6]["r"] -> .p[10].q[6][r] -> .p.10..q.6..r. -> .p.10.q.6.r.
+        var str: String = path.replace("\"", "").replace("[", ".").replace("]", ".").replace("..", ".")
+
+        // Remove heading dot
+        str = if (str.startsWith(".")) str.substring(1) else str
+
+        // Remove tailing dot
+        str = if (str.endsWith(".") && str.size >= 2) str.substring(0, str.size - 1) else str
+        str
     }
 
     /**
-     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued
+     * Makes the fusion of a set of MongoQueryNode: when several queries of type FIELD have the same field
+     * (their path), they are fusioned into a single FIELD query.
      */
     def fusionQueries(qs: List[MongoQueryNode]): List[MongoQueryNode] = {
         if (qs.isEmpty || qs.length == 1)
             return qs
-        else if (qs.length == 2)
-            fusionTwoQueries(qs(0), qs(1))
-        else
-            fusionQueries(qs.tail.tail)
+        else {
+            val qsNonFields = qs.filterNot(_.isField)
+
+            val qsFields = qs.filter(_.isField).map(_.asInstanceOf[MongoQueryNodeField])
+
+            // Select all FIELDs that have the same field (the path) as the first one
+            val fieldHead = qsFields.head
+            val fieldsWithSamePath = qsFields.tail.filter(f => f.field == fieldHead.field)
+
+            // Select all FIELDs that have a different field (the path) from the first one
+            val fieldsWithOtherPath = qsFields.tail.filterNot(f => f.field == fieldHead.field)
+            // Result: 
+            qsNonFields ++ // all non-field elements
+                (fusionQueries(fieldsWithOtherPath) // all other field elements fusioned when possible
+                    :+ fusionFields(fieldHead +: fieldsWithSamePath)) // fusion of all field elements that have the same field as the first one
+        }
     }
 
     /**
-     * @TODO Just a first attempt but probably lots of cases are not covered. To be continued
+     * Merge several queries of type FIELD that have the same field (their path).
+     * Examples:
+     * 	q1: 'a': {$gt:10}
+     * 	q2: 'a': {$lt:20}
+     * 		=> 'a': {$gt:10, $lt:20}
      *
-     * A quite quickly written method that is definitely not complete.
-     * The goal is that, if at the very end of the translation process, we have come up with
-     * the following 2 members in the top-level query:
-     *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}}
-     *   'movies': {$elemMatch: {'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
-     * we can merge them into a single one:
-     *   'movies': {$elemMatch: {'code': {$exists: true, $ne: null}}, 'actors': {$elemMatch: {$eq: 'T. Leung'}}}}
+     * 	q1: 'a.b': {$size:10, $elemMatch:{A}}
+     * 	q2: 'a.b': {$elemMatch:{B}}
+     * 		=> 'a.b': {$size:10, $elemMatch:{A, B}}
+     *
+     *  If all FIELD queries do not have the field then an exception is thrown.
      */
-    private def fusionTwoQueries(q1: MongoQueryNode, q2: MongoQueryNode): List[MongoQueryNode] = {
-        if (q1.isField && q2.isField) {
-            val q1Field = q1.asInstanceOf[MongoQueryNodeField]
-            val q2Field = q2.asInstanceOf[MongoQueryNodeField]
-            if (q1Field.field == q2Field.field) {
-                val fused = fusionTwoQueries(q1Field.next, q2Field.next)
-                if (fused.length == 1)
-                    return List(new MongoQueryNodeField(q1Field.field, fused(0), q1Field.arraySlice))
-            }
-        }
+    private def fusionFields(q: List[MongoQueryNodeField]): MongoQueryNodeField = {
+        var q1 = q.head
+        for (q2 <- q.tail)
+            q1 = fusionTwoFields(q1, q2)
+        q1
+    }
 
-        if (q1.isElemMatch && q2.isElemMatch) {
-            val q1EM = q1.asInstanceOf[MongoQueryNodeElemMatch]
-            val q2EM = q2.asInstanceOf[MongoQueryNodeElemMatch]
-            return List(new MongoQueryNodeElemMatch(q1EM.members ++ q2EM.members))
-        }
+    /**
+     * Merge 2 queries of type FIELD that have the same path.
+     * Examples:
+     * 	q1: 'a': {$gt:10}
+     * 	q2: 'a': {$lt:20}
+     * 		=> 'a': {$gt:10, $lt:20}
+     *
+     * 	q1: 'a.b': {$size:10, $elemMatch:{A}}
+     * 	q2: 'a.b': {$elemMatch:{B}}
+     * 		=> 'a.b': {$size:10, $elemMatch:{A, B}}
+     *
+     *  If the 2 FIELD queries do not have the same field (the path) then an exception is thrown.
+     */
+    private def fusionTwoFields(q1: MongoQueryNodeField, q2: MongoQueryNodeField): MongoQueryNodeField = {
+        if (q1.field != q2.field)
+            throw new MorphException("Error: both queries should have the same field name. Mistaken call.")
 
-        return List(q1, q2)
+        // Group all ELEMMATCH members into a single ELEMMATCH
+        val all_EM_members = (q1.members.filter(_.isElemMatch) ++ q2.members.filter(_.isElemMatch))
+            .flatMap(_.asInstanceOf[MongoQueryNodeElemMatch].members)
+
+        // Group all non-ELEMMATCH members of q1 and q2 in a single list
+        val q1_NEM = q1.members.filterNot(_.isElemMatch) ++ q2.members.filterNot(_.isElemMatch)
+
+        // Build a new FIELD replacing q1 and q2
+        new MongoQueryNodeField(q1.field, q1_NEM ++ all_EM_members, None)
     }
 }

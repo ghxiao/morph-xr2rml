@@ -1,8 +1,8 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 
 /**
  * MongoDB query element representing an equality or not null condition on a field.
@@ -23,10 +23,9 @@ class MongoQueryNodeCond(
             this.value == q.asInstanceOf[MongoQueryNodeCond].value
     }
 
-    override def toQueryStringNotFirst() = {
+    override def toString() = {
         cond match {
             case ConditionType.IsNotNull => "$exists: true, $ne: null"
-
             case ConditionType.Equals =>
                 if (value.isInstanceOf[String])
                     "$eq: '" + value + "'"

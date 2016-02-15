@@ -41,6 +41,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     /**
      * High level entry point to the query translation process.
      * @TODO only the first query of the AbstractQuery result is managed for the time being
+     * @TODO the transTP does not generate an atomic abstract query for the parent triples map if any
      *
      * @return AbstractQuery instance containing a set of concrete queries.
      *
@@ -403,7 +404,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     /**
      * Translate a set of non-optimized MongoQueryNode instances into one or more optimized concrete MongoDB queries.
      *
-     * All  MongoQueryNodes are grouped under a top-level AND query, unless there was only one condition.
+     * All MongoQueryNodes are grouped under a top-level AND query, unless there is only one condition.
      * Then the query is optimized, which may come up with a top-level UNION.
      *
      * A query string is generated, that contains the initial query string from the logical source.
@@ -426,7 +427,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
         // @TODO If the query is an AND, merge its members that have a common root JSON field
         // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}, which is not possible so far
-        // do to the way the MongoQueryNodeField is designed: it can have only one condition.
+        // due to the way the MongoQueryNodeField is designed: it can have only one condition.
         // Example 2. AND('a.b':{$elemMatch:{Q1}}, 'a.b':{$elemMatch:{Q2}}) => 'a.b': {$elemMatch:{$and:[{Q1},{Q2}]}}.
         // Need to continue function MongoQueryNode.fusionQueries()
 
@@ -440,7 +441,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                         q.toTopLevelQuery(fromPart.query),
                         q.projection.map(o => o.toString)))
             else
-                // Convert to a query string, add the query from the logical source, and create a MongoDBQuery instance
+                // If no UNION, convert to a query string, add the query from the logical source, and create a MongoDBQuery instance
                 List(new MongoDBQuery(fromPart.collection, Q.toTopLevelQuery(fromPart.query), Q.projection.map(o => o.toString)))
                 
         if (logger.isTraceEnabled())

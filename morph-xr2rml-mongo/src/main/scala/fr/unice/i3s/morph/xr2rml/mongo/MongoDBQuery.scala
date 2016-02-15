@@ -15,7 +15,7 @@ class MongoDBQuery(
         val query: String,
         val projection: Option[String]) {
 
-    /** Constructor without projection */ 
+    /** Constructor without projection */
     def this(collection: String, query: String) = this(collection, query, None)
 
     var iterator: Option[String] = None
@@ -26,10 +26,12 @@ class MongoDBQuery(
     }
 
     override def toString(): String = {
+        var str = "MongoDBQuery[Collection: " + collection + ". Query: " + query
         if (iterator.isDefined)
-            "MongoDBQuery[Collection: " + collection + ". Query: " + query + ". Iterator: " + iterator.get + "]"
-        else
-            "MongoDBQuery[Collection: " + collection + ". Query: " + query + "]"
+            str = str + ". Iterator: " + iterator.get
+        if (projection.isDefined)
+            str = str + ". Projection: " + projection
+        str + "]"
     }
 
     override def equals(a: Any): Boolean = {

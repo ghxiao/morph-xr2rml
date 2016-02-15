@@ -10,5 +10,5 @@ class MongoQueryNodeNotSupported(val path: String) extends MongoQueryNode {
         q.isInstanceOf[MongoQueryNodeNotSupported] && this.path == q.asInstanceOf[MongoQueryNodeNotSupported].path
     }
 
-    override def toQueryStringNotFirst = "UNSUPPORTED"
+    override def toString = "UNSUPPORTED"
 }

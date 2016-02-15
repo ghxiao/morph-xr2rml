@@ -1,5 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
+import scala.util.matching.Regex.Match
+
 import org.apache.log4j.Logger
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
@@ -47,13 +49,13 @@ object JsonPathToMongoTranslator {
      *  Regex for a heading JSONPath field name with heading dot: .p
      *  The full match will be .p but the first capturing group will only p
      */
-    final val JSONPATH_FIELD_NAME_DOTTED = """^\.(\p{Alnum}+)""".r
+    //final val JSONPATH_FIELD_NAME_DOTTED = """^\.(\p{Alnum}+)""".r
 
     /**
      *  Regex for a heading JSONPath field name in array notation: ["p"]
      *  The full match will be ["p"] but the first capturing group will only p
      */
-    final val JSONPATH_FIELD_NAME_ARRAY_NOTATION = """^\["(\p{Alnum}+)"\]""".r
+    //final val JSONPATH_FIELD_NAME_ARRAY_NOTATION = """^\["(\p{Alnum}+)"\]""".r
 
     /**
      *  Regex for a JSONPath field name in double-quoted in an alternatives: "q"
@@ -191,12 +193,15 @@ object JsonPathToMongoTranslator {
         }
 
         // ------ Rule R2: Field alternative (a) or array index alternative (b)
+
+        val match0_JPF = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(path)
+        val match0_JPF_list = match0_JPF.toList
+
         {
             // First, try to match <JP:F> at the beginning of the path
-            val match0_JPF = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(path).toList
-            if (!match0_JPF.isEmpty) {
-                val match0 = match0_JPF(0).group(0) // Match0 is a <JP:F>
-                val after_match0 = match0_JPF(0).after(0)
+            if (!match0_JPF_list.isEmpty) {
+                val match0 = match0_JPF_list(0).group(0) // Match0 is a <JP:F>
+                val after_match0 = match0_JPF_list(0).after(0)
 
                 // ------ Rule R2a:
                 // trans(<JP:F>["p","q",...]<JP>, <cond>) ->
@@ -278,10 +283,9 @@ object JsonPathToMongoTranslator {
         //            trans(<JP:F>.*<JP>, <cond>) SLICE(dotNotation(<JP:F>), <end>)
         {
             // First, try to match <JP:F> at the beginning of the path
-            val match0_JPF = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(path).toList
-            if (!match0_JPF.isEmpty) {
-                val match0 = match0_JPF(0).group(0) // Match0 is a <JP:F>
-                val after_match0 = match0_JPF(0).after(0)
+            if (!match0_JPF_list.isEmpty) {
+                val match0 = match0_JPF_list(0).group(0) // Match0 is a <JP:F>
+                val after_match0 = match0_JPF_list(0).after(0)
 
                 var after_match1: CharSequence = ""
                 val arraySliceNode: Option[MongoQueryProjectionArraySlice] = {
@@ -399,28 +403,14 @@ object JsonPathToMongoTranslator {
         //	(a) trans(.p<JP>, <cond>)    -> FIELD(p) trans(<JP>, <cond>)
         //  (b) trans(["p"]<JP>, <cond>) -> FIELD(p) trans(<JP>, <cond>)
         //	(c) trans([i]<JP>, <cond>)   -> FIELD(p) trans(<JP>, <cond>)
+        // In fact we implement this in one step: .p["q"][1] => FIELD("p.q.1")  
         {
-            var fieldMatch: String = ""
-            var afterMatch: String = ""
-
-            // Try to match .p
-            var matched = JsonPathToMongoTranslator.JSONPATH_FIELD_NAME_DOTTED.findAllMatchIn(path).toList
-            if (matched.isEmpty) {
-                // Try to match ["p"]
-                matched = JsonPathToMongoTranslator.JSONPATH_FIELD_NAME_ARRAY_NOTATION.findAllMatchIn(path).toList
-                if (matched.isEmpty)
-                    // Try to match [5]
-                    matched = JsonPathToMongoTranslator.JSONPATH_ARRAY_IDX_ARRAY_NOTATION.findAllMatchIn(path).toList
-            }
-
-            if (!matched.isEmpty) {
-                fieldMatch = matched(0).group(1)
-                if (!fieldMatch.isEmpty) {
-                    if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule r8")
-                    afterMatch = matched(0).after(0).toString
-                    if (logger.isTraceEnabled()) logger.trace("Rule R8, matched: " + fieldMatch + ", afterMatch: " + afterMatch);
-                    return new MongoQueryNodeField(fieldMatch, trans(afterMatch, cond), arraySlice)
-                }
+            if (!match0_JPF_list.isEmpty) {
+                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule r8")
+                val match0 = match0_JPF_list(0).group(0) // Match0 is a <JP:F>
+                val after_match0 = match0_JPF_list(0).after(0).toString()
+                if (logger.isTraceEnabled()) logger.trace("Rule R8, matched: " + match0 + ", afterMatch: " + after_match0);
+                return new MongoQueryNodeField(MongoQueryNode.dotNotation(match0), List(trans(after_match0, cond)), arraySlice)
             }
         }
 

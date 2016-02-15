@@ -14,12 +14,11 @@ class MongoQueryNodeTest {
     @Test def test() {
         println("------------------------------------------------- test")
         val node: MongoQueryNode =
-            new MongoQueryNodeField("p1",
-                new MongoQueryNodeField("p2",
-                    new MongoQueryNodeElemMatch(
-                        new MongoQueryNodeField("p3",
-                            new MongoQueryNodeElemMatch(
-                                new MongoQueryNodeCond(ConditionType.Equals, new Integer(3)))))))
+            new MongoQueryNodeField("p1.p2",
+                new MongoQueryNodeElemMatch(
+                    new MongoQueryNodeField("p3",
+                        new MongoQueryNodeElemMatch(
+                            new MongoQueryNodeCond(ConditionType.Equals, new Integer(3))))))
         println(node.toString)
         assertEquals(
             """'p1.p2': {$elemMatch: {'p3': {$elemMatch: {$eq: 3}}}}""",
@@ -31,27 +30,15 @@ class MongoQueryNodeTest {
         val node: MongoQueryNode =
             new MongoQueryNodeOr(List(
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("p",
-                        new MongoQueryNodeField("0",
-                            new MongoQueryNodeField("q",
-                                new MongoQueryNodeField("1",
-                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
-                    new MongoQueryNodeField("p",
-                        new MongoQueryNodeField("0",
-                            new MongoQueryNodeField("q",
-                                new MongoQueryNodeField("3",
-                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))))),
+                    new MongoQueryNodeField("p.0.q.1",
+                        new MongoQueryNodeCond(ConditionType.IsNotNull, null)),
+                    new MongoQueryNodeField("p.0.q.3",
+                        new MongoQueryNodeCond(ConditionType.IsNotNull, null)))),
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("p",
-                        new MongoQueryNodeField("2",
-                            new MongoQueryNodeField("q",
-                                new MongoQueryNodeField("1",
-                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
-                    new MongoQueryNodeField("p",
-                        new MongoQueryNodeField("2",
-                            new MongoQueryNodeField("q",
-                                new MongoQueryNodeField("3",
-                                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
+                    new MongoQueryNodeField("p.2.q.1",
+                        new MongoQueryNodeCond(ConditionType.IsNotNull, null)),
+                    new MongoQueryNodeField("p.2.q.3",
+                        new MongoQueryNodeCond(ConditionType.IsNotNull, null))))
             ))
         println(node.toString)
         assertEquals(
@@ -136,53 +123,79 @@ class MongoQueryNodeTest {
 
         node1 = new MongoQueryNodeOr(List(
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("0",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("0",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("3",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))))),
+                new MongoQueryNodeField("p.0.q.1",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)),
+                new MongoQueryNodeField("p.0.q.3",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)))),
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("2",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("2",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("3",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
+                new MongoQueryNodeField("p.2.q.1",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)),
+                new MongoQueryNodeField("p.2.q.3",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))
         ))
         node1 = new MongoQueryNodeOr(List(
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("0",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("0",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("3",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))))),
+                new MongoQueryNodeField("p.0.q.1",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)),
+                new MongoQueryNodeField("p.0.q.3",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)))),
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("2",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("1",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null))))),
-                new MongoQueryNodeField("p",
-                    new MongoQueryNodeField("2",
-                        new MongoQueryNodeField("q",
-                            new MongoQueryNodeField("4",
-                                new MongoQueryNodeCond(ConditionType.IsNotNull, null)))))))
+                new MongoQueryNodeField("p.2.q.1",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null)),
+                new MongoQueryNodeField("p.2.q.3",
+                    new MongoQueryNodeCond(ConditionType.IsNotNull, null))))
         ))
         assertTrue(node1 == node1)
         assertFalse(node1 == node2)
     }
+
+    @Test def test_fusionQueries() {
+        println("------------------------------------------------- test_fusionQueries")
+        val node: MongoQueryNode =
+            new MongoQueryNodeField("a", new MongoQueryNodeCond(ConditionType.IsNotNull, null))
+        var res = MongoQueryNode.fusionQueries(List(node))
+        println(res)
+        assertEquals(res.size, 1)
+        assertEquals(cleanString(res(0).toString), cleanString("'a': {$exists: true, $ne: null}"))
+        
+        println("------------------------------")
+        val node2: MongoQueryNode =
+            new MongoQueryNodeField("a", new MongoQueryNodeCond(ConditionType.Equals, "1"))
+        res = MongoQueryNode.fusionQueries(List(node, node2))
+        println(res)
+        assertEquals(res.size, 1)
+        assertEquals(cleanString(res(0).toString), cleanString("'a': {$exists: true, $ne: null, $eq: '1'}"))
+
+        println("------------------------------")
+        val node3: MongoQueryNode =
+            new MongoQueryNodeField("a", new MongoQueryNodeCond(ConditionType.Equals, "2"))
+        val node4: MongoQueryNode =
+            new MongoQueryNodeField("B", new MongoQueryNodeCond(ConditionType.Equals, "0"))
+        res = MongoQueryNode.fusionQueries(List(node, node4, node2, node3))
+        println(res)
+        assertEquals(res.size, 2)
+        assertEquals(cleanString(res(0).toString), cleanString("'B': {$eq: '0'}"))
+        assertEquals(cleanString(res(1).toString), cleanString("'a': {$exists: true, $ne: null, $eq: '1', $eq: '2'}"))
+    }
+
+    @Test def test_fusionQueries_ElemMatch() {
+        println("------------------------------------------------- test_fusionQueries_ElemMatch")
+        val node: MongoQueryNode =
+                new MongoQueryNodeField("a",
+                    new MongoQueryNodeElemMatch(
+                        new MongoQueryNodeCond(ConditionType.Equals, new Integer(1))))
+        var res = MongoQueryNode.fusionQueries(List(node))
+        println(res)
+        assertEquals(res.size, 1)
+        assertEquals(cleanString(res(0).toString), cleanString("'a': {$elemMatch: {$eq: 1}}"))
+        
+        println("------------------------------")
+        val node2: MongoQueryNode =
+            new MongoQueryNodeCompare("a",  MongoQueryNodeCompare.Operator.SIZE, "10")
+        res = MongoQueryNode.fusionQueries(List(node, node2))
+        println(res)
+        assertEquals(res.size, 1)
+        assertEquals(cleanString(res(0).toString), cleanString("'a': {$elemMatch: {$eq: 1}, $size: 1}"))
+    }
+
 }

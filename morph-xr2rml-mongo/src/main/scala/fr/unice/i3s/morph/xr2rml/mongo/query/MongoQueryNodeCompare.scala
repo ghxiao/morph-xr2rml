@@ -16,7 +16,7 @@ class MongoQueryNodeCompare(val path: String, val operator: MongoQueryNodeCompar
         } else false
     }
 
-    override def toQueryStringNotFirst() = {
+    override def toString() = {
         if (operator == MongoQueryNodeCompare.Operator.REGEX)
             "'" + dotNotedPath + "': {" + operator.toString() + ": /" + value + "/}"
         else

@@ -16,21 +16,7 @@ class MongoQueryNodeElemMatch(val members: List[MongoQueryNode]) extends MongoQu
         q.isInstanceOf[MongoQueryNodeElemMatch] && this.members == q.asInstanceOf[MongoQueryNodeElemMatch].members
     }
 
-    override def toQueryStringNotFirst() = {
-        var membersStr = ""
-        var first = true
-
-        for (mb <- members) {
-            if (first) {
-                first = false
-                membersStr = mb.toString
-            } else
-                membersStr += ", " + mb.toString
-
-        }
-
-        "$elemMatch: {" + membersStr + "}"
-    }
+    override def toString() = { "$elemMatch: {" + members.mkString(", ") + "}" }
 
     /**
      * Pull up members of an AND as members of the ELEMMATCH

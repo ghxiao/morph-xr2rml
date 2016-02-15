@@ -14,20 +14,7 @@ class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode
         q.isInstanceOf[MongoQueryNodeOr] && this.members == q.asInstanceOf[MongoQueryNodeOr].members
     }
 
-    override def toQueryStringNotFirst() = {
-        var str = "$or: ["
-
-        var first = true
-        members.foreach(m => {
-            if (first)
-                first = false
-            else
-                str += ", "
-            str += "{" + m + "}"
-        })
-        str += "]"
-        str
-    }
+    override def toString() = { "$or: [{" + members.mkString("}, {") + "}]" }
 
     /**
      * Flatten several nested ORs into a single one
@@ -117,9 +104,9 @@ class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode
 
     /**
      * Rule w1: OR(A1,...An, W) <=> UNION(OR(A1,...An), W)
-     * 
+     *
      * If this OR node has no WHERE, then it is returned. Otherwise a UNION is returned.
-     * 
+     *
      */
     def rewriteOrWhere: MongoQueryNode = {
         if (this.hasWhere) {

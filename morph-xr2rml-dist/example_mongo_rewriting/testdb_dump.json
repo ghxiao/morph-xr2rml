@@ -23,4 +23,3 @@ db.movies2.insert([
 ])
 db.movies2.find()
 
-

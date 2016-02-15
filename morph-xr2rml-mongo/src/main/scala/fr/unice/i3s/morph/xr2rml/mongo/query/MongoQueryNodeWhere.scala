@@ -14,5 +14,5 @@ class MongoQueryNodeWhere(val cond: String) extends MongoQueryNode {
         q.isInstanceOf[MongoQueryNodeWhere] && this.cond == q.asInstanceOf[MongoQueryNodeWhere].cond
     }
 
-    override def toQueryStringNotFirst() = { "$where: " + "'" + cond.replace("'", "\"") + "'" }
+    override def toString = { "$where: " + "'" + cond.replace("'", "\"") + "'" }
 }

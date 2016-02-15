@@ -12,5 +12,5 @@ class MongoQueryNodeExists(val path: String) extends MongoQueryNode {
         q.isInstanceOf[MongoQueryNodeExists] && this.path == q.asInstanceOf[MongoQueryNodeExists].path
     }
 
-    override def toQueryStringNotFirst() = { "'" + dotNotedPath + "': {$exists: true}" }
+    override def toString() = { "'" + dotNotedPath + "': {$exists: true}" }
 }

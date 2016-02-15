@@ -19,20 +19,7 @@ class MongoQueryNodeUnion(val members: List[MongoQueryNode]) extends MongoQueryN
     /**
      * This method is for debug purpose only since it returns a string that is not a valid MongoDB query
      */
-    override def toQueryStringNotFirst() = {
-        var str = "UNION: ["
-
-        var first = true
-        members.foreach(m => {
-            if (first)
-                first = false
-            else
-                str += ", "
-            str += "{" + m + "}"
-        })
-        str += "]"
-        str
-    }
+    override def toString() = { "UNION: [{" + members.mkString("}, {") + "}]" }
 
     /**
      * Group WHEREs:

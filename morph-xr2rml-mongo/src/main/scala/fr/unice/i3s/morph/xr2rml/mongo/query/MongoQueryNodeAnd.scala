@@ -16,20 +16,7 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
 
     def queryMembersToString: String = { members.mkString(", ") }
 
-    override def toQueryStringNotFirst() = {
-
-        var str = ""
-        var first = true
-        members.foreach(m => {
-            if (first)
-                first = false
-            else
-                str += ", "
-            str += "{" + m + "}"
-        })
-
-        "$and: [" + str + "]"
-    }
+    override def toString() = { "$and: [{" + members.mkString("}, {") + "}]" }
 
     /**
      * Flatten several nested ANDs into a single one

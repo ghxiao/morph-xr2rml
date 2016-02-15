@@ -245,15 +245,32 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(res.queries.isEmpty)
     }
 
+    @Test def test_toConcreteQueries_Field() {
+        println("------ test_toConcreteQueries_Field")
+        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCond(ConditionType.Equals, "bbb")), None)
+        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")), None)
+
+        println("---------------------------------")
+        var fromPart = new MongoDBQuery("collection", "tititutu")
+        var result = queryTranslator.toConcreteQueries(fromPart, List(field))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("tititutu"))
+        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+    }
+
     @Test def test_toConcreteQueries() {
+        println("------ test_toConcreteQueries")
         var fromPart = new MongoDBQuery("collection", "tititutu")
 
         val compare = new MongoQueryNodeCompare("a", MongoQueryNodeCompare.Operator.GT, "10")
-        val field = new MongoQueryNodeField("b", new MongoQueryNodeCond(ConditionType.Equals, "bbb"), None)
+        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCond(ConditionType.Equals, "bbb")), None)
+        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")), None)
         val exists1 = new MongoQueryNodeExists("c")
         val exists2 = new MongoQueryNodeExists("d")
         val or = new MongoQueryNodeOr(List(exists1, exists2))
         val and = new MongoQueryNodeAnd(List(compare, field))
+        val and2 = new MongoQueryNodeAnd(List(compare, field2))
         val union = new MongoQueryNodeUnion(List(compare, or))
 
         println("---------------------------------")
@@ -263,6 +280,14 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(cleanString(result(0).query).contains("tititutu"))
         assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
         assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+
+        println("---------------------------------")
+        result = queryTranslator.toConcreteQueries(fromPart, List(and2))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("tititutu"))
+        assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
+        assertTrue(cleanString(result(0).query).contains("'b.0.b':{$eq:'b0b'}"))
 
         println("---------------------------------")
         result = queryTranslator.toConcreteQueries(fromPart, List(compare, field))
