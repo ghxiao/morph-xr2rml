@@ -13,10 +13,10 @@ import org.apache.log4j.Logger
 class MongoDBQuery(
         val collection: String,
         val query: String,
-        val projection: Option[String]) {
+        val projection: String) {
 
     /** Constructor without projection */
-    def this(collection: String, query: String) = this(collection, query, None)
+    def this(collection: String, query: String) = this(collection, query, "")
 
     var iterator: Option[String] = None
 
@@ -29,7 +29,7 @@ class MongoDBQuery(
         var str = "MongoDBQuery[Collection: " + collection + ". Query: " + query
         if (iterator.isDefined)
             str = str + ". Iterator: " + iterator.get
-        if (projection.isDefined)
+        if (!projection.isEmpty)
             str = str + ". Projection: " + projection
         str + "]"
     }

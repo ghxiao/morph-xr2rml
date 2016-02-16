@@ -23,3 +23,8 @@ db.movies2.insert([
 ])
 db.movies2.find()
 
+
+
+db.movies2.find({actors: {$size: 2, $elemMatch:{$eq: "T. Leung"}}})
+
+db.movies2.find({a: {$gt: 12, $lt: 20}})

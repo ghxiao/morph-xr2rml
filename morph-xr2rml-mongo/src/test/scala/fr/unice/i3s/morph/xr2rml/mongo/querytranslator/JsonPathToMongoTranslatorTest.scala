@@ -4,11 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 
 class JsonPathToMongoTranslatorTest {
 
@@ -173,18 +173,27 @@ class JsonPathToMongoTranslatorTest {
         var cond = new MongoQueryNodeCond(ConditionType.IsNotNull, null)
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println("Query     : " + query.toString)
-        println("Projection: " + query.projection.get)
+        println("Projection: " + query.toTopLevelProjection)
         assertEquals(cleanString("'p': {$elemMatch: {$exists: true, $ne: null}}"), cleanString(query.toString))
-        assertEquals(cleanString("'p': {$slice: -10}"), cleanString(query.projection.get.toString()))
+        assertEquals(cleanString("{'p': {$slice: -10}}"), cleanString(query.toTopLevelProjection))
 
         println("-----------------------------------")
         jpExpr = """$.p[-10:].q"""
         cond = new MongoQueryNodeCond(ConditionType.Equals, "6")
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println("Query     : " + query.toString)
-        println("Projection: " + query.projection.get)
+        println("Projection: " + query.toTopLevelProjection)
         assertEquals(cleanString("'p': {$elemMatch: {'q': {$eq: '6'}}}"), cleanString(query.toString))
-        assertEquals(cleanString("'p': {$slice: -10}"), cleanString(query.projection.get.toString()))
+        assertEquals(cleanString("{'p': {$slice: -10}}"), cleanString(query.toTopLevelProjection))
+
+        println("-----------------------------------")
+        jpExpr = """$.p[-10:].q"""
+        cond = new MongoQueryNodeCond(ConditionType.Equals, "6")
+        query = JsonPathToMongoTranslator.trans(jpExpr, cond, List(new MongoQueryProjectionArraySlice("a", "99")))
+        println("Query     : " + query.toString)
+        println("Projection: " + query.toTopLevelProjection)
+        assertEquals(cleanString("'p': {$elemMatch: {'q': {$eq: '6'}}}"), cleanString(query.toString))
+        assertEquals(cleanString("{'a': {$slice: 99}, 'p': {$slice: -10}}"), cleanString(query.toTopLevelProjection))
     }
 
     @Test def test_R5b() {
@@ -194,27 +203,27 @@ class JsonPathToMongoTranslatorTest {
         var cond = new MongoQueryNodeCond(ConditionType.Equals, "6")
         var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println("Query     : " + query.toString)
-        println("Projection: " + query.projection.get)
+        println("Projection: " + query.toTopLevelProjection)
         assertEquals(cleanString("'p': {$elemMatch: {$eq: '6'}}"), cleanString(query.toString))
-        assertEquals(cleanString("'p': {$slice: 10}"), cleanString(query.projection.get.toString()))
+        assertEquals(cleanString("{'p': {$slice: 10}}"), cleanString(query.toTopLevelProjection))
 
         println("-----------------------------------")
         jpExpr = """$.p[:10]"""
         cond = new MongoQueryNodeCond(ConditionType.Equals, "6")
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println("Query     : " + query.toString)
-        println("Projection: " + query.projection.get)
+        println("Projection: " + query.toTopLevelProjection)
         assertEquals(cleanString("'p': {$elemMatch: {$eq: '6'}}"), cleanString(query.toString))
-        assertEquals(cleanString("'p': {$slice: 10}"), cleanString(query.projection.get.toString()))
+        assertEquals(cleanString("{'p': {$slice: 10}}"), cleanString(query.toTopLevelProjection))
 
         println("-----------------------------------")
         jpExpr = """$.p[:10].q"""
         cond = new MongoQueryNodeCond(ConditionType.IsNotNull, null)
         query = JsonPathToMongoTranslator.trans(jpExpr, cond)
         println("Query     : " + query.toString)
-        println("Projection: " + query.projection.get)
+        println("Projection: " + query.toTopLevelProjection)
         assertEquals(cleanString("'p': {$elemMatch: {'q': {$exists: true, $ne: null}}}"), cleanString(query.toString))
-        assertEquals(cleanString("'p': {$slice: 10}"), cleanString(query.projection.get.toString()))
+        assertEquals(cleanString("{'p': {$slice: 10}}"), cleanString(query.toTopLevelProjection))
     }
 
     @Test def test_R6b() {

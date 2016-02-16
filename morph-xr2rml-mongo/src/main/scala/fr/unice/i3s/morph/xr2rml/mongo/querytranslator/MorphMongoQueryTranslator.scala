@@ -117,7 +117,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 if (iter.isDefined) cond.reference.replace("$", iter.get)
                 else cond.reference
 
-            // Run the translation into an abstract MongoDB query
+            // Translate the condition on a JSONPath reference into an abstract MongoDB query (a MongoQueryNode)
             cond.condType match {
                 case ConditionType.IsNotNull =>
                     JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.IsNotNull, null))
@@ -130,7 +130,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         if (logger.isTraceEnabled())
             logger.trace("Conditions translated to abstract MongoDB query:\n" + absQueries)
 
-            // Create the concrete queries from the set of abstract MongoDB queries
+        // Create the concrete queries from the set of abstract MongoDB queries
         val queries = toConcreteQueries(fromPart, absQueries).map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, Some(tm)))
 
         if (logger.isDebugEnabled())
@@ -405,7 +405,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * Translate a set of non-optimized MongoQueryNode instances into one or more optimized concrete MongoDB queries.
      *
      * All MongoQueryNodes are grouped under a top-level AND query, unless there is only one condition.
-     * Then the query is optimized, which may come up with a top-level UNION.
+     * Then the query is optimized, which may generate a top-level UNION.
      *
      * A query string is generated, that contains the initial query string from the logical source.
      * A UNION is translated into several concrete queries, for any other type of query only one query string is returned.
@@ -425,11 +425,11 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         if (logger.isTraceEnabled())
             logger.trace("Condtion set was translated into: " + Q)
 
-        // @TODO If the query is an AND, merge its members that have a common root JSON field
-        // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}, which is not possible so far
-        // due to the way the MongoQueryNodeField is designed: it can have only one condition.
+        // If the query is an AND, merge its FIELD nodes that have the same path
+        // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}
         // Example 2. AND('a.b':{$elemMatch:{Q1}}, 'a.b':{$elemMatch:{Q2}}) => 'a.b': {$elemMatch:{$and:[{Q1},{Q2}]}}.
-        // Need to continue function MongoQueryNode.fusionQueries()
+        if (Q.isAnd)
+            Q = new MongoQueryNodeAnd(MongoQueryNode.fusionQueries(Q.asInstanceOf[MongoQueryNodeAnd].members))
 
         val Qstr: List[MongoDBQuery] =
             if (Q.isUnion)
@@ -439,11 +439,14 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                     q => new MongoDBQuery(
                         fromPart.collection,
                         q.toTopLevelQuery(fromPart.query),
-                        q.projection.map(o => o.toString)))
+                        q.toTopLevelProjection))
             else
                 // If no UNION, convert to a query string, add the query from the logical source, and create a MongoDBQuery instance
-                List(new MongoDBQuery(fromPart.collection, Q.toTopLevelQuery(fromPart.query), Q.projection.map(o => o.toString)))
-                
+                List(new MongoDBQuery(
+                    fromPart.collection,
+                    Q.toTopLevelQuery(fromPart.query),
+                    Q.toTopLevelProjection))
+
         if (logger.isTraceEnabled())
             logger.trace("Final set of concrete queries: [" + Qstr + "]")
         Qstr

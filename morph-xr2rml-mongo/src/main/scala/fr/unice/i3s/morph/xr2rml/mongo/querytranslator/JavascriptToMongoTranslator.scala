@@ -2,17 +2,19 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
 import org.mozilla.javascript.Token
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExpr
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExprFactory
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 
 /**
  * In the process of translating a JSONPath expression and a top-level condition into a MongoDB query,
@@ -109,7 +111,7 @@ object JavascriptToMongoTranslator {
             val source = jsExpr.astNode.toSource
             if (source.startsWith("this")) {
                 if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j3")
-                return new MongoQueryNodeExists(source.substring(4)) // skip the "this"
+                return new MongoQueryNodeField(source.substring(4), new MongoQueryNodeExists) // skip the "this"
             }
         }
 
@@ -120,7 +122,7 @@ object JavascriptToMongoTranslator {
                 val source = jsExpr.astNode.toSource
                 if (source.startsWith("!this")) {
                     if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j4")
-                    return new MongoQueryNodeNotExists(source.substring(5)) // skip the "!this"
+                    return new MongoQueryNodeField(source.substring(5), new MongoQueryNodeNotExists) // skip the "!this"
                 }
             }
         }
@@ -147,10 +149,11 @@ object JavascriptToMongoTranslator {
                 val pathSrc = path.astNode.toSource
                 if (pathSrc.startsWith("this") && pathSrc.endsWith(".length") && !pathSrc.equals("this.length")) {
                     if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j5")
-                    return new MongoQueryNodeCompare(
+                    return new MongoQueryNodeField(
                         pathSrc.substring(4, pathSrc.indexOf(".length")), // skip the "this" and stop before the .length
-                        MongoQueryNodeCompare.Operator.SIZE,
-                        value.astNode.toSource)
+                        new MongoQueryNodeCompare(
+                            MongoQueryNodeCompare.Operator.SIZE,
+                            value.astNode.toSource))
                 }
             }
         }
@@ -203,10 +206,12 @@ object JavascriptToMongoTranslator {
                 }
 
                 if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j6")
-                return new MongoQueryNodeCompare(
+
+                return new MongoQueryNodeField(
                     path.astNode.toSource.substring(4), // skip the "this"
-                    transJsOpToMongo(jsExpr.getType),
-                    value.astNode.toSource)
+                    new MongoQueryNodeCompare(
+                        transJsOpToMongo(jsExpr.getType),
+                        value.astNode.toSource))
             }
         }
 

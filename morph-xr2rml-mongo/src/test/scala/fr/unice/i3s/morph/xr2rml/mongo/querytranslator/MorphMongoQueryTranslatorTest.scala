@@ -2,8 +2,8 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.junit.Assert
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
@@ -13,13 +13,16 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjection
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 
 class MorphMongoQueryTranslatorTest {
 
@@ -247,8 +250,8 @@ class MorphMongoQueryTranslatorTest {
 
     @Test def test_toConcreteQueries_Field() {
         println("------ test_toConcreteQueries_Field")
-        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCond(ConditionType.Equals, "bbb")), None)
-        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")), None)
+        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCond(ConditionType.Equals, "bbb")))
+        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")))
 
         println("---------------------------------")
         var fromPart = new MongoDBQuery("collection", "tititutu")
@@ -263,26 +266,17 @@ class MorphMongoQueryTranslatorTest {
         println("------ test_toConcreteQueries")
         var fromPart = new MongoDBQuery("collection", "tititutu")
 
-        val compare = new MongoQueryNodeCompare("a", MongoQueryNodeCompare.Operator.GT, "10")
-        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCond(ConditionType.Equals, "bbb")), None)
-        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")), None)
-        val exists1 = new MongoQueryNodeExists("c")
-        val exists2 = new MongoQueryNodeExists("d")
+        val compare = new MongoQueryNodeField("a", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))
+        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")))
+        val exists1 = new MongoQueryNodeField("c", new MongoQueryNodeExists)
+        val exists2 = new MongoQueryNodeField("d", new MongoQueryNodeExists)
         val or = new MongoQueryNodeOr(List(exists1, exists2))
-        val and = new MongoQueryNodeAnd(List(compare, field))
         val and2 = new MongoQueryNodeAnd(List(compare, field2))
         val union = new MongoQueryNodeUnion(List(compare, or))
 
         println("---------------------------------")
-        var result = queryTranslator.toConcreteQueries(fromPart, List(and))
-        println(result)
-        assertTrue(result.size == 1)
-        assertTrue(cleanString(result(0).query).contains("tititutu"))
-        assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
-        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
-
-        println("---------------------------------")
-        result = queryTranslator.toConcreteQueries(fromPart, List(and2))
+        // Remove top-level AND
+        var result = queryTranslator.toConcreteQueries(fromPart, List(and2))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -290,30 +284,85 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(cleanString(result(0).query).contains("'b.0.b':{$eq:'b0b'}"))
 
         println("---------------------------------")
-        result = queryTranslator.toConcreteQueries(fromPart, List(compare, field))
+        result = queryTranslator.toConcreteQueries(fromPart, List(compare, field2))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
         assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
-        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+        assertTrue(cleanString(result(0).query).contains("'b.0.b':{$eq:'b0b'}"))
 
         println("---------------------------------")
-        result = queryTranslator.toConcreteQueries(fromPart, List(or, and))
+        // Remove top-level AND from AND(OR, AND)
+        result = queryTranslator.toConcreteQueries(fromPart, List(or, and2))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
         assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
-        assertTrue(cleanString(result(0).query).contains("'b':{$eq:'bbb'}"))
+        assertTrue(cleanString(result(0).query).contains("'b.0.b':{$eq:'b0b'}"))
         assertTrue(cleanString(result(0).query).contains("$or:[{'c':{$exists:true}},{'d':{$exists:true}}]"))
 
         println("---------------------------------")
+        // Top-level UNION
         result = queryTranslator.toConcreteQueries(fromPart, List(union))
         println(result)
         assertTrue(result.size == 2)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
-        assertTrue(cleanString(result(1).query).contains("tititutu"))
         assertTrue(cleanString(result(0).query).contains("'a':{$gt:10}"))
+        assertTrue(cleanString(result(1).query).contains("tititutu"))
         assertTrue(cleanString(result(1).query).contains("$or:[{'c':{$exists:true}},{'d':{$exists:true}}]"))
+    }
+
+    @Test def test_toConcreteQueries_FusionQueries() {
+        println("------ test_toConcreteQueries_FusionQueries")
+        var fromPart = new MongoDBQuery("collection", "")
+
+        val compare = new MongoQueryNodeField("a.b", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))
+        val exists = new MongoQueryNodeField("a.b", new MongoQueryNodeExists)
+        val field = new MongoQueryNodeField("c", List(new MongoQueryNodeCond(ConditionType.Equals, "ccc")))
+
+        println("---------------------------------")
+        var result = queryTranslator.toConcreteQueries(fromPart, List(compare, field, exists))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("'a.b':{$gt:10,$exists:true}"))
+        assertTrue(cleanString(result(0).query).contains("'c':{$eq:'ccc'}"))
+
+        println("---------------------------------")
+        result = queryTranslator.toConcreteQueries(fromPart, List(compare, field, exists))
+        println(result)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("'a.b':{$gt:10,$exists:true}"))
+        assertTrue(cleanString(result(0).query).contains("'c':{$eq:'ccc'}"))
+
+    }
+
+    @Test def test_toConcreteQueries_FusionQueries_ElemMatch() {
+        println("------ test_toConcreteQueries_FusionQueries_ElemMatch")
+        var fromPart = new MongoDBQuery("collection", "")
+
+        val elemmatch = new MongoQueryNodeField(
+            "a.b",
+            List(new MongoQueryNodeElemMatch(new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))),
+            List(new MongoQueryProjectionArraySlice("a.b", "10")))
+        val elemmatch2 = new MongoQueryNodeField(
+            "a.b", new MongoQueryNodeElemMatch(new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.LT, "20")))
+        val arraysize = new MongoQueryNodeField(
+            "a.b", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.SIZE, "99"))
+
+        // 2 arrays with one slice
+        var result = queryTranslator.toConcreteQueries(fromPart, List(elemmatch, elemmatch2))
+        println(result(0).toString)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("{'a.b':{$elemMatch:{$gt:10,$lt:20}}}"))
+        assertTrue(cleanString(result(0).projection).contains("{'a.b':{$slice:10}}"))
+
+        println("---------------------------------")
+        // 2 arrays with one slice and one size
+        result = queryTranslator.toConcreteQueries(fromPart, List(elemmatch, elemmatch2, arraysize))
+        println(result(0).toString)
+        assertTrue(result.size == 1)
+        assertTrue(cleanString(result(0).query).contains("{'a.b':{$size:99,$elemMatch:{$gt:10,$lt:20}}}"))
+        assertTrue(cleanString(result(0).projection).contains("{'a.b':{$slice:10}}"))
     }
 
     @Test def test_full() {

@@ -10,7 +10,7 @@ abstract class MongoQueryNode {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
-    var projection: Option[MongoQueryProjection] = None
+    var projection: List[MongoQueryProjection] = List.empty
 
     /** Is the current abstract node a FIELD node? */
     def isField: Boolean = false
@@ -38,14 +38,16 @@ abstract class MongoQueryNode {
      * implicitly makes an AND between the fields of the top-level query document.
      *
      * @param fromPart the query string that comes from the logical source of the triples map,
-     * to be appended to the query we will produce from this MongoQueryNode instance
+     * to be appended to the query we will produce from this MongoQueryNode instance .
+     * It must not be in '{' and '}'.
+     * @return query part of the MongoDB collection.find() method
      */
     def toTopLevelQuery(fromPart: String): String = {
         val from =
             if (fromPart.isEmpty) ""
             else fromPart + ", "
 
-        if (this.isAnd)
+        if (this.isAnd) // replace the top-level AND by its members
             "{" + from + this.asInstanceOf[MongoQueryNodeAnd].queryMembersToString + "}"
         else if (this.isInstanceOf[MongoQueryNodeNotSupported])
             "{" + from + "}"
@@ -57,10 +59,21 @@ abstract class MongoQueryNode {
 
     /**
      * Build the concrete query string corresponding to that abstract query object
-     * when it is a top-level query object, either the root, or it is inside
-     * an AND, OR, ELEMMATCH or UNION.
+     * when it is a top-level query object.
+     * The result does not contain the encapsulating '{ and '}' of a final query string.
      */
     def toString(): String
+
+    /**
+     * Build the concrete projection part of the MongoDB collection.find() method.
+     * The result does contains encapsulating '{ and '}'.
+     */
+    def toTopLevelProjection(): String = {
+        if (this.isAnd) // replace the top-level AND by its members 
+            "{" + this.asInstanceOf[MongoQueryNodeAnd].members.flatMap(_.projection).mkString(", ") + "}"
+        else
+            "{" + this.projection.mkString(", ") + "}"
+    }
 
     /**
      * Apply optimizations to the query repeatedly, and try to pull up WHERE nodes,
@@ -125,7 +138,7 @@ abstract class MongoQueryNode {
                 if (optMembers.isEmpty)
                     new MongoQueryNodeNotSupported("Empty FIELD after removing a NOT_SUPPORTED")
                 else
-                    new MongoQueryNodeField(a.field, optMembers, a.arraySlice)
+                    new MongoQueryNodeField(a.path, optMembers, a.projection)
             }
 
             case a: MongoQueryNodeElemMatch => {
@@ -257,32 +270,33 @@ object MongoQueryNode {
     }
 
     /**
-     * Makes the fusion of a set of MongoQueryNode: when several queries of type FIELD have the same field
-     * (their path), they are fusioned into a single FIELD query.
+     * Makes the fusion of a set of MongoQueryNode: when several queries of type FIELD have the same path,
+     * they are fusioned into a single FIELD query.
      */
     def fusionQueries(qs: List[MongoQueryNode]): List[MongoQueryNode] = {
         if (qs.isEmpty || qs.length == 1)
             return qs
         else {
+            // Select all nodes that are not FIELDs
             val qsNonFields = qs.filterNot(_.isField)
 
+            // Select all FIELD nodes that have the same path as the first FIELD node
             val qsFields = qs.filter(_.isField).map(_.asInstanceOf[MongoQueryNodeField])
-
-            // Select all FIELDs that have the same field (the path) as the first one
             val fieldHead = qsFields.head
-            val fieldsWithSamePath = qsFields.tail.filter(f => f.field == fieldHead.field)
+            val fieldsWithSamePath = qsFields.tail.filter(f => f.path == fieldHead.path)
 
-            // Select all FIELDs that have a different field (the path) from the first one
-            val fieldsWithOtherPath = qsFields.tail.filterNot(f => f.field == fieldHead.field)
+            // Select all FIELD nodes that have a different path from the first FIELD node
+            val fieldsWithOtherPath = qsFields.tail.filterNot(f => f.path == fieldHead.path)
+
             // Result: 
             qsNonFields ++ // all non-field elements
-                (fusionQueries(fieldsWithOtherPath) // all other field elements fusioned when possible
-                    :+ fusionFields(fieldHead +: fieldsWithSamePath)) // fusion of all field elements that have the same field as the first one
+                (fusionQueries(fieldsWithOtherPath) // all other FIELD nodes fusioned when possible
+                    :+ fusionFields(fieldHead +: fieldsWithSamePath)) // fusion of all FIELD nodes that have the same path as the first FIELD
         }
     }
 
     /**
-     * Merge several queries of type FIELD that have the same field (their path).
+     * Merge several queries of type FIELD that have the same path.
      * Examples:
      * 	q1: 'a': {$gt:10}
      * 	q2: 'a': {$lt:20}
@@ -292,7 +306,7 @@ object MongoQueryNode {
      * 	q2: 'a.b': {$elemMatch:{B}}
      * 		=> 'a.b': {$size:10, $elemMatch:{A, B}}
      *
-     *  If all FIELD queries do not have the field then an exception is thrown.
+     *  If all FIELD nodes do not have the path then an exception is thrown.
      */
     private def fusionFields(q: List[MongoQueryNodeField]): MongoQueryNodeField = {
         var q1 = q.head
@@ -312,10 +326,10 @@ object MongoQueryNode {
      * 	q2: 'a.b': {$elemMatch:{B}}
      * 		=> 'a.b': {$size:10, $elemMatch:{A, B}}
      *
-     *  If the 2 FIELD queries do not have the same field (the path) then an exception is thrown.
+     *  If the 2 FIELD nodes do not have the same path then an exception is thrown.
      */
     private def fusionTwoFields(q1: MongoQueryNodeField, q2: MongoQueryNodeField): MongoQueryNodeField = {
-        if (q1.field != q2.field)
+        if (q1.path != q2.path)
             throw new MorphException("Error: both queries should have the same field name. Mistaken call.")
 
         // Group all ELEMMATCH members into a single ELEMMATCH
@@ -325,7 +339,11 @@ object MongoQueryNode {
         // Group all non-ELEMMATCH members of q1 and q2 in a single list
         val q1_NEM = q1.members.filterNot(_.isElemMatch) ++ q2.members.filterNot(_.isElemMatch)
 
-        // Build a new FIELD replacing q1 and q2
-        new MongoQueryNodeField(q1.field, q1_NEM ++ all_EM_members, None)
+        // Build a new FIELD that will replace q1 and q2, 
+        // in which the ELEMMATCH nodes of q1 and q2 are grouped in a single one
+        if (!all_EM_members.isEmpty)
+            new MongoQueryNodeField(q1.path, q1_NEM :+ new MongoQueryNodeElemMatch(all_EM_members), q1.projection ++ q2.projection)
+        else
+            new MongoQueryNodeField(q1.path, q1_NEM, q1.projection ++ q2.projection)
     }
 }

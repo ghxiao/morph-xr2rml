@@ -20,10 +20,16 @@ Indeed it requires to "revert" expressions such as JSONPath or XPath to retrieve
 
 ### Publications
 F. Michel, C. Faron-Zucker, and J. Montagnat. A Generic Mapping-Based Query Translation from SPARQL to Various Target Database Query Languages.
-In Proceedings of the WebIST Conference, 2016.
+In Proceedings of the 12th WebIST Conference, 2016.
 
-F. Michel, C. Faron-Zucker, and J. Montagnat. Mapping-based SPARQL access to a MongoDB database. Technical report, CNRS, 2016.
+F. Michel, C. Faron-Zucker, and J. Montagnat. Mapping-based SPARQL access to a MongoDB database. Technical report, CNRS, 2016. 
 https://hal.archives-ouvertes.fr/hal-01245883.
+
+F. Michel, L. Djimenou, C. Faron-Zucker, and J. Montagnat. Translation of Relational and Non-Relational Databases into RDF with xR2RML.
+In Proceedings of the 11th WebIST Conference, 2015.
+
+F. Michel, L. Djimenou, C. Faron-Zucker, and J. Montagnat. xR2RML: Relational and Non-Relational Databases to RDF Mapping Language.
+Technical report, CNRS, 2015. https://hal.archives-ouvertes.fr/hal-01066663
 
 ## Build
 

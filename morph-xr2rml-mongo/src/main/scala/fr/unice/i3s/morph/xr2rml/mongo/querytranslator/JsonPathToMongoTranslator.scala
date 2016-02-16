@@ -1,9 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
-import scala.util.matching.Regex.Match
-
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
@@ -16,6 +13,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjection
 
 /**
  * This object implements the algorithm that translates a condition on a JSONPath expression
@@ -141,12 +139,12 @@ object JsonPathToMongoTranslator {
      */
     def trans(jpPath: String, cond: MongoQueryNodeCond): MongoQueryNode = {
         val path = if (jpPath == null) "" else jpPath
-        transJsonPathToMongo(path, cond, None)
+        transJsonPathToMongo(path, cond, List.empty)
     }
 
-    def trans(jpPath: String, cond: MongoQueryNodeCond, arraySlice: Option[MongoQueryProjectionArraySlice]): MongoQueryNode = {
+    def trans(jpPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): MongoQueryNode = {
         val path = if (jpPath == null) "" else jpPath
-        transJsonPathToMongo(path, cond, arraySlice)
+        transJsonPathToMongo(path, cond, projection)
     }
 
     /**
@@ -155,12 +153,12 @@ object JsonPathToMongoTranslator {
      *
      * @param jpPath the JSONPath to translate, may be empty but NOT null
      * @param cond the isNotNull or Equals condition
-     * @param arraySlice applies to a field (R8) when we have detected an array slice notation (call from R5)
+     * @param projection applies to a field (R8) when we have detected an array slice notation (call from R5)
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
      * The result CAN'T be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
      */
-    private def transJsonPathToMongo(jpPath: String, cond: MongoQueryNodeCond, arraySlice: Option[MongoQueryProjectionArraySlice]): MongoQueryNode = {
-        if (logger.isTraceEnabled()) logger.trace("trans([" + jpPath + "], [" + cond + "], [" + arraySlice + "])")
+    private def transJsonPathToMongo(jpPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): MongoQueryNode = {
+        if (logger.isTraceEnabled()) logger.trace("trans([" + jpPath + "], [" + cond + "], [" + projection + "])")
 
         // Clean string: remove spaces, use only double-quotes
         val path = jpPath.trim().replace("'", "\"").replaceAll("""\p{Space}""", "")
@@ -189,7 +187,7 @@ object JsonPathToMongoTranslator {
             if (path.length == 1)
                 return new MongoQueryNodeNotSupported(path)
             else
-                return trans(path.substring(1), cond)
+                return trans(path.substring(1), cond, projection)
         }
 
         // ------ Rule R2: Field alternative (a) or array index alternative (b)
@@ -206,7 +204,7 @@ object JsonPathToMongoTranslator {
                 // ------ Rule R2a:
                 // trans(<JP:F>["p","q",...]<JP>, <cond>) ->
                 //       OR(trans(<JP:F>.p<JP>, <cond>), trans(<JP:F>.q<JP>, <cond>), ...)
-                var result = translateFieldAlternative(match0, after_match0.toString(), cond)
+                var result = translateFieldAlternative(match0, after_match0.toString(), cond, projection)
                 if (result.isDefined) {
                     if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R2a")
                     return result.get
@@ -215,7 +213,7 @@ object JsonPathToMongoTranslator {
                 // ------ Rule R2b:
                 // trans(<JP:F>[i,j,...]<JP>, <cond>) ->
                 //       OR(trans(<JP:F>.i<JP>, <cond>), trans(<JP:F>.j<JP>, <cond>), ...)
-                result = translateArrayIndexAlternative(match0, after_match0.toString(), cond)
+                result = translateArrayIndexAlternative(match0, after_match0.toString(), cond, projection)
                 if (result.isDefined) {
                     if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R2b")
                     return result.get
@@ -228,7 +226,7 @@ object JsonPathToMongoTranslator {
             // ------ Rule R3a:
             // trans(["p","q",...]<JP>, <cond>) ->
             //       OR( trans(.p<JP>, <cond>), trans(.q<JP>, <cond>), ... )
-            var result = translateFieldAlternative("", path, cond)
+            var result = translateFieldAlternative("", path, cond, projection)
             if (result.isDefined) {
                 if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R3a")
                 return result.get
@@ -237,7 +235,7 @@ object JsonPathToMongoTranslator {
             // ------ Rule R3b:
             // trans([1,3,...]<JP>, <cond>) ->
             //       OR( trans(.1<JP>, <cond>), trans(.3<JP>, <cond>), ... )
-            result = translateArrayIndexAlternative("", path, cond)
+            result = translateArrayIndexAlternative("", path, cond, projection)
             if (result.isDefined) {
                 if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R3b")
                 return result.get
@@ -266,12 +264,12 @@ object JsonPathToMongoTranslator {
                 if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule R4")
                 val transJsBoolExpr = JavascriptToMongoTranslator.transJS(replaceAt("this", match0))
                 if (transJsBoolExpr.isDefined) {
-                    val members = List(trans(after_match0.toString, cond), transJsBoolExpr.get)
+                    val members = List(trans(after_match0.toString, cond, projection), transJsBoolExpr.get)
                     if (logger.isTraceEnabled()) logger.trace("Rule 4, ELEMMATCH members: " + members.map(m => m.toString))
                     return new MongoQueryNodeElemMatch(members)
                 } else {
                     logger.error("Rule R4: JS expression [" + match0 + "] could not be translated into a MongoDB query. Ignoring it.")
-                    return trans(after_match0.toString, cond)
+                    return trans(after_match0.toString, cond, projection)
                 }
             }
         }
@@ -308,9 +306,8 @@ object JsonPathToMongoTranslator {
                             None
                     }
                 }
-
                 if (arraySliceNode.isDefined)
-                    return trans(match0.toString + ".*" + after_match1, cond, arraySliceNode)
+                    return trans(match0.toString + ".*" + after_match1, cond, projection :+ arraySliceNode.get)
             }
         }
 
@@ -352,7 +349,7 @@ object JsonPathToMongoTranslator {
                         // Rule R6b - Build the AND query operator
                         if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule R6b")
                         val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + condJS(cond))
-                        val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
+                        val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeExists), wherePart)
                         if (logger.isTraceEnabled()) logger.trace("Rule R6b, AND members: " + andMembers.map(m => m.toString))
                         return new MongoQueryNodeAnd(andMembers)
                     } else {
@@ -369,7 +366,7 @@ object JsonPathToMongoTranslator {
                             // Rule R6c - Build the AND query operator
                             if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r6b")
                             val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + after_match1 + condJS(cond))
-                            val andMembers = List(new MongoQueryNodeExists(match0), wherePart)
+                            val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeExists), wherePart)
                             if (logger.isTraceEnabled()) logger.trace("Rule R6c, AND members: " + andMembers.map(m => m.toString))
                             return new MongoQueryNodeAnd(andMembers)
                         }
@@ -395,7 +392,7 @@ object JsonPathToMongoTranslator {
                 fieldMatch = matched(0).group(0)
                 afterMatch = matched(0).after(0).toString
                 if (logger.isTraceEnabled()) logger.trace("Rule R7, matched: " + fieldMatch + ", afterMatch: " + afterMatch);
-                return new MongoQueryNodeElemMatch(trans(afterMatch, cond))
+                return new MongoQueryNodeElemMatch(trans(afterMatch, cond, projection))
             }
         }
 
@@ -410,7 +407,7 @@ object JsonPathToMongoTranslator {
                 val match0 = match0_JPF_list(0).group(0) // Match0 is a <JP:F>
                 val after_match0 = match0_JPF_list(0).after(0).toString()
                 if (logger.isTraceEnabled()) logger.trace("Rule R8, matched: " + match0 + ", afterMatch: " + after_match0);
-                return new MongoQueryNodeField(MongoQueryNode.dotNotation(match0), List(trans(after_match0, cond)), arraySlice)
+                return new MongoQueryNodeField(match0, List(trans(after_match0, cond, projection)), projection)
             }
         }
 
@@ -429,7 +426,7 @@ object JsonPathToMongoTranslator {
      * @return a MongoQueryNode if altPath was a field alternative, none otherwise.
      * @throws MorphException in case of serious parsing issue (probably due to a mistaken call to this method)
      */
-    def translateFieldAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond): Option[MongoQueryNode] = {
+    def translateFieldAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): Option[MongoQueryNode] = {
         val pre =
             if (prePath == null || prePath.isEmpty()) ""
             else prePath
@@ -452,7 +449,7 @@ object JsonPathToMongoTranslator {
             if (logger.isTraceEnabled()) logger.trace("OR members: " + orMembers)
 
             // Run the translation of each OR member
-            Some(new MongoQueryNodeOr(orMembers.map(om => trans(om, cond))))
+            Some(new MongoQueryNodeOr(orMembers.map(om => trans(om, cond, projection))))
         } else
             None
     }
@@ -467,7 +464,7 @@ object JsonPathToMongoTranslator {
      * @result a MongoQueryNode if altPath was an array index alternative, none otherwise.
      * @throws MorphException in case of serious parsing issue (probably due to a mistaken call to this method)
      */
-    private def translateArrayIndexAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond): Option[MongoQueryNode] = {
+    private def translateArrayIndexAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): Option[MongoQueryNode] = {
         val pre =
             if (prePath == null || prePath.isEmpty()) ""
             else prePath
@@ -490,7 +487,7 @@ object JsonPathToMongoTranslator {
             if (logger.isTraceEnabled()) logger.trace("OR members: " + orMembers)
 
             // Run the translation of each OR member
-            Some(new MongoQueryNodeOr(orMembers.map(om => trans(om, cond))))
+            Some(new MongoQueryNodeOr(orMembers.map(om => trans(om, cond, projection))))
         } else
             None
     }
