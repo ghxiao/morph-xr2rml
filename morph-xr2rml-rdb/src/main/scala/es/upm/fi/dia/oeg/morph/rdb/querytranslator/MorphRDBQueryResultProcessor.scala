@@ -3,9 +3,13 @@ package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 import java.io.Writer
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
 import scala.collection.JavaConversions.asScalaBuffer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.Query
+
 import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
@@ -14,13 +18,12 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.TermMapResult
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 
 class MorphRDBQueryResultProcessor(
@@ -28,7 +31,7 @@ class MorphRDBQueryResultProcessor(
     properties: MorphProperties,
     xmlOutputStream: Writer,
     dataSourceReader: MorphBaseDataSourceReader,
-    queryTranslator: IQueryTranslator)
+    queryTranslator: MorphBaseQueryTranslator)
 
         extends MorphXMLQueryResultProcessor(
             mappingDocument: R2RMLMappingDocument,

@@ -11,15 +11,15 @@ import org.apache.log4j.Logger
 import com.hp.hpl.jena.query.Query
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseRunner(
         val mappingDocument: R2RMLMappingDocument,
         val unfolder: MorphBaseUnfolder,
         val dataTranslator: MorphBaseDataTranslator,
-        val queryTranslator: IQueryTranslator,
+        val queryTranslator: MorphBaseQueryTranslator,
         val queryResultProcessor: MorphBaseQueryResultProcessor,
         var outputStream: Writer,
         var sparqlQuery: Option[Query]) {

@@ -12,8 +12,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
@@ -65,7 +65,7 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     }
 
     override def createQueryTranslator(
-        properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): IQueryTranslator = {
+        properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): MorphBaseQueryTranslator = {
         new MorphMongoQueryTranslator(md)
     }
 
@@ -74,7 +74,7 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
         md: R2RMLMappingDocument,
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator,
-        queryTranslator: IQueryTranslator,
+        queryTranslator: MorphBaseQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor = {
         new MorphMongoQueryResultProcessor(md, properties, dataSourceReader, dataTranslator.asInstanceOf[MorphMongoDataTranslator], outputStream)
     }

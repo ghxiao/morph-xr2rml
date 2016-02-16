@@ -10,11 +10,24 @@ import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.AbstractQuery
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
  */
-abstract class MorphBaseQueryTranslator extends IQueryTranslator {
+abstract class MorphBaseQueryTranslator {
+
+    var genCnx: GenericConnection = null;
+
+    var optimizer: MorphBaseQueryOptimizer = null;
+
+    var properties: MorphProperties = null;
+
+    var databaseType: String = null;
+
+    var mappingDocument: R2RMLMappingDocument = null;
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -27,8 +40,8 @@ abstract class MorphBaseQueryTranslator extends IQueryTranslator {
      * High level entry point to the query translation process.
      *
      * @param sparqlQuery the SPARQL query to translate
-     * @return set of concrete database queries. In the RDB case, there should be only one query. 
-     * The result may be empty but not null. 
+     * @return set of concrete database queries. In the RDB case, there should be only one query.
+     * The result may be empty but not null.
      */
     def translate(sparqlQuery: Query): AbstractQuery = {
         val start = System.currentTimeMillis()

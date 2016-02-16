@@ -255,7 +255,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         var fromPart = new MongoDBQuery("collection", "tititutu")
-        var result = queryTranslator.toConcreteQueries(fromPart, List(field))
+        var result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(field))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -276,7 +276,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // Remove top-level AND
-        var result = queryTranslator.toConcreteQueries(fromPart, List(and2))
+        var result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(and2))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -284,7 +284,7 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(cleanString(result(0).query).contains("'b.0.b':{$eq:'b0b'}"))
 
         println("---------------------------------")
-        result = queryTranslator.toConcreteQueries(fromPart, List(compare, field2))
+        result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(compare, field2))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -293,7 +293,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // Remove top-level AND from AND(OR, AND)
-        result = queryTranslator.toConcreteQueries(fromPart, List(or, and2))
+        result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(or, and2))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -303,7 +303,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // Top-level UNION
-        result = queryTranslator.toConcreteQueries(fromPart, List(union))
+        result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(union))
         println(result)
         assertTrue(result.size == 2)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -321,14 +321,14 @@ class MorphMongoQueryTranslatorTest {
         val field = new MongoQueryNodeField("c", List(new MongoQueryNodeCond(ConditionType.Equals, "ccc")))
 
         println("---------------------------------")
-        var result = queryTranslator.toConcreteQueries(fromPart, List(compare, field, exists))
+        var result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(compare, field, exists))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("'a.b':{$gt:10,$exists:true}"))
         assertTrue(cleanString(result(0).query).contains("'c':{$eq:'ccc'}"))
 
         println("---------------------------------")
-        result = queryTranslator.toConcreteQueries(fromPart, List(compare, field, exists))
+        result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(compare, field, exists))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("'a.b':{$gt:10,$exists:true}"))
@@ -350,7 +350,7 @@ class MorphMongoQueryTranslatorTest {
             "a.b", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.SIZE, "99"))
 
         // 2 arrays with one slice
-        var result = queryTranslator.toConcreteQueries(fromPart, List(elemmatch, elemmatch2))
+        var result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(elemmatch, elemmatch2))
         println(result(0).toString)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("{'a.b':{$elemMatch:{$gt:10,$lt:20}}}"))
@@ -358,7 +358,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // 2 arrays with one slice and one size
-        result = queryTranslator.toConcreteQueries(fromPart, List(elemmatch, elemmatch2, arraysize))
+        result = queryTranslator.toConcreteQueries(fromPart, List.empty, List(elemmatch, elemmatch2, arraysize))
         println(result(0).toString)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("{'a.b':{$size:99,$elemMatch:{$gt:10,$lt:20}}}"))

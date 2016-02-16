@@ -3,11 +3,11 @@ package es.upm.fi.dia.oeg.morph.base.querytranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
- * <p>Abstract representation of a condition created during the rewriting process by matching terms of a triple pattern
- * with references from a term map. This class represents 2 types: Equality and Not-null.</p>
+ * Abstract representation of a condition created during the rewriting process by matching terms of a triple pattern
+ * with references from a term map. Those can be of 3 types: Equality, Not-null or SparqlFilter.
  *
- * Attribute <em>reference<em> is the reference (e.g. column name or JSONPath expression) on which the condition applies,
- * attribute <em>eqValue<em> is used in case of an Equality condition.
+ * Attribute <em>reference<em> is the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies.
+ * Attribute <em>eqValue<em> is used in case of an Equality condition.
  */
 class MorphBaseQueryCondition(
         /**
@@ -20,7 +20,7 @@ class MorphBaseQueryCondition(
         val condType: ConditionType.Value,
 
         /** The value in case of an equality condition */
-        val eqValue: Object) extends IQueryCondition {
+        val eqValue: Object) {
 
     override def toString: String = {
         condType match {
@@ -49,4 +49,8 @@ object MorphBaseQueryCondition {
     def equality(ref: String, value: String) = {
         new MorphBaseQueryCondition(ref, ConditionType.Equals, value)
     }
+}
+
+object ConditionType extends Enumeration {
+    val Equals, IsNotNull, SparqlFilter = Value
 }

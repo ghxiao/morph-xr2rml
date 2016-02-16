@@ -68,7 +68,6 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTransTPResult
-import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TriplePatternPredicateBounder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
@@ -83,6 +82,7 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.rdb.engine.NameGenerator
 
 class MorphRDBQueryTranslator(
     nameGenerator: NameGenerator,
@@ -555,7 +555,7 @@ class MorphRDBQueryTranslator(
     }
 
     private def transProject(opProject: OpProject): ISqlQuery = {
-        
+
         val selectItemGenerator = new MorphSQLSelectItemGenerator(this.nameGenerator, this.databaseType);
         val opProjectSubOp = opProject.getSubOp();
         val opProjectSubOpSQL = this.trans(opProjectSubOp);

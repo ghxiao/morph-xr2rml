@@ -12,8 +12,8 @@ import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 abstract class MorphBaseRunnerFactory {
@@ -87,14 +87,14 @@ abstract class MorphBaseRunnerFactory {
         dataSourceReader: MorphBaseDataSourceReader,
         properties: MorphProperties): MorphBaseDataTranslator
 
-    def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): IQueryTranslator
+    def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): MorphBaseQueryTranslator
 
     def createQueryResultProcessor(
         properties: MorphProperties,
         md: R2RMLMappingDocument,
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator,
-        queryTranslator: IQueryTranslator,
+        queryTranslator: MorphBaseQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor;
 
     private def buildMaterializer(configurationProperties: MorphProperties, mappingDocument: R2RMLMappingDocument, outputStream: Writer): MorphBaseMaterializer = {

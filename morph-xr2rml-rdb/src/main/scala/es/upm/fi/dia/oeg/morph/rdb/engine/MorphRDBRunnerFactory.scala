@@ -12,9 +12,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
-import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBAlphaGenerator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBBetaGenerator
@@ -64,7 +63,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
             mappingDocument, materializer, unfolder.asInstanceOf[MorphRDBUnfolder], dataSourceReader.asInstanceOf[MorphRDBDataSourceReader], properties);
     }
 
-    override def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): IQueryTranslator = {
+    override def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): MorphBaseQueryTranslator = {
 
         val queryOptimizer = new MorphRDBQueryOptimizer()
         queryOptimizer.selfJoinElimination = properties.selfJoinElimination;
@@ -81,7 +80,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         queryTranslator
     }
 
-    private def createQueryTranslator(md: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): IQueryTranslator = {
+    private def createQueryTranslator(md: R2RMLMappingDocument, conn: GenericConnection, properties: MorphProperties): MorphBaseQueryTranslator = {
 
         val unfolder = new MorphRDBUnfolder(md, properties);
 
@@ -105,7 +104,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         md: R2RMLMappingDocument,
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator,
-        queryTranslator: IQueryTranslator,
+        queryTranslator: MorphBaseQueryTranslator,
         outputStream: Writer): MorphBaseQueryResultProcessor = {
 
         val queryResultProc = new MorphRDBQueryResultProcessor(md, properties, outputStream, dataSourceReader, queryTranslator)

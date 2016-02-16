@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base.querytranslator
+package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.sparql.core.Var

@@ -1,18 +1,19 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
+
 import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
-import es.upm.fi.dia.oeg.morph.base.querytranslator.IQueryCondition
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
@@ -20,8 +21,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 
 /**
@@ -31,8 +32,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
  * has not more that one predicate-object map, and each predicate-object map has
  * exactly one predicate and one object map.
  * In the code this assumption is mentioned by the annotation @NORMALIZED_ASSUMPTION
- *
- * @TODO The management of logical source iterators is approximate, must be studied in details.
  */
 class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQueryTranslator {
 
@@ -40,8 +39,16 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
     /**
      * High level entry point to the query translation process.
-     * @TODO only the first query of the AbstractQuery result is managed for the time being
-     * @TODO the transTP does not generate an atomic abstract query for the parent triples map if any
+     *
+     * @TODO Several features are not implemented:
+     * - The rewriting only works for simple triples maps, with no referencing object map involved.
+     * The transTP does not generate an atomic abstract query for the parent triples map if any.
+     * - The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
+     * Besides only the references are listed, but they must be bound to the variable they represent
+     * (the AS of the project part) so that the INNER JOIN can be computed.
+     * - The iterator of the logical source is not taken into account when computing the WHERE part, i.e.
+     * the conditions on the JSONPath references from the mapping.
+     * - The binding of triples maps to triple patterns is static (see below).
      *
      * @return AbstractQuery instance containing a set of concrete queries.
      *
@@ -96,12 +103,12 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
         // Start translation
         val fromPart = genFrom(tm)
-        val selectPart = genProjection(tp, tm)
+        val projectPart = genProjection(tp, tm)
         val wherePart = genCond(tp, tm)
         if (logger.isDebugEnabled())
             logger.debug("transTP(" + tp + ", " + tm + "):\n" +
                 "fromPart:  " + fromPart + "\n" +
-                "selecPart: " + selectPart + "\n" +
+                "projectPart: " + projectPart + "\n" +
                 "wherePart: " + wherePart)
 
         // Select only isNotNull and Equality conditions
@@ -131,7 +138,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
             logger.trace("Conditions translated to abstract MongoDB query:\n" + absQueries)
 
         // Create the concrete queries from the set of abstract MongoDB queries
-        val queries = toConcreteQueries(fromPart, absQueries).map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, Some(tm)))
+        val queries = toConcreteQueries(fromPart, projectPart, absQueries).map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, Some(tm)))
 
         if (logger.isDebugEnabled())
             logger.debug("transTP(" + tp + ", " + tm + "):\n" + queries)
@@ -247,9 +254,9 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of conditions, either non-null or equality
      */
-    def genCond(tp: Triple, tm: R2RMLTriplesMap): List[IQueryCondition] = {
+    def genCond(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
 
-        var conditions: List[IQueryCondition] = List.empty
+        var conditions: List[MorphBaseQueryCondition] = List.empty
 
         { // === Subject map ===
             val tpTerm = tp.getSubject
@@ -330,9 +337,9 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of conditions, either non-null or equality
      */
-    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): List[IQueryCondition] = {
+    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
 
-        var conditions: List[IQueryCondition] = List.empty
+        var conditions: List[MorphBaseQueryCondition] = List.empty
 
         { // === Object map ===
             val tpTerm = tp.getObject
@@ -372,10 +379,12 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
     /**
      * Generate one equality condition between a reference in the term map (Column name, JSONPath expression...)
-     * and a term of a triple pattern.<br>
-     * If the term map is reference-valued, one equality condition is generated.<br>
+     * and a term of a triple pattern.
+     *
+     * If the term map is reference-valued, one equality condition is generated.
      * If the term map is template-value, possibly several equality conditions are generated, i.e. one for each
-     * capturing group in the template string.<br>     *
+     * capturing group in the template string.
+     *
      * Return an empty list for other types of term map.
      *
      * @param targetQuery child or parent, i.e. the query to which references of termMap relate to
@@ -411,11 +420,13 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * A UNION is translated into several concrete queries, for any other type of query only one query string is returned.
      *
      * @param fromPart the query of the logical source
+     * @param projectPart the set of xR2RML references to project. NOT MANAGED FOR NOW.
      * @param absQueries the actual set of NotNull or Equality conditions to translate into concrete MongoDB queries.
      * @return list of MongoDBQuery instances
      */
     def toConcreteQueries(
         fromPart: MongoDBQuery,
+        projectPart: List[String],
         absQueries: List[MongoQueryNode]): List[MongoDBQuery] = {
 
         // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query

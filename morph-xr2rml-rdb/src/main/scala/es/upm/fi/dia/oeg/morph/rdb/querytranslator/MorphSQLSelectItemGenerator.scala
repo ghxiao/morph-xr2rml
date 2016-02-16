@@ -6,7 +6,7 @@ import org.apache.log4j.Logger
 import com.hp.hpl.jena.graph.Node
 import scala.collection.JavaConversions._
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.base.querytranslator.NameGenerator
+import es.upm.fi.dia.oeg.morph.rdb.engine.NameGenerator
 
 class MorphSQLSelectItemGenerator(nameGenerator: NameGenerator, dbType: String) {
     val logger = Logger.getLogger("SelectItemGenerator");
