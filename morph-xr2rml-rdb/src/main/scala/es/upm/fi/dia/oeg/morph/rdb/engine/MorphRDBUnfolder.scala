@@ -13,11 +13,11 @@ import Zql.ZConstant
 import Zql.ZExpression
 import Zql.ZQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
@@ -399,7 +399,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
         logger.info("Query for triples map " + cm.id + ": " + resultAux.print(true).replaceAll("\n", " "))
 
-        new GenericQuery(Constants.DatabaseType.Relational, resultAux, None)
+        new GenericQuery(None, Constants.DatabaseType.Relational, resultAux)
     }
 
     def unfoldMappingDocument() = {

@@ -6,20 +6,14 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * Abstract representation of a condition created during the rewriting process by matching terms of a triple pattern
  * with references from a term map. Those can be of 3 types: Equality, Not-null or SparqlFilter.
  *
- * Attribute <em>reference<em> is the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies.
- * Attribute <em>eqValue<em> is used in case of an Equality condition.
+ * @param reference<em> the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies,
+ * typically the column name or JSONPath expression
+ * @param condType The type of condition
+ * @param eqValue value in case of an equality condition. Ignored in another condition type
  */
 class MorphBaseQueryCondition(
-        /**
-         * The reference on which this condition applies, typically the column name or JSONPath expression
-         * from a xrr:reference or rr:template property
-         */
         val reference: String,
-
-        /** The type of condition */
         val condType: ConditionType.Value,
-
-        /** The value in case of an equality condition */
         val eqValue: Object) {
 
     override def toString: String = {

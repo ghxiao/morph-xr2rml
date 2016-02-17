@@ -15,13 +15,13 @@ import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument

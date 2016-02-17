@@ -75,7 +75,7 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
     }
 
     def getParentTriplesMap(refObjectMap: R2RMLRefObjectMap): R2RMLTriplesMap = {
-        // Build the list of JENA resources that correspond to all triples map that are 
+        // Build the list of JENA resources that correspond to all triples maps that are
         // referenced as a parent triples map by the given referencing object map.
         val parentTripleMapResources = this.classMappings.map(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap];

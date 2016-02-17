@@ -1,12 +1,13 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.io.Writer
+
 import com.hp.hpl.jena.query.Query
+
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.AbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 
 /**
  * Abstract class for the engine that shall translate results of a SPARQL query into RDF triples
@@ -34,6 +35,6 @@ abstract class MorphBaseQueryResultProcessor(
      * Conversely, MongoDB does not support joins, therefore there may be several queries in the AbstractQuery.
      * In this case the xR2RML processor shall compute the join itself.
      */
-    def translateResult(mapSparqlSql: Map[Query, AbstractQuery])
+    def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery])
 
 }

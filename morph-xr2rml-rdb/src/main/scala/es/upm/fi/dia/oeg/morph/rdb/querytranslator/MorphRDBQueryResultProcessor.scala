@@ -3,14 +3,9 @@ package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 import java.io.Writer
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.query.Query
-
-import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
@@ -25,6 +20,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 
 class MorphRDBQueryResultProcessor(
     mappingDocument: R2RMLMappingDocument,
@@ -51,13 +48,13 @@ class MorphRDBQueryResultProcessor(
      * In the RDB case the AbstractQuery should contain only one element, since
      * the UNION is supported in SQL.<br>
      */
-    override def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
+    override def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery]) {
         val start = System.currentTimeMillis();
         var i = 0;
         mapSparqlSql.foreach(mapElement => {
             val sparqlQuery = mapElement._1
-            // In the RDB case there should be only a query, and one query in it
-            val genQuery = mapElement._2.head
+            // In the RDB case the abstract query should just contain one GenericQuery
+            val genQuery = mapElement._2.targetQuery(0).asInstanceOf[GenericQuery]
             val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database

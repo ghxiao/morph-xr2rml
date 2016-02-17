@@ -1,12 +1,13 @@
 package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.Connection
+
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 
 /**

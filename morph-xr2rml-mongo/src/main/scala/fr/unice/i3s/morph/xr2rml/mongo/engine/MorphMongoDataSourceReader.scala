@@ -17,11 +17,11 @@ import com.mongodb.ServerAddress
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 

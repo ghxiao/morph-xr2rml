@@ -1,23 +1,25 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import scala.collection.JavaConversions.asJavaIterator
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 abstract class MorphBaseDataTranslator(
@@ -84,7 +86,7 @@ abstract class MorphBaseDataTranslator(
     def generateRDFTriples(query: GenericQuery): Unit = {
         val tm = query.boundTriplesMap.get
         try {
-            val ls = tm.logicalSource ;
+            val ls = tm.logicalSource;
             val sm = tm.subjectMap;
             val poms = tm.predicateObjectMaps;
             this.generateRDFTriples(Some(ls), sm, poms, query);

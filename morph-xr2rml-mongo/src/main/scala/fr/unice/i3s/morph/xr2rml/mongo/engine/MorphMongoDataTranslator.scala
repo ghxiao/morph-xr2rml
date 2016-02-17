@@ -9,8 +9,6 @@ import com.hp.hpl.jena.vocabulary.RDF
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
@@ -19,6 +17,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
@@ -58,7 +57,11 @@ class MorphMongoDataTranslator(
      * </ol>
      */
     @throws[MorphException]
-    override def generateRDFTriples(logicalSrc: Option[xR2RMLLogicalSource], sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit = {
+    override def generateRDFTriples(
+        logicalSrc: Option[xR2RMLLogicalSource],
+        sm: R2RMLSubjectMap,
+        poms: Iterable[R2RMLPredicateObjectMap],
+        query: GenericQuery): Unit = {
 
         logger.info("Starting translating triples map into RDF instances...");
         if (sm == null) {
@@ -245,9 +248,8 @@ class MorphMongoDataTranslator(
                 }
             }
         }
-        if (logger.isInfoEnabled()) System.out.println() // proper display of progress counter
-
-        logger.info(i + " instances retrieved.");
+        if (logger.isDebugEnabled())
+            logger.debug(i + " instances retrieved.");
     }
 
     /**

@@ -60,11 +60,11 @@ import Zql.ZExpression
 import Zql.ZGroupBy
 import Zql.ZOrderBy
 import Zql.ZSelectItem
-import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTransTPResult
@@ -122,7 +122,7 @@ class MorphRDBQueryTranslator(
     /**
      * High level entry point to the query translation process.
      */
-    override def translate(op: Op): AbstractQuery = {
+    override def translate(op: Op): MorphAbstractQuery = {
         logger.debug("opSparqlQuery = " + op);
 
         // Find candidate triples maps
@@ -171,7 +171,7 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        AbstractQuery(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None))
+        new MorphAbstractQuery(None).setTargetQuery(List(new GenericQuery(None, Constants.DatabaseType.Relational, resultQuery)))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

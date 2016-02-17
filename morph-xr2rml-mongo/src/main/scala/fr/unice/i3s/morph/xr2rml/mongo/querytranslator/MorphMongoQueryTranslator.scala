@@ -2,22 +2,19 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
 
-import com.hp.hpl.jena.graph.Node
-import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
 
-import es.upm.fi.dia.oeg.morph.base.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
@@ -35,91 +32,68 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
  */
 class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQueryTranslator {
 
+    this.mappingDocument = md
+
     override val logger = Logger.getLogger(this.getClass());
 
     /**
      * High level entry point to the query translation process.
      *
      * @TODO Several features are not implemented:
+     * - Only the first triple pattern of the SPARQL query is translated.
+     * - The binding of a triples map to the triple patterns is hard coded.
      * - The rewriting only works for simple triples maps, with no referencing object map involved.
-     * The transTP does not generate an atomic abstract query for the parent triples map if any.
      * - The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
      * Besides only the references are listed, but they must be bound to the variable they represent
-     * (the AS of the project part) so that the INNER JOIN can be computed.
+     * (the AS of the project part) so that the INNER JOIN can be computed, and from the reference
+     * we must figure out which filed exactly is to be projected and translate this into a MongoDB
+     * collection.find() projection parameter. E.g.: $.field.* => {'field':true}
      * - The iterator of the logical source is not taken into account when computing the WHERE part, i.e.
      * the conditions on the JSONPath references from the mapping.
-     * - The binding of triples maps to triple patterns is static (see below).
      *
-     * @return AbstractQuery instance containing a set of concrete queries.
+     * @return a MorphAbstractQuery instance in which the targetQuery parameter has been set with
+     * a list containing a set of concrete queries.
      *
      */
-    override def translate(op: Op): AbstractQuery = {
+    override def translate(op: Op): MorphAbstractQuery = {
         if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
         // WARNING ####################################################################
         // This is totally adhoc code meant to test the whole process of running Morph-xR2RML with
-        // a query of one triple pattern. Bindings with triples maps are hard coded here
+        // a query of one triple pattern. 
+        // -> Bindings with triples maps are hard coded here
+        // -> We consider that only one atomic abstract query is created
+
         val tmMovies = md.getClassMappingsByName("Movies")
         val tmDirectors = md.getClassMappingsByName("Directors")
 
-        // Do the translation of the first triple pattern
+        // Translation the first triple pattern into an abstract query under a triples map
         val bgp = op.asInstanceOf[OpProject].getSubOp().asInstanceOf[OpBGP]
         val triples = bgp.getPattern().getList()
-        this.transTP(triples.get(0), tmMovies)
-        // ####################################################################
+        val tp1 = triples.get(0)
+
+        val absQ = this.transTPm(tp1, List(tmMovies))
+        abstractQuerytoConcrete(absQ)
     }
 
     /**
-     * Translation of a triple pattern into a set of concrete queries based on a candidate triples map.
+     * Translate an abstract query into a set of concrete queries
      *
-     * @param tp a SPARQL triple pattern
-     * @param tm a triples map that has been assessed as a candidate triples map for tp, that is a
-     * triples map that should potentially be able to generate triples matching tp
+     * @param absQ the abstract query
      * @return set of concrete query strings
      */
-    def transTP(tp: Triple, tm: R2RMLTriplesMap): AbstractQuery = {
+    def abstractQuerytoConcrete(absQ: MorphAbstractQuery): MorphAbstractQuery = {
 
-        // Sanity checks about the @NORMALIZED_ASSUMPTION
-        val poms = tm.getPropertyMappings
-        if (poms.isEmpty || poms.size > 1) {
-            logger.error("The candidate triples map " + tm.toString + " must have exactly one predicate-object map.")
-            return AbstractQuery()
-        }
+        // Consider the query is always an atomic query (@TODO upgrade this)
+        val atomicQ = absQ.asInstanceOf[MorphAbstractAtomicQuery]
 
-        val pom = poms.head
-        if (pom.predicateMaps.size != 1 ||
-            !((pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0))) {
-            logger.error("The candidate triples map " + tm.toString + " must have exactly one predicate map and one object map.")
-            return AbstractQuery()
-        }
+        // Select isNotNull and Equality conditions
+        val whereConds = atomicQ.where.filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals)
 
-        val logSrc = tm.getLogicalSource
-        if (logSrc.logicalTableType != Constants.LogicalTableType.QUERY) {
-            logger.error("Logical source table type is not compatible with MongoDB.")
-            return AbstractQuery()
-        }
-
-        if (logger.isDebugEnabled()) logger.debug("Translation of triple pattern: [" + tp + "] with triples map " + tm)
-
-        // Start translation
-        val fromPart = genFrom(tm)
-        val projectPart = genProjection(tp, tm)
-        val wherePart = genCond(tp, tm)
-        if (logger.isDebugEnabled())
-            logger.debug("transTP(" + tp + ", " + tm + "):\n" +
-                "fromPart:  " + fromPart + "\n" +
-                "projectPart: " + projectPart + "\n" +
-                "wherePart: " + wherePart)
-
-        // Select only isNotNull and Equality conditions
-        val pushDownConds = wherePart.
-            filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals).
-            map(c => c.asInstanceOf[MorphBaseQueryCondition])
-
-        // Generate one abstract MongoDB query for each condition
-        val absQueries: List[MongoQueryNode] = pushDownConds.map(cond => {
+        // Generate one abstract MongoDB query for each isNotNull and Equality condition
+        val mongAbsQs: List[MongoQueryNode] = whereConds.map(cond => {
             // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
-            val iter = fromPart.iterator
+            val iter = atomicQ.from.docIterator
             val reference =
                 if (iter.isDefined) cond.reference.replace("$", iter.get)
                 else cond.reference
@@ -135,14 +109,67 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         })
 
         if (logger.isTraceEnabled())
-            logger.trace("Conditions translated to abstract MongoDB query:\n" + absQueries)
+            logger.trace("Conditions translated to abstract MongoDB query:\n" + mongAbsQs)
 
-        // Create the concrete queries from the set of abstract MongoDB queries
-        val queries = toConcreteQueries(fromPart, projectPart, absQueries).map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, Some(tm)))
+        // Create the concrete query/queries from the set of abstract MongoDB queries
+        val from = genFrom(atomicQ.boundTriplesMap.get)
+        val queries = mongoAbstractQuerytoConcrete(from, atomicQ.project, mongAbsQs)
 
-        if (logger.isDebugEnabled())
-            logger.debug("transTP(" + tp + ", " + tm + "):\n" + queries)
-        AbstractQuery(queries)
+        // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
+        absQ.setTargetQuery(queries.map(q => new GenericQuery(absQ.boundTriplesMap, Constants.DatabaseType.MongoDB, q)))
+    }
+
+    /**
+     * Translate a set of non-optimized MongoQueryNode instances into one or more optimized concrete MongoDB queries.
+     *
+     * All MongoQueryNodes are grouped under a top-level AND query, unless there is only one condition.
+     * Then the query is optimized, which may generate a top-level UNION.
+     *
+     * A query string is generated, that contains the initial query string from the logical source.
+     * A UNION is translated into several concrete queries, for any other type of query only one query string is returned.
+     *
+     * @param from from part of the atomic abstract query (query from the logical source)
+     * @param project project part of the atomic abstract query (xR2RML references to project, NOT MANAGED FOR NOW).
+     * @param absQueries the actual set of NotNull or Equality conditions to translate into concrete MongoDB queries.
+     * @return list of MongoDBQuery instances whose results must be unioned.
+     */
+    def mongoAbstractQuerytoConcrete(
+        from: MongoDBQuery,
+        project: List[MorphBaseQueryProjection],
+        absQueries: List[MongoQueryNode]): List[MongoDBQuery] = {
+
+        // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query
+        var Q =
+            if (absQueries.length == 1) absQueries(0).optimize
+            else new MongoQueryNodeAnd(absQueries).optimize
+        if (logger.isTraceEnabled())
+            logger.trace("Condtion set was translated into: " + Q)
+
+        // If the query is an AND, merge its FIELD nodes that have the same path
+        // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}
+        // Example 2. AND('a.b':{$elemMatch:{Q1}}, 'a.b':{$elemMatch:{Q2}}) => 'a.b': {$elemMatch:{$and:[{Q1},{Q2}]}}.
+        if (Q.isAnd)
+            Q = new MongoQueryNodeAnd(MongoQueryNode.fusionQueries(Q.asInstanceOf[MongoQueryNodeAnd].members))
+
+        val Qstr: List[MongoDBQuery] =
+            if (Q.isUnion)
+                // For each member of the UNION, convert it to a query string, add the query from the logical source,
+                // and create a MongoDBQuery instance
+                Q.asInstanceOf[MongoQueryNodeUnion].members.map(
+                    q => new MongoDBQuery(
+                        from.collection,
+                        q.toTopLevelQuery(from.query),
+                        q.toTopLevelProjection))
+            else
+                // If no UNION, convert to a query string, add the query from the logical source, and create a MongoDBQuery instance
+                List(new MongoDBQuery(
+                    from.collection,
+                    Q.toTopLevelQuery(from.query),
+                    Q.toTopLevelProjection))
+
+        if (logger.isTraceEnabled())
+            logger.trace("Final set of concrete queries: [" + Qstr + "]")
+        Qstr
     }
 
     /**
@@ -175,291 +202,4 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
             throw new MorphException("Triples map " + tm + " has no parent triples map")
     }
 
-    /**
-     * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.
-     * Those references are used to select the data elements to mention in the projection part of the query.
-     *
-     * @param tp a SPARQL triple pattern
-     * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return list of references (JSONPath expressions for MongoDB) from which fields must be projected
-     */
-    def genProjection(tp: Triple, tm: R2RMLTriplesMap): List[String] = {
-
-        var listRefs: List[String] = List.empty
-
-        if (tp.getSubject().isVariable())
-            listRefs = tm.subjectMap.getReferences
-
-        val pom = tm.getPropertyMappings.head // @NORMALIZED_ASSUMPTION
-        if (tp.getPredicate().isVariable())
-            listRefs = listRefs ::: pom.predicateMaps.head.getReferences // @NORMALIZED_ASSUMPTION
-
-        if (pom.hasRefObjectMap) {
-            // The joined fields must always be projected, whether tp.obj is an IRI or a variable: since MongoDB
-            // cannot compute joins, the xR2RML processor has to do it, thus joined fields must be returned by both queries.
-            val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
-            for (jc <- rom.joinConditions)
-                listRefs = listRefs :+ jc.childRef
-        } else if (tp.getObject().isVariable())
-            listRefs = listRefs ++ pom.objectMaps.head.getReferences // @NORMALIZED_ASSUMPTION
-
-        listRefs
-    }
-
-    /**
-     * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.
-     * Those references are used to select the data elements to mention in the projection part of the query.
-     *
-     * @param tp a SPARQL triple pattern
-     * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return list of references (JSONPath expressions for MongoDB) from which fields must be projected
-     */
-    def genProjectionParent(tp: Triple, tm: R2RMLTriplesMap): List[String] = {
-
-        var listRefs: List[String] = List.empty
-
-        val pom = tm.getPropertyMappings.head // @NORMALIZED_ASSUMPTION
-        if (pom.hasRefObjectMap) {
-            // The joined fields must always be projected, whether tp.obj is an IRI or a variable: since MongoDB
-            // cannot compute joins, the xR2RML processor has to do it, thus joined fields must be returned by both queries.
-            val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
-            for (jc <- rom.joinConditions) {
-                listRefs = listRefs :+ jc.parentRef
-            }
-
-            // In addition, if tp.obj is a variable, the subject of the parent TM must be projected too.
-            if (tp.getObject().isVariable()) {
-                val parentTM = md.getParentTriplesMap(rom)
-                listRefs = listRefs ++ parentTM.subjectMap.getReferences // @NORMALIZED_ASSUMPTION
-            }
-        } else
-            throw new MorphException("Triples map " + tm + " has no parent triples map")
-        listRefs
-    }
-
-    /**
-     * Generate the set of conditions to apply to the database query (the from part), so that triples map TM
-     * generates triples that match tp.
-     * If a triple pattern term is constant (IRI or literal), genCond generates an equality condition,
-     * only if the term map is reference-valued or template-valued. Indeed, if the term map is constant-valued and
-     * the tp term is constant too, we should already have checked that they were compatible in the bind_m function.
-     *
-     * If a triple pattern term is variable, genCond generates a not-null condition, only
-     * if the term map is reference-valued or template-valued. Indeed, if the term map is constant-valued, then the variable
-     * will simply be bound to the constant value of the term map but that does not entail any condition in the query.
-     *
-     * A condition is either isNotNull(JSONPath expression) or equals(JSONPath expression, value)
-     *
-     * @param tp a SPARQL triple pattern
-     * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return set of conditions, either non-null or equality
-     */
-    def genCond(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
-
-        var conditions: List[MorphBaseQueryCondition] = List.empty
-
-        { // === Subject map ===
-            val tpTerm = tp.getSubject
-            val termMap = tm.subjectMap
-
-            if (termMap.isReferenceOrTemplateValued)
-                if (tpTerm.isVariable)
-                    // Add a not-null condition for each reference in the term map
-                    conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                else if (tpTerm.isURI) {
-                    // Add an equality condition for each reference in the term map
-                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
-                }
-        }
-        { // === Predicate map ===
-            val tpTerm = tp.getPredicate
-            val termMap = tm.predicateObjectMaps.head.predicateMaps.head // @NORMALIZED_ASSUMPTION
-
-            if (termMap.isReferenceOrTemplateValued)
-                if (tpTerm.isVariable)
-                    // Add a not-null condition for each reference in the term map
-                    conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                else if (tpTerm.isURI)
-                    // Add an equality condition for each reference in the term map
-                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
-        }
-        { // === Object map ===
-            val tpTerm = tp.getObject
-            val pom = tm.predicateObjectMaps.head // @NORMALIZED_ASSUMPTION
-
-            if (tpTerm.isLiteral) {
-                // Add an equality condition for each reference in the term map
-                val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
-                if (termMap.isReferenceOrTemplateValued)
-                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
-
-            } else if (tpTerm.isURI) {
-
-                if (pom.hasRefObjectMap) {
-                    val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
-                    // Add non-null condition on the child reference 
-                    for (jc <- rom.joinConditions)
-                        conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.childRef)
-                } else {
-                    // tp.obj is a constant IRI and there is no RefObjectMap: add an equality condition for each reference in the term map
-                    val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
-                    if (termMap.isReferenceOrTemplateValued)
-                        conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
-                }
-
-            } else if (tpTerm.isVariable) {
-
-                if (pom.hasRefObjectMap) {
-                    val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
-                    // Add non-null condition on the child reference 
-                    for (jc <- rom.joinConditions)
-                        conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.childRef)
-                } else {
-                    // tp.obj is a Variable and there is no RefObjectMap: add a non-null condition for each reference in the term map
-                    val termMap = pom.objectMaps.head // @NORMALIZED_ASSUMPTION
-                    if (termMap.isReferenceOrTemplateValued)
-                        conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                }
-            }
-        }
-
-        if (logger.isDebugEnabled()) logger.debug("Translation returns conditions: " + conditions)
-        conditions
-    }
-
-    /**
-     *
-     * Generate the set of conditions to match the object of a triple pattern with he subject
-     * of a referencing object map.
-     * A condition is either isNotNull(JSONPath expression) or equals(JSONPath expression, value)
-     *
-     * @param tp a SPARQL triple pattern
-     * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return set of conditions, either non-null or equality
-     */
-    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
-
-        var conditions: List[MorphBaseQueryCondition] = List.empty
-
-        { // === Object map ===
-            val tpTerm = tp.getObject
-            val pom = tm.predicateObjectMaps.head // @NORMALIZED_ASSUMPTION
-
-            if (!pom.hasRefObjectMap)
-                throw new MorphException("Triples map " + tm + " has no parent triples map")
-
-            if (tpTerm.isURI) {
-                // tp.obj is a constant IRI to be matched with the subject of the parent TM:
-                // add an equality condition for each reference in the subject map of the parent TM
-                val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
-                val parentSM = md.getParentTriplesMap(rom).subjectMap
-                if (parentSM.isReferenceOrTemplateValued)
-                    conditions = conditions ++ genEqualityConditions(parentSM, tpTerm)
-
-                // Add non-null condition on the parent reference
-                for (jc <- rom.joinConditions)
-                    conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.parentRef)
-
-            } else if (tpTerm.isVariable) {
-                // tp.obj is a SPARQL variable to be matched with the subject of the parent TM
-                val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
-                val parentSM = md.getParentTriplesMap(rom).subjectMap
-                if (parentSM.isReferenceOrTemplateValued)
-                    conditions = conditions ++ parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-
-                // Add non-null condition on the parent reference
-                for (jc <- rom.joinConditions)
-                    conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.parentRef)
-            }
-        }
-
-        if (logger.isDebugEnabled()) logger.debug("Translation returns Parent conditions: " + conditions)
-        conditions
-    }
-
-    /**
-     * Generate one equality condition between a reference in the term map (Column name, JSONPath expression...)
-     * and a term of a triple pattern.
-     *
-     * If the term map is reference-valued, one equality condition is generated.
-     * If the term map is template-value, possibly several equality conditions are generated, i.e. one for each
-     * capturing group in the template string.
-     *
-     * Return an empty list for other types of term map.
-     *
-     * @param targetQuery child or parent, i.e. the query to which references of termMap relate to
-     * @param termMap the term map that should possibly generate terms that match the triple pattern term tpTerm
-     * @param tpTerm a term from a triple pattern
-     * @return a list of one equality condition for a reference-value term map, possibly several conditions
-     * for a template-valued term map
-     */
-    private def genEqualityConditions(termMap: R2RMLTermMap, tpTerm: Node): List[MorphBaseQueryCondition] = {
-
-        if (termMap.isReferenceValued) {
-            // Make a new equality condition between the reference in the term map and the value in the triple pattern term
-            List(MorphBaseQueryCondition.equality(termMap.getOriginalValue, tpTerm.toString(false)))
-
-        } else if (termMap.isTemplateValued) {
-            // Get the references of the template string and the associated values in the triple pattern term
-            val refValueCouples = TemplateUtility.getTemplateMatching(termMap.getOriginalValue, tpTerm.toString(false))
-
-            // For each reference and associated value, build a new equality condition
-            val refValueConds = refValueCouples.map(m => MorphBaseQueryCondition.equality(m._1, m._2))
-            refValueConds.toList
-        } else
-            List.empty
-    }
-
-    /**
-     * Translate a set of non-optimized MongoQueryNode instances into one or more optimized concrete MongoDB queries.
-     *
-     * All MongoQueryNodes are grouped under a top-level AND query, unless there is only one condition.
-     * Then the query is optimized, which may generate a top-level UNION.
-     *
-     * A query string is generated, that contains the initial query string from the logical source.
-     * A UNION is translated into several concrete queries, for any other type of query only one query string is returned.
-     *
-     * @param fromPart the query of the logical source
-     * @param projectPart the set of xR2RML references to project. NOT MANAGED FOR NOW.
-     * @param absQueries the actual set of NotNull or Equality conditions to translate into concrete MongoDB queries.
-     * @return list of MongoDBQuery instances
-     */
-    def toConcreteQueries(
-        fromPart: MongoDBQuery,
-        projectPart: List[String],
-        absQueries: List[MongoQueryNode]): List[MongoDBQuery] = {
-
-        // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query
-        var Q =
-            if (absQueries.length == 1) absQueries(0).optimize
-            else new MongoQueryNodeAnd(absQueries).optimize
-        if (logger.isTraceEnabled())
-            logger.trace("Condtion set was translated into: " + Q)
-
-        // If the query is an AND, merge its FIELD nodes that have the same path
-        // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}
-        // Example 2. AND('a.b':{$elemMatch:{Q1}}, 'a.b':{$elemMatch:{Q2}}) => 'a.b': {$elemMatch:{$and:[{Q1},{Q2}]}}.
-        if (Q.isAnd)
-            Q = new MongoQueryNodeAnd(MongoQueryNode.fusionQueries(Q.asInstanceOf[MongoQueryNodeAnd].members))
-
-        val Qstr: List[MongoDBQuery] =
-            if (Q.isUnion)
-                // For each member of the UNION, convert it to a query string, add the query from the logical source,
-                // and create a MongoDBQuery instance
-                Q.asInstanceOf[MongoQueryNodeUnion].members.map(
-                    q => new MongoDBQuery(
-                        fromPart.collection,
-                        q.toTopLevelQuery(fromPart.query),
-                        q.toTopLevelProjection))
-            else
-                // If no UNION, convert to a query string, add the query from the logical source, and create a MongoDBQuery instance
-                List(new MongoDBQuery(
-                    fromPart.collection,
-                    Q.toTopLevelQuery(fromPart.query),
-                    Q.toTopLevelProjection))
-
-        if (logger.isTraceEnabled())
-            logger.trace("Final set of concrete queries: [" + Qstr + "]")
-        Qstr
-    }
 }
