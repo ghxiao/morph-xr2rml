@@ -4,14 +4,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
-
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
 
 class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
 
@@ -19,6 +19,10 @@ class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
     this.mappingDocument = R2RMLMappingDocument("query_translator/mapping.ttl", properties, null)
 
     override def translate(op: Op): MorphAbstractQuery = { null }
+    
+    override def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractAtomicQuery) = {
+        throw new MorphException("Not supported")
+    }
 }
 
 class MorphBaseQueryTranslatorTest {

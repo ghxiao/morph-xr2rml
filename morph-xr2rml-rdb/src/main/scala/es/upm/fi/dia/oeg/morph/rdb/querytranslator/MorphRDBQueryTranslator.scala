@@ -64,6 +64,7 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
@@ -104,6 +105,15 @@ class MorphRDBQueryTranslator(
     var mapVarNotNull: Map[Node, Boolean] = Map.empty;
 
     override val logger = Logger.getLogger(this.getClass());
+
+    /**
+     * This method is necessary for the inheritance but it is actually not used in the RDB case:
+     * the query translation method is still the one defined in Morph-RDB, it has not been upgrade
+     * to support the abstract query mechanism used in the MongoDB case.
+     */
+    override def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractAtomicQuery) = {
+        throw new MorphException("Not supported")
+    }
 
     this.alphaGenerator.owner = this;
     this.betaGenerator.owner = this;
@@ -171,7 +181,7 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        new MorphAbstractQuery(None).setTargetQuery(List(new GenericQuery(None, Constants.DatabaseType.Relational, resultQuery)))
+        new MorphAbstractQuery(None).setTargetQuery(List(new GenericQuery(None, Constants.DatabaseType.Relational, resultQuery, None)))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

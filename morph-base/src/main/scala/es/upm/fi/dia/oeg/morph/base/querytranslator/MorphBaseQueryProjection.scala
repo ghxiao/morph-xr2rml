@@ -8,6 +8,8 @@ package es.upm.fi.dia.oeg.morph.base.querytranslator
  * or JSONPath expression (MongoDB) from a xrr:reference. Possibly multiple expressions in case of a rr:template property
  * @param as name of the SPARQL variable this reference stands for. Optional since a projection for a joined reference
  * does not stand for any variable
+ * 
+ * @author Franck Michel (franck.michel@cnrs.fr)
  */
 class MorphBaseQueryProjection(
         val references: List[String],
@@ -16,7 +18,9 @@ class MorphBaseQueryProjection(
     /** Constructor with a single reference and no AS */
     def this(reference: String) = { this(List(reference), None) }
 
-    override def toString = {
-        references + " AS " + as
+    override def toString: String = {
+        if (as.isDefined)
+            references + " AS " + as.get
+        else references.toString
     }
 }

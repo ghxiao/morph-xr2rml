@@ -31,50 +31,29 @@ abstract class MorphBaseDataTranslator(
     val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Loop on all triples maps of the mapping graph and generate triples in the current model of the data materializer, based
-     * on the triples map: this consists in calculating the query, running it
-     * against the database, translating results in RDF terms and making the triples.
+     * Entry point of the materialization approach:
+     * Loop on all triples maps of the mapping graph and generate triples in the data materializer model,
+     * based on the triples map: this consists in calculating the query, running it against the database,
+     * translating results in RDF terms and making the triples.
      */
     def translateData(mappingDocument: R2RMLMappingDocument): Unit = {
-        val triplesMaps = mappingDocument.classMappings
-        for (triplesMap <- triplesMaps) {
+        val tms = mappingDocument.classMappings
+        for (tm <- tms) {
             logger.info("===============================================================================");
-            logger.info("Starting data materialization of triples map " + triplesMap.id);
+            logger.info("Starting data materialization of triples map " + tm.id);
             try {
-                this.generateRDFTriples(triplesMap)
+                val query = this.unfolder.unfoldConceptMapping(tm);
+                this.generateRDFTriples(tm, query);
                 null
             } catch {
-                case e: Exception => {
-                    logger.error("error while translating data of triplesMap : " + triplesMap);
-                    if (e.getMessage() != null)
-                        logger.error("error message = " + e.getMessage());
+                case e: MorphException => {
+                    logger.error("Error while generatring triples for " + tm + ": " + e.getMessage);
                     e.printStackTrace()
                 }
-            }
-        }
-    }
-
-    /**
-     * Generate triples in the current model of the data materializer, based
-     * on the triples map: this consists in calculating the query from the triples map logical source,
-     * running it against the database, translating results in RDF terms and building the triples.
-     */
-    private def generateRDFTriples(cm: R2RMLTriplesMap): Unit = {
-        try {
-            val query = this.unfolder.unfoldConceptMapping(cm);
-            val logicalTable = cm.logicalSource;
-            val sm = cm.subjectMap;
-            val poms = cm.predicateObjectMaps;
-
-            this.generateRDFTriples(Some(logicalTable), sm, poms, query);
-        } catch {
-            case e: MorphException => {
-                logger.error("Error while generatring triples for " + cm + ": " + e.getMessage);
-                e.printStackTrace()
-            }
-            case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + cm + ": " + e.getMessage);
-                e.printStackTrace()
+                case e: Exception => {
+                    logger.error("Unexpected error while generatring triples for " + tm + ": " + e.getMessage);
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -86,10 +65,7 @@ abstract class MorphBaseDataTranslator(
     def generateRDFTriples(query: GenericQuery): Unit = {
         val tm = query.boundTriplesMap.get
         try {
-            val ls = tm.logicalSource;
-            val sm = tm.subjectMap;
-            val poms = tm.predicateObjectMaps;
-            this.generateRDFTriples(Some(ls), sm, poms, query);
+            this.generateRDFTriples(tm, query);
         } catch {
             case e: MorphException => {
                 logger.error("Error while generatring triples for " + tm + ": " + e.getMessage);
@@ -103,10 +79,14 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Query the database and build triples from the result:
-     * this is the method where all the database-specific work will be done
+     * Query the database and build triples from the result based on the triples map definition.
+     * This is the method where all the database-specific work will be done
+     *
+     * @throws MorphException
      */
-    protected def generateRDFTriples(logicalSrc: Option[xR2RMLLogicalSource], sm: R2RMLSubjectMap, poms: Iterable[R2RMLPredicateObjectMap], query: GenericQuery): Unit
+    protected def generateRDFTriples(
+        tm: R2RMLTriplesMap,
+        query: GenericQuery): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.
@@ -307,8 +287,6 @@ abstract class MorphBaseDataTranslator(
     protected def translateBoolean(value: String): String = {
         if (value.equalsIgnoreCase("T") || value.equalsIgnoreCase("True") || value.equalsIgnoreCase("1"))
             "true"
-        else if (value.equalsIgnoreCase("F") || value.equalsIgnoreCase("False") || value.equalsIgnoreCase("0"))
-            "false"
         else
             "false"
     }

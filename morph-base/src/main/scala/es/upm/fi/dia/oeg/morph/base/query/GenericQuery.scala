@@ -15,7 +15,8 @@ class GenericQuery(
 
         val boundTriplesMap: Option[R2RMLTriplesMap],
         val dbType: Constants.DatabaseType.Value,
-        val concreteQuery: Object) {
+        val concreteQuery: Object,
+        iter: Option[String]) {
 
     def isSqlQuery: Boolean = {
         dbType == Constants.DatabaseType.Relational
@@ -25,5 +26,12 @@ class GenericQuery(
         dbType == Constants.DatabaseType.MongoDB
     }
 
-    override def toString: String = { concreteQuery.toString }
+    override def toString: String = {
+        var str = "GenericQuery[" + concreteQuery.toString
+        if (iter.isDefined)
+            str = str + ", Iterator: " + iter.get
+        if (boundTriplesMap.isDefined)
+            str = str + ", BoundTM: " + boundTriplesMap.get
+        str + "]"
+    }
 }

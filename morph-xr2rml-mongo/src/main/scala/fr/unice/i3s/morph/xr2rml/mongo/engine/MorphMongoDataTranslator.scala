@@ -38,7 +38,7 @@ class MorphMongoDataTranslator(
         throw new MorphException("Database connection type does not match MongoDB")
 
     /** Store already executed queries to avoid running them several times. The key of the hashmap is the query string itself. */
-    private var executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+    private val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
 
     /** Store already parsed queries to avoid creating the same GenericQuery object several times. The key of the hashmap is the triples map name */
     private var queries: scala.collection.mutable.Map[String, GenericQuery] = new scala.collection.mutable.HashMap
@@ -55,34 +55,44 @@ class MorphMongoDataTranslator(
      * and a list of resources representing target graphs mentioned in the predicate-object map.</li>
      * <li>Finally combine all subject, graph, predicate and object resources to generate triples.</li>
      * </ol>
+     *
+     * @throws MorphException
      */
-    @throws[MorphException]
     override def generateRDFTriples(
-        logicalSrc: Option[xR2RMLLogicalSource],
-        sm: R2RMLSubjectMap,
-        poms: Iterable[R2RMLPredicateObjectMap],
+        tm: R2RMLTriplesMap,
         query: GenericQuery): Unit = {
 
         logger.info("Starting translating triples map into RDF instances...");
-        if (sm == null) {
-            val errorMessage = "No SubjectMap is defined";
-            logger.error(errorMessage);
-            throw new MorphException(errorMessage);
-        }
+        val ls = tm.logicalSource;
+        val sm = tm.subjectMap;
+        val poms = tm.predicateObjectMaps;
 
         // Execute the query against the database and apply the iterator
-        val resultSet =
-            if (logicalSrc.isDefined)
-                executeQueryAndIteraotr(query, logicalSrc.get.docIterator)
-            else
-                executeQueryAndIteraotr(query, None)
+        val childResultSet = executeQueryAndIterator(query, ls.docIterator)
+
+        // Execute all the parent queries against the database and apply their iterators
+        // to be able to do the joins.
+        // This "cache" lives just the time of computing this triples map, therefore it is
+        // different from the global cache executedQueries that lives along the computing of al triples maps
+        val parentResultSets: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+        poms.foreach(pom => {
+            pom.refObjectMaps.foreach(rom => {
+                val parentTM = this.md.getParentTriplesMap(rom)
+                val query = this.unfolder.unfoldConceptMapping(parentTM)
+                val queryMapId = makeQueryMapId(query, parentTM.logicalSource.docIterator)
+                if (!parentResultSets.contains(queryMapId)) {
+                    val resultSet = executeQueryAndIterator(query, parentTM.logicalSource.docIterator)
+                    parentResultSets += (queryMapId -> resultSet)
+                }
+            })
+        })
 
         // Main loop: iterate and process each result document of the result set
         var i = 0;
-        for (document <- resultSet) {
+        for (document <- childResultSet) {
             i = i + 1;
-            if (logger.isDebugEnabled()) logger.debug("Generating triples for document " + i + "/" + resultSet.size + ": " + document)
-            if (logger.isInfoEnabled()) System.out.print("Generating triples for document: " + i + "/" + resultSet.size + "          \r")
+            if (logger.isDebugEnabled()) logger.debug("Generating triples for document " + i + "/" + childResultSet.size + ": " + document)
+            if (logger.isInfoEnabled()) System.out.print("Generating triples for document: " + i + "/" + childResultSet.size + "          \r")
 
             try {
                 // Create the subject resource
@@ -147,10 +157,19 @@ class MorphMongoDataTranslator(
                             val childMsp = MixedSyntaxPath(joinCond.childRef, sm.refFormulaion)
                             val childValues: List[Object] = childMsp.evaluate(document)
 
-                            // Evaluate the parent reference on the results of the parent triples map logical source
-                            val parentValues = evalMixedSyntaxPathOnTriplesMap(parentTM, joinCond.parentRef)
+                            // ---- Evaluate the parent reference on the results of the parent triples map logical source
 
-                            // Make the actual join between the child values and parent values
+                            // Create the mixed syntax path corresponding to the parent reference
+                            val msp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
+
+                            // Get the results of the parent query
+                            val queryMapId = makeQueryMapId(this.unfolder.unfoldConceptMapping(parentTM), parentTM.logicalSource.docIterator)
+                            val parentRes = parentResultSets.get(queryMapId).get
+
+                            // Evaluate each parent query result against the mixed syntax path
+                            val parentValues = parentRes.map(tmResult => (tmResult, msp.evaluate(tmResult)))
+
+                            // ---- Make the actual join between the child values and parent values
                             val parentSubjects = parentValues.flatMap(parentResult => {
                                 // For each document returned by the parent triples map (named parent document),
                                 // if at least one of the child values is in the current parent document values, 
@@ -258,6 +277,11 @@ class MorphMongoDataTranslator(
      * then translate those values into RDF terms.
      */
     private def translateData(termMap: R2RMLTermMap, jsonDoc: String): List[RDFNode] = {
+        if (termMap == null) {
+            val errorMessage = "TermMap is null";
+            logger.error(errorMessage);
+            throw new MorphException(errorMessage);
+        }
 
         var datatype = termMap.datatype
         var languageTag = termMap.languageTag
@@ -334,7 +358,7 @@ class MorphMongoDataTranslator(
                 }
             }
 
-            case _ => { throw new Exception("Invalid term map type " + termMap.termMapType) }
+            case _ => { throw new MorphException("Invalid term map type " + termMap.termMapType) }
         }
         result
     }
@@ -420,12 +444,13 @@ class MorphMongoDataTranslator(
      *
      * Major drawback: memory consumption, this is not appropriate for very big databases.
      */
-    private def executeQueryAndIteraotr(query: GenericQuery, logSrcIterator: Option[String]): List[String] = {
+    private def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String]): List[String] = {
 
         // A query is simply and uniquely identified by its concrete string value
-        val queryMapId = query.concreteQuery.toString
+        val queryMapId = makeQueryMapId(query, logSrcIterator)
         val queryResult =
             if (executedQueries.contains(queryMapId)) {
+                if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache: " + query)
                 executedQueries(queryMapId)
             } else {
                 // Execute the query against the database, choose the execution method depending on the db type
@@ -434,8 +459,10 @@ class MorphMongoDataTranslator(
                 // Save the result of this query in case it is asked again later (in a join)
                 // @TODO USE WITH CARE: this would need to be strongly improved with the use of a real cache library,
                 // and memory-consumption-based eviction.
-                if (properties.cacheQueryResult)
+                if (properties.cacheQueryResult) {
                     executedQueries += (queryMapId -> resultSet)
+                    if (logger.isTraceEnabled()) logger.trace("Adding query to cache: " + query)
+                }
                 resultSet
             }
 
@@ -476,7 +503,7 @@ class MorphMongoDataTranslator(
         }
 
         // Execute the query against the database
-        val tmResultSet = executeQueryAndIteraotr(query, tm.logicalSource.docIterator)
+        val tmResultSet = executeQueryAndIterator(query, tm.logicalSource.docIterator)
 
         // Create the mixed syntax path corresponding to the reference
         val msp = MixedSyntaxPath(reference, tm.subjectMap.refFormulaion)
@@ -487,5 +514,12 @@ class MorphMongoDataTranslator(
         })
 
         results
+    }
+
+    private def makeQueryMapId(query: GenericQuery, iter: Option[String]): String = {
+        if (iter.isDefined)
+            query.concreteQuery.toString + ", Iterator: " + iter.get
+        else
+            query.concreteQuery.toString
     }
 }

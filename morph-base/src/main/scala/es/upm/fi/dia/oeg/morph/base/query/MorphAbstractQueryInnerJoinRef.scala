@@ -1,6 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base.query
 
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 
 /**
  * Representation of the INNER JOIN abstract query generated from the relation between a child and a parent triples map.
@@ -29,5 +30,22 @@ class MorphAbstractQueryInnerJoinRef(
             "INNER JOIN\n" +
             parent.toString + " AS parent\n" +
             "ON child/" + childRef + " = parent/" + parentRef
+    }
+
+    override def toStringConcrete: String = {
+        child.toStringConcrete + " AS child\n" +
+            "INNER JOIN\n" +
+            parent.toStringConcrete + " AS parent\n" +
+            "ON child/" + childRef + " = parent/" + parentRef
+    }
+
+    /**
+     * Translate all atomic abstract queries of this abstract query into concrete queries.
+     *
+     * @translator the query translator
+     */
+    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+        child.translateAtomicAbstactQueriesToConcrete(translator)
+        parent.translateAtomicAbstactQueriesToConcrete(translator)
     }
 }

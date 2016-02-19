@@ -1,14 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
-
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
@@ -21,9 +19,12 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFa
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
+ *
+ * @author Franck Michel (franck.michel@cnrs.fr)
  */
 abstract class MorphBaseQueryTranslator {
 
@@ -127,6 +128,15 @@ abstract class MorphBaseQueryTranslator {
     }
 
     /**
+     * Translate an atomic abstract query into a set of concrete queries.
+     *
+     * @param atomicQ the abstract atomic query
+     * @return the same atomic abstract query instance in which the targetQuery member has been
+     * set with a list of concrete query strings whose results must be UNIONed
+     */
+    def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractAtomicQuery): List[GenericQuery]
+
+    /**
      * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.
      * Those references are used to select the data elements to mention in the projection part of the
      * target database query.
@@ -134,6 +144,7 @@ abstract class MorphBaseQueryTranslator {
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return list of projections
+     * @throws MorphException if the triples map has no object map
      */
     def genProjection(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryProjection] = {
 
@@ -152,9 +163,10 @@ abstract class MorphBaseQueryTranslator {
             val rom = pom.getRefObjectMap(0)
             for (jc <- rom.joinConditions)
                 listRefs = listRefs :+ new MorphBaseQueryProjection(jc.childRef)
-        } else if (tp.getObject().isVariable())
+        } else if (tp.getObject().isVariable()) {
             listRefs = listRefs :+ new MorphBaseQueryProjection(pom.objectMaps.head.getReferences, Some(tp.getObject.toString))
 
+        }
         listRefs
     }
 
@@ -209,6 +221,7 @@ abstract class MorphBaseQueryTranslator {
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of conditions, either non-null or equality
+     * @throws MorphException if the triples map has no object map
      */
     def genCond(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
 
@@ -245,6 +258,8 @@ abstract class MorphBaseQueryTranslator {
 
             if (tpTerm.isLiteral) {
                 // Add an equality condition for each reference in the term map
+                if (pom.objectMaps.isEmpty)
+                    throw new MorphException("Triples map " + tm + " has no object map. Maybe due to an inccorect triples map binding.")
                 val termMap = pom.objectMaps.head
                 if (termMap.isReferenceOrTemplateValued)
                     conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
@@ -302,7 +317,7 @@ abstract class MorphBaseQueryTranslator {
         val pom = tm.predicateObjectMaps.head
 
         if (!pom.hasRefObjectMap)
-            throw new MorphException("Triples map " + tm + " has no parent triples map")
+            throw new MorphException("Triples map " + tm + " has no parent triples map. Maybe due to an inccorect triples map binding.")
 
         if (tpTerm.isURI) {
             // tp.obj is a constant IRI to be matched with the subject of the parent TM:

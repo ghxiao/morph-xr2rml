@@ -10,6 +10,8 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * typically the column name or JSONPath expression
  * @param condType The type of condition
  * @param eqValue value in case of an equality condition. Ignored in another condition type
+ * 
+ * @author Franck Michel (franck.michel@cnrs.fr)
  */
 class MorphBaseQueryCondition(
         val reference: String,

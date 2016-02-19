@@ -47,7 +47,7 @@ class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
 
         val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery, false)
         logger.info("Query for triples map " + triplesMap.id + ": " + mongoQuery.toString)
-        new GenericQuery(None, Constants.DatabaseType.MongoDB, mongoQuery)
+        new GenericQuery(None, Constants.DatabaseType.MongoDB, mongoQuery, logicalSrc.docIterator)
     }
 
     override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = { null }

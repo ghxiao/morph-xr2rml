@@ -1,11 +1,10 @@
 package es.upm.fi.dia.oeg.morph.base.query
 
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
-import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -36,5 +35,13 @@ class MorphAbstractAtomicQuery(
         "{ from   :  " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }"
+    }
+
+    /**
+     * Translate this atomic abstract query into concrete queries.
+     * The result is stored in attribute this.targetQuery.
+     */
+    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+        this.targetQuery = translator.atomicAbstractQuerytoConcrete(this)
     }
 }
