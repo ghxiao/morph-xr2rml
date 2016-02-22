@@ -43,24 +43,22 @@ class MorphRDBDataTranslator(
 
     /**
      * Query the database and build triples from the result set. For each row of the result set do:
-     * 
+     *
      * (1) create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,
-     * 
+     *
      * (2) loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
      * a list of resources from the subject map of a parent object map in case there are referencing object maps,
      * and a list of resources representing target graphs mentioned in the predicate-object map.
-     * 
+     *
      * (3) Combine all subject, graph, predicate and object resources to generate triples.
      */
-    @throws[MorphException]
-    override def generateRDFTriples(
-        tm: R2RMLTriplesMap,
-        query: GenericQuery) = {
+    override def generateRDFTriples(tm: R2RMLTriplesMap) = {
 
         logger.info("Starting translating triples map into RDF instances...");
         val ls = tm.logicalSource;
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;
+        val query = this.unfolder.unfoldConceptMapping(tm)
 
         // Run the query against the database
         val rows = dataSourceReader.execute(query).asInstanceOf[MorphRDBResultSet].resultSet
@@ -102,7 +100,7 @@ class MorphRDBDataTranslator(
                 logger.debug("Row " + i + " subjects: " + subjects)
 
                 // Create the list of resources representing subject target graphs
-                val subjectGraphs = sm.graphMaps.map(sgmElement => {
+                val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
                     val subjectGraphValue = this.translateData(sgmElement, rows, ls.alias, mapXMLDatatype)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
@@ -127,8 +125,7 @@ class MorphRDBDataTranslator(
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
                             for (sub <- subjects)
-                                for (subG <- subjectGraph)
-                                    this.materializer.materializeQuad(sub, RDF.`type`, classRes, subG);
+                                this.materializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
                         });
                     }
                 });
@@ -206,8 +203,7 @@ class MorphRDBDataTranslator(
                     logger.trace("Row " + i + " refObjects: " + refObjects)
 
                     // Create the list of resources representing target graphs mentioned in the predicate-object map
-                    val pogm = pom.graphMaps;
-                    val predicateObjectGraphs = pogm.map(pogmElement => {
+                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
                         val poGraphValue = this.translateData(pogmElement, rows, null, mapXMLDatatype)
                         poGraphValue
                     });
@@ -217,53 +213,7 @@ class MorphRDBDataTranslator(
                     // ----------------------------------------------------------------------------------------------
                     // Finally, combine all the terms to generate triples in the target graphs or default graph
                     // ----------------------------------------------------------------------------------------------
-
-                    if (sm.graphMaps.isEmpty && pogm.isEmpty) {
-                        predicates.foreach(predEl => {
-                            objects.foreach(obj => {
-                                for (sub <- subjects) {
-                                    this.materializer.materializeQuad(sub, predEl, obj, null)
-                                    logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                }
-                            });
-
-                            refObjects.foreach(obj => {
-                                for (sub <- subjects) {
-                                    if (obj != null) {
-                                        this.materializer.materializeQuad(sub, predEl, obj, null)
-                                        logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                    }
-                                }
-                            });
-                        });
-                    } else {
-                        val unionGraphs = subjectGraphs ++ predicateObjectGraphs
-                        unionGraphs.foreach(unionGraph => {
-                            predicates.foreach(predEl => {
-                                objects.foreach(obj => {
-                                    unionGraphs.foreach(unionGraph => {
-                                        for (sub <- subjects) {
-                                            for (un <- unionGraph) {
-                                                this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                            }
-                                        }
-                                    });
-                                });
-
-                                refObjects.foreach(obj => {
-                                    for (sub <- subjects) {
-                                        for (un <- unionGraph) {
-                                            if (obj != null) {
-                                                this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                            }
-                                        }
-                                    }
-                                });
-                            });
-                        })
-                    }
+                    this.materializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
                 });
 
             } catch {
@@ -280,6 +230,17 @@ class MorphRDBDataTranslator(
 
         logger.info(i + " instances retrieved.");
         rows.close();
+    }
+
+    /**
+     * Generate triples in the context of the query rewriting.
+     * This method has been implemented for MongoDB only, in the RDB case the query rewriting is how it was
+     * initially developed in Morph-RDB.
+     *
+     * @throws MorphException
+     */
+    override def generateRDFTriples(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit = {
+        throw new MorphException("Unsupported action.")
     }
 
     /**

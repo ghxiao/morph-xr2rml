@@ -15,8 +15,16 @@ abstract class MorphBaseMaterializer(val model: Model, var outputStream: Writer)
     val logger = Logger.getLogger(this.getClass().getName());
     var rdfLanguage: String = null;
 
-    def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode)
     def materialize()
+
+    def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode)
+    
+    def materializeQuads(
+        subjects: List[RDFNode],
+        predicates: List[RDFNode],
+        objects: List[RDFNode],
+        refObjects: List[RDFNode],
+        graphs: Set[RDFNode])
 
     def setModelPrefixMap(prefixMap: Map[String, String]) = {
         this.model.setNsPrefixes(prefixMap);

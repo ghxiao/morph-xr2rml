@@ -36,20 +36,14 @@ abstract class MorphBaseDataTranslator(
      * based on the triples map: this consists in calculating the query, running it against the database,
      * translating results in RDF terms and making the triples.
      */
-    def translateData(mappingDocument: R2RMLMappingDocument): Unit = {
+    def translateData_Materialization(mappingDocument: R2RMLMappingDocument): Unit = {
         val tms = mappingDocument.classMappings
         for (tm <- tms) {
             logger.info("===============================================================================");
             logger.info("Starting data materialization of triples map " + tm.id);
             try {
-                val query = this.unfolder.unfoldConceptMapping(tm);
-                this.generateRDFTriples(tm, query);
-                null
+                this.generateRDFTriples(tm)
             } catch {
-                case e: MorphException => {
-                    logger.error("Error while generatring triples for " + tm + ": " + e.getMessage);
-                    e.printStackTrace()
-                }
                 case e: Exception => {
                     logger.error("Unexpected error while generatring triples for " + tm + ": " + e.getMessage);
                     e.printStackTrace()
@@ -59,34 +53,33 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Generate triples in the context of the query rewriting: run the query and apply
-     * the triples map bound to the query (GenericQuery.bondTriplesMap) to create triples.
+     * Materialize triples based on a triples map definition.
+     * This is the method where all the database-specific work will be done
+     * @throws MorphException
      */
-    def generateRDFTriples(query: GenericQuery): Unit = {
-        val tm = query.boundTriplesMap.get
+    protected def generateRDFTriples(tm: R2RMLTriplesMap): Unit
+
+    /**
+     * Generate triples in the context of the query rewriting: run the child and optional parent queries,
+     * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
+     */
+    def translateDate_QueryRewriting(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit = {
         try {
-            this.generateRDFTriples(tm, query);
+            this.generateRDFTriples(childQuery, parentQuery)
         } catch {
-            case e: MorphException => {
-                logger.error("Error while generatring triples for " + tm + ": " + e.getMessage);
-                e.printStackTrace()
-            }
             case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + tm + ": " + e.getMessage);
+                logger.error("Unexpected error while generatring triples for " + childQuery.boundTriplesMap + ": " + e.getMessage)
                 e.printStackTrace()
             }
         }
     }
 
     /**
-     * Query the database and build triples from the result based on the triples map definition.
-     * This is the method where all the database-specific work will be done
-     *
+     * Generate triples in the context of the query rewriting: run the child and optional parent queries,
+     * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
      * @throws MorphException
      */
-    protected def generateRDFTriples(
-        tm: R2RMLTriplesMap,
-        query: GenericQuery): Unit
+    protected def generateRDFTriples(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

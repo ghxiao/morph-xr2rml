@@ -93,7 +93,6 @@ abstract class MorphBaseQueryTranslator {
             val project = genProjection(tp, tm)
             val where = genCond(tp, tm)
             val q1 = new MorphAbstractAtomicQuery(Some(tm), from, project, where)
-
             val Q =
                 if (!pom.hasRefObjectMap)
                     // If there is no parent triples map, simply return this atomic abstract query
@@ -104,7 +103,7 @@ abstract class MorphBaseQueryTranslator {
                     val Pfrom = mappingDocument.getParentTriplesMap(rom).logicalSource
                     val Pproject = genProjectionParent(tp, tm)
                     val Pwhere = genCondParent(tp, tm)
-                    val q2 = new MorphAbstractAtomicQuery(Some(tm), Pfrom, Pproject, Pwhere)
+                    val q2 = new MorphAbstractAtomicQuery(None, Pfrom, Pproject, Pwhere) // no TM is bound to the parent query, only to the child
 
                     if (rom.joinConditions.size != 1)
                         logger.warn("Multiple join conditions not supported in a ReferencingObjectMap. Considering only the first one.")

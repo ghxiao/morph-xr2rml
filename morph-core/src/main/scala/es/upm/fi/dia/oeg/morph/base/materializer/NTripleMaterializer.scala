@@ -53,7 +53,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
 
                 // Check if the object is an RDF List and if there would already be the same triple in the model
                 if (obj.isResource && GeneralUtility.isRdfList(model, obj.asResource)) {
-                    
+
                     // List all triples concerning the same subject and predicate to see if there would already be the same list
                     val existingObjs = model.listObjectsOfProperty(subject.asResource(), pred)
 
@@ -101,4 +101,45 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
         } else
             logger.error("Unable to serialize triple, subject: " + subject + ", predicate: " + predicate + ", object: " + obj);
     }
+
+    /**
+     * Materialize RDF triple in target graphs
+     */
+    def materializeQuads(
+        subjects: List[RDFNode],
+        predicates: List[RDFNode],
+        objects: List[RDFNode],
+        refObjects: List[RDFNode],
+        graphs: Set[RDFNode]): Unit = {
+
+        predicates.foreach(pred => {
+            subjects.foreach(sub => {
+                objects.foreach(obj => {
+                    if (graphs.isEmpty) {
+                        this.materializeQuad(sub, pred, obj, null)
+                        if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
+                    } else {
+                        graphs.foreach(graph => {
+                            this.materializeQuad(sub, pred, obj, graph)
+                            if (logger.isDebugEnabled()) logger.debug("Materialized triple: graph[" + graph + "], [" + sub + "] [" + pred + "] [" + obj + "]")
+                        })
+                    }
+                })
+                refObjects.foreach(obj => {
+                    if (obj != null) {
+                        if (graphs.isEmpty) {
+                            this.materializeQuad(sub, pred, obj, null)
+                            if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
+                        } else {
+                            graphs.foreach(graph => {
+                                this.materializeQuad(sub, pred, obj, graph)
+                                if (logger.isDebugEnabled()) logger.debug("Materialized triple: graph[" + graph + "], [" + sub + "] [" + pred + "] [" + obj + "]")
+                            })
+                        }
+                    }
+                })
+            })
+        })
+    }
+
 }

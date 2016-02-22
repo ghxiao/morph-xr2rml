@@ -47,7 +47,6 @@ class MorphMongoDataTranslator(
 
     /**
      * Query the database and build triples from the result. For each document of the result set:
-     *
      * <ol>
      * <li>create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,</li>
      * <li>loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
@@ -56,32 +55,33 @@ class MorphMongoDataTranslator(
      * <li>Finally combine all subject, graph, predicate and object resources to generate triples.</li>
      * </ol>
      *
-     * @throws MorphException
+     * @param tm the triples map for which to generate the triples
      */
-    override def generateRDFTriples(
-        tm: R2RMLTriplesMap,
-        query: GenericQuery): Unit = {
+    override def generateRDFTriples(tm: R2RMLTriplesMap): Unit = {
 
-        logger.info("Starting translating triples map into RDF instances...");
+        logger.info("Starting translating triples map " + tm.toString + " into RDF triples...");
         val ls = tm.logicalSource;
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;
+        val query = this.unfolder.unfoldConceptMapping(tm)
 
         // Execute the query against the database and apply the iterator
         val childResultSet = executeQueryAndIterator(query, ls.docIterator)
 
-        // Execute all the parent queries against the database and apply their iterators
-        // to be able to do the joins.
+        // Execute the queries of all the parent triples maps (in the join conditions) against the database 
+        // and apply their iterators. There queries will serve in computing the joins.
         // This "cache" lives just the time of computing this triples map, therefore it is
-        // different from the global cache executedQueries that lives along the computing of al triples maps
+        // different from the global cache executedQueries that lives along the computing of all triples maps
+        // parentResultSets is a map whose key is the query map id (query string + iterator), and the value 
+        // if a list of result documents.
         val parentResultSets: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
         poms.foreach(pom => {
             pom.refObjectMaps.foreach(rom => {
                 val parentTM = this.md.getParentTriplesMap(rom)
-                val query = this.unfolder.unfoldConceptMapping(parentTM)
-                val queryMapId = makeQueryMapId(query, parentTM.logicalSource.docIterator)
+                val parentQuery = this.unfolder.unfoldConceptMapping(parentTM)
+                val queryMapId = makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator)
                 if (!parentResultSets.contains(queryMapId)) {
-                    val resultSet = executeQueryAndIterator(query, parentTM.logicalSource.docIterator)
+                    val resultSet = executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator)
                     parentResultSets += (queryMapId -> resultSet)
                 }
             })
@@ -101,7 +101,7 @@ class MorphMongoDataTranslator(
                 if (logger.isDebugEnabled()) logger.debug("Document " + i + " subjects: " + subjects)
 
                 // Create the list of resources representing subject target graphs
-                val subjectGraphs = sm.graphMaps.map(sgmElement => {
+                val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
                     val subjectGraphValue = this.translateData(sgmElement, document)
                     val graphMapTermType = sgmElement.inferTermType;
                     val subjectGraph = graphMapTermType match {
@@ -128,22 +128,20 @@ class MorphMongoDataTranslator(
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
                             for (sub <- subjects)
-                                for (subG <- subjectGraph)
-                                    this.materializer.materializeQuad(sub, RDF.`type`, classRes, subG);
+                                this.materializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
                         });
                     }
                 });
 
                 // Internal loop on each predicate-object map
                 poms.foreach(pom => {
-
                     // ----- Make a list of resources for the predicate maps of this predicate-object map
                     val predicates = pom.predicateMaps.flatMap(predicateMap => { this.translateData(predicateMap, document) });
-                    if (logger.isDebugEnabled()) logger.debug("Document " + i + " predicates: " + predicates)
+                    if (!predicates.isEmpty && logger.isDebugEnabled()) logger.debug("Document " + i + " predicates: " + predicates)
 
                     // ------ Make a list of resources for the object maps of this predicate-object map
                     val objects = pom.objectMaps.flatMap(objectMap => { this.translateData(objectMap, document) });
-                    if (logger.isDebugEnabled()) logger.debug("Document " + i + " objects: " + objects)
+                    if (!objects.isEmpty && logger.isDebugEnabled()) logger.debug("Document " + i + " objects: " + objects)
 
                     // ----- For each RefObjectMap get the IRIs from the subject map of the parent triples map
                     val refObjects = pom.refObjectMaps.flatMap(refObjectMap => {
@@ -160,22 +158,23 @@ class MorphMongoDataTranslator(
                             // ---- Evaluate the parent reference on the results of the parent triples map logical source
 
                             // Create the mixed syntax path corresponding to the parent reference
-                            val msp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
+                            val parentMsp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
 
                             // Get the results of the parent query
                             val queryMapId = makeQueryMapId(this.unfolder.unfoldConceptMapping(parentTM), parentTM.logicalSource.docIterator)
                             val parentRes = parentResultSets.get(queryMapId).get
 
-                            // Evaluate each parent query result against the mixed syntax path
-                            val parentValues = parentRes.map(tmResult => (tmResult, msp.evaluate(tmResult)))
+                            // Evaluate the mixed syntax path on each parent query result. The result is stored as pairs:
+                            // 		(JSON document, result of the evaluation of the parent reference on the JSON document)   
+                            val parentValues = parentRes.map(res => (res, parentMsp.evaluate(res)))
 
-                            // ---- Make the actual join between the child values and parent values
-                            val parentSubjects = parentValues.flatMap(parentResult => {
+                            // ---- Make the join between the child values and parent values
+                            val parentSubjects = parentValues.flatMap(parentVal => {
                                 // For each document returned by the parent triples map (named parent document),
                                 // if at least one of the child values is in the current parent document values, 
                                 // then generate an RDF term for the subject of the current parent document.
-                                if (!childValues.intersect(parentResult._2).isEmpty)
-                                    Some(this.translateData(parentTM.subjectMap, parentResult._1))
+                                if (!childValues.intersect(parentVal._2).isEmpty) // parentVal._2 is the evaluation of the parent ref
+                                    Some(this.translateData(parentTM.subjectMap, parentVal._1)) // parentVal._1 is the JSON document itself
                                 else
                                     // There was no match: return an empty list so that the final intersection of candidate return nothing
                                     Some(List())
@@ -195,12 +194,10 @@ class MorphMongoDataTranslator(
                         else
                             createCollection(refObjectMap.termType.get, finalParentSubjects)
                     })
-                    if (!refObjects.isEmpty)
-                        if (logger.isDebugEnabled()) logger.debug("Document " + i + " refObjects: " + refObjects)
+                    if (!refObjects.isEmpty && logger.isDebugEnabled()) logger.debug("Document " + i + " refObjects: " + refObjects)
 
                     // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                    val pogm = pom.graphMaps;
-                    val predicateObjectGraphs = pogm.map(pogmElement => {
+                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
                         val poGraphValue = this.translateData(pogmElement, document)
                         poGraphValue
                     });
@@ -208,53 +205,147 @@ class MorphMongoDataTranslator(
                         if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                     // ----- Finally, combine all the terms to generate triples in the target graphs or default graph
-                    if (sm.graphMaps.isEmpty && pogm.isEmpty) {
-                        predicates.foreach(predEl => {
-                            objects.foreach(obj => {
-                                for (sub <- subjects) {
-                                    this.materializer.materializeQuad(sub, predEl, obj, null)
-                                    if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                }
-                            });
+                    this.materializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
+                })
+            } catch {
+                case e: MorphException => {
+                    logger.error("Error while translating data of document " + i + ": " + e.getMessage);
+                    e.printStackTrace()
+                }
+                case e: Exception => {
+                    logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
+                    e.printStackTrace()
+                }
+            }
+        }
+        if (logger.isDebugEnabled()) logger.debug(i + " instances retrieved.");
+    }
 
-                            refObjects.foreach(obj => {
-                                for (sub <- subjects) {
-                                    if (obj != null) {
-                                        this.materializer.materializeQuad(sub, predEl, obj, null)
-                                        if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                    }
-                                }
-                            });
-                        });
-                    } else {
-                        val unionGraphs = subjectGraphs ++ predicateObjectGraphs
-                        unionGraphs.foreach(unionGraph => {
-                            predicates.foreach(predEl => {
-                                objects.foreach(obj => {
-                                    unionGraphs.foreach(unionGraph => {
-                                        for (sub <- subjects) {
-                                            for (un <- unionGraph) {
-                                                this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                if (logger.isDebugEnabled()) logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                            }
-                                        }
-                                    });
-                                });
+    /**
+     * Generate triples in the context of the query rewriting: run the child and optional parent queries,
+     * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
+     * 
+     * This assumes that triples maps are normalized, i.e. (1) exactly one predicate-object map with exactly one
+     * predicate map and one object map, (2) each rr:class property of the subject map was translated into an
+     * equivalent normalized triples map.
+     *
+     * @param childQuery a concrete MongoDB query
+     * @param parentQuery optional concrete MongoDB query in case the triples map has one referencing object map
+     */
+    override def generateRDFTriples(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit = {
 
-                                refObjects.foreach(obj => {
-                                    for (sub <- subjects) {
-                                        for (un <- unionGraph) {
-                                            if (obj != null) {
-                                                this.materializer.materializeQuad(sub, predEl, obj, un)
-                                                if (logger.isDebugEnabled()) logger.debug("Materialized triple: graph[" + un + "], [" + sub + "] [" + predEl + "] [" + obj + "]")
-                                            }
-                                        }
-                                    }
-                                });
-                            });
-                        })
+        val tm = childQuery.boundTriplesMap.get
+        logger.info("Starting translating triples map " + tm.toString + " into RDF triples...");
+        val sm = tm.subjectMap;
+        val poms = tm.predicateObjectMaps;
+        val pom = poms.head
+
+        // Execute the query against the database and apply the iterator
+        val childResultSet = executeQueryAndIterator(childQuery, tm.logicalSource.docIterator)
+
+        // Execute the parent query (in the join condition) against the database
+        val parentResultSet = {
+            if (parentQuery.isDefined && !pom.refObjectMaps.isEmpty) {
+                val rom = pom.refObjectMaps.head
+                val parentTM = this.md.getParentTriplesMap(rom)
+                Some(executeQueryAndIterator(parentQuery.get, parentTM.logicalSource.docIterator))
+            } else
+                None
+        }
+
+        // Main loop: iterate and process each result document of the result set
+        var i = 0;
+        for (document <- childResultSet) {
+            i = i + 1;
+            if (logger.isDebugEnabled()) logger.debug("Generating triples for document " + i + "/" + childResultSet.size + ": " + document)
+
+            try {
+                //---- Create the subject resource
+                val subjects = this.translateData(sm, document)
+                if (subjects == null) { throw new Exception("null value in the subject triple") }
+                if (logger.isDebugEnabled()) logger.debug("Document " + i + " subjects: " + subjects)
+
+                //---- Create the list of resources representing subject target graphs
+                val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
+                    val subjectGraphValue = this.translateData(sgmElement, document)
+                    val graphMapTermType = sgmElement.inferTermType;
+                    graphMapTermType match {
+                        case Constants.R2RML_IRI_URI => { subjectGraphValue }
+                        case _ => {
+                            val errorMessage = "GraphMap's TermType is not valid: " + graphMapTermType;
+                            logger.warn(errorMessage);
+                            throw new MorphException(errorMessage);
+                        }
                     }
+                })
+                if (!subjectGraphs.isEmpty)
+                    if (logger.isDebugEnabled()) logger.debug("Document " + i + " subject graphs: " + subjectGraphs)
+
+                // ----- Make a list of resources for the predicate map of the predicate-object map
+                val predicates = this.translateData(pom.predicateMaps.head, document)
+                if (logger.isDebugEnabled()) logger.debug("Document " + i + " predicates: " + predicates)
+
+                // ------ Make a list of resources for the object map of the predicate-object map
+                val objects =
+                    if (!pom.objectMaps.isEmpty)
+                        this.translateData(pom.objectMaps.head, document)
+                    else List.empty
+                if (!objects.isEmpty)
+                    if (logger.isDebugEnabled()) logger.debug("Document " + i + " objects: " + objects)
+
+                // ----- If there is a RefObjectMap, get the IRIs from the parent query using the subject map 
+                // 		 of the parent triples map, and join the child and parent references in the join condition
+                val refObjects = {
+                    if (parentQuery.isDefined && !pom.refObjectMaps.isEmpty) {
+
+                        // ---- Compute a list of subject IRIs for the join condition
+                        val rom = pom.refObjectMaps.head
+                        val parentTM = this.md.getParentTriplesMap(rom)
+                        val joinCond = rom.joinConditions.head
+
+                        // Evaluate the child reference on the current document (of the child triples map)
+                        val childMsp = MixedSyntaxPath(joinCond.childRef, sm.refFormulaion)
+                        val childValues: List[Object] = childMsp.evaluate(document)
+
+                        // Evaluate the parent reference on each parent query result. The result is stored as pairs:
+                        // (JSON document, result of the evaluation of the parent reference on the JSON document)
+                        val parentMsp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
+                        val parentValues = parentResultSet.get.map(res => (res, parentMsp.evaluate(res)))
+
+                        // ---- Make the join between the child and parent values
+                        val parentSubjects = parentValues.flatMap(parentVal => {
+                            // For each document returned by the parent triples map (named parent document),
+                            // if at least one of the child values is in the current parent document values, 
+                            // then generate an RDF term for the subject of the current parent document.
+                            if (!childValues.intersect(parentVal._2).isEmpty) // parentVal._2 is the evaluation of the parent ref
+                                Some(this.translateData(parentTM.subjectMap, parentVal._1)) // parentVal._1 is the JSON document itself
+                            else
+                                // There was no match: return an empty list so that the final intersection of candidate return nothing
+                                Some(List())
+                        }).flatten
+                        if (logger.isTraceEnabled()) logger.trace("Join parent candidates: " + joinCond.toString + ", result:" + parentSubjects)
+
+                        // Optionally convert the result to an RDF collection or container
+                        if (rom.isR2RMLTermType)
+                            parentSubjects
+                        else
+                            createCollection(rom.termType.get, parentSubjects)
+                    } else
+                        List.empty
+                }
+                if (!refObjects.isEmpty)
+                    if (logger.isDebugEnabled()) logger.debug("Document " + i + " refObjects: " + refObjects)
+
+                // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
+                val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
+                    val poGraphValue = this.translateData(pogmElement, document)
+                    poGraphValue
                 });
+                if (!predicateObjectGraphs.isEmpty && logger.isDebugEnabled())
+                    logger.debug("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+
+                // ----- Finally, combine all the terms to generate triples in the target graphs or default graph
+                this.materializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
 
             } catch {
                 case e: MorphException => {
@@ -267,8 +358,7 @@ class MorphMongoDataTranslator(
                 }
             }
         }
-        if (logger.isDebugEnabled())
-            logger.debug(i + " instances retrieved.");
+        if (logger.isDebugEnabled()) logger.debug(i + " instances retrieved.");
     }
 
     /**
@@ -367,8 +457,9 @@ class MorphMongoDataTranslator(
      * Create a JENA literal resource with optional data type and language tag.
      * This method is overriden in the case of JSON to enable the mapping between JSON data types
      * and XSD data types
+     *
+     * @throws MorphException
      */
-    @throws[MorphException]
     override protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
             val encodedValue =

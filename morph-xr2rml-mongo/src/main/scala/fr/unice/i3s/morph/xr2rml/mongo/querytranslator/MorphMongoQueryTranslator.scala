@@ -29,7 +29,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
  * has not more that one predicate-object map, and each predicate-object map has
  * exactly one predicate and one object map.
  * In the code this assumption is mentioned by the annotation @NORMALIZED_ASSUMPTION
- * 
+ *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
 class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQueryTranslator {
@@ -63,7 +63,6 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         // This is totally adhoc code meant to test the whole process of running Morph-xR2RML with
         // a query of one triple pattern. 
         // -> Bindings with triples maps are hard coded here
-
         val tmMovies = md.getClassMappingsByName("Movies")
         val tmDirectors = md.getClassMappingsByName("Directors")
 
@@ -120,7 +119,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
             logger.trace("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
 
         // Create the concrete query/queries from the set of abstract MongoDB queries
-        val from = genFrom(atomicQ.boundTriplesMap.get)
+        val from = MongoDBQuery.parseQueryString(atomicQ.from.getValue, atomicQ.from.docIterator, true)
         val queries = mongoAbstractQuerytoConcrete(from, atomicQ.project, mongAbsQ)
 
         // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
@@ -175,18 +174,6 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         if (logger.isTraceEnabled())
             logger.trace("Final set of concrete queries: [" + Qstr + "]")
         Qstr
-    }
-
-    /**
-     * Generate the data source from the triples map
-     *
-     * @param tm a triples map that has been assessed to be a candidate triples map for the translation of tp into a query
-     * @return a MongoDBQuery representing the query string
-     */
-    def genFrom(tm: R2RMLTriplesMap): MongoDBQuery = {
-        val logSrc = tm.getLogicalSource
-        val query = MongoDBQuery.parseQueryString(logSrc.getValue, logSrc.docIterator, true)
-        query
     }
 
     /**

@@ -80,7 +80,7 @@ class MorphBaseRunner(
         val start = System.currentTimeMillis();
 
         // Run the query and generate triples
-        this.dataTranslator.translateData(mappingDocument)
+        this.dataTranslator.translateData_Materialization(mappingDocument)
 
         // Write the result to the output file
         this.dataTranslator.materializer.materialize();
