@@ -105,12 +105,12 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
     /**
      * Materialize RDF triple in target graphs
      */
-    def materializeQuads(
+    override def materializeQuads(
         subjects: List[RDFNode],
         predicates: List[RDFNode],
         objects: List[RDFNode],
         refObjects: List[RDFNode],
-        graphs: Set[RDFNode]): Unit = {
+        graphs: List[RDFNode]): Unit = {
 
         predicates.foreach(pred => {
             subjects.foreach(sub => {

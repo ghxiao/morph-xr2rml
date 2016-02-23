@@ -235,7 +235,7 @@ abstract class MorphBaseDataTranslator(
      * If the list of nodes is empty, return an empty list, but no empty collection/contianer is returned.
      */
     @throws[MorphException]
-    protected def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
+    def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
 
         // If values is empty, then do not return a list with one empty list inside, but just an empty list
         if (values.isEmpty)

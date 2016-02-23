@@ -24,7 +24,7 @@ abstract class MorphBaseMaterializer(val model: Model, var outputStream: Writer)
         predicates: List[RDFNode],
         objects: List[RDFNode],
         refObjects: List[RDFNode],
-        graphs: Set[RDFNode])
+        graphs: List[RDFNode])
 
     def setModelPrefixMap(prefixMap: Map[String, String]) = {
         this.model.setNsPrefixes(prefixMap);

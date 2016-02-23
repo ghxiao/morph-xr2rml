@@ -113,7 +113,7 @@ class MorphRDBDataTranslator(
                         }
                     }
                     subjectGraph
-                });
+                }).toList;
                 if (!subjectGraphs.isEmpty)
                     logger.trace("Row " + i + " subject graphs: " + subjectGraphs)
 
@@ -207,7 +207,7 @@ class MorphRDBDataTranslator(
                     val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
                         val poGraphValue = this.translateData(pogmElement, rows, null, mapXMLDatatype)
                         poGraphValue
-                    });
+                    }).toList;
                     if (!predicateObjectGraphs.isEmpty)
                         logger.trace("Row " + i + " predicate-object map graphs: " + predicateObjectGraphs)
 

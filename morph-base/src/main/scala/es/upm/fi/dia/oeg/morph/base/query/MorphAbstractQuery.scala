@@ -5,6 +5,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 
 /**
  * Representation of an abstract query as defined in https://hal.archives-ouvertes.fr/hal-01245883.
@@ -50,6 +52,21 @@ class MorphAbstractQuery(
      * @param translator the query translator
      */
     def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+        throw new MorphException("Not supported")
+    }
+
+    /**
+     * Execute the query and produce the RDF terms for each of the result documents
+     * by applying the triples map bound to this query.
+     *
+     * @param dataSourceReader the data source reader to query the database
+     * @param dataTrans the data translator to create RDF terms
+     * @return a list of MorphBaseResultRdfTerms instances, one for each result document
+     * May return an empty result but NOT null.
+     */
+    def generateRdfTerms(
+        dataSourceReader: MorphBaseDataSourceReader,
+        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
         throw new MorphException("Not supported")
     }
 }
