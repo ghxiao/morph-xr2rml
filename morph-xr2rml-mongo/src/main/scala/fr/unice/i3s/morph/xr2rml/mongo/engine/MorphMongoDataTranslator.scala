@@ -1,12 +1,10 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -15,15 +13,15 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryInnerJoinRef
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryUnion
 
 class MorphMongoDataTranslator(
     md: R2RMLMappingDocument,
@@ -66,7 +64,7 @@ class MorphMongoDataTranslator(
         val query = this.unfolder.unfoldConceptMapping(tm)
 
         // Execute the query against the database and apply the iterator
-        val childResultSet = executeQueryAndIterator(query, ls.docIterator)
+        val childResultSet = dataSourceReader.executeQueryAndIterator(query, ls.docIterator).asInstanceOf[MorphMongoResultSet].resultSet.toList
 
         // Execute the queries of all the parent triples maps (in the join conditions) against the database 
         // and apply their iterators. There queries will serve in computing the joins.
@@ -81,8 +79,8 @@ class MorphMongoDataTranslator(
                 val parentQuery = this.unfolder.unfoldConceptMapping(parentTM)
                 val queryMapId = makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator)
                 if (!parentResultSets.contains(queryMapId)) {
-                    val resultSet = executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator)
-                    parentResultSets += (queryMapId -> resultSet)
+                    val resultSet = dataSourceReader.executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
+                    parentResultSets += (queryMapId -> resultSet.toList)
                 }
             })
         })
@@ -224,33 +222,53 @@ class MorphMongoDataTranslator(
     /**
      * Generate triples in the context of the query rewriting: run the child and optional parent queries,
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
-     * 
+     *
      * This assumes that triples maps are normalized, i.e. (1) exactly one predicate-object map with exactly one
      * predicate map and one object map, (2) each rr:class property of the subject map was translated into an
      * equivalent normalized triples map.
      *
-     * @param childQuery a concrete MongoDB query
-     * @param parentQuery optional concrete MongoDB query in case the triples map has one referencing object map
+     * @param query an abstract query in which the targetQuery fields must have been set
+     * @throws MorphException if one of the atomic abstract queries in this query has no target query
      */
-    override def generateRDFTriples(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit = {
+    override def generateRDFTriples(query: MorphAbstractQuery): Unit = {
+        if (!query.isTargetQuerySet)
+            throw new MorphException("Target queries not set in " + query)
 
-        val tm = childQuery.boundTriplesMap.get
+        val tm = query.boundTriplesMap.get
         logger.info("Starting translating triples map " + tm.toString + " into RDF triples...");
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;
         val pom = poms.head
 
-        // Execute the query against the database and apply the iterator
-        val childResultSet = executeQueryAndIterator(childQuery, tm.logicalSource.docIterator)
+        var childResultSet: List[String] = List.empty
+        var parentResultSet: Option[List[String]] = None
 
-        // Execute the parent query (in the join condition) against the database
-        val parentResultSet = {
-            if (parentQuery.isDefined && !pom.refObjectMaps.isEmpty) {
-                val rom = pom.refObjectMaps.head
-                val parentTM = this.md.getParentTriplesMap(rom)
-                Some(executeQueryAndIterator(parentQuery.get, parentTM.logicalSource.docIterator))
-            } else
-                None
+        if (query.isInstanceOf[MorphAbstractAtomicQuery]) {
+
+            // Execute the queries, apply the iterator, and make a UNION (flatMap) of the results
+            childResultSet = query.executeQuery(dataSourceReader, tm.logicalSource.docIterator)
+                .flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+
+        } else if (query.isInstanceOf[MorphAbstractQueryInnerJoinRef]) {
+
+            // Execute the child queries, apply the iterator, and make a UNION (flatMap) of the results
+            val q = query.asInstanceOf[MorphAbstractQueryInnerJoinRef]
+            childResultSet = q.child.executeQuery(dataSourceReader, tm.logicalSource.docIterator)
+                .flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+
+            // Execute the parent queries (in the join condition), apply the iterator, and make a UNION (flatMap) of the results
+            parentResultSet = {
+                if (!pom.refObjectMaps.isEmpty) {
+                    val rom = pom.refObjectMaps.head
+                    val parentTM = this.md.getParentTriplesMap(rom)
+                    Some(q.parent.executeQuery(dataSourceReader, parentTM.logicalSource.docIterator)
+                        .flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet))
+                } else
+                    None
+            }
+        } else if (query.isInstanceOf[MorphAbstractQueryUnion]) {
+            val q = query.asInstanceOf[MorphAbstractQueryUnion]
+
         }
 
         // Main loop: iterate and process each result document of the result set
@@ -296,7 +314,7 @@ class MorphMongoDataTranslator(
                 // ----- If there is a RefObjectMap, get the IRIs from the parent query using the subject map 
                 // 		 of the parent triples map, and join the child and parent references in the join condition
                 val refObjects = {
-                    if (parentQuery.isDefined && !pom.refObjectMaps.isEmpty) {
+                    if (!pom.refObjectMaps.isEmpty) {
 
                         // ---- Compute a list of subject IRIs for the join condition
                         val rom = pom.refObjectMaps.head
@@ -524,87 +542,6 @@ class MorphMongoDataTranslator(
 
             case _ => null
         }
-    }
-
-    /**
-     * Execute a query against the database and apply an rml:iterator on the results.
-     *
-     * Results of the query are saved to an hash map, to avoid doing the same query several times
-     * in case we need it again later. This is used to evaluate queries of triples maps and reuse
-     * results for joins in case of reference object map.
-     *
-     * Major drawback: memory consumption, this is not appropriate for very big databases.
-     */
-    private def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String]): List[String] = {
-
-        // A query is simply and uniquely identified by its concrete string value
-        val queryMapId = makeQueryMapId(query, logSrcIterator)
-        val queryResult =
-            if (executedQueries.contains(queryMapId)) {
-                if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache: " + query)
-                executedQueries(queryMapId)
-            } else {
-                // Execute the query against the database, choose the execution method depending on the db type
-                val resultSet = dataSourceReader.execute(query).asInstanceOf[MorphMongoResultSet].resultSet.toList
-
-                // Save the result of this query in case it is asked again later (in a join)
-                // @TODO USE WITH CARE: this would need to be strongly improved with the use of a real cache library,
-                // and memory-consumption-based eviction.
-                if (properties.cacheQueryResult) {
-                    executedQueries += (queryMapId -> resultSet)
-                    if (logger.isTraceEnabled()) logger.trace("Adding query to cache: " + query)
-                }
-                resultSet
-            }
-
-        // Apply the iterator to the result set, this creates a new result set
-        val queryResultIter =
-            if (logSrcIterator.isDefined) {
-                val jPath = JSONPath_PathExpression.parseRaw(logSrcIterator.get)
-                queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
-            } else queryResult
-
-        if (logger.isTraceEnabled()) logger.trace("Query returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
-        queryResultIter
-    }
-
-    /**
-     * This method retrieves the data corresponding to a triples map, then
-     * it evaluates an expression (mixed syntax path or a simple JSONPath expression) on
-     * each result documents.
-     * It is used to evaluate the parent reference of a join condition on the parent triples map.
-     *
-     * @param tm triples map
-     * @param reference mixed syntax path expression to evaluate on the results of the triples map
-     * @return a list of couples (result document, evaluation of the expression on that document).
-     * The result document is one of the results of executing the logical source query.
-     * The evaluation of each of these documents can return more than one value, thus the 2nd
-     * member of the couple is a list.
-     */
-    private def evalMixedSyntaxPathOnTriplesMap(tm: R2RMLTriplesMap, reference: String): List[(String, List[Object])] = {
-
-        // Get the query corresponding to that triples map
-        var query: GenericQuery = null
-        if (queries.contains(tm.id)) {
-            logger.info("Query for triples map " + tm.id + ": " + queries(tm.id))
-            query = queries(tm.id)
-        } else {
-            query = this.unfolder.unfoldConceptMapping(tm)
-            queries += (tm.id -> query)
-        }
-
-        // Execute the query against the database
-        val tmResultSet = executeQueryAndIterator(query, tm.logicalSource.docIterator)
-
-        // Create the mixed syntax path corresponding to the reference
-        val msp = MixedSyntaxPath(reference, tm.subjectMap.refFormulaion)
-
-        // Evaluate each result of the triples map against the mixed syntax path
-        val results = tmResultSet.map(tmResult => {
-            (tmResult, msp.evaluate(tmResult))
-        })
-
-        results
     }
 
     private def makeQueryMapId(query: GenericQuery, iter: Option[String]): String = {

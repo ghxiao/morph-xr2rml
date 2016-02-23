@@ -128,6 +128,7 @@ abstract class MorphBaseQueryTranslator {
 
     /**
      * Translate an atomic abstract query into a set of concrete queries.
+     * This method is used in the MorphAbstractAtomicQuery class.
      *
      * @param atomicQ the abstract atomic query
      * @return the same atomic abstract query instance in which the targetQuery member has been

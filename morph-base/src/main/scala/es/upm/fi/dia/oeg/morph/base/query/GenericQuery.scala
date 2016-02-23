@@ -13,7 +13,6 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
  */
 class GenericQuery(
 
-        val boundTriplesMap: Option[R2RMLTriplesMap],
         val dbType: Constants.DatabaseType.Value,
         val concreteQuery: Object,
         iter: Option[String]) {
@@ -30,8 +29,6 @@ class GenericQuery(
         var str = "GenericQuery[" + concreteQuery.toString
         if (iter.isDefined)
             str = str + ", Iterator: " + iter.get
-        if (boundTriplesMap.isDefined)
-            str = str + ", BoundTM: " + boundTriplesMap.get
         str + "]"
     }
 }

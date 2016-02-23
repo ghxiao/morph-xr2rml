@@ -41,11 +41,18 @@ class MorphAbstractQueryInnerJoinRef(
 
     /**
      * Translate all atomic abstract queries of this abstract query into concrete queries.
-     *
-     * @translator the query translator
+     * @param translator the query translator
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         child.translateAtomicAbstactQueriesToConcrete(translator)
         parent.translateAtomicAbstactQueriesToConcrete(translator)
+    }
+
+    /**
+     * Check if atomic abstract queries within this query have a target query properly initialized
+     * i.e. targetQuery is not empty
+     */
+    override def isTargetQuerySet: Boolean = {
+        child.isTargetQuerySet && parent.isTargetQuerySet
     }
 }

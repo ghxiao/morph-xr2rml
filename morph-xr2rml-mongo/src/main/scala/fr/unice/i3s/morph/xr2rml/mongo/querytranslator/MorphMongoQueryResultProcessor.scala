@@ -44,27 +44,9 @@ class MorphMongoQueryResultProcessor(
 
         mapSparqlSql.foreach(mapElement => {
             val sparqlQuery: Query = mapElement._1
+            dataTranslator.translateDate_QueryRewriting(mapElement._2)
 
-            if (mapElement._2.isInstanceOf[MorphAbstractAtomicQuery]) {
-                
-                // @TODO For now just one result GenericQuery
-                val genQuery: GenericQuery = mapElement._2.targetQuery(0).asInstanceOf[GenericQuery]
-
-                // Generate triples matching the triple pattern in the current model
-                // @TODO: for now this works fine with 
-                dataTranslator.translateDate_QueryRewriting(genQuery, None)
-                
-            } else if (mapElement._2.isInstanceOf[MorphAbstractQueryInnerJoinRef]) {
-                
-                // @TODO For now just one result GenericQuery
-                val q = mapElement._2.asInstanceOf[MorphAbstractQueryInnerJoinRef]
-                
-                val childQuery: GenericQuery = q.child.targetQuery(0)
-                val parentQuery: GenericQuery = q.parent.targetQuery(0)
-                dataTranslator.translateDate_QueryRewriting(childQuery, Some(parentQuery))
-            }
-
-            // Evaluate the SPARQL query on the result graph
+            // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
             val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, this.dataTranslator.materializer.model)
             val resultSet: ResultSet = qexec.execSelect();
             while (resultSet.hasNext()) {

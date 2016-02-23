@@ -60,7 +60,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
         // WARNING ####################################################################
-        // This is totally adhoc code meant to test the whole process of running Morph-xR2RML with
+        // @TODO This is totally adhoc code meant to test the whole process of running Morph-xR2RML with
         // a query of one triple pattern. 
         // -> Bindings with triples maps are hard coded here
         val tmMovies = md.getClassMappingsByName("Movies")
@@ -78,7 +78,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     }
 
     /**
-     * Translate an atomic abstract query into a set of concrete queries.
+     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
      *
      * First, the atomic abstract query is translated into an abstract MongoDB query using the
      * JsonPathToMongoTranslator.trans() function.
@@ -123,7 +123,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         val queries = mongoAbstractQuerytoConcrete(from, atomicQ.project, mongAbsQ)
 
         // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
-        queries.map(q => new GenericQuery(atomicQ.boundTriplesMap, Constants.DatabaseType.MongoDB, q, atomicQ.from.docIterator))
+        queries.map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, atomicQ.from.docIterator))
     }
 
     /**

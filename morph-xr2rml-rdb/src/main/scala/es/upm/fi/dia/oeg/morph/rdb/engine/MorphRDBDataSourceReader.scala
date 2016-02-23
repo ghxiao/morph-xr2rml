@@ -1,7 +1,6 @@
 package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.Connection
-
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
@@ -9,13 +8,14 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
 
 /**
  * This class is used in case of the query rewriting access method,
  * to execute queries on the fly.
  * It is not used in the data materialization access method.
  */
-class MorphRDBDataSourceReader() extends MorphBaseDataSourceReader {
+class MorphRDBDataSourceReader(properties: MorphProperties) extends MorphBaseDataSourceReader(properties) {
 
     var sqlCnx: Connection = null;
 
@@ -23,6 +23,10 @@ class MorphRDBDataSourceReader() extends MorphBaseDataSourceReader {
         val rs = DBUtility.execute(this.sqlCnx, query.concreteQuery.asInstanceOf[ISqlQuery].toString(), this.timeout);
         val resultSet = new MorphRDBResultSet(rs);
         resultSet;
+    }
+
+    override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String]): MorphBaseResultSet = {
+        throw new MorphException("Unsupported method.")
     }
 
     override def setConnection(connection: GenericConnection) {

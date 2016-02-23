@@ -181,7 +181,7 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        new MorphAbstractQuery(None).setTargetQuery(List(new GenericQuery(None, Constants.DatabaseType.Relational, resultQuery, None)))
+        new MorphAbstractQuery(None).setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None)))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

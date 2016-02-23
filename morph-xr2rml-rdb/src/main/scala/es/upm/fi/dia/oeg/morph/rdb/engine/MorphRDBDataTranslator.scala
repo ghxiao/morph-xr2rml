@@ -26,6 +26,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 
 class MorphRDBDataTranslator(
     md: R2RMLMappingDocument,
@@ -239,7 +240,7 @@ class MorphRDBDataTranslator(
      *
      * @throws MorphException
      */
-    override def generateRDFTriples(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit = {
+    override def generateRDFTriples(query: MorphAbstractQuery): Unit = {
         throw new MorphException("Unsupported action.")
     }
 

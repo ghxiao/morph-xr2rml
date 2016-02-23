@@ -1,15 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import scala.collection.JavaConversions.asJavaIterator
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -21,6 +18,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 
 abstract class MorphBaseDataTranslator(
         val md: R2RMLMappingDocument,
@@ -63,12 +61,12 @@ abstract class MorphBaseDataTranslator(
      * Generate triples in the context of the query rewriting: run the child and optional parent queries,
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
      */
-    def translateDate_QueryRewriting(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit = {
+    def translateDate_QueryRewriting(query: MorphAbstractQuery): Unit = {
         try {
-            this.generateRDFTriples(childQuery, parentQuery)
+            this.generateRDFTriples(query)
         } catch {
             case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + childQuery.boundTriplesMap + ": " + e.getMessage)
+                logger.error("Unexpected error while generatring triples for " + query.boundTriplesMap + ": " + e.getMessage)
                 e.printStackTrace()
             }
         }
@@ -79,7 +77,7 @@ abstract class MorphBaseDataTranslator(
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
      * @throws MorphException
      */
-    protected def generateRDFTriples(childQuery: GenericQuery, parentQuery: Option[GenericQuery]): Unit
+    protected def generateRDFTriples(query: MorphAbstractQuery): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

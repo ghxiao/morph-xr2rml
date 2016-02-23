@@ -21,11 +21,18 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 
-class MorphMongoDataSourceReader extends MorphBaseDataSourceReader {
+class MorphMongoDataSourceReader(properties: MorphProperties)
+        extends MorphBaseDataSourceReader(properties: MorphProperties) {
+
+    /** Cache of already executed queries. The key of the map is the query string itself. */
+    private val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+
+    val logger = Logger.getLogger(this.getClass().getName());
 
     /**
      * Execute a MongoDB query against the connection.
@@ -46,6 +53,46 @@ class MorphMongoDataSourceReader extends MorphBaseDataSourceReader {
 
         val results: MongoCursor[String] = collec.find(queryStr).map[String](MorphMongoDataSourceReader.jongoHandler)
         new MorphMongoResultSet(results.iterator())
+    }
+
+    /**
+     * Execute a query against the database and apply an rml:iterator on the results.
+     *
+     * Results of the query are saved to a cache to avoid doing the same query several times
+     * in case we need it again later (in case of reference object map).
+     * Major drawback: memory consumption, this is not appropriate for very big databases.
+     */
+    override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String]): MorphBaseResultSet = {
+
+        // A query is simply and uniquely identified by its concrete string value
+        val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, logSrcIterator)
+        val queryResult =
+            if (executedQueries.contains(queryMapId)) {
+                if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache: " + query)
+                executedQueries(queryMapId)
+            } else {
+                // Execute the query against the database, choose the execution method depending on the db type
+                val resultSet = this.execute(query).asInstanceOf[MorphMongoResultSet].resultSet.toList
+
+                // Save the result of this query in case it is asked again later (in a join)
+                // @TODO USE WITH CARE: this would need to be strongly improved with the use of a real cache library,
+                // and memory-consumption-based eviction.
+                if (properties.cacheQueryResult) {
+                    executedQueries += (queryMapId -> resultSet)
+                    if (logger.isTraceEnabled()) logger.trace("Adding query to cache: " + query)
+                }
+                resultSet
+            }
+
+        // Apply the iterator to the result set, this creates a new result set
+        val queryResultIter =
+            if (logSrcIterator.isDefined) {
+                val jPath = JSONPath_PathExpression.parseRaw(logSrcIterator.get)
+                queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
+            } else queryResult
+
+        if (logger.isTraceEnabled()) logger.trace("Query returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
+        new MorphMongoResultSet(queryResultIter.toIterator)
     }
 
     override def setConnection(connection: GenericConnection) {
@@ -101,5 +148,12 @@ object MorphMongoDataSourceReader {
             case e: com.mongodb.MongoException =>
                 throw new Exception("Error when connecting to the database: " + e.getMessage(), e)
         }
+    }
+
+    def makeQueryMapId(query: GenericQuery, iter: Option[String]): String = {
+        if (iter.isDefined)
+            query.concreteQuery.toString + ", Iterator: " + iter.get
+        else
+            query.concreteQuery.toString
     }
 }

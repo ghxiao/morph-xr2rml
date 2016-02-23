@@ -5,6 +5,9 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -40,8 +43,28 @@ class MorphAbstractAtomicQuery(
     /**
      * Translate this atomic abstract query into concrete queries.
      * The result is stored in attribute this.targetQuery.
+     * @param translator the query translator
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         this.targetQuery = translator.atomicAbstractQuerytoConcrete(this)
     }
+
+    /**
+     * Check if this atomic abstract queries has a target query properly initialized
+     * i.e. targetQuery is not empty
+     */
+    override def isTargetQuerySet: Boolean = { !targetQuery.isEmpty }
+
+    /**
+     * Execute the target database queries against the database and return the result documents.
+     *
+     * @param dataSourceReader the data source reader
+     * @param iter the iterator to apply on query results
+     * @return list of instances of MorphBaseResultSet, one for each GenericQuery of targetQuery
+     * Must NOT return null, may return an empty result.
+     */
+    override def executeQuery(dataSourceReader: MorphBaseDataSourceReader, iter: Option[String]): List[MorphBaseResultSet] = {
+        this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
+    }
+
 }

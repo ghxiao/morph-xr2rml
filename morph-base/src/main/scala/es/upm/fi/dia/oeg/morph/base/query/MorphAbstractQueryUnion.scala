@@ -27,11 +27,23 @@ class MorphAbstractQueryUnion(
 
     /**
      * Translate all atomic abstract queries of this abstract query into concrete queries.
-     *
-     * @translator the query translator
+     * @param translator the query translator
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         for (q <- members)
             q.translateAtomicAbstactQueriesToConcrete(translator)
+    }
+
+    /**
+     * Check if atomic abstract queries within this query have a target query properly initialized
+     * i.e. targetQuery is not empty
+     */
+    override def isTargetQuerySet: Boolean = {
+        var res: Boolean = false
+        if (!members.isEmpty)
+            res = members.head.isTargetQuerySet
+        for (q <- members)
+            res = res && q.isTargetQuerySet
+        res
     }
 }
