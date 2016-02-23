@@ -1,8 +1,8 @@
-package es.upm.fi.dia.oeg.morph.base.query
+package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 
 /**
  * Representation of the UNION abstract query of several abstract queries

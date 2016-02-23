@@ -23,11 +23,12 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 
-class MorphMongoDataSourceReader(properties: MorphProperties)
-        extends MorphBaseDataSourceReader(properties: MorphProperties) {
+class MorphMongoDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties)
+        extends MorphBaseDataSourceReader(md, properties) {
 
     /** Cache of already executed queries. The key of the map is the query string itself. */
     private val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
@@ -52,7 +53,7 @@ class MorphMongoDataSourceReader(properties: MorphProperties)
                 "{" + mongoQ.query + "}"
 
         val results: MongoCursor[String] = collec.find(queryStr).map[String](MorphMongoDataSourceReader.jongoHandler)
-        new MorphMongoResultSet(results.iterator())
+        new MorphMongoResultSet(results.toList)
     }
 
     /**
@@ -92,7 +93,7 @@ class MorphMongoDataSourceReader(properties: MorphProperties)
             } else queryResult
 
         if (logger.isTraceEnabled()) logger.trace("Query returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
-        new MorphMongoResultSet(queryResultIter.toIterator)
+        new MorphMongoResultSet(queryResultIter.toList)
     }
 
     override def setConnection(connection: GenericConnection) {

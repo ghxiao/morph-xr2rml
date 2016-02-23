@@ -6,14 +6,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
-
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryInnerJoinRef
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
@@ -27,6 +23,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractAtomicQuery
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
 
 class MorphMongoQueryTranslatorTest {
 

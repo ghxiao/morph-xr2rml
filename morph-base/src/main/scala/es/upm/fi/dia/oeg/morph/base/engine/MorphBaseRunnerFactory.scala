@@ -45,7 +45,7 @@ abstract class MorphBaseRunnerFactory {
         val materializer = this.buildMaterializer(properties, mappingDocument, outputStream);
 
         // Building DATA SOURCE READER
-        val dataSourceReader = this.createDataSourceReader(properties, connection);
+        val dataSourceReader = this.createDataSourceReader(mappingDocument, properties, connection);
 
         // Building DATA TRANSLATOR
         val dataTranslator = this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, properties)
@@ -78,7 +78,7 @@ abstract class MorphBaseRunnerFactory {
 
     def createUnfolder(properties: MorphProperties, md: R2RMLMappingDocument): MorphBaseUnfolder
 
-    def createDataSourceReader(properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader
+    def createDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader
 
     def createDataTranslator(
         md: R2RMLMappingDocument,

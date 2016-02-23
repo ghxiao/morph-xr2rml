@@ -9,13 +9,15 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 /**
  * This class is used in case of the query rewriting access method,
  * to execute queries on the fly.
  * It is not used in the data materialization access method.
  */
-class MorphRDBDataSourceReader(properties: MorphProperties) extends MorphBaseDataSourceReader(properties) {
+class MorphRDBDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties)
+        extends MorphBaseDataSourceReader(md, properties) {
 
     var sqlCnx: Connection = null;
 

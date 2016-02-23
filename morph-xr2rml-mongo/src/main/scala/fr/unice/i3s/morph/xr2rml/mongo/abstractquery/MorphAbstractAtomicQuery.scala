@@ -1,13 +1,17 @@
-package es.upm.fi.dia.oeg.morph.base.query
+package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -22,11 +26,12 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
  */
 class MorphAbstractAtomicQuery(
 
-    boundTriplesMap: Option[R2RMLTriplesMap],
+    boundTM: Option[R2RMLTriplesMap],
     val from: xR2RMLLogicalSource,
     val project: List[MorphBaseQueryProjection],
     val where: List[MorphBaseQueryCondition])
-        extends MorphAbstractQuery(boundTriplesMap) {
+
+        extends MorphAbstractQuery(boundTM) {
 
     override def toString = {
         val fromStr =
@@ -56,15 +61,21 @@ class MorphAbstractAtomicQuery(
     override def isTargetQuerySet: Boolean = { !targetQuery.isEmpty }
 
     /**
-     * Execute the target database queries against the database and return the result documents.
+     * Execute the target database queries against the database and return a single result set that
+     * contains a UNION of all JSON results of all queries in targetQuery
      *
      * @param dataSourceReader the data source reader
      * @param iter the iterator to apply on query results
-     * @return list of instances of MorphBaseResultSet, one for each GenericQuery of targetQuery
+     * @return MorphBaseResultSet instance that contains the UNION of the results of each GenericQuery of targetQuery
      * Must NOT return null, may return an empty result.
      */
-    override def executeQuery(dataSourceReader: MorphBaseDataSourceReader, iter: Option[String]): List[MorphBaseResultSet] = {
-        this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
-    }
+    def executeQuery(dataSourceReader: MorphBaseDataSourceReader, iter: Option[String]): MorphMongoResultSet = {
 
+        // Execute the queries of the tagetQuery
+        val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
+
+        // Convert the list of MorphMongoResultSet into a single MorphMongoResultSet with a UNION (flatMap) of all the results
+        val resSet = resSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+        new MorphMongoResultSet(resSet)
+    }
 }

@@ -64,7 +64,6 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
@@ -107,11 +106,14 @@ class MorphRDBQueryTranslator(
     override val logger = Logger.getLogger(this.getClass());
 
     /**
-     * This method is necessary for the inheritance but it is actually not used in the RDB case:
+     * These two methods are necessary for the inheritance but it is actually not used in the RDB case:
      * the query translation method is still the one defined in Morph-RDB, it has not been upgrade
      * to support the abstract query mechanism used in the MongoDB case.
      */
-    override def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractAtomicQuery) = {
+    override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
+        throw new MorphException("Not supported")
+    }
+    override def atomicAbstractQuerytoConcrete(q: MorphAbstractQuery): List[GenericQuery] = {
         throw new MorphException("Not supported")
     }
 

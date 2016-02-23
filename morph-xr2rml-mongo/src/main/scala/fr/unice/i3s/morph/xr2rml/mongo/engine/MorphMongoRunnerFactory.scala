@@ -47,8 +47,8 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     }
 
     override def createDataSourceReader(
-        properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader = {
-        val reader = new MorphMongoDataSourceReader(properties)
+        md: R2RMLMappingDocument, properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader = {
+        val reader = new MorphMongoDataSourceReader(md, properties)
         reader.setConnection(connection);
         reader
     }

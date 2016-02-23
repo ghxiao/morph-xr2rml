@@ -8,10 +8,11 @@ import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 
 class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
 
@@ -19,8 +20,12 @@ class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
     this.mappingDocument = R2RMLMappingDocument("query_translator/mapping.ttl", properties, null)
 
     override def translate(op: Op): MorphAbstractQuery = { null }
-    
-    override def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractAtomicQuery) = {
+
+    override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
+        throw new MorphException("Not supported")
+    }
+
+    override def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractQuery): List[GenericQuery]= {
         throw new MorphException("Not supported")
     }
 }

@@ -11,10 +11,7 @@ import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryInnerJoinRef
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryUnion
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
@@ -75,66 +72,15 @@ abstract class MorphBaseQueryTranslator {
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
      * @throws MorphException
      */
-    def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
-
-        val unionOf = for (tm <- tmSet) yield {
-
-            // Sanity checks about the @NORMALIZED_ASSUMPTION
-            val poms = tm.getPropertyMappings
-            if (poms.isEmpty || poms.size > 1)
-                throw new MorphException("The candidate triples map " + tm.toString + " must have exactly one predicate-object map.")
-            val pom = poms.head
-            if (pom.predicateMaps.size != 1 ||
-                !((pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0)))
-                throw new MorphException("The candidate triples map " + tm.toString + " must have exactly one predicate map and one object map.")
-
-            // Start translation
-            val from = tm.logicalSource
-            val project = genProjection(tp, tm)
-            val where = genCond(tp, tm)
-            val q1 = new MorphAbstractAtomicQuery(Some(tm), from, project, where)
-            val Q =
-                if (!pom.hasRefObjectMap)
-                    // If there is no parent triples map, simply return this atomic abstract query
-                    q1
-                else {
-                    // If there is a parent triples map, create an INNER JOIN ON childRef = parentRef
-                    val rom = pom.getRefObjectMap(0)
-                    val Pfrom = mappingDocument.getParentTriplesMap(rom).logicalSource
-                    val Pproject = genProjectionParent(tp, tm)
-                    val Pwhere = genCondParent(tp, tm)
-                    val q2 = new MorphAbstractAtomicQuery(None, Pfrom, Pproject, Pwhere) // no TM is bound to the parent query, only to the child
-
-                    if (rom.joinConditions.size != 1)
-                        logger.warn("Multiple join conditions not supported in a ReferencingObjectMap. Considering only the first one.")
-                    val jc = rom.joinConditions.toIterable.head // assume only one join condition 
-                    new MorphAbstractQueryInnerJoinRef(Some(tm), q1, jc.childRef, q2, jc.parentRef)
-                }
-
-            Q // yield query Q for triples map tm
-        }
-
-        // If only one triples map then we return the abstract query for that TM
-        val resultQ = if (unionOf.size == 1)
-            unionOf.head
-        else
-            // If several triples map, then we return a UNION of the abstract queries for each TM
-            new MorphAbstractQueryUnion(None, unionOf)
-
-        if (logger.isDebugEnabled())
-            logger.debug("transTPm: Translation of triple pattern: [" + tp + "] with triples maps " + tmSet + ":\n" + resultQ.toString)
-        resultQ
-    }
+    def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery
 
     /**
-     * Translate an atomic abstract query into a set of concrete queries.
-     * This method is used in the MorphAbstractAtomicQuery class.
+     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
      *
      * @param atomicQ the abstract atomic query
-     * @return the same atomic abstract query instance in which the targetQuery member has been
-     * set with a list of concrete query strings whose results must be UNIONed
+     * @return list of concrete query strings whose results must be UNIONed
      */
-    def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractAtomicQuery): List[GenericQuery]
+    def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractQuery): List[GenericQuery]
 
     /**
      * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.

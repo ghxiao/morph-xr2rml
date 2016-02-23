@@ -45,8 +45,8 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         unfolder;
     }
 
-    override def createDataSourceReader(properties: MorphProperties, connection: GenericConnection): MorphRDBDataSourceReader = {
-        val reader = new MorphRDBDataSourceReader(properties)
+    override def createDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties, connection: GenericConnection): MorphRDBDataSourceReader = {
+        val reader = new MorphRDBDataSourceReader(md, properties)
         reader.setConnection(connection);
         reader.setTimeout(properties.databaseTimeout)
         reader

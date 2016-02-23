@@ -1,10 +1,12 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
@@ -15,13 +17,13 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryInnerJoinRef
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryUnion
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractAtomicQuery
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryUnion
 
 class MorphMongoDataTranslator(
     md: R2RMLMappingDocument,
@@ -246,29 +248,19 @@ class MorphMongoDataTranslator(
         if (query.isInstanceOf[MorphAbstractAtomicQuery]) {
 
             // Execute the queries, apply the iterator, and make a UNION (flatMap) of the results
-            childResultSet = query.executeQuery(dataSourceReader, tm.logicalSource.docIterator)
-                .flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+            val q = query.asInstanceOf[MorphAbstractAtomicQuery]
+            childResultSet = q.executeQuery(dataSourceReader, tm.logicalSource.docIterator).resultSet
 
         } else if (query.isInstanceOf[MorphAbstractQueryInnerJoinRef]) {
 
-            // Execute the child queries, apply the iterator, and make a UNION (flatMap) of the results
+            // Execute the child and parent queries, apply the iterator, and make UNIONs (flatMap) of the results
             val q = query.asInstanceOf[MorphAbstractQueryInnerJoinRef]
-            childResultSet = q.child.executeQuery(dataSourceReader, tm.logicalSource.docIterator)
-                .flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+            val res = q.executeQuery(dataSourceReader, tm.logicalSource.docIterator)
+            childResultSet = res._1.resultSet
+            parentResultSet = res._2.map(_.resultSet)
 
-            // Execute the parent queries (in the join condition), apply the iterator, and make a UNION (flatMap) of the results
-            parentResultSet = {
-                if (!pom.refObjectMaps.isEmpty) {
-                    val rom = pom.refObjectMaps.head
-                    val parentTM = this.md.getParentTriplesMap(rom)
-                    Some(q.parent.executeQuery(dataSourceReader, parentTM.logicalSource.docIterator)
-                        .flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet))
-                } else
-                    None
-            }
         } else if (query.isInstanceOf[MorphAbstractQueryUnion]) {
-            val q = query.asInstanceOf[MorphAbstractQueryUnion]
-
+            throw new MorphException("Not supoprted")
         }
 
         // Main loop: iterate and process each result document of the result set

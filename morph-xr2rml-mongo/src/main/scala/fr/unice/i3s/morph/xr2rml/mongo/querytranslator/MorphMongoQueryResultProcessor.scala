@@ -1,22 +1,22 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import java.io.Writer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.query.QueryExecution
 import com.hp.hpl.jena.query.QueryExecutionFactory
 import com.hp.hpl.jena.query.ResultSet
 import com.hp.hpl.jena.query.ResultSetFormatter
+
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractAtomicQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQueryInnerJoinRef
 
 /**
  * Execute the database query and produce the XML SPARQL result set
