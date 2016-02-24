@@ -38,6 +38,9 @@ class MorphMongoQueryResultProcessor(
     /**
      * Execute the database query, translate the database results into triples,
      * evaluate the SPARQL query on the resulting graph and save the XML output to a file.
+     * 
+     * @param mapSparqlSql map of SPARQL queries and associated MorphAbstractQuery instances.
+     * Each MorphAbstractQuery has been translated into executable target queries
      */
     override def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery]) {
         val start = System.currentTimeMillis();

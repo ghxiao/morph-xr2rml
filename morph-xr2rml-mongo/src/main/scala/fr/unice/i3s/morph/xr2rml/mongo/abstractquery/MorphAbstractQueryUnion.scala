@@ -1,15 +1,12 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
-import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
-import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import org.apache.log4j.Logger
 
 /**
  * Representation of the UNION abstract query of several abstract queries
@@ -19,17 +16,17 @@ import es.upm.fi.dia.oeg.morph.base.Constants
  * @members the abstract query members of the union
  */
 class MorphAbstractQueryUnion(
-
-    boundTriplesMap: Option[R2RMLTriplesMap],
     val members: List[MorphAbstractQuery])
-        extends MorphAbstractQuery(boundTriplesMap) {
+        extends MorphAbstractQuery(None) {
+
+    val logger = Logger.getLogger(this.getClass().getName());
 
     override def toString = {
-        members.mkString("\nUNION\n")
+        "[" + members.mkString("]\nUNION\n[") + "]"
     }
 
     override def toStringConcrete: String = {
-        members.map(q => q.toStringConcrete).mkString("\nUNION\n")
+        "[" + members.map(q => q.toStringConcrete).mkString("]\nUNION\n[") + "]"
     }
 
     /**
@@ -55,19 +52,26 @@ class MorphAbstractQueryUnion(
     }
 
     /**
-     * Execute each query of the union and produce the RDF terms for each of the result documents
-     * by applying the triples map bound to this query.
+     * Return the list of SPARQL variables projected in all the abstract queries of this UNION query
+     */
+    override def getVariables: List[String] = {
+        members.flatMap(m => m.getVariables).sortWith(_ < _).distinct
+    }
+
+    /**
+     * Execute each query of the union, generate the RDF terms for each of the result documents,
      * then make a UNION of all the results
      *
      * @param dataSourceReader the data source reader to query the database
      * @param dataTrans the data translator to create RDF terms
-     * @return a list of MorphBaseResultRdfTerms instances, one for each result document of each member query.
-     * May return an empty result but NOT null.
+     * @return a list of MorphBaseResultRdfTerms instances, one for each result document of each member 
+     * of the union query. May return an empty result but NOT null.
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
+        logger.info("Generating RDF terms from union query below:\n" + this.toStringConcrete);
         members.flatMap(m => m.generateRdfTerms(dataSourceReader, dataTranslator))
     }
 }

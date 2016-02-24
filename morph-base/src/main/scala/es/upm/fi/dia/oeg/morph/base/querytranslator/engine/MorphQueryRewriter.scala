@@ -33,7 +33,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
 
         extends Rewrite {
 
-    def logger = Logger.getLogger(this.getClass());
+    private def logger = Logger.getLogger(this.getClass());
 
     def rewrite(op: Op): Op = {
         val result: Op = op match {
@@ -93,22 +93,21 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
 
         var result: List[Triple] = Nil;
 
-        if (triples == null) {
+        if (triples == null)
             result = null;
-        } else if (triples.size() == 1) {
+        else if (triples.size() == 1)
             result = triples;
-        } else {
+        else {
             var mapNodeTriples: Map[Node, List[Triple]] = Map.empty;
             var mapNodeTableSize: Map[Node, Long] = Map.empty;
 
             for (tp <- triples) {
                 val tpSubject = tp.getSubject();
                 val logicalTableSize = {
-                    if (tpSubject.isURI()) {
+                    if (tpSubject.isURI())
                         this.mapNodeLogicalTableSize(tpSubject).longValue() - 1;
-                    } else {
+                    else
                         this.mapNodeLogicalTableSize(tpSubject).longValue();
-                    }
                 }
 
                 if (mapNodeTriples.contains(tpSubject)) {
@@ -128,7 +127,6 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                         logicalTableSize
                     }
                 }
-
             }
 
             val triplesSubjects = SPARQLUtility.getSubjects(triples).distinct;

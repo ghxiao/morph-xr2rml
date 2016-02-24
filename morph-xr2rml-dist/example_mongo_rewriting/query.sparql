@@ -2,7 +2,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX ex: <http://example.org/>
 
-SELECT ?y
+SELECT ?x ?y
 WHERE {
     # Bound to triples map <#Movies>: without RefObjectMap
     #?x ex:starring "T. Leung".
@@ -11,7 +11,7 @@ WHERE {
     #?x ex:directed <http://example.org/movie/Manh> .
 
     # Bound to triples map <#Directors>: with RefObjectMap
-    #?x ex:directed ?y .
+    ?x ex:directed ?y .
 
     # Bound to triples map <#Directors>: with RefObjectMap
 	<http://example.org/dir/Wong%20Kar-wai> ex:directed ?y .

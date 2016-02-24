@@ -1,8 +1,13 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.graph.Triple
+
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
@@ -10,17 +15,14 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
-import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
- * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
- * from which we have derived this query
+ * @param triple the triple pattern for which we create this atomic query
+ * @param boundTriplesMap the triples map, bound to the triple pattern, from which this query is derived
  * @param from consists of the triples map logical source
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
  * needed to generate the RDF terms of the result triples
@@ -29,6 +31,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
  */
 class MorphAbstractAtomicQuery(
 
+    val triple: Option[Triple],
     boundTriplesMap: Option[R2RMLTriplesMap],
     val from: xR2RMLLogicalSource,
     val project: List[MorphBaseQueryProjection],
@@ -66,10 +69,17 @@ class MorphAbstractAtomicQuery(
     override def isTargetQuerySet: Boolean = { !targetQuery.isEmpty }
 
     /**
+     * Return the list of SPARQL variables projected in this abstract query
+     */
+    override def getVariables: List[String] = {
+        project.filter(_.as.isDefined).map(_.as.get).sortWith(_ < _).distinct
+    }
+
+    /**
      * Execute the query and produce the RDF terms for each of the result documents
      * by applying the triples map bound to this query.
      * If targetQuery contains several queries their result is UNIONed.
-     * 
+     *
      * @param dataSourceReader the data source reader to query the database
      * @param dataTrans the data translator to create RDF terms
      * @return a list of MorphBaseResultRdfTerms instances, one for each result document
@@ -79,12 +89,34 @@ class MorphAbstractAtomicQuery(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
+        if (!triple.isDefined || !boundTriplesMap.isDefined) {
+            val errMsg = "Atomic abstract query with either no associtaed triple pattern or no triples map bound to the triple pattern" +
+                " => the query is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
+            logger.error(errMsg)
+            logger.error("Query: " + this.toString)
+            throw new MorphException(errMsg)
+        }
+
+        val tp = triple.get
+        val subjectAsVariable =
+            if (tp.getSubject.isVariable)
+                Some(tp.getSubject.toString)
+            else None
+        val predicateAsVariable =
+            if (tp.getPredicate.isVariable)
+                Some(tp.getPredicate.toString)
+            else None
+        val objectAsVariable =
+            if (tp.getObject.isVariable)
+                Some(tp.getObject.toString)
+            else None
+
         val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
         val tm = this.boundTriplesMap.get
         val sm = tm.subjectMap;
         val pom = tm.predicateObjectMaps.head
         val iter: Option[String] = tm.logicalSource.docIterator
-        logger.info("Translating atomic query \n" + this.toStringConcrete + "\ninto RDF terms under triples map " + tm.toString);
+        logger.info("Generating RDF terms from atomic query below into under triples map " + tm.toString + ": \n" + this.toStringConcrete);
 
         // Execute the queries of tagetQuery and make a UNION (flatMap) of all the results
         val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
@@ -136,8 +168,11 @@ class MorphAbstractAtomicQuery(
                 if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                 // Result 
-                Some(new MorphBaseResultRdfTerms(subjects, predicates, objects, (subjectGraphs ++ predicateObjectGraphs).toList))
-                
+                Some(new MorphBaseResultRdfTerms(
+                    subjects, subjectAsVariable,
+                    predicates, predicateAsVariable,
+                    objects, objectAsVariable,
+                    (subjectGraphs ++ predicateObjectGraphs).toList))
             } catch {
                 case e: MorphException => {
                     logger.error("Error while translating data of document " + i + ": " + e.getMessage);

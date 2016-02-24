@@ -42,7 +42,7 @@ abstract class MorphBaseQueryTranslator {
     /** Map of nodes of a SPARQL query and the candidate triples maps for each node **/
     var mapInferredTMs: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
 
-    Optimize.setFactory(new MorphQueryRewritterFactory());
+    //Optimize.setFactory(new MorphQueryRewritterFactory());
 
     /**
      * High level entry point to the query translation process.

@@ -2,6 +2,8 @@ package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
 
+import com.hp.hpl.jena.graph.Triple
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
@@ -9,16 +11,16 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
-import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 
 /**
  * Representation of the INNER JOIN abstract query generated from the relation between a child and a parent triples map.
  *
- * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
- * from which we have derived this query
+ * @param triple the triple pattern for which we create this query
+ * @param boundTriplesMap the triples map, bound to the triple pattern, from which this query is derived
  * @param child the query representing the child triples map
  * @param childRef the xR2RML child reference of the join condition: rr:joinCondition [ ... rr:child ... ]
  * @param parent the query representing the parent triples map
@@ -26,6 +28,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
  */
 class MorphAbstractQueryInnerJoinRef(
 
+    val triple: Triple,
     boundTriplesMap: Option[R2RMLTriplesMap],
     val child: MorphAbstractAtomicQuery,
     val childRef: String,
@@ -54,7 +57,7 @@ class MorphAbstractQueryInnerJoinRef(
      * Translate all atomic abstract queries of this abstract query into concrete queries.
      * @param translator the query translator
      */
-    def translateAtomicAbstactQueriesToConcrete(translator: MorphMongoQueryTranslator): Unit = {
+    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         child.translateAtomicAbstactQueriesToConcrete(translator)
         parent.translateAtomicAbstactQueriesToConcrete(translator)
     }
@@ -68,6 +71,13 @@ class MorphAbstractQueryInnerJoinRef(
     }
 
     /**
+     * Return the list of SPARQL variables projected in this abstract query
+     */
+    override def getVariables: List[String] = {
+        (child.getVariables ++ parent.getVariables).sortWith(_ < _).distinct
+    }
+
+    /**
      * Execute the query and produce the RDF terms for each of the result documents
      * by applying the triples map bound to this query.
      *
@@ -78,18 +88,31 @@ class MorphAbstractQueryInnerJoinRef(
      * @param dataTrans the data translator to create RDF terms
      * @return a list of MorphBaseResultRdfTerms instances, one for each result document
      * May return an empty result but NOT null.
-     * @throws MorphException if the triples map bound to the query has no referencing object map  
+     * @throws MorphException if the triples map bound to the query has no referencing object map
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+
+        val subjectAsVariable =
+            if (triple.getSubject.isVariable)
+                Some(triple.getSubject.toString)
+            else None
+        val predicateAsVariable =
+            if (triple.getPredicate.isVariable)
+                Some(triple.getPredicate.toString)
+            else None
+        val objectAsVariable =
+            if (triple.getObject.isVariable)
+                Some(triple.getObject.toString)
+            else None
 
         val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
         val tm = this.boundTriplesMap.get
         val sm = tm.subjectMap;
         val pom = tm.predicateObjectMaps.head
         val iter: Option[String] = tm.logicalSource.docIterator
-        logger.info("Translating inner join ref query \n" + this.toStringConcrete + "\ninto RDF terms under triples map " + tm.toString);
+        logger.info("Generating RDF terms from inner join ref query below under triples map " + tm.toString + ": \n" + this.toStringConcrete);
 
         // Execute the child queries and create a MorphMongoResultSet with a UNION (flatMap) of all the results
         val childResSets = child.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
@@ -191,8 +214,11 @@ class MorphAbstractQueryInnerJoinRef(
                 if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                 // Result 
-                Some(new MorphBaseResultRdfTerms(subjects, predicates, refObjects, (subjectGraphs ++ predicateObjectGraphs).toList))
-
+                Some(new MorphBaseResultRdfTerms(
+                    subjects, subjectAsVariable,
+                    predicates, predicateAsVariable,
+                    refObjects, objectAsVariable,
+                    (subjectGraphs ++ predicateObjectGraphs).toList))
             } catch {
                 case e: MorphException => {
                     logger.error("Error while translating data of document " + i + ": " + e.getMessage);

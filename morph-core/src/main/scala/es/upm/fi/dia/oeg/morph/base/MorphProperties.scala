@@ -171,7 +171,8 @@ class MorphProperties extends java.util.Properties {
         logger.info("String transformation = " + this.transformString);
 
         this.mapURIEncodingChars = this.readMapStringString(MorphProperties.URI_ENCODE_PROPERTY, Map.empty);
-
+        // Example: uri.encode=(" "->"%20"),,(","->"")
+        
         this.uriTransformationOperation = this.readListString(MorphProperties.URI_TRANSFORM_PROPERTY, Nil, ",")
 
         this.mapDataTranslationLimits = this.readMapStringString(MorphProperties.DATATRANSLATION_LIMIT, Map.empty);

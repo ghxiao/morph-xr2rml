@@ -209,5 +209,23 @@ class MorphBaseQueryTranslatorTest {
         assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
         assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
     }
+    
+    @Test def test() {
+        var s1 = NodeFactory.createVariable("x")
+        var s2 = NodeFactory.createVariable("x")
+        var p1 = NodeFactory.createURI("http://example.org/directed")
+        var p2 = NodeFactory.createURI("http://example.org/directed")
+        var o1 = NodeFactory.createLiteral("lit")
+        var o2 = NodeFactory.createLiteral("lit")
+
+        println(s1 == s2)
+        println(p1 == p2)
+        println(o1 == o2)
+
+        println(s1 == o2)
+        println(o1 == p2)
+        println(p1 == s1)
+        
+    }
 }
 

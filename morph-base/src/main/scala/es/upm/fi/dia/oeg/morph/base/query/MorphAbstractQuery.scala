@@ -56,6 +56,13 @@ class MorphAbstractQuery(
     }
 
     /**
+     * Return the list of SPARQL variables projected in this abstract query
+     */
+    def getVariables: List[String] = {
+        throw new MorphException("Not supported")
+    }
+
+    /**
      * Execute the query and produce the RDF terms for each of the result documents
      * by applying the triples map bound to this query.
      *

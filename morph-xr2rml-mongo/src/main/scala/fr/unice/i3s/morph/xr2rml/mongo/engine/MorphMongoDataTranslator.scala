@@ -37,12 +37,6 @@ class MorphMongoDataTranslator(
     if (!dataSourceReader.connection.isMongoDB)
         throw new MorphException("Database connection type does not match MongoDB")
 
-    /** Store already executed queries to avoid running them several times. The key of the hashmap is the query string itself. */
-    private val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
-
-    /** Store already parsed queries to avoid creating the same GenericQuery object several times. The key of the hashmap is the triples map name */
-    private var queries: scala.collection.mutable.Map[String, GenericQuery] = new scala.collection.mutable.HashMap
-
     override val logger = Logger.getLogger(this.getClass().getName());
 
     /**
