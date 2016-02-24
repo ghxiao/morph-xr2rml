@@ -27,7 +27,7 @@ object TemplateUtility {
      * Example:<br>
      * if tplStr = "http://example.org/{ID}/{Column(NAME)/JSONPath(...)}",
      * and inputURIString = "http://example.org/id1/mixed",<br>
-     * the method returns: Map("ID" -> id1, "Column(NAME)/JSONPath(...)" -> mixed).
+     * the method returns: Map("ID" -> "id1", "Column(NAME)/JSONPath(...)" -> "mixed").
      */
     def getTemplateMatching(tplStr: String, inputURIString: String): Map[String, String] = {
 

@@ -17,6 +17,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
@@ -320,7 +322,12 @@ abstract class MorphBaseQueryTranslator {
             val refValueCouples = TemplateUtility.getTemplateMatching(termMap.getOriginalValue, tpTerm.toString(false))
 
             // For each reference and associated value, build a new equality condition
-            val refValueConds = refValueCouples.map(m => MorphBaseQueryCondition.equality(m._1, m._2))
+            val refValueConds = refValueCouples.map(m => {
+                if (termMap.inferTermType == Constants.R2RML_IRI_URI)
+                    MorphBaseQueryCondition.equality(m._1, GeneralUtility.decodeURI(m._2))
+                else
+                    MorphBaseQueryCondition.equality(m._1, m._2)
+            })
             refValueConds.toList
         } else
             List.empty

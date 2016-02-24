@@ -101,6 +101,35 @@ object GeneralUtility {
         result;
     }
 
+    def decodeURI(originalValue: String): String = {
+        var result = originalValue;
+        if (result != null) {
+            result = result.replaceAll("\\%20", " ");
+            result = result.replaceAll("\\%21", "!");
+            result = result.replaceAll("\\%22", "\"");
+            result = result.replaceAll("\\%23", "#");
+            result = result.replaceAll("\\%24", "$");
+            result = result.replaceAll("\\%26", "&");
+            result = result.replaceAll("\\%27", "'");
+            result = result.replaceAll("\\%28", "(");
+            result = result.replaceAll("\\%29", ")");
+            result = result.replaceAll("\\%2A", "*");
+            result = result.replaceAll("\\%2a", "*");
+            result = result.replaceAll("\\%2B", "+");
+            result = result.replaceAll("\\%2b", "+");
+            result = result.replaceAll("\\%2C", ",");
+            result = result.replaceAll("\\%2c", ",");
+            result = result.replaceAll("\\%2D", "-");
+            result = result.replaceAll("\\%2d", "-");
+            result = result.replaceAll("\\%2E", ".");
+            result = result.replaceAll("\\%2e", ".");
+            result = result.replaceAll("\\%2F", "/");
+            result = result.replaceAll("\\%2f", "/");
+            result = result.replaceAll("\\%25", "%");
+        }
+        result;
+    }
+
     /**
      * Recursive method to compute the intersection of multiple sets of RDFNode
      *
