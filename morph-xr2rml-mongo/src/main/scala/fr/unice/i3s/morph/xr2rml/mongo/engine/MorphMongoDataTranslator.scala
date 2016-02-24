@@ -305,7 +305,6 @@ class MorphMongoDataTranslator(
                     // Evaluate the raw value against the mixed-syntax path.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
                     valuesRaw.filter(_ != null)
-                    //valuesRaw
                 }
 
                 val replacements: List[List[Object]] = listReplace.toList

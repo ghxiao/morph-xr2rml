@@ -92,7 +92,7 @@ class MorphMongoDataSourceReader(md: R2RMLMappingDocument, properties: MorphProp
                 queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
             } else queryResult
 
-        if (logger.isTraceEnabled()) logger.trace("Query returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
+        if (logger.isTraceEnabled()) logger.trace("Query \n" + query + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
         new MorphMongoResultSet(queryResultIter.toList)
     }
 

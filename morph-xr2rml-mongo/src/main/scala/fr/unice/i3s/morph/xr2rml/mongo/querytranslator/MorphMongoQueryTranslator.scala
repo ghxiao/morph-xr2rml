@@ -198,6 +198,9 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * Then, a query string is generated from the optimized MongoQueryNode, to which the initial query string
      * from the logical source is appended.
      * A UNION is translated into several concrete queries. For any other type of query only one query string is returned.
+     * 
+     * @TODO the project part is not managed: must transform JSONPath references nito actually projectable 
+     * fields in a MongoDB query
      *
      * @param from from part of the atomic abstract query (query from the logical source)
      * @param project project part of the atomic abstract query (xR2RML references to project, NOT MANAGED FOR NOW).
