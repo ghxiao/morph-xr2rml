@@ -114,9 +114,6 @@ class MorphRDBQueryTranslator(
     override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
         throw new MorphException("Not supported")
     }
-    override def atomicAbstractQuerytoConcrete(q: MorphAbstractQuery): List[GenericQuery] = {
-        throw new MorphException("Not supported")
-    }
 
     this.alphaGenerator.owner = this;
     this.betaGenerator.owner = this;

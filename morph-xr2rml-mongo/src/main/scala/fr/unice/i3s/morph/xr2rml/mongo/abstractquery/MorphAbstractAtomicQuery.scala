@@ -1,9 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Triple
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
@@ -17,6 +15,15 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
+import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
+import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -54,12 +61,53 @@ class MorphAbstractAtomicQuery(
     }
 
     /**
-     * Translate this atomic abstract query into concrete queries.
+     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
+     *
+     * First, the atomic abstract query is translated into an abstract MongoDB query using the
+     * JsonPathToMongoTranslator.trans() function.
+     * Then, the abstract MongoDB query is translated into a set of concrete MongoDB queries
+     * by function mongoAbstractQuerytoConcrete().
+     *
      * The result is stored in attribute this.targetQuery.
+     *
      * @param translator the query translator
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
-        this.targetQuery = translator.atomicAbstractQuerytoConcrete(this)
+
+        // Select isNotNull and Equality conditions
+        val whereConds = this.where.filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals)
+
+        // Generate one abstract MongoDB query for each isNotNull and Equality condition
+        val mongAbsQs: List[MongoQueryNode] = whereConds.map(cond => {
+            // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
+            val iter = this.from.docIterator
+            val reference =
+                if (iter.isDefined) cond.reference.replace("$", iter.get)
+                else cond.reference
+
+            // Translate the condition on a JSONPath reference into an abstract MongoDB query (a MongoQueryNode)
+            cond.condType match {
+                case ConditionType.IsNotNull =>
+                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.IsNotNull, null))
+                case ConditionType.Equals =>
+                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue))
+                case _ => throw new MorphException("Unsupported condition type " + cond.condType)
+            }
+        })
+
+        // If there are several queries (more than 1), encapsulate them under a top-level AND
+        val mongAbsQ =
+            if (mongAbsQs.size > 1) new MongoQueryNodeAnd(mongAbsQs)
+            else mongAbsQs(0)
+        if (logger.isTraceEnabled())
+            logger.trace("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
+
+        // Create the concrete query/queries from the set of abstract MongoDB queries
+        val from = MongoDBQuery.parseQueryString(this.from.getValue, this.from.docIterator, true)
+        val queries = translator.asInstanceOf[MorphMongoQueryTranslator].mongoAbstractQuerytoConcrete(from, this.project, mongAbsQ)
+
+        // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
+        this.targetQuery = queries.map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, this.from.docIterator))
     }
 
     /**

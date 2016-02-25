@@ -39,7 +39,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryLeftJoin
  * Translation of a SPARQL query into a set of MongoDB queries.
  *
  * This class assumes that the xR2RML mapping is normalized, that is, a triples map
- * has not more that one predicate-object map, and each predicate-object map has
+ * has exactly one predicate-object map, and each predicate-object map has
  * exactly one predicate and one object map.
  * In the code this assumption is mentioned by the annotation @NORMALIZED_ASSUMPTION
  *
@@ -80,13 +80,23 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     override def translate(op: Op): MorphAbstractQuery = {
         if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
-        // Translate the SPARQL query to abstract queries
+        // Translate the SPARQL query into an abstract query
         val res = translateSparqlQuery(op)
-        // Translate the abstract queries into concrete MongoDB queries
-        res.get.translateAtomicAbstactQueriesToConcrete(this)
-        res.get
+
+        // Translate the atomic abstract queries into concrete MongoDB queries
+        if (res.isDefined) {
+            res.get.translateAtomicAbstactQueriesToConcrete(this)
+            res.get
+        } else
+            throw new MorphException("Error: cannot translate SPARQL query to an abstract query")
     }
 
+    /**
+     * Recursive translation of a SPARQL query into an abstract query
+     *
+     * @param op SPARQL query or SPARQL query element
+     * @return a MorphAbstractQuery instance or None if the query element is not supported in the translation
+     */
     private def translateSparqlQuery(op: Op): Option[MorphAbstractQuery] = {
         op match {
             case opProject: OpProject => { // SELECT clause
@@ -229,56 +239,6 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     }
 
     /**
-     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
-     *
-     * First, the atomic abstract query is translated into an abstract MongoDB query using the
-     * JsonPathToMongoTranslator.trans() function.
-     * Then, the abstract MongoDB query is translated into a set of concrete MongoDB queries
-     * by function mongoAbstractQuerytoConcrete().
-     *
-     * @param atomicQ the abstract atomic query
-     * @return list of concrete query strings whose results must be UNIONed
-     */
-    override def atomicAbstractQuerytoConcrete(q: MorphAbstractQuery): List[GenericQuery] = {
-
-        // Select isNotNull and Equality conditions
-        val atomicQ = q.asInstanceOf[MorphAbstractAtomicQuery]
-        val whereConds = atomicQ.where.filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals)
-
-        // Generate one abstract MongoDB query for each isNotNull and Equality condition
-        val mongAbsQs: List[MongoQueryNode] = whereConds.map(cond => {
-            // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
-            val iter = atomicQ.from.docIterator
-            val reference =
-                if (iter.isDefined) cond.reference.replace("$", iter.get)
-                else cond.reference
-
-            // Translate the condition on a JSONPath reference into an abstract MongoDB query (a MongoQueryNode)
-            cond.condType match {
-                case ConditionType.IsNotNull =>
-                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.IsNotNull, null))
-                case ConditionType.Equals =>
-                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue))
-                case _ => throw new MorphException("Unsupported condition type " + cond.condType)
-            }
-        })
-
-        // If there are several queries (more than 1), encapsulate them under a top-level AND
-        val mongAbsQ =
-            if (mongAbsQs.size > 1) new MongoQueryNodeAnd(mongAbsQs)
-            else mongAbsQs(0)
-        if (logger.isTraceEnabled())
-            logger.trace("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
-
-        // Create the concrete query/queries from the set of abstract MongoDB queries
-        val from = MongoDBQuery.parseQueryString(atomicQ.from.getValue, atomicQ.from.docIterator, true)
-        val queries = mongoAbstractQuerytoConcrete(from, atomicQ.project, mongAbsQ)
-
-        // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
-        queries.map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, atomicQ.from.docIterator))
-    }
-
-    /**
      * Translate a non-optimized MongoQueryNode instance into one or more optimized concrete MongoDB queries.
      *
      * Firstly, the query is optimized, which may generate a top-level UNION.
@@ -286,7 +246,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * from the logical source is appended.
      * A UNION is translated into several concrete queries. For any other type of query only one query string is returned.
      *
-     * @TODO the project part is not managed: must transform JSONPath references nito actually projectable
+     * @TODO the project part is not managed: must transform JSONPath references into actually projectable
      * fields in a MongoDB query
      *
      * @param from from part of the atomic abstract query (query from the logical source)

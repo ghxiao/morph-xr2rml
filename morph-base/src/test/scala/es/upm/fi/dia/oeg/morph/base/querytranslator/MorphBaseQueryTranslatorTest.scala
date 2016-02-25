@@ -24,10 +24,6 @@ class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
     override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
         throw new MorphException("Not supported")
     }
-
-    override def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractQuery): List[GenericQuery]= {
-        throw new MorphException("Not supported")
-    }
 }
 
 class MorphBaseQueryTranslatorTest {

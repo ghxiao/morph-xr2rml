@@ -77,14 +77,6 @@ abstract class MorphBaseQueryTranslator {
     def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery
 
     /**
-     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
-     *
-     * @param atomicQ the abstract atomic query
-     * @return list of concrete query strings whose results must be UNIONed
-     */
-    def atomicAbstractQuerytoConcrete(atomicQ: MorphAbstractQuery): List[GenericQuery]
-
-    /**
      * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.
      * Those references are used to select the data elements to mention in the projection part of the
      * target database query.
