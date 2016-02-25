@@ -426,12 +426,12 @@ object R2RMLTermMap {
                     val stmtObject = mapStatement.getObject()
                     termPos match {
                         case Constants.MorphPOS.sub => {
-                            val sm = new R2RMLSubjectMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, Set.empty, Set.empty, refFormulation);
+                            val sm = new R2RMLSubjectMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), Set.empty, Set.empty, refFormulation);
                             sm.parse(stmtObject)
                             Some(sm)
                         }
                         case Constants.MorphPOS.pre => {
-                            val pm = new R2RMLPredicateMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), None, None, refFormulation);
+                            val pm = new R2RMLPredicateMap(Constants.MorphTermMapType.ConstantTermMap, Some(Constants.R2RML_IRI_URI), refFormulation);
                             pm.parse(stmtObject)
                             Some(pm);
                         }

@@ -1,24 +1,23 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
-import com.hp.hpl.jena.sparql.algebra.optimize.Optimize
+
+import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewritterFactory
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.Constants
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
@@ -41,6 +40,8 @@ abstract class MorphBaseQueryTranslator {
 
     /** Map of nodes of a SPARQL query and the candidate triples maps for each node **/
     var mapInferredTMs: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
+
+    MorphBaseTriplePatternBindings.mappingDocument = this.mappingDocument
 
     //Optimize.setFactory(new MorphQueryRewritterFactory());
 
@@ -75,6 +76,15 @@ abstract class MorphBaseQueryTranslator {
      * @throws MorphException
      */
     def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery
+
+    /**
+     * Compute the triple pattern bindings for all triple patterns in a graph pattern
+     * @param gp graph pattern
+     * @return bindings as a map of triples and associated triples maps
+     */
+    def bindm(gp: Op): Map[Triple, List[R2RMLTriplesMap]] = {
+        throw new Exception("Not implemented")
+    }
 
     /**
      * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.

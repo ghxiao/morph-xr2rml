@@ -12,9 +12,7 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 class R2RMLSubjectMap(
     termMapType: Constants.MorphTermMapType.Value,
     termType: Option[String],
-    datatype: Option[String],
-    languageTag: Option[String],
-
+    
     /** IRIs of classes defined with the rr:class property */
     val classURIs: Set[String],
 
@@ -24,7 +22,7 @@ class R2RMLSubjectMap(
     /** Reference formulation from the logical source */
     refFormulaion: String)
 
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulaion) {
+        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulaion) {
 
     override val logger = Logger.getLogger(this.getClass().getName());
     var termtype = this.inferTermType
@@ -37,8 +35,6 @@ object R2RMLSubjectMap {
         val coreProperties = R2RMLTermMap.extractCoreProperties(rdfNode);
         val termMapType = coreProperties._1;
         val termType = coreProperties._2;
-        val datatype = coreProperties._3;
-        val languageTag = coreProperties._4;
         val nestTM = coreProperties._5;
         if (nestTM.isDefined)
             logger.error("A nested term map cannot be defined in a subject map. Ignoring.")
@@ -68,7 +64,7 @@ object R2RMLSubjectMap {
             case _ => { Set.empty }
         }
 
-        val sm = new R2RMLSubjectMap(termMapType, termType, datatype, languageTag, classURIs, graphMaps, refFormulation);
+        val sm = new R2RMLSubjectMap(termMapType, termType, classURIs, graphMaps, refFormulation);
         sm.rdfNode = rdfNode;
 
         sm.parse(rdfNode)

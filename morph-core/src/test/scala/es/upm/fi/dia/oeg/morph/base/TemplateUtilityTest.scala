@@ -1,6 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TemplateUtilityTest {
@@ -65,6 +66,9 @@ class TemplateUtilityTest {
         assertEquals("id1", groups.get("ID1").get)
         assertEquals("id2", groups.get("ID2").get)
 
+        groups = TemplateUtility.getTemplateMatching("http://example.org/student/{ID1}", "http://foo.com/student/id1")
+        println("groups: " + groups)
+        assertTrue(groups.isEmpty)
         
         val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
         val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""

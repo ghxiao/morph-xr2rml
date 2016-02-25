@@ -12,11 +12,9 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 class R2RMLPredicateMap(
     termMapType: Constants.MorphTermMapType.Value,
     termType: Option[String],
-    datatype: Option[String],
-    languageTag: Option[String],
     refFormulation: String)
 
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulation) {
+        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulation) {
 
     var termtype = this.inferTermType
 }
@@ -28,8 +26,6 @@ object R2RMLPredicateMap {
         val coreProperties = R2RMLTermMap.extractCoreProperties(rdfNode);
         val termMapType = coreProperties._1;
         val termType = coreProperties._2;
-        val datatype = coreProperties._3;
-        val languageTag = coreProperties._4;
         val nestTM = coreProperties._5;
 
         if (nestTM.isDefined)
@@ -38,7 +34,7 @@ object R2RMLPredicateMap {
         if (R2RMLTermMap.isRdfCollectionTermType(termType))
             logger.error("A subject map cannot have a term type: " + termType + ". Ignoring.")
 
-        val pm = new R2RMLPredicateMap(termMapType, termType, datatype, languageTag, refFormulation);
+        val pm = new R2RMLPredicateMap(termMapType, termType, refFormulation);
         pm.parse(rdfNode);
         pm;
     }
