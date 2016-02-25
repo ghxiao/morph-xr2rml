@@ -11,12 +11,12 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 
 /**
- * Representation of the INNER JOIN abstract query generated from two basic graph patterns.
+ * Representation of the LEFT JOIN abstract query generated from two basic graph patterns.
  *
  * @param left the query representing the left basic graph pattern of the join
  * @param right the query representing the right basic graph pattern of the join
  */
-class MorphAbstractQueryInnerJoin(
+class MorphAbstractQueryLeftJoin(
 
     val left: MorphAbstractQuery,
     val right: MorphAbstractQuery)
@@ -27,14 +27,14 @@ class MorphAbstractQueryInnerJoin(
 
     override def toString = {
         "[" + left.toString + "]\n" +
-            "INNER JOIN\n[" +
+            "LEFt JOIN\n[" +
             right.toString + "]\n" +
             "ON " + getSharedVariables
     }
 
     override def toStringConcrete: String = {
         "[" + left.toStringConcrete + "]\n" +
-            "INNER JOIN\n[" +
+            "LEFT JOIN\n[" +
             right.toStringConcrete + "]\n" +
             "ON " + getSharedVariables
     }
@@ -65,7 +65,7 @@ class MorphAbstractQueryInnerJoin(
 
     /**
      * Execute the left and right queries, generate the RDF terms for each of the result documents,
-     * then make a JOIN of all the results
+     * then make a LEFT JOIN of all the results
      *
      * @param dataSourceReader the data source reader to query the database
      * @param dataTrans the data translator to create RDF terms
@@ -102,8 +102,12 @@ class MorphAbstractQueryInnerJoin(
                 val leftTerm = leftTriple.getTermsForVariable(x)
                 for (rightTriple <- rightTripleX) {
                     val rightTerm = rightTriple.getTermsForVariable(x)
-                    if (!leftTerm.intersect(rightTerm).isEmpty) {
-                        // If there is a match, keep the two MorphBaseResultRdfTerms instances 
+                    if (leftTerm.intersect(rightTerm).isEmpty) {
+                        // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
+                        if (!joinResult.contains(leftTriple.getId))
+                            joinResult += (leftTriple.getId -> leftTriple)
+                    } else {
+                        // If there is a match, keep the left and right MorphBaseResultRdfTerms instances 
                         if (!joinResult.contains(leftTriple.getId))
                             joinResult += (leftTriple.getId -> leftTriple)
                         if (!joinResult.contains(rightTriple.getId))

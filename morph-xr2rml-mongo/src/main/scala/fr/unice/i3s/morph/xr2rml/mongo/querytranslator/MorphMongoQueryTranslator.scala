@@ -1,9 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import scala.collection.JavaConversions._
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
@@ -16,7 +14,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
@@ -36,6 +33,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryLeftJoin
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -52,6 +50,16 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     this.mappingDocument = md
 
     override val logger = Logger.getLogger(this.getClass());
+
+    /**
+     * Retrieve the triples maps bound to a triple pattern
+     * @TODO The binding of a triples map to the triple patterns is hard coded.
+     */
+    private def getBoundTriplesMaps(triple: Triple): List[R2RMLTriplesMap] = {
+        val tmMovies = md.getClassMappingsByName("Movies")
+        val tmDirectors = md.getClassMappingsByName("Directors")
+        List(tmDirectors)
+    }
 
     /**
      * High level entry point to the query translation process.
@@ -77,16 +85,6 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         // Translate the abstract queries into concrete MongoDB queries
         res.get.translateAtomicAbstactQueriesToConcrete(this)
         res.get
-    }
-
-    /**
-     * Retrieve the triples maps bound to a triple pattern
-     * @TODO The binding of a triples map to the triple patterns is hard coded.
-     */
-    private def getBoundTriplesMaps(triple: Triple): List[R2RMLTriplesMap] = {
-        val tmMovies = md.getClassMappingsByName("Movies")
-        val tmDirectors = md.getClassMappingsByName("Directors")
-        List(tmDirectors)
     }
 
     private def translateSparqlQuery(op: Op): Option[MorphAbstractQuery] = {
@@ -122,6 +120,17 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                     right
                 else None
             }
+            case opLeftJoin: OpLeftJoin => { //OPT pattern
+                val left = translateSparqlQuery(opLeftJoin.getLeft)
+                val right = translateSparqlQuery(opLeftJoin.getRight)
+                if (left.isDefined && right.isDefined)
+                    Some(new MorphAbstractQueryLeftJoin(left.get, right.get))
+                else if (left.isDefined)
+                    left
+                else if (right.isDefined)
+                    right
+                else None
+            }
             case opUnion: OpUnion => { //UNION pattern
                 val left = translateSparqlQuery(opUnion.getLeft)
                 val right = translateSparqlQuery(opUnion.getRight)
@@ -133,10 +142,6 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 else if (right.isDefined)
                     right
                 else None
-            }
-            case opLeftJoin: OpLeftJoin => { //OPT pattern
-                logger.warn("SPARQL OPTIONAL no supported in query translation.")
-                None
             }
             case opFilter: OpFilter => { //FILTER pattern
                 logger.warn("SPARQL Filter no supported in query translation.")
@@ -324,23 +329,5 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         if (logger.isTraceEnabled())
             logger.trace("Final set of concrete queries: [" + Qstr + "]")
         Qstr
-    }
-
-    /**
-     * Generate the data source for the parent triples map of the triples map passed
-     *
-     * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return a MongoDBQuery representing the query string of the parent triples map
-     */
-    def genFromParent(tm: R2RMLTriplesMap): MongoDBQuery = {
-        val pom = tm.getPropertyMappings.head
-
-        if (pom.hasRefObjectMap) {
-            val rom = pom.getRefObjectMap(0)
-            val parentTMLogSrc = md.getParentTriplesMap(rom).getLogicalSource
-            val query = MongoDBQuery.parseQueryString(parentTMLogSrc.getValue, parentTMLogSrc.docIterator, true)
-            query
-        } else
-            throw new MorphException("Triples map " + tm + " has no parent triples map")
     }
 }

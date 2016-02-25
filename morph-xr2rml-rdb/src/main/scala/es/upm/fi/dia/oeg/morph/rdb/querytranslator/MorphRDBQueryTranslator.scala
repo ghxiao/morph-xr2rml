@@ -60,6 +60,7 @@ import Zql.ZExpression
 import Zql.ZGroupBy
 import Zql.ZOrderBy
 import Zql.ZSelectItem
+import es.upm.fi.dia.oeg.morph.abstractquery.MorphAbstractQuerySql
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
@@ -183,7 +184,7 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        new MorphAbstractQuery(None).setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None)))
+        new MorphAbstractQuerySql().setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None)))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

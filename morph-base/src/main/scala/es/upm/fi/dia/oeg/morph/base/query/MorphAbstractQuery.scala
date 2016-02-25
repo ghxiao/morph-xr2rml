@@ -14,16 +14,12 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
  * Also used to store the concrete query (attribute targetQuery) that results from
  * the translation of this abstract query into the target database language.
  *
- * <b>Note</b>: This class is not abstract because it is used as is in the RDB case, in which the original SPARQL-to-SQL query
- * translation method of Morph-RDB has not been modified. Therefore in the RDB case we use an instance of this class
- * as an simple encapsulation of the query rewritten somewhere else.
- *
  * @param boundTriplesMap in the query rewriting context, this field is significant only for an instance
  * of MorphAbstractAtomicQuery and it is a triples map that is bound to the triple pattern
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
-class MorphAbstractQuery(
+abstract class MorphAbstractQuery(
         val boundTriplesMap: Option[R2RMLTriplesMap]) {
 
     /**
@@ -39,28 +35,26 @@ class MorphAbstractQuery(
         this
     }
 
+    def toStringConcrete: String = { targetQuery.toString }
+
+    //---- Abstract methods ----
+
     /**
      * Check if atomic abstract queries within this query have a target query properly initialized
      * i.e. targetQuery is not empty
      */
-    def isTargetQuerySet: Boolean = false
-
-    def toStringConcrete: String = { targetQuery.toString }
+    def isTargetQuerySet: Boolean
 
     /**
      * Translate all atomic abstract queries within this abstract query into concrete queries.
      * @param translator the query translator
      */
-    def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
-        throw new MorphException("Not supported")
-    }
+    def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit
 
     /**
      * Return the list of SPARQL variables projected in this abstract query
      */
-    def getVariables: List[String] = {
-        throw new MorphException("Not supported")
-    }
+    def getVariables: List[String]
 
     /**
      * Execute the query and produce the RDF terms for each of the result documents
@@ -73,7 +67,5 @@ class MorphAbstractQuery(
      */
     def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
-        throw new MorphException("Not supported")
-    }
+        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms]
 }

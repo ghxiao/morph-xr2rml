@@ -38,27 +38,6 @@ class MorphMongoQueryTranslatorTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
-    @Test def test_genFromParent() {
-        println("------ test_genFromParent")
-
-        var from = queryTranslator.genFromParent(tmDirectors)
-        println(from)
-        assertEquals(new MongoDBQuery("movies", "decade:{$exists:true}").setIterator(Some("$.movies.*")), from)
-
-        try {
-            from = queryTranslator.genFromParent(tmMovies)
-        } catch {
-            case e: MorphException => {
-                println("Caught exception: " + e.getMessage())
-                assertTrue(true)
-            }
-            case e: Exception => {
-                println(e.getMessage())
-                Assert.fail()
-            }
-        }
-    }
-
     @Test def test_mongoAbstractQuerytoConcrete_Field() {
         println("------ test_mongoAbstractQuerytoConcrete_Field")
 
