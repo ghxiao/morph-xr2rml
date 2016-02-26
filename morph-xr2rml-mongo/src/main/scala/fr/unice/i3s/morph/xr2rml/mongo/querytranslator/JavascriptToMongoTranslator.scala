@@ -207,11 +207,15 @@ object JavascriptToMongoTranslator {
 
                 if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j6")
 
-                return new MongoQueryNodeField(
-                    path.astNode.toSource.substring(4), // skip the "this"
-                    new MongoQueryNodeCompare(
-                        transJsOpToMongo(jsExpr.getType),
-                        value.astNode.toSource))
+                val op = transJsOpToMongo(jsExpr.getType)
+                if (op == null)
+                    return new MongoQueryNodeNotSupported("JS operator + " + jsExpr.getType + " not supported.")
+                else
+                    return new MongoQueryNodeField(
+                        path.astNode.toSource.substring(4), // skip the "this"
+                        new MongoQueryNodeCompare(
+                            transJsOpToMongo(jsExpr.getType),
+                            value.astNode.toSource))
             }
         }
 
@@ -235,7 +239,10 @@ object JavascriptToMongoTranslator {
             case Token.GT => MongoQueryNodeCompare.Operator.GT
             case Token.GE => MongoQueryNodeCompare.Operator.GTE
             case Token.REGEXP => MongoQueryNodeCompare.Operator.REGEX
-            case _ => throw new MorphException("Cannot translate JS operator + " + jsOp + " to a MongoDB operator.")
+            case _ => {
+                logger.warn("Cannot translate JS operator + " + jsOp + " to a MongoDB operator.")
+                null
+            }
         }
         MongoQueryNodeCompare.Operator.EQ
     }

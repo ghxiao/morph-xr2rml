@@ -96,17 +96,7 @@ class MorphMongoDataTranslator(
 
                 // Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
-                    val subjectGraphValue = this.translateData(sgmElement, document)
-                    val graphMapTermType = sgmElement.inferTermType;
-                    val subjectGraph = graphMapTermType match {
-                        case Constants.R2RML_IRI_URI => { subjectGraphValue }
-                        case _ => {
-                            val errorMessage = "GraphMap's TermType is not valid: " + graphMapTermType;
-                            logger.warn(errorMessage);
-                            throw new MorphException(errorMessage);
-                        }
-                    }
-                    subjectGraph
+                    this.translateData(sgmElement, document)
                 }).toList;
                 if (!subjectGraphs.isEmpty)
                     if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)

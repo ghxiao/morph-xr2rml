@@ -118,7 +118,7 @@ class MorphAbstractQueryInnerJoinRef(
         val childResSets = child.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
         val childResultSet = childResSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
 
-        // Execute the parent queries (in the join condition), apply the iterator, and make a UNION (flatMap) of the results
+        // Execute the parent queries (in the parent triples map), apply the iterator, and make a UNION (flatMap) of the results
         val parentResultSet = {
             if (!pom.refObjectMaps.isEmpty) {
                 val rom = pom.refObjectMaps.head
@@ -146,16 +146,7 @@ class MorphAbstractQueryInnerJoinRef(
 
                 //---- Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
-                    val subjectGraphValue = dataTranslator.translateData(sgmElement, document)
-                    val graphMapTermType = sgmElement.inferTermType;
-                    graphMapTermType match {
-                        case Constants.R2RML_IRI_URI => { subjectGraphValue }
-                        case _ => {
-                            val errorMessage = "GraphMap's TermType is not valid: " + graphMapTermType;
-                            logger.warn(errorMessage);
-                            throw new MorphException(errorMessage);
-                        }
-                    }
+                    dataTranslator.translateData(sgmElement, document)
                 })
                 if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
 
@@ -208,8 +199,7 @@ class MorphAbstractQueryInnerJoinRef(
 
                 // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
                 val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
-                    val poGraphValue = dataTranslator.translateData(pogmElement, document)
-                    poGraphValue
+                    dataTranslator.translateData(pogmElement, document)
                 });
                 if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 

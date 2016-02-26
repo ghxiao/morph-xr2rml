@@ -281,8 +281,8 @@ abstract class MorphBaseQueryTranslator {
 
             if (tpTerm.isLiteral) {
                 // Add an equality condition for each reference in the term map
-                if (pom.objectMaps.isEmpty)
-                    throw new MorphException("Triples map " + tm + " has no object map. Maybe due to an inccorect triples map binding.")
+                if (! pom.hasObjectMap)
+                    throw new MorphException("Triples map " + tm + " has no object map. Presumably an inccorect triple pattern binding.")
                 val termMap = pom.objectMaps.head
                 if (termMap.isReferenceOrTemplateValued)
                     conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
@@ -340,7 +340,7 @@ abstract class MorphBaseQueryTranslator {
         val pom = tm.predicateObjectMaps.head
 
         if (!pom.hasRefObjectMap)
-            throw new MorphException("Triples map " + tm + " has no parent triples map. Maybe due to an inccorect triples map binding.")
+            throw new MorphException("Triples map " + tm + " has no parent triples map. Presumably an inccorect triple pattern binding.")
 
         if (tpTerm.isURI) {
             // tp.obj is a constant IRI to be matched with the subject of the parent TM:

@@ -163,8 +163,9 @@ abstract class MorphBaseDataTranslator(
 
     /**
      *  Create a JENA resource with an IRI after URL-encoding the string
+     *  
+     * @throws MorphException
      */
-    @throws[MorphException]
     protected def createIRI(originalIRI: String) = {
         var resultIRI = originalIRI;
         try {
@@ -187,8 +188,9 @@ abstract class MorphBaseDataTranslator(
 
     /**
      * Create a JENA literal resource with optional datatype and language tag
+     * 
+     * @throws MorphException
      */
-    @throws[MorphException]
     protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
             val encodedValue =
@@ -230,11 +232,13 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Convert a list of RDFNodes into an RDF collection or container. The result is returned as a list with one element.
+     * Convert a list of RDFNodes into an RDF collection or container. 
+     * The result is returned as a list with one element.
      *
-     * If the list of nodes is empty, return an empty list, but no empty collection/contianer is returned.
+     * If the list of nodes is empty, return an empty list, but no empty collection/container is returned.
+     * 
+     * @throws MorphException
      */
-    @throws[MorphException]
     def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
 
         // If values is empty, then do not return a list with one empty list inside, but just an empty list

@@ -21,7 +21,7 @@ class R2RMLPredicateObjectMap(
 
     if (predicateMaps.isEmpty)
         throw new MorphException("Error: predicateObjectMap with no predicate map will be ignored.")
-    if (objectMaps.isEmpty && refObjectMaps.isEmpty)
+    if (!this.hasObjectMap && !this.hasRefObjectMap)
         throw new MorphException("Error: predicateObjectMap with no object map will be ignored.")
 
     var alias: String = null;
