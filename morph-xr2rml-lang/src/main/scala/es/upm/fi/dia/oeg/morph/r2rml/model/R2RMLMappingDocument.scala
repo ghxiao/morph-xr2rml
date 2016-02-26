@@ -20,7 +20,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 
-class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
+class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
 
     var dbMetaData: Option[MorphDatabaseMetaData] = None;
 
@@ -39,29 +39,29 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
                 val sqlCnx = conn.concreteCnx.asInstanceOf[Connection]
                 val newMetaData = MorphDatabaseMetaData(sqlCnx, databaseName, databaseType);
                 this.dbMetaData = Some(newMetaData);
-                this.classMappings.foreach(cm => cm.buildMetaData(this.dbMetaData));
+                this.triplesMaps.foreach(cm => cm.buildMetaData(this.dbMetaData));
             }
         }
     }
 
     def getPropertyMappingsByPropertyURI(propertyURI: String): Iterable[R2RMLPredicateObjectMap] = {
-        this.classMappings.map(cm => cm.getPropertyMappings(propertyURI)).flatten
+        this.triplesMaps.map(cm => cm.getPropertyMappings(propertyURI)).flatten
     }
 
     def getClassMappingByPropertyURIs(propertyURIs: Iterable[String]): Iterable[R2RMLTriplesMap] =
-        this.classMappings.filter(cm =>
+        this.triplesMaps.filter(cm =>
             propertyURIs.toSet.subsetOf(cm.predicateObjectMaps.flatMap(_.getMappedPredicateNames).toSet)
         )
 
     def getClassMappingsByClassURI(classURI: String) =
-        this.classMappings.filter(_.getMappedClassURIs.exists(_.equals(classURI)))
+        this.triplesMaps.filter(_.getMappedClassURIs.exists(_.equals(classURI)))
 
     /**
      * Find the list of predicates that are used in all PredicateObjectMaps of all TriplesMaps of the document
      * @return a list of predicate names
      */
     def getMappedProperties(): Iterable[String] = {
-        val cms = this.classMappings.toList;
+        val cms = this.triplesMaps.toList;
         val resultAux = cms.map(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap];
             val poms = tm.getPropertyMappings().toList;
@@ -77,7 +77,7 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
     def getParentTriplesMap(refObjectMap: R2RMLRefObjectMap): R2RMLTriplesMap = {
         // Build the list of JENA resources that correspond to all triples maps that are
         // referenced as a parent triples map by the given referencing object map.
-        val parentTripleMapResources = this.classMappings.map(cm => {
+        val parentTripleMapResources = this.triplesMaps.map(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap];
             val poms = tm.predicateObjectMaps;
             poms.map(pom => {
@@ -90,7 +90,7 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
             }).flatten
         }).flatten;
 
-        val parentTripleMaps = this.classMappings.filter(cm => {
+        val parentTripleMaps = this.triplesMaps.filter(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap];
             parentTripleMapResources.exists(parentTripleMapResource => {
                 tm.resource == parentTripleMapResource;
@@ -142,7 +142,7 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
         val pom = pm.asInstanceOf[R2RMLPredicateObjectMap];
         val om = pom.getObjectMap(0);
         val rom = pom.getRefObjectMap(0);
-        val cms = this.classMappings
+        val cms = this.triplesMaps
 
         val result: Iterable[R2RMLTriplesMap] = if (om != null && rom == null) {
             val inferredTermType = om.inferTermType;
@@ -201,21 +201,21 @@ class R2RMLMappingDocument(val classMappings: Iterable[R2RMLTriplesMap]) {
     }
 
     def getClassMappingsByInstanceTemplate(templateValue: String): Iterable[R2RMLTriplesMap] = {
-        this.classMappings.filter(cm => {
+        this.triplesMaps.filter(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap]
             tm.subjectMap.templateString.startsWith(templateValue)
         })
     }
 
     def getClassMappingsByInstanceURI(instanceURI: String): Iterable[R2RMLTriplesMap] = {
-        this.classMappings.filter(cm => {
+        this.triplesMaps.filter(cm => {
             val possibleInstance = cm.isPossibleInstance(instanceURI)
             possibleInstance
         })
     }
 
     def getClassMappingsByName(name: String): R2RMLTriplesMap = {
-        val filtered = this.classMappings.filter(cm => {
+        val filtered = this.triplesMaps.filter(cm => {
             cm.asInstanceOf[R2RMLTriplesMap].name == name
         })
         if (filtered.isEmpty)

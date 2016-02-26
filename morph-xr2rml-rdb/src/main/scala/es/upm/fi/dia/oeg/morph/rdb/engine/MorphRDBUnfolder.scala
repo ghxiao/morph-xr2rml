@@ -403,7 +403,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     }
 
     def unfoldMappingDocument() = {
-        val triplesMaps = this.md.classMappings
+        val triplesMaps = this.md.triplesMaps
         val result = if (triplesMaps != null) {
             triplesMaps.flatMap(triplesMap => {
                 try {

@@ -256,7 +256,7 @@ class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
         this.mapInferredTypes.getOrElse(node, Set.empty).toSet
 
     private def inferByURI(uri: String): Set[R2RMLTriplesMap] =
-        this.mappingDocument.classMappings.filter(_.isPossibleInstance(uri)).toSet
+        this.mappingDocument.triplesMaps.filter(_.isPossibleInstance(uri)).toSet
 
     /**
      * Debug method

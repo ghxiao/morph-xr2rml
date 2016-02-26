@@ -22,7 +22,7 @@ object TemplateUtility {
     /**
      * Match an URI with a template string. The result is a set of couples where the
      * key is the path in the template string, and the value is the corresponding value in the given URI.
-     * This method applies to R2RML templates as well as xR2RML templates including mixed-syntax paths. 
+     * This method applies to R2RML templates as well as xR2RML templates including mixed-syntax paths.
      * <br>
      * Example:<br>
      * if tplStr = "http://example.org/{ID}/{Column(NAME)/JSONPath(...)}",
@@ -67,7 +67,7 @@ object TemplateUtility {
     /**
      * Get the list of capturing groups between '{' and '}' in a template string, without the '{' and '}'.
      * This method applies to R2RML templates as well as xR2RML templates including
-     * mixed-syntax paths. 
+     * mixed-syntax paths.
      * Example: if tplStr is "http://example.org/{ID}/{Column(NAME)/JSONPath(...)}/...",
      * the method returns List("ID", "Column(NAME)/JSONPath(...)").
      *
@@ -245,6 +245,37 @@ object TemplateUtility {
         combinations.toList
     }
 
+    /**
+     * Check if two template string are compatible, i.e. if there fixed parts are the same 
+     * and they have {...} at the same place. Example:
+     * "http://example.org/{xx}/B{zz}"
+     * and
+     * "http://example.org/{yy}/B{tt}"
+     * are compatible
+     */
+    def compatibleTemplateStrings(tplStr1: String, tplStr2: String): Boolean = {
+
+        var newTplStr1 = tplStr1;
+        if (!newTplStr1.startsWith("<")) newTplStr1 = "<" + newTplStr1;
+        if (!newTplStr1.endsWith(">")) newTplStr1 = newTplStr1 + ">";
+
+        var newTplStr2 = tplStr2;
+        if (!newTplStr2.startsWith("<")) newTplStr2 = "<" + newTplStr2;
+        if (!newTplStr2.endsWith(">")) newTplStr2 = newTplStr2 + ">";
+
+        var groups = this.getTemplateGroups(newTplStr1)
+        for (group <- groups)
+            // Replace each group "{...}" with the regex "PLACEHOLDER"
+            newTplStr1 = newTplStr1.replace("{" + group + "}", "PLACEHOLDER");
+
+        groups = this.getTemplateGroups(newTplStr2)
+        for (group <- groups)
+            // Replace each group "{...}" with the regex "PLACEHOLDER"
+            newTplStr2 = newTplStr2.replace("{" + group + "}", "PLACEHOLDER");
+
+        newTplStr1 == newTplStr2
+    }
+
     def main(args: Array[String]) = {
         var template = "Hello {Name} Please find attached {Invoice Number} which is due on {Due Date}";
 
@@ -268,6 +299,7 @@ object TemplateUtility {
 
         val firstYear = for (m <- date findAllMatchIn dates) yield m group 1
         System.out.println("firstYear: " + firstYear.toList)
+
     }
 
 }

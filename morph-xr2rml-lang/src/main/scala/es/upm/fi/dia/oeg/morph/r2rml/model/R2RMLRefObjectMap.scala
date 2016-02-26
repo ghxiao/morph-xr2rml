@@ -9,7 +9,10 @@ import com.hp.hpl.jena.rdf.model.Resource
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 
-class R2RMLRefObjectMap(val parentTriplesMapResource: Resource, val joinConditions: Set[R2RMLJoinCondition], val termType: Option[String]) {
+class R2RMLRefObjectMap(
+        val parentTriplesMapResource: Resource,
+        val joinConditions: Set[R2RMLJoinCondition],
+        val termType: Option[String]) {
 
     val logger = Logger.getLogger(this.getClass().getName());
     var rdfNode: RDFNode = null;

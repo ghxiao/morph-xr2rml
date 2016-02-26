@@ -71,6 +71,10 @@ class R2RMLPredicateObjectMap(
             null;
     }
 
+    def hasObjectMap(): Boolean = {
+        (this.objectMaps != null && !this.objectMaps.isEmpty)
+    }
+
     def hasRefObjectMap(): Boolean = {
         (this.refObjectMaps != null && !this.refObjectMaps.isEmpty)
     }

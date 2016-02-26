@@ -16,6 +16,7 @@ import com.hp.hpl.jena.datatypes.RDFDatatype
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 
 class MorphBaseTriplePatternBindingsTest {
 
@@ -212,5 +213,87 @@ class MorphBaseTriplePatternBindingsTest {
         assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri2))
         assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri3))
         assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
+    }
+
+    @Test
+    def test_compatible_TermMaps {
+        // Compatible term maps with constant/reference/template
+
+        var termMap1 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ConstantTermMap, // term map type
+            Some(Constants.R2RML_IRI_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap1))
+
+        var termMap2 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_IRI_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+
+        termMap2 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.TemplateTermMap, // term map type
+            Some(Constants.R2RML_IRI_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+    }
+
+    @Test
+    def test_compatible_TermMaps2 {
+        // Language tags, data types
+
+        var termMap1 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_LITERAL_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap1))
+
+        var termMap2 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_LITERAL_URI), // term type
+            None, Some("fr"), // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+
+        termMap2 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_LITERAL_URI), // term type
+            Some("http://www.w3.org/2001/XMLSchema#string"), None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+    }
+
+    @Test
+    def test_compatible_TermMaps3 {
+        // Literal, IRI, BlankNode 
+
+        var termMap1 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_LITERAL_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+
+        // Language tags, data types
+        var termMap2 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_IRI_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+
+        termMap2 = new R2RMLObjectMap(
+            Constants.MorphTermMapType.ReferenceTermMap, // term map type
+            Some(Constants.R2RML_BLANKNODE_URI), // term type
+            None, None, // data type, language tag
+            None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
+        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
     }
 }

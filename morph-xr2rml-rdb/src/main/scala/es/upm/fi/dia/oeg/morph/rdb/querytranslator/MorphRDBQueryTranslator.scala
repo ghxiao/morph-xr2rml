@@ -764,7 +764,7 @@ class MorphRDBQueryTranslator(
                         tmOption.get;
                     } else {
                         logger.warn("Undefined TriplesMap for triple: " + tp + ". All triple patterns will be used");
-                        this.mappingDocument.classMappings.toSet
+                        this.mappingDocument.triplesMaps.toSet
                     }
                 }
 
@@ -1438,7 +1438,7 @@ class MorphRDBQueryTranslator(
                 logger.warn(errorMessage);
                 val errorMessage2 = "All class mappings will be used.";
                 logger.warn(errorMessage2);
-                val allCms = this.mappingDocument.classMappings.toList;
+                val allCms = this.mappingDocument.triplesMaps.toList;
                 if (allCms == null || allCms.size() == 0) {
                     val errorMessage3 = "Mapping document doesn't contain any class mappings!";
                     logger.error(errorMessage3);

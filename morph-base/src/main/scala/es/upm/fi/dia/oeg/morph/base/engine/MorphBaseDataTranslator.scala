@@ -35,7 +35,7 @@ abstract class MorphBaseDataTranslator(
      * translating results in RDF terms and making the triples.
      */
     def translateData_Materialization(mappingDocument: R2RMLMappingDocument): Unit = {
-        val tms = mappingDocument.classMappings
+        val tms = mappingDocument.triplesMaps
         for (tm <- tms) {
             logger.info("===============================================================================");
             logger.info("Starting data materialization of triples map " + tm.id);

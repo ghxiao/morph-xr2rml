@@ -1,5 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
+import scala.collection.JavaConversions.asScalaBuffer
+
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.graph.Node
@@ -7,6 +9,15 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
+import com.hp.hpl.jena.sparql.algebra.op.OpBGP
+import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
+import com.hp.hpl.jena.sparql.algebra.op.OpFilter
+import com.hp.hpl.jena.sparql.algebra.op.OpJoin
+import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
+import com.hp.hpl.jena.sparql.algebra.op.OpOrder
+import com.hp.hpl.jena.sparql.algebra.op.OpProject
+import com.hp.hpl.jena.sparql.algebra.op.OpSlice
+import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
@@ -79,11 +90,74 @@ abstract class MorphBaseQueryTranslator {
 
     /**
      * Compute the triple pattern bindings for all triple patterns in a graph pattern
-     * @param gp graph pattern
+     *
+     * @param op SPARQL query or SPARQL query element
      * @return bindings as a map of triples and associated triples maps
      */
-    def bindm(gp: Op): Map[Triple, List[R2RMLTriplesMap]] = {
-        throw new Exception("Not implemented")
+    def bindm(op: Op): Map[Triple, List[R2RMLTriplesMap]] = {
+
+        op match {
+            case opProject: OpProject => { // SELECT clause
+                val subOp = opProject.getSubOp();
+                this.bindm(subOp)
+            }
+            case bgp: OpBGP => { // Basic Graph Pattern
+                val triples: List[Triple] = bgp.getPattern.getList.toList
+                if (triples.size == 0)
+                    Map.empty
+                else if (triples.size == 1) {
+                    val tp = triples.head
+                    val boundTMs = this.mappingDocument.triplesMaps.toList.map(tm => {
+
+                        // triples map TM is bound to tp iff
+                        //    compatible(TM.sub, tp.sub) ^ compatible(TM.pred, tp.pred) ^ compatible(TM.obj, tp.obj)}
+                        val pom = tm.predicateObjectMaps.head
+                        var bound = MorphBaseTriplePatternBindings.compatible(tm.subjectMap, tp.getSubject) &&
+                            MorphBaseTriplePatternBindings.compatible(pom.predicateMaps.head, tp.getPredicate) &&
+                            (if (pom.hasObjectMap)
+                                MorphBaseTriplePatternBindings.compatible(pom.objectMaps.head, tp.getObject)
+                            else if (pom.hasRefObjectMap)
+                                MorphBaseTriplePatternBindings.compatible(pom.refObjectMaps.head, tp.getObject)
+                            else {
+                                logger.warn("Unormalized triples map " + tm.toString + ": cannot have both object maps and referencing object maps")
+                                false
+                            })
+
+                        if (bound) Some(tm) else None
+                    }).flatten // flatten removes None, keeping possibly an empty list of triples maps
+                    Map(tp -> boundTMs)
+                } else {
+                    // @TODO
+                    Map.empty
+                }
+            }
+            case opJoin: OpJoin => { // AND pattern
+                Map.empty
+            }
+            case opLeftJoin: OpLeftJoin => { //OPT pattern
+                Map.empty
+            }
+            case opUnion: OpUnion => { //UNION pattern
+                val left = bindm(opUnion.getLeft)
+                val right = bindm(opUnion.getRight)
+                left ++ right
+            }
+            case opFilter: OpFilter => { //FILTER pattern
+                Map.empty
+            }
+            case opSlice: OpSlice => {
+                Map.empty
+            }
+            case opDistinct: OpDistinct => {
+                Map.empty
+            }
+            case opOrder: OpOrder => {
+                Map.empty
+            }
+            case _ => {
+                Map.empty
+            }
+        }
     }
 
     /**
@@ -115,7 +189,6 @@ abstract class MorphBaseQueryTranslator {
                 listRefs = listRefs :+ new MorphBaseQueryProjection(jc.childRef)
         } else if (tp.getObject().isVariable()) {
             listRefs = listRefs :+ new MorphBaseQueryProjection(pom.objectMaps.head.getReferences, Some(tp.getObject.toString))
-
         }
         listRefs
     }
@@ -283,7 +356,7 @@ abstract class MorphBaseQueryTranslator {
 
         } else if (tpTerm.isVariable) {
             // tp.obj is a SPARQL variable to be matched with the subject of the parent TM
-            val rom = pom.getRefObjectMap(0) // @NORMALIZED_ASSUMPTION
+            val rom = pom.getRefObjectMap(0)
             val parentSM = mappingDocument.getParentTriplesMap(rom).subjectMap
             if (parentSM.isReferenceOrTemplateValued)
                 conditions = conditions ++ parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))

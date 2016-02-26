@@ -60,7 +60,7 @@ class TemplateUtilityTest {
 
     @Test def TestGetTemplateMatching() {
         println("------------------ TestGetTemplateMatching ------------------")
-        
+
         var groups = TemplateUtility.getTemplateMatching("http://example.org/student/{ID1}/{ID2}/{ID1}", "http://example.org/student/id1/id2/id1")
         println("groups: " + groups)
         assertEquals("id1", groups.get("ID1").get)
@@ -69,7 +69,7 @@ class TemplateUtilityTest {
         groups = TemplateUtility.getTemplateMatching("http://example.org/student/{ID1}", "http://foo.com/student/id1")
         println("groups: " + groups)
         assertTrue(groups.isEmpty)
-        
+
         val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
         val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
         val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
@@ -150,5 +150,18 @@ class TemplateUtilityTest {
         println("values: " + values)
         assertEquals(1, values.length)
         assertEquals(tpl, values(0))
+    }
+
+    @Test def TestCompatibleTemplateStrings {
+
+        val tplStr1 = "http://example.org/student/{xx}/{12}/B{zz}"
+        val tplStr2 = "http://example.org/student/{yy}/{34}/B{tt}"
+        assertTrue(TemplateUtility.compatibleTemplateStrings(tplStr1, tplStr2))
+
+        val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
+        val jsonPath = """JSONPath($['store'].book[\(@.length-1\)].title)"""
+        val mixedPath = "Column(NAME)/CSV(3)/" + xPath + "/" + jsonPath + "/TSV(name)"
+        var tpl = "http://example.org/student/{ID}/{" + mixedPath + "}/{ID2}/{" + mixedPath + "}"
+        assertTrue(TemplateUtility.compatibleTemplateStrings(tpl, tpl))
     }
 }

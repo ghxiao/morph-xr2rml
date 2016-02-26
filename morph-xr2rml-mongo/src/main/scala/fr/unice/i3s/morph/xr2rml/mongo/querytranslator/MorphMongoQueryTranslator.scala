@@ -34,6 +34,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryLeftJoin
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -104,7 +105,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 this.translateSparqlQuery(subOp)
             }
             case bgp: OpBGP => { // Basic Graph Pattern
-                val triples = bgp.getPattern.getList.toList
+                val triples: List[Triple] = bgp.getPattern.getList.toList
                 if (triples.size == 0)
                     None
                 else if (triples.size == 1)
@@ -197,7 +198,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 throw new MorphException("The candidate triples map " + tm.toString + " must have exactly one predicate-object map.")
             val pom = poms.head
             if (pom.predicateMaps.size != 1 ||
-                !((pom.objectMaps.size == 0 && pom.refObjectMaps.size == 1) || (pom.objectMaps.size == 1 && pom.refObjectMaps.size == 0)))
+                !((!pom.hasObjectMap && pom.hasRefObjectMap) || (pom.hasObjectMap && !pom.hasRefObjectMap)))
                 throw new MorphException("The candidate triples map " + tm.toString + " must have exactly one predicate map and one object map.")
 
             // Start translation
