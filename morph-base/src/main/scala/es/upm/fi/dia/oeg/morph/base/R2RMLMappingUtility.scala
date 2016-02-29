@@ -21,7 +21,7 @@ object R2RMLMappingUtility {
     datatypesMap += ("DOUBLE" -> XSDDoubleURI);
     datatypesMap += ("DATETIME" -> XSDDateTimeURI);
 
-    /** 
+    /**
      *  Retrieve the predicate object map resources of a set of triples maps
      */
     def getPredicateObjectMapResources(tmsRes: List[Resource]): List[Resource] = {
@@ -37,7 +37,7 @@ object R2RMLMappingUtility {
         result;
     }
 
-    /** 
+    /**
      *  Retrieve the predicate-object map resources of a triples map
      */
     def getPredicateObjectMapResources(tmRes: Resource): List[Resource] = {

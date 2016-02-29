@@ -1,0 +1,40 @@
+@prefix xrr: <http://i3s.unice.fr/xr2rml#> .
+@prefix rr:  <http://www.w3.org/ns/r2rml#> .
+@prefix ex:  <http://example.org/> .
+@prefix rml: <http://semweb.mmlab.be/ns/rml#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#TM1>
+   xrr:logicalSource [ xrr:query "query1" ];
+   rr:subjectMap [ rr:template "http://example.org/plop/{plop}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:starring;
+      rr:objectMap [ xrr:reference "plop" ];
+   ].
+
+<#TM2>
+   xrr:logicalSource [ xrr:query "query2" ];
+   rr:subjectMap [ rr:template "http://example.org/plop/{plop}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:starring;
+      rr:objectMap [ xrr:reference "plop"; rr:language "fr" ];
+   ].
+
+<#TM3>
+   xrr:logicalSource [ xrr:query "query3" ];
+   rr:subjectMap [ rr:template "http://example.org/{plop}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:starring;
+      rr:objectMap [ xrr:reference "plop" ];
+   ].
+   
+<#TM4>
+   xrr:logicalSource [ xrr:query "query4" ];
+   rr:subjectMap [ rr:template "http://example.org/plup/{plup}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:directed;
+      rr:objectMap [
+         rr:parentTriplesMap <#TM1>;
+         rr:joinCondition [ rr:child "toto"; rr:parent "tutu" ]
+      ]
+   ].

@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.morph.base
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class TemplateUtilityTest {
@@ -154,8 +155,16 @@ class TemplateUtilityTest {
 
     @Test def TestCompatibleTemplateStrings {
 
-        val tplStr1 = "http://example.org/student/{xx}/{12}/B{zz}"
-        val tplStr2 = "http://example.org/student/{yy}/{34}/B{tt}"
+        var tplStr1 = "http://example.org/student/{xx}"
+        var tplStr2 = "http://example.org/{yy}/{34}"
+        assertFalse(TemplateUtility.compatibleTemplateStrings(tplStr1, tplStr2))
+
+        tplStr1 = "http://example.org/student/{xx}"
+        tplStr2 = "http://example.org/student/{yy}/{34}/B{tt}"
+        assertFalse(TemplateUtility.compatibleTemplateStrings(tplStr1, tplStr2))
+
+        tplStr1 = "http://example.org/student/{xx}/{12}/B{zz}"
+        tplStr2 = "http://example.org/student/{yy}/{34}/B{tt}"
         assertTrue(TemplateUtility.compatibleTemplateStrings(tplStr1, tplStr2))
 
         val xPath = """XPath(\/\/root\/node[1]\(\)\/@id)"""
