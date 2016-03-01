@@ -4,37 +4,54 @@
 @prefix rml: <http://semweb.mmlab.be/ns/rml#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<#TM1>
+<#TM1_plop>
    xrr:logicalSource [ xrr:query "query1" ];
    rr:subjectMap [ rr:template "http://example.org/plop/{plop}" ];
    rr:predicateObjectMap [
-      rr:predicate ex:starring;
+      rr:predicate ex:plop;
       rr:objectMap [ xrr:reference "plop" ];
    ].
 
-<#TM2>
+<#TM2_plop>
    xrr:logicalSource [ xrr:query "query2" ];
    rr:subjectMap [ rr:template "http://example.org/plop/{plop}" ];
    rr:predicateObjectMap [
-      rr:predicate ex:starring;
+      rr:predicate ex:plop;
       rr:objectMap [ xrr:reference "plop"; rr:language "fr" ];
    ].
 
-<#TM3>
+<#TM3_plop>
    xrr:logicalSource [ xrr:query "query3" ];
-   rr:subjectMap [ rr:template "http://example.org/{plop}" ];
+   rr:subjectMap [ rr:template "http://example.org/{plop}/plop" ];
    rr:predicateObjectMap [
-      rr:predicate ex:starring;
+      rr:predicate ex:plop;
       rr:objectMap [ xrr:reference "plop" ];
    ].
    
-<#TM4>
+<#TM4_plip>
    xrr:logicalSource [ xrr:query "query4" ];
-   rr:subjectMap [ rr:template "http://example.org/plup/{plup}" ];
+   rr:subjectMap [ rr:template "http://example.org/plip/{plip}" ];
    rr:predicateObjectMap [
-      rr:predicate ex:directed;
+      rr:predicate ex:plip;
       rr:objectMap [
-         rr:parentTriplesMap <#TM1>;
+         rr:parentTriplesMap <#TM1_plop>;
          rr:joinCondition [ rr:child "toto"; rr:parent "tutu" ]
       ]
    ].
+
+<#TM5_plup>
+   xrr:logicalSource [ xrr:query "query5" ];
+   rr:subjectMap [ rr:template "http://example.org/plup/{plup}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:plup;
+      rr:objectMap [ xrr:reference "plup" ];
+   ].
+
+<#TM6_plup>
+   xrr:logicalSource [ xrr:query "query6" ];
+   rr:subjectMap [ rr:template "http://example.org/plop/{plup}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:plup;
+      rr:object "plup";
+   ].
+   

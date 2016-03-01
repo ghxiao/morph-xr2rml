@@ -108,7 +108,7 @@ object TemplateUtility {
                 else group
             }
         )
-        if (logger.isTraceEnabled()) logger.trace("Extracted groups: " + groupsFromTpl + " from template " + tplStr)
+        //if (logger.isTraceEnabled()) logger.trace("Extracted groups: " + groupsFromTpl + " from template " + tplStr)
         groupsFromTpl;
     }
 
