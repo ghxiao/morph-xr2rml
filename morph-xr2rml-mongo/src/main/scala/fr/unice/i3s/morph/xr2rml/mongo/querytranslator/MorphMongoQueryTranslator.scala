@@ -35,6 +35,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryLeftJoin
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBindings
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -53,20 +55,9 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     override val logger = Logger.getLogger(this.getClass());
 
     /**
-     * Retrieve the triples maps bound to a triple pattern
-     * @TODO The binding of a triples map to the triple patterns is hard coded.
-     */
-    private def getBoundTriplesMaps(triple: Triple): List[R2RMLTriplesMap] = {
-        val tmMovies = md.getClassMappingsByName("Movies")
-        val tmDirectors = md.getClassMappingsByName("Directors")
-        List(tmDirectors)
-    }
-
-    /**
      * High level entry point to the query translation process.
      *
      * @TODO Several features are not implemented:
-     * - The binding of a triples map to the triple patterns is hard coded.
      * - The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
      * Besides, only the references are listed, but they must be bound to the variable they represent
      * (the AS of the project part) so that the INNER JOIN can be computed, and from the reference
@@ -81,8 +72,11 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     override def translate(op: Op): MorphAbstractQuery = {
         if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
+        // Calculate the triple pattern bindings
+        val bindings = MorphBaseTriplePatternBindings.bindm(op)
+
         // Translate the SPARQL query into an abstract query
-        val res = translateSparqlQuery(op)
+        val res = translateSparqlQuery(bindings, op)
 
         // Translate the atomic abstract queries into concrete MongoDB queries
         if (res.isDefined) {
@@ -95,25 +89,26 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
     /**
      * Recursive translation of a SPARQL query into an abstract query
      *
+     * @param bindings bindings of the the SPARQL query triple patterns
      * @param op SPARQL query or SPARQL query element
      * @return a MorphAbstractQuery instance or None if the query element is not supported in the translation
      */
-    private def translateSparqlQuery(op: Op): Option[MorphAbstractQuery] = {
+    private def translateSparqlQuery(bindings: Map[String, TPBindings], op: Op): Option[MorphAbstractQuery] = {
         op match {
             case opProject: OpProject => { // SELECT clause
                 val subOp = opProject.getSubOp();
-                this.translateSparqlQuery(subOp)
+                this.translateSparqlQuery(bindings, subOp)
             }
             case bgp: OpBGP => { // Basic Graph Pattern
                 val triples: List[Triple] = bgp.getPattern.getList.toList
                 if (triples.size == 0)
                     None
                 else if (triples.size == 1)
-                    Some(this.transTPm(triples.head, this.getBoundTriplesMaps(triples.head)))
+                    Some(this.transTPm(triples.head, this.getBoundTriplesMaps(bindings, triples.head)))
                 else {
                     // Make an INER JOIN between the first triple pattern and the rest of the triple patterns
-                    val left = this.transTPm(triples.head, this.getBoundTriplesMaps(triples.head))
-                    val right = this.translateSparqlQuery(new OpBGP(BasicPattern.wrap(triples.tail)))
+                    val left = this.transTPm(triples.head, this.getBoundTriplesMaps(bindings, triples.head))
+                    val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
                     if (right.isDefined)
                         Some(new MorphAbstractQueryInnerJoin(left, right.get))
                     else
@@ -121,8 +116,8 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 }
             }
             case opJoin: OpJoin => { // AND pattern
-                val left = translateSparqlQuery(opJoin.getLeft)
-                val right = translateSparqlQuery(opJoin.getRight)
+                val left = translateSparqlQuery(bindings, opJoin.getLeft)
+                val right = translateSparqlQuery(bindings, opJoin.getRight)
                 if (left.isDefined && right.isDefined)
                     Some(new MorphAbstractQueryInnerJoin(left.get, right.get))
                 else if (left.isDefined)
@@ -132,8 +127,8 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 else None
             }
             case opLeftJoin: OpLeftJoin => { //OPT pattern
-                val left = translateSparqlQuery(opLeftJoin.getLeft)
-                val right = translateSparqlQuery(opLeftJoin.getRight)
+                val left = translateSparqlQuery(bindings, opLeftJoin.getLeft)
+                val right = translateSparqlQuery(bindings, opLeftJoin.getRight)
                 if (left.isDefined && right.isDefined)
                     Some(new MorphAbstractQueryLeftJoin(left.get, right.get))
                 else if (left.isDefined)
@@ -143,8 +138,8 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 else None
             }
             case opUnion: OpUnion => { //UNION pattern
-                val left = translateSparqlQuery(opUnion.getLeft)
-                val right = translateSparqlQuery(opUnion.getRight)
+                val left = translateSparqlQuery(bindings, opUnion.getLeft)
+                val right = translateSparqlQuery(bindings, opUnion.getRight)
 
                 if (left.isDefined && right.isDefined)
                     Some(new MorphAbstractQueryUnion(List(left.get, right.get)))
@@ -174,6 +169,19 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 logger.warn("SPARQL feature no supported in query translation.")
                 None
             }
+        }
+    }
+
+    /**
+     * Retrieve the triples maps bound to a triple pattern
+     */
+    private def getBoundTriplesMaps(bindings: Map[String, TPBindings], triple: Triple): List[R2RMLTriplesMap] = {
+
+        if (bindings.contains(triple.toString))
+            bindings(triple.toString).bound
+        else {
+            logger.warn("No binding defined for triple pattern " + triple.toString)
+            List.empty
         }
     }
 

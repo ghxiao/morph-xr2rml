@@ -52,8 +52,6 @@ abstract class MorphBaseQueryTranslator {
     /** Map of nodes of a SPARQL query and the candidate triples maps for each node **/
     var mapInferredTMs: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
 
-    MorphBaseTriplePatternBindings.mappingDocument = this.mappingDocument
-
     //Optimize.setFactory(new MorphQueryRewritterFactory());
 
     /**
@@ -68,6 +66,7 @@ abstract class MorphBaseQueryTranslator {
      */
     def translate(sparqlQuery: Query): MorphAbstractQuery = {
         val start = System.currentTimeMillis()
+        MorphBaseTriplePatternBindings.mappingDocument = this.mappingDocument
         val result = this.translate(Algebra.compile(sparqlQuery));
         logger.info("Query translation time = " + (System.currentTimeMillis() - start) + "ms.");
         result
@@ -209,7 +208,7 @@ abstract class MorphBaseQueryTranslator {
 
             if (tpTerm.isLiteral) {
                 // Add an equality condition for each reference in the term map
-                if (! pom.hasObjectMap)
+                if (!pom.hasObjectMap)
                     throw new MorphException("Triples map " + tm + " has no object map. Presumably an inccorect triple pattern binding.")
                 val termMap = pom.objectMaps.head
                 if (termMap.isReferenceOrTemplateValued)
