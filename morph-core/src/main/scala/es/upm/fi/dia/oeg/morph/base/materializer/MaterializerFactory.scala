@@ -9,7 +9,7 @@ object MaterializerFactory {
 
     def create(outputStream: Writer, jenaMode: String): MorphBaseMaterializer = {
 
-        logger.info("Creating MorphBaseMaterializer. Jena mode: " + jenaMode + ", Output stream: " + outputStream)
+        if (logger.isDebugEnabled) logger.debug("Creating MorphBaseMaterializer. Jena mode: " + jenaMode + ", Output stream: " + outputStream)
 
         val model = MorphBaseMaterializer.createJenaModel(jenaMode);
 

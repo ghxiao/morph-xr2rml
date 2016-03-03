@@ -26,7 +26,7 @@ abstract class MorphBaseRunnerFactory {
 
     def createRunner(properties: MorphProperties): MorphBaseRunner = {
 
-        logger.info("Creating MorphBaseRunner")
+        if (logger.isDebugEnabled) logger.debug("Creating MorphBaseRunner")
 
         // Building CONNECTION
         val connection = this.createConnection(properties);
@@ -56,7 +56,6 @@ abstract class MorphBaseRunnerFactory {
         // ---------------------------------------------------------------------------------
 
         // Building QUERY TRANSLATOR
-        logger.info("Building query translator...");
         val queryTranslator = this.createQueryTranslator(properties, mappingDocument, dataSourceReader)
 
         // Building RESULT PROCESSOR to translate the SQL result set into a SPARQL result set and serialize it into a file

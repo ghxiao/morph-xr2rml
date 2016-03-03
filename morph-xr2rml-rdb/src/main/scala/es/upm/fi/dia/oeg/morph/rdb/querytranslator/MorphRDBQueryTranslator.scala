@@ -132,7 +132,7 @@ class MorphRDBQueryTranslator(
     /**
      * High level entry point to the query translation process.
      */
-    override def translate(op: Op): MorphAbstractQuery = {
+    override def translate(op: Op): Option[MorphAbstractQuery] = {
         logger.debug("opSparqlQuery = " + op);
 
         // Find candidate triples maps
@@ -181,7 +181,7 @@ class MorphRDBQueryTranslator(
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        new MorphAbstractQuerySql().setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None)))
+        Some(new MorphAbstractQuerySql().setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None))))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

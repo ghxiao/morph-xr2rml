@@ -77,7 +77,7 @@ class MorphAbstractQueryLeftJoin(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
-        logger.info("Generating RDF terms from the inner join query:\n" + this.toStringConcrete)
+        logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
         val joinResult: scala.collection.mutable.Map[String, MorphBaseResultRdfTerms] = new scala.collection.mutable.HashMap
 
         // First, generate the triples for both left and right graph patterns of the join
@@ -85,40 +85,48 @@ class MorphAbstractQueryLeftJoin(
         val rightTriples = right.generateRdfTerms(dataSourceReader, dataTranslator)
 
         if (logger.isDebugEnabled)
-            logger.debug("Inner joining " + leftTriples.size + " left triples with " + rightTriples.size + " right triples.")
+            logger.debug("Left joining " + leftTriples.size + " left triple(s) with " + rightTriples.size + " right triple(s).")
         if (logger.isTraceEnabled) {
             logger.trace("Left triples:\n" + leftTriples.mkString("\n"))
             logger.trace("Right triples:\n" + rightTriples.mkString("\n"))
         }
 
-        // For each variable x shared by both graph patterns, select the left and right triples
-        // in which at least one term is bound to x, then join the documents on these terms.
-        for (x <- this.getSharedVariables) {
+        val sharedVars = this.getSharedVariables
+        if (sharedVars.isEmpty) {
+            val res = leftTriples ++ rightTriples // no filtering if no common variable
+            if (logger.isDebugEnabled)
+                logger.debug("Left join computed " + res.size + " results.")
+            res
+        } else {
+            // For each variable x shared by both graph patterns, select the left and right triples
+            // in which at least one term is bound to x, then join the documents on these terms.
+            for (x <- sharedVars) {
 
-            val leftTripleX = leftTriples.filter(_.hasVariable(x))
-            val rightTripleX = rightTriples.filter(_.hasVariable(x))
+                val leftTripleX = leftTriples.filter(_.hasVariable(x))
+                val rightTripleX = rightTriples.filter(_.hasVariable(x))
 
-            for (leftTriple <- leftTripleX) {
-                val leftTerm = leftTriple.getTermsForVariable(x)
-                for (rightTriple <- rightTripleX) {
-                    val rightTerm = rightTriple.getTermsForVariable(x)
-                    if (leftTerm.intersect(rightTerm).isEmpty) {
-                        // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
-                        if (!joinResult.contains(leftTriple.getId))
-                            joinResult += (leftTriple.getId -> leftTriple)
-                    } else {
-                        // If there is a match, keep the left and right MorphBaseResultRdfTerms instances 
-                        if (!joinResult.contains(leftTriple.getId))
-                            joinResult += (leftTriple.getId -> leftTriple)
-                        if (!joinResult.contains(rightTriple.getId))
-                            joinResult += (rightTriple.getId -> rightTriple)
+                for (leftTriple <- leftTripleX) {
+                    val leftTerm = leftTriple.getTermsForVariable(x)
+                    for (rightTriple <- rightTripleX) {
+                        val rightTerm = rightTriple.getTermsForVariable(x)
+                        if (leftTerm.intersect(rightTerm).isEmpty) {
+                            // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
+                            if (!joinResult.contains(leftTriple.getId))
+                                joinResult += (leftTriple.getId -> leftTriple)
+                        } else {
+                            // If there is a match, keep the left and right MorphBaseResultRdfTerms instances 
+                            if (!joinResult.contains(leftTriple.getId))
+                                joinResult += (leftTriple.getId -> leftTriple)
+                            if (!joinResult.contains(rightTriple.getId))
+                                joinResult += (rightTriple.getId -> rightTriple)
+                        }
                     }
                 }
             }
+            if (logger.isDebugEnabled)
+                logger.debug("Left join computed " + joinResult.size + " results.")
+            joinResult.values.toList
         }
-        if (logger.isDebugEnabled)
-            logger.debug("Inner join computed " + joinResult.size + " results.")
-        joinResult.values.toList
     }
 
     private def getSharedVariables = {

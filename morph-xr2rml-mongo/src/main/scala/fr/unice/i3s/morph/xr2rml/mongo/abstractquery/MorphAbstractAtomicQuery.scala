@@ -76,6 +76,7 @@ class MorphAbstractAtomicQuery(
 
         // Select isNotNull and Equality conditions
         val whereConds = this.where.filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals)
+        if (logger.isDebugEnabled()) logger.debug("Translating conditions:" + whereConds)
 
         // Generate one abstract MongoDB query for each isNotNull and Equality condition
         val mongAbsQs: List[MongoQueryNode] = whereConds.map(cond => {
@@ -99,8 +100,8 @@ class MorphAbstractAtomicQuery(
         val mongAbsQ =
             if (mongAbsQs.size > 1) new MongoQueryNodeAnd(mongAbsQs)
             else mongAbsQs(0)
-        if (logger.isTraceEnabled())
-            logger.trace("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
+        if (logger.isDebugEnabled())
+            logger.debug("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
 
         // Create the concrete query/queries from the set of abstract MongoDB queries
         val from = MongoDBQuery.parseQueryString(this.from.getValue, this.from.docIterator, true)
@@ -164,11 +165,12 @@ class MorphAbstractAtomicQuery(
         val sm = tm.subjectMap;
         val pom = tm.predicateObjectMaps.head
         val iter: Option[String] = tm.logicalSource.docIterator
-        logger.info("Generating RDF terms from atomic query below into under triples map " + tm.toString + ": \n" + this.toStringConcrete);
+        logger.info("Generating RDF terms under triples map " + tm.toString + " for atomic query: \n" + this.toStringConcrete);
 
         // Execute the queries of tagetQuery and make a UNION (flatMap) of all the results
         val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
         val resultSet = resSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+        logger.info("Query returned " + resultSet.size + " results.");
 
         // Main loop: iterate and process each result document of the result set
         var i = 0;
@@ -180,7 +182,7 @@ class MorphAbstractAtomicQuery(
                 //---- Create the subject resource
                 val subjects = dataTranslator.translateData(sm, document)
                 if (subjects == null) { throw new Exception("null value in the subject triple") }
-                if (logger.isDebugEnabled()) logger.debug("Document " + i + " subjects: " + subjects)
+                if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
 
                 //---- Create the list of resources representing subject target graphs
                 val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {

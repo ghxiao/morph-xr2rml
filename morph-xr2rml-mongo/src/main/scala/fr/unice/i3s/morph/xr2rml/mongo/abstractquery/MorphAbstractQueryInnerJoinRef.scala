@@ -112,12 +112,13 @@ class MorphAbstractQueryInnerJoinRef(
         val sm = tm.subjectMap;
         val pom = tm.predicateObjectMaps.head
         val iter: Option[String] = tm.logicalSource.docIterator
-        logger.info("Generating RDF terms from inner join ref query below under triples map " + tm.toString + ": \n" + this.toStringConcrete);
+        logger.info("Generating RDF terms from inner join ref query under triples map " + tm.toString + ": \n" + this.toStringConcrete);
 
         // Execute the child queries and create a MorphMongoResultSet with a UNION (flatMap) of all the results
         val childResSets = child.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
         val childResultSet = childResSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
-
+        if (logger.isDebugEnabled()) logger.debug()
+        
         // Execute the parent queries (in the parent triples map), apply the iterator, and make a UNION (flatMap) of the results
         val parentResultSet = {
             if (!pom.refObjectMaps.isEmpty) {
@@ -137,7 +138,7 @@ class MorphAbstractQueryInnerJoinRef(
         val terms = for (document <- childResultSet) yield {
             try {
                 i = i + 1;
-                if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for document " + i + "/" + childResultSet.size + ": " + document)
+                if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for child document " + i + "/" + childResultSet.size + ": " + document)
 
                 //---- Create the subject resource
                 val subjects = dataTranslator.translateData(sm, document)

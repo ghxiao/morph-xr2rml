@@ -233,7 +233,7 @@ object R2RMLMappingDocument {
     }
 
     def apply(mdPath: String, props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
-        logger.info("Creating R2RMLMappingDocument ");
+        if (logger.isDebugEnabled) logger.debug("Creating R2RMLMappingDocument ");
 
         val model = ModelFactory.createDefaultModel();
         // use the FileManager to find the input file

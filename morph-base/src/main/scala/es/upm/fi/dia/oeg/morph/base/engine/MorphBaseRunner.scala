@@ -53,16 +53,19 @@ class MorphBaseRunner(
 
             // Translate SPARQL query into SQL
             val rewrittenQuery = this.queryTranslator.translate(sparqlQuery.get);
-            logger.info("SPARQL Query = \n" + sparqlQuery);
-            logger.info("Rewrtitten Abstract Query = \n" + rewrittenQuery.toString);
-            logger.info("Rewrtitten Concrete Query = \n" + rewrittenQuery.toStringConcrete);
+            if (rewrittenQuery.isDefined) {
+                logger.info("SPARQL Query = \n" + sparqlQuery);
+                logger.info("Rewrtitten Abstract Query = \n" + rewrittenQuery.get.toString);
+                logger.info("Rewrtitten Concrete Query = \n" + rewrittenQuery.get.toStringConcrete);
 
-            val mapSparqlRewritten = Map((sparqlQuery.get -> rewrittenQuery))
-            this.queryResultProcessor.translateResult(mapSparqlRewritten);
+                val mapSparqlRewritten = Map((sparqlQuery.get -> rewrittenQuery.get))
+                this.queryResultProcessor.translateResult(mapSparqlRewritten);
+            } else
+                logger.warn("Could not translate the SPARQL into a target query.")
         }
 
         val end = System.currentTimeMillis();
-        logger.info("Running time = " + (end - start) + "ms.");
+        logger.info("Total Running Time = " + (end - start) + "ms.");
         logger.info("**********************DONE****************************");
         return status;
     }

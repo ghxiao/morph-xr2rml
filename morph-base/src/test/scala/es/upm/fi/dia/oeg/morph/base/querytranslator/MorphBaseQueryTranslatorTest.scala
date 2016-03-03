@@ -19,7 +19,7 @@ class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
     this.properties = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")
     this.mappingDocument = R2RMLMappingDocument("query_translator/mapping.ttl", properties, null)
 
-    override def translate(op: Op): MorphAbstractQuery = { null }
+    override def translate(op: Op): Option[MorphAbstractQuery] = { None }
 
     override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
         throw new MorphException("Not supported")

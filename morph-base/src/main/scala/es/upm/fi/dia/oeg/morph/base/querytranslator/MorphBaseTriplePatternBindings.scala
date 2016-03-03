@@ -69,11 +69,11 @@ object MorphBaseTriplePatternBindings {
                     // Compute the bindings of the first triple pattern
                     val tp1 = triples.head
                     var bindingsTp1 = bindmTP(tp1)
+                    val result = Map(TPBindings(tp1, bindingsTp1))
+                    if (logger.isTraceEnabled()) logger.trace("Binding of single triple pattern: " + result)
 
                     if (triples.size == 1) {
                         // Only one triple pattern in the BGP, return its bindings straight away
-                        val result = Map(TPBindings(tp1, bindingsTp1))
-                        if (logger.isTraceEnabled()) logger.trace("Binding of single triple pattern: " + result)
                         result
                     } else {
                         // Several triple patterns in the BGP 
@@ -105,7 +105,7 @@ object MorphBaseTriplePatternBindings {
                             results = results - tp1.toString + TPBindings(tp1, bindingsTp1 intersect results(tp1.toString).bound)
                         else
                             results = results + TPBindings(tp1, bindingsTp1)
-                        if (logger.isTraceEnabled()) logger.trace("Binding of BGP: " + results)
+                        if (logger.isDebugEnabled()) logger.debug("Binding of BGP: " + results)
                         results
                     }
                 }
@@ -158,7 +158,7 @@ object MorphBaseTriplePatternBindings {
                     else
                         results = results + TPBindings(tp1, bindingsTp1)
                 }
-                if (logger.isTraceEnabled()) logger.trace("Binding of AND graph pattern: " + results)
+                if (logger.isDebugEnabled()) logger.debug("Binding of AND graph pattern: " + results)
                 results
             }
 
@@ -204,7 +204,7 @@ object MorphBaseTriplePatternBindings {
                             results = results + TPBindings(tp1, bindingsTp1)
                     }
                 }
-                if (logger.isTraceEnabled()) logger.trace("Binding of OPTIONAL graph pattern: " + results)
+                if (logger.isDebugEnabled()) logger.debug("Binding of OPTIONAL graph pattern: " + results)
                 results
             }
 
@@ -230,7 +230,7 @@ object MorphBaseTriplePatternBindings {
                             results = results + TPBindings(tp2, bindingsTp2)
                     }
                 }
-                if (logger.isTraceEnabled()) logger.trace("Binding of UNION graph pattern: " + results)
+                if (logger.isDebugEnabled()) logger.debug("Binding of UNION graph pattern: " + results)
                 results
             }
 
@@ -261,6 +261,10 @@ object MorphBaseTriplePatternBindings {
 
         val boundTMs = this.mappingDocument.triplesMaps.toList.map(tm => {
             val pom = tm.predicateObjectMaps.head
+
+            if (tm.predicateObjectMaps.size > 1 || pom.predicateMaps.size > 1 ||
+                pom.objectMaps.size > 1 || pom.refObjectMaps.size > 1)
+                throw new MorphException("Error, non-normalized triples map: " + tm)
 
             var bound: Boolean = MorphBaseTriplePatternBindings.compatible(tm.subjectMap, tp.getSubject) &&
                 MorphBaseTriplePatternBindings.compatible(pom.predicateMaps.head, tp.getPredicate) &&

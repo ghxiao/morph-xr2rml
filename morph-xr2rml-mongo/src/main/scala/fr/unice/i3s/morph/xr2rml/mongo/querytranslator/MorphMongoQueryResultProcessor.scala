@@ -38,32 +38,35 @@ class MorphMongoQueryResultProcessor(
     /**
      * Execute the database query, translate the database results into triples,
      * evaluate the SPARQL query on the resulting graph and save the XML output to a file.
-     * 
+     *
      * @param mapSparqlSql map of SPARQL queries and associated MorphAbstractQuery instances.
      * Each MorphAbstractQuery has been translated into executable target queries
      */
     override def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery]) {
-        val start = System.currentTimeMillis();
 
         mapSparqlSql.foreach(mapElement => {
+            var start = System.currentTimeMillis();
             val sparqlQuery: Query = mapElement._1
-            dataTranslator.translateDate_QueryRewriting(mapElement._2)
+            dataTranslator.translateData_QueryRewriting(mapElement._2)
+            var end = System.currentTimeMillis();
+            logger.info("Duration of query execution and generation of triples = " + (end - start) + "ms.");
 
             // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
+            start = System.currentTimeMillis();
             val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, this.dataTranslator.materializer.model)
             val resultSet: ResultSet = qexec.execSelect();
             while (resultSet.hasNext()) {
                 val strResultSet = ResultSetFormatter.asXMLString(resultSet)
-                if (logger.isDebugEnabled()) logger.debug("Writing query result document:\n" + strResultSet)
+                if (logger.isInfoEnabled()) logger.info("Writing query result document:\n" + strResultSet)
                 output.write(strResultSet)
             }
+            end = System.currentTimeMillis();
+            logger.info("Late SPARQL query evaluation time = " + (end - start) + "ms.");
 
             this.output.flush()
             this.output.close()
         })
 
-        val end = System.currentTimeMillis();
-        logger.info("Result generation time = " + (end - start) + "ms.");
     }
 
     override def preProcess(sparqlQuery: Query): Unit = {}

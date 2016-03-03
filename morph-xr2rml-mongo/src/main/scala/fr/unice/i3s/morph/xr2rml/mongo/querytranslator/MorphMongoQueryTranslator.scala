@@ -1,7 +1,9 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import scala.collection.JavaConversions._
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
@@ -14,13 +16,17 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
-import es.upm.fi.dia.oeg.morph.base.Constants
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBindings
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
@@ -28,15 +34,11 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractAtomicQuery
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoin
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryLeftJoin
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryLeftJoin
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBindings
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -67,23 +69,31 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
      * the conditions on the JSONPath references from the mapping.
      *
      * @return a MorphAbstractQuery instance in which the targetQuery parameter has been set with
-     * a list containing a set of concrete queries.
+     * a list containing a set of concrete queries. May return None if no bindings are found.
      */
-    override def translate(op: Op): MorphAbstractQuery = {
+    override def translate(op: Op): Option[MorphAbstractQuery] = {
         if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
         // Calculate the triple pattern bindings
+        val start = System.currentTimeMillis()
         val bindings = MorphBaseTriplePatternBindings.bindm(op)
+        logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.");
 
         // Translate the SPARQL query into an abstract query
-        val res = translateSparqlQuery(bindings, op)
+        val emptyBindings = bindings.filter(b => b._2.bound.isEmpty)
+        if (bindings.isEmpty || ! emptyBindings.isEmpty) {
+            logger.warn("Could not find bindings for all triple patterns of the query:\n" + bindings)
+            None
+        } else {
+            val res = translateSparqlQuery(bindings, op)
 
-        // Translate the atomic abstract queries into concrete MongoDB queries
-        if (res.isDefined) {
-            res.get.translateAtomicAbstactQueriesToConcrete(this)
-            res.get
-        } else
-            throw new MorphException("Error: cannot translate SPARQL query to an abstract query")
+            // Translate the atomic abstract queries into concrete MongoDB queries
+            if (res.isDefined) {
+                res.get.translateAtomicAbstactQueriesToConcrete(this)
+                Some(res.get)
+            } else
+                throw new MorphException("Error: cannot translate SPARQL query to an abstract query")
+        }
     }
 
     /**
@@ -220,15 +230,25 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                 else {
                     // If there is a parent triples map, create an INNER JOIN ON childRef = parentRef
                     val q1 = new MorphAbstractAtomicQuery(None, None, from, project, where) // no tp nor TM in case of a RefObjectMap
+
                     val rom = pom.getRefObjectMap(0)
                     val Pfrom = mappingDocument.getParentTriplesMap(rom).logicalSource
                     val Pproject = genProjectionParent(tp, tm)
-                    val Pwhere = genCondParent(tp, tm)
-                    val q2 = new MorphAbstractAtomicQuery(None, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
+                    var Pwhere = genCondParent(tp, tm)
 
                     if (rom.joinConditions.size != 1)
                         logger.warn("Multiple join conditions not supported in a ReferencingObjectMap. Considering only the first one.")
-                    val jc = rom.joinConditions.toIterable.head // assume only one join condition 
+                    val jc = rom.joinConditions.toIterable.head // assume only one join condition. @TODO
+
+                    // If there is an equality condition, in the child query, about the child reference of the join condition, 
+                    // then we can set the same equality condition on the parent reference since child/childRef == parent/parentRef
+                    val eqChild = where.filter(w => (w.condType == ConditionType.Equals) && (w.reference == jc.childRef))
+                    if (!eqChild.isEmpty) {
+                        val eqParent = MorphBaseQueryCondition.equality(jc.parentRef, eqChild.head.eqValue.toString)
+                        if (logger.isTraceEnabled) logger.trace("Copying equality condition on child ref to parent ref: " + eqParent)
+                        Pwhere = Pwhere :+ eqParent
+                    }
+                    val q2 = new MorphAbstractAtomicQuery(None, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
                     new MorphAbstractQueryInnerJoinRef(tp, Some(tm), q1, jc.childRef, q2, jc.parentRef)
                 }
             Q // yield query Q for triples map tm
@@ -271,7 +291,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
         // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query
         var Q = absQuery.optimize
         if (logger.isTraceEnabled())
-            logger.trace("Condtion set was translated into: " + Q)
+            logger.trace("Condtions optimized to: " + Q)
 
         // If the query is an AND, merge its FIELD nodes that have the same path
         // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}
@@ -296,7 +316,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                     Q.toTopLevelProjection))
 
         if (logger.isTraceEnabled())
-            logger.trace("Final set of concrete queries: [" + Qstr + "]")
+            logger.trace("Final set of concrete queries:\n [" + Qstr + "]")
         Qstr
     }
 }

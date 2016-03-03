@@ -58,21 +58,20 @@ abstract class MorphBaseQueryTranslator {
      * High level entry point to the query translation process.
      *
      * @param sparqlQuery the SPARQL query to translate
-     * @return set of concrete database queries.
      * @return a MorphAbstractQuery instance in which the targetQuery parameter has been set with
      * a list containing a set of concrete queries. In the RDB case there is only one query.
      * In the MongoDB case there may be several queries, which means a union of the results of all queries.
-     * The result may be empty but not null.
+     * The result is None in case an error occurred.
      */
-    def translate(sparqlQuery: Query): MorphAbstractQuery = {
+    def translate(sparqlQuery: Query): Option[MorphAbstractQuery] = {
         val start = System.currentTimeMillis()
         MorphBaseTriplePatternBindings.mappingDocument = this.mappingDocument
         val result = this.translate(Algebra.compile(sparqlQuery));
-        logger.info("Query translation time = " + (System.currentTimeMillis() - start) + "ms.");
+        logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
         result
     }
 
-    protected def translate(op: Op): MorphAbstractQuery
+    protected def translate(op: Op): Option[MorphAbstractQuery]
 
     /**
      * Translation of a triple pattern into an abstract query under a set of xR2RML triples maps

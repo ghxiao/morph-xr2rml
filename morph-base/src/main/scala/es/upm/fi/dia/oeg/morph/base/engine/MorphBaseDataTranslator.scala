@@ -61,7 +61,7 @@ abstract class MorphBaseDataTranslator(
      * Generate triples in the context of the query rewriting: run the child and optional parent queries,
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
      */
-    def translateDate_QueryRewriting(query: MorphAbstractQuery): Unit = {
+    def translateData_QueryRewriting(query: MorphAbstractQuery): Unit = {
         try {
             this.generateRDFTriples(query)
         } catch {

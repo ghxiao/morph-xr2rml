@@ -15,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
  * MorphRunner is the main entry point of the Morph-xR2RML application.
@@ -92,8 +93,12 @@ object MorphRunner {
                 e.printStackTrace()
                 System.exit(-1)
             }
+            case e: MorphException => {
+                logger.fatal("An error has occured: " + e.getMessage())
+                System.exit(-1)
+            }
             case e: Exception => {
-                logger.fatal("An unexpected exception occured: " + e.getMessage())
+                logger.fatal("An unexpected error occured: " + e.getMessage())
                 e.printStackTrace()
                 System.exit(-1)
             }

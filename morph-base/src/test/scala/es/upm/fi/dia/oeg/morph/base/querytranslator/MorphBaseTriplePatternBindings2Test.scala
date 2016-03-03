@@ -1,25 +1,28 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
+
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import com.hp.hpl.jena.sparql.algebra.Algebra
 
 class MorphBaseTriplePatternBindings2Concret extends MorphBaseQueryTranslator {
 
     this.properties = MorphProperties.apply("src/test/resources/query_translator", "morph_test_bindings.properties")
     this.mappingDocument = R2RMLMappingDocument("query_translator/mapping_test_bindings.ttl", properties, null)
 
-    override def translate(op: Op): MorphAbstractQuery = { null }
+    override def translate(op: Op): Option[MorphAbstractQuery] = { None }
 
     override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
         throw new MorphException("Not supported")
@@ -175,6 +178,20 @@ class MorphBaseTriplePatternBindings2Test {
         res = bindings(tp1.toString).bound
         assertTrue(res.contains(TM4))
         assertTrue(res.size == 1)
+    }
+
+    @Test def test_bindm4() {
+        println("------ test_bindm4")
+        val query = """
+			PREFIX ex: <http://example.org/>
+			
+			SELECT ?x ?y WHERE {
+            	?x ?y ?z .
+			}"""
+
+        val sparqlQuery = QueryFactory.create(query, null, null)
+        val bindings = MorphBaseTriplePatternBindings.bindm(Algebra.compile(sparqlQuery))
+        assertEquals(6, bindings.values.toList.flatMap(_.bound).size)
     }
 
     @Test def test_bindm10() {

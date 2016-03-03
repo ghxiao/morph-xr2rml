@@ -183,7 +183,7 @@ object JsonPathToMongoTranslator {
         // trans($, <cond>) -> {}
         // trans($<JP>, <cond>) -> trans(<JP>, <cond>)
         if (path.charAt(0) == '$') {
-            if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule R0")
+            if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule R0")
             if (path.length == 1)
                 return new MongoQueryNodeNotSupported(path)
             else
@@ -206,7 +206,7 @@ object JsonPathToMongoTranslator {
                 //       OR(trans(<JP:F>.p<JP>, <cond>), trans(<JP:F>.q<JP>, <cond>), ...)
                 var result = translateFieldAlternative(match0, after_match0.toString(), cond, projection)
                 if (result.isDefined) {
-                    if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R2a")
+                    if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule R2a")
                     return result.get
                 }
 
@@ -215,7 +215,7 @@ object JsonPathToMongoTranslator {
                 //       OR(trans(<JP:F>.i<JP>, <cond>), trans(<JP:F>.j<JP>, <cond>), ...)
                 result = translateArrayIndexAlternative(match0, after_match0.toString(), cond, projection)
                 if (result.isDefined) {
-                    if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R2b")
+                    if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule R2b")
                     return result.get
                 }
             }
@@ -228,7 +228,7 @@ object JsonPathToMongoTranslator {
             //       OR( trans(.p<JP>, <cond>), trans(.q<JP>, <cond>), ... )
             var result = translateFieldAlternative("", path, cond, projection)
             if (result.isDefined) {
-                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R3a")
+                if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule R3a")
                 return result.get
             }
 
@@ -237,7 +237,7 @@ object JsonPathToMongoTranslator {
             //       OR( trans(.1<JP>, <cond>), trans(.3<JP>, <cond>), ... )
             result = translateArrayIndexAlternative("", path, cond, projection)
             if (result.isDefined) {
-                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R3b")
+                if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule R3b")
                 return result.get
             }
         }
@@ -261,7 +261,7 @@ object JsonPathToMongoTranslator {
                 }
 
                 // Build the ELEMMATCH query operator
-                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule R4")
+                if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule R4")
                 val transJsBoolExpr = JavascriptToMongoTranslator.transJS(replaceAt("this", match0))
                 if (transJsBoolExpr.isDefined) {
                     val members = List(trans(after_match0.toString, cond, projection), transJsBoolExpr.get)
@@ -347,7 +347,7 @@ object JsonPathToMongoTranslator {
                     if (after_match1.length == 0) {
 
                         // Rule R6b - Build the AND query operator
-                        if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule R6b")
+                        if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule R6b")
                         val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + condJS(cond))
                         val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeExists), wherePart)
                         if (logger.isTraceEnabled()) logger.trace("Rule R6b, AND members: " + andMembers.map(m => m.toString))
@@ -364,7 +364,7 @@ object JsonPathToMongoTranslator {
                             }
 
                             // Rule R6c - Build the AND query operator
-                            if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matches rule r6b")
+                            if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule r6b")
                             val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + after_match1 + condJS(cond))
                             val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeExists), wherePart)
                             if (logger.isTraceEnabled()) logger.trace("Rule R6c, AND members: " + andMembers.map(m => m.toString))
@@ -388,7 +388,7 @@ object JsonPathToMongoTranslator {
                 matched = JsonPathToMongoTranslator.JSONPATH_WILDCARD_ARRAY_NOTATION.findAllMatchIn(path).toList
 
             if (!matched.isEmpty) {
-                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule R7")
+                if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule R7")
                 fieldMatch = matched(0).group(0)
                 afterMatch = matched(0).after(0).toString
                 if (logger.isTraceEnabled()) logger.trace("Rule R7, matched: " + fieldMatch + ", afterMatch: " + afterMatch);
@@ -403,7 +403,7 @@ object JsonPathToMongoTranslator {
         // In fact we implement this in one step: .p["q"][1] => FIELD("p.q.1")  
         {
             if (!match0_JPF_list.isEmpty) {
-                if (logger.isDebugEnabled()) logger.debug("JSONPath expression [" + path + "] matched rule r8")
+                if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule r8")
                 val match0 = match0_JPF_list(0).group(0) // Match0 is a <JP:F>
                 val after_match0 = match0_JPF_list(0).after(0).toString()
                 if (logger.isTraceEnabled()) logger.trace("Rule R8, matched: " + match0 + ", afterMatch: " + after_match0);
