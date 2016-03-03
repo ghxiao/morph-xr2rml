@@ -1,0 +1,1160 @@
+@prefix xrr: <http://i3s.unice.fr/xr2rml#> .
+@prefix rr:  <http://www.w3.org/ns/r2rml#> .
+@prefix rml: <http://semweb.mmlab.be/ns/rml#> .
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix dct: <http://purl.org/dc/elements/1.1/>.
+
+@prefix txn: <http://lod.taxonconcept.org/ontology/txn.owl#>.
+@prefix gn: <http://www.geonames.org/ontology#>.
+@prefix nt: <http://purl.obolibrary.org/obo/ncbitaxon#>.
+@prefix dwc: <http://rs.tdwg.org/dwc/terms/>.
+
+@prefix taxref: <http://inpn.mnhn.fr/taxref/8.0/>.
+@prefix taxrefrk: <http://inpn.mnhn.fr/taxref/taxrank#>.
+@prefix taxrefhab: <http://inpn.mnhn.fr/taxref/habitat#>.
+@prefix taxrefbgs: <http://inpn.mnhn.fr/taxref/bioGeoStatus#>.
+@prefix taxrefprop: <http://inpn.mnhn.fr/taxref/properties/>.
+
+<#SM_Taxon>
+    a rr:SubjectMap;
+    rr:template "http://inpn.mnhn.fr/taxref/8.0/taxon/{$.codeTaxon}".
+<#LS_Taxon>
+    a xrr:LogicalSource;
+    xrr:query """db.taxref3.find( { $where: 'this.codeTaxon == this.codeReference' } )""".
+<#LS_AltLbl>
+    a xrr:LogicalSource;
+    xrr:query """db.taxref3.find( { $where: 'this.codeTaxon != this.codeReference' } )""".
+    
+<#SM_Taxon_Label>
+    a rr:SubjectMap;
+    rr:template "http://inpn.mnhn.fr/taxref/label/{$.codeTaxon}".
+ 
+# ----- Create a taxon (skos Concept) for each reference name
+<#TM_Taxon_Type>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate rdf:type;
+        rr:objectMap [ rr:constant skos:Concept; rr:termType rr:IRI ]
+    ].
+
+<#TM_Taxon_Broader>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate skos:broader;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/8.0/taxon/{$.codeParent}"; ];
+    ].
+
+<#TM_Taxon_Note>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate skos:note;
+        rr:objectMap [ xrr:reference "$.libelleNom"; ];
+    ].
+
+<#TM_Taxon_PrefLabel>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate skosxl:prefLabel;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/label/{$.codeTaxon}"; ];
+    ].
+
+#<#TM_Taxon_AltLabel>
+#    xrr:logicalSource <#LS_Taxon>;
+#    rr:subjectMap <#SM_Taxon>;
+#    rr:predicateObjectMap [
+#        rr:predicate skosxl:altLabel;
+#        rr:objectMap [
+#            rr:parentTriplesMap <#TM_Synonym_Label_Type>;
+#            rr:joinCondition [
+#                rr:child "$.codeTaxon";
+#                rr:parent "$.codeReference";
+#            ]
+#        ];
+#    ].    
+
+<#TM_Taxon_AltLabel>
+    xrr:logicalSource <#LS_AltLbl>;
+    rr:subjectMap [ rr:template "http://inpn.mnhn.fr/taxref/8.0/taxon/{$.codeReference}" ] ;
+    rr:predicateObjectMap [
+        rr:predicate skosxl:altLabel;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/label/{$.codeTaxon}" ];
+    ].
+
+
+# ----- Prefered Labels -----
+
+<#TM_Reference_Label_Type>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate rdf:type;
+        rr:object skosxl:Label;
+    ].
+    
+<#TM_Reference_Label_LitForm>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate skosxl:literalForm;
+        rr:objectMap [ xrr:reference "$.libelleNom"; ];
+    ].
+    
+<#TM_Reference_Label_VernFr>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:vernacularName;
+        rr:objectMap [ xrr:reference "$.nomVernaculaire"; rr:language "fr" ];
+    ].
+
+<#TM_Reference_Label_isPrefLbl>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:isPrefLabelOf;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/8.0/taxon/{$.codeTaxon}"; ];
+    ].
+
+<#TM_Reference_Label_Auth>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate txn:authority;
+        rr:objectMap [ xrr:reference "$.libelleAuteur"; ];
+    ].
+
+# ----- Alt Labels -----
+
+<#TM_Synonym_Label_Type>
+    xrr:logicalSource <#LS_AltLbl>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate rdf:type;
+        rr:object skosxl:Label;
+    ].
+    
+<#TM_Synonym_Label_LitForm>
+    xrr:logicalSource <#LS_AltLbl>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate skosxl:literalForm;
+        rr:objectMap [ xrr:reference "$.libelleNom"; ];
+    ].
+    
+<#TM_Synonym_Label_VernFr>
+    xrr:logicalSource <#LS_AltLbl>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:vernacularName;
+        rr:objectMap [ xrr:reference "$.nomVernaculaire"; rr:language "fr" ];
+    ].
+    
+<#TM_Synonym_Label_iAltLbl>
+    xrr:logicalSource <#LS_AltLbl>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:isAltLabelOf;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/8.0/taxon/{$.codeReference}"; ];
+    ].
+    
+<#TM_Synonym_Label_Auth>
+    xrr:logicalSource <#LS_AltLbl>;
+    rr:subjectMap <#SM_Taxon_Label>;
+    rr:predicateObjectMap [
+        rr:predicate txn:authority;
+        rr:objectMap [ xrr:reference "$.libelleAuteur"; ];
+    ].
+
+# ---------------------------------------------------------------------------------
+# Taxonomical ranks
+# ---------------------------------------------------------------------------------
+    
+<#TM_TaxonomicalRank_SuperKingdom>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPRG'} )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:superkingdom; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Kingdom>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'KD' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:kingdom; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubKingdom>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSRG' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:subkingdom; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_InfraKingdom>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFRG' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Infrakingdom; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Phylum>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'PH' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Phylum; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubPhylum>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBPH' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubPhylum; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_InfraPhylum>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFPH' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:InfraPhylum; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Division>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'DV' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Division; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubDivision>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBDV' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubDivision; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SuperClass>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPCL' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SuperClass; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Cladus>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CLAD' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Cladus; rr:termType rr:IRI; ];     
+    ].
+
+<#TM_TaxonomicalRank_Class>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CL' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Class; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubClass>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBCL' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubClass; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_InfraClass>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFCL' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:InfraClass; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Legio>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'LEG' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Legio; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SuperOrder>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPOR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SuperOrder; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Cohorte>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'COH' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Cohort; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Order>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'OR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Order; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubOrder>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBOR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubOrder; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_InfraOrder>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFOR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:InfraOrder; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SuperFamily>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPFM' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SuperFamily; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Family>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FM' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Family; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubFamily>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBFM' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubFamily; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Tribe>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'TR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Tribe; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubTribe>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSTR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubTribe; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Genus>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'GN' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Genus; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubGenus>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSGN' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubGenus; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Section>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SC' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Section; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubSection>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBSC' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubSection; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Series>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Series; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubSeries>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSER' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubSeries; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Agregate>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'AGES' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Agregate; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Species>
+    # 153576 results
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'ES' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Species; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SemiSpecies>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SMES' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SemiSpecies; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_MicroSpecies>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'MES' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:MicroSpecies; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubSpecies>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSES' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubSpecies; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Natio>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'NAT' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Natio; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Varietas>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'VAR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Varietas; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubVarietas>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SVAR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubVarietas; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Forma>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FO' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Forma; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_SubForma>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSFO' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:SubForma; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_FormaSpecies>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FOES' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:FormaSpecies; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Linea>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'LIN' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Linea; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Clone>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CLO' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Clone; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Race>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'RACE' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Race; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Cultivar>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CAR' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Cultivar; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Morpha>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'MO' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Morpha; rr:termType rr:IRI; ];
+    ].
+
+<#TM_TaxonomicalRank_Abberation>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'AB' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate nt:has_rank;
+        rr:objectMap [ rr:constant taxrefrk:Abberatio; rr:termType rr:IRI; ];
+    ].
+
+# ---------------------------------------------------------------------------------
+# Types of habitat
+# ---------------------------------------------------------------------------------
+
+<#TM_Habitat_Marine>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '1' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Marine; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_FreshWater>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '2' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:FreshWater; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_BrackishWater>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '6' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:BrackishWater; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_Terrestrial>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '3' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Terrestrial; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_MarineAndFreshWater_Marine>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '4' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Marine; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_MarineAndFreshWater_Fresh>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '4' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:FreshWater; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_MarineAndTerrestrial_Marine>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '5' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Marine; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_MarineAndTerrestrial_Terrestr>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '5' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Terrestrial; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_TerrestrialAndOrFreshWater_Terrestr>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '7' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate txn:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Terrestrial; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_TerrestrialAndOrFreshWater_Fresh>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '7' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate txn:habitat;
+        rr:objectMap [ rr:constant taxrefhab:FreshWater; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_TerrestrialAndFreshWater_Terrestr>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '8' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate txn:habitat;
+        rr:objectMap [ rr:constant taxrefhab:Terrestrial; rr:termType rr:IRI; ];
+    ].
+
+<#TM_Habitat_TerrestrialAndFreshWater_Fresh>
+    a rr:TriplesMap;
+    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '8' } )"""; ];
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate txn:habitat;
+        rr:objectMap [ rr:constant taxrefhab:FreshWater; rr:termType rr:IRI; ];
+    ].
+
+# ---------------------------------------------------------------------------------
+# Biogeographical statuses
+# ---------------------------------------------------------------------------------
+<#LS_SBD_Metro> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'fr' : {$ne: ''}, 'fr': {$ne: null} } )""".
+<#SM_SBG_Metro_BN> rr:template "{$.codeTaxon}_FR"; rr:termType rr:BlankNode.
+<#TM_SBG_Metro>
+    xrr:logicalSource <#LS_SBD_Metro>; rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Metro_BN>;
+    ].
+<#TM_SBG_Metro_BN1>
+    xrr:logicalSource <#LS_SBD_Metro>; rr:subjectMap <#SM_SBG_Metro_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.fr}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Metro_BN2>
+    xrr:logicalSource <#LS_SBD_Metro>; rr:subjectMap <#SM_SBG_Metro_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial;
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3017382/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Metro_BN3>
+    xrr:logicalSource <#LS_SBD_Metro>; rr:subjectMap <#SM_SBG_Metro_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:FRA; WOEID:23424819"; ].
+<#TM_SBG_Metro_BN4>
+    xrr:logicalSource <#LS_SBD_Metro>; rr:subjectMap <#SM_SBG_Metro_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Metropolitan France"; ].
+
+
+<#LS_SBD_Guyane> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'gf' : {$ne: ''}, 'gf': {$ne: null} } )""".
+<#SM_SBG_Guyane_BN> rr:template "{$.codeTaxon}_GF"; rr:termType rr:BlankNode.
+<#TM_SBG_Guyane>
+    xrr:logicalSource <#LS_SBD_Guyane>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Guyane_BN>;
+    ].
+<#TM_SBG_Guyane_BN1>
+    xrr:logicalSource <#LS_SBD_Guyane>; rr:subjectMap <#SM_SBG_Guyane_BN>;
+    rr:predicateObjectMap [ 
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.gf}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Guyane_BN2>
+    xrr:logicalSource <#LS_SBD_Guyane>; rr:subjectMap <#SM_SBG_Guyane_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3381670/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Guyane_BN3>
+    xrr:logicalSource <#LS_SBD_Guyane>; rr:subjectMap <#SM_SBG_Guyane_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:FRG-OO; WOEID:23424811"; ].
+<#TM_SBG_Guyane_BN4>
+    xrr:logicalSource <#LS_SBD_Guyane>; rr:subjectMap <#SM_SBG_Guyane_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "French Guyana"; ].
+
+
+<#LS_SBD_Martinique> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'mar' : {$ne: ''}, 'mar': {$ne: null} } )""".
+<#SM_SBG_Martinique_BN> rr:template "{$.codeTaxon}_MAR"; rr:termType rr:BlankNode.
+<#TM_SBG_Martinique>
+    xrr:logicalSource <#LS_SBD_Martinique>; rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Martinique_BN>;
+    ].
+<#TM_SBG_Martinique_BN1>
+    xrr:logicalSource <#LS_SBD_Martinique>; rr:subjectMap <#SM_SBG_Martinique_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.mar}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Martinique_BN2>
+    xrr:logicalSource <#LS_SBD_Martinique>; rr:subjectMap <#SM_SBG_Martinique_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3570311/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Martinique_BN3>
+    xrr:logicalSource <#LS_SBD_Martinique>; rr:subjectMap <#SM_SBG_Martinique_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:WIN-MA; WOEID:23424884"; ].
+<#TM_SBG_Martinique_BN4>
+    xrr:logicalSource <#LS_SBD_Martinique>; rr:subjectMap <#SM_SBG_Martinique_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Martinique"; ].
+
+
+<#LS_SBD_Guadeloupe> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'gua' : {$ne: ''}, 'gua': {$ne: null} } )""".
+<#SM_SBG_Guadeloupe_BN> rr:template "{$.codeTaxon}_GUA"; rr:termType rr:BlankNode.
+<#TM_SBG_Guadeloupe>
+    xrr:logicalSource <#LS_SBD_Guadeloupe>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Guadeloupe_BN>;
+    ].
+<#TM_SBG_Guadeloupe_BN1>
+    xrr:logicalSource <#LS_SBD_Guadeloupe>; rr:subjectMap <#SM_SBG_Guadeloupe_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.gua}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Guadeloupe_BN2>
+    xrr:logicalSource <#LS_SBD_Guadeloupe>; rr:subjectMap <#SM_SBG_Guadeloupe_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3579143/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Guadeloupe_BN3>
+    xrr:logicalSource <#LS_SBD_Guadeloupe>; rr:subjectMap <#SM_SBG_Guadeloupe_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:LEE-GU; WOEID:23424831"; ].
+<#TM_SBG_Guadeloupe_BN4>
+    xrr:logicalSource <#LS_SBD_Guadeloupe>; rr:subjectMap <#SM_SBG_Guadeloupe_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Guadeloupe"; ].
+
+
+<#LS_SBD_StMartin> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'sm' : {$ne: ''}, 'sm': {$ne: null} } )""".
+<#SM_SBG_StMartin_BN> rr:template "{$.codeTaxon}_SM"; rr:termType rr:BlankNode.
+<#TM_SBG_StMartin>
+    xrr:logicalSource <#LS_SBD_StMartin>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_StMartin_BN>;
+    ].
+<#TM_SBG_StMartin_BN1>
+    xrr:logicalSource <#LS_SBD_StMartin>; rr:subjectMap <#SM_SBG_StMartin_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.sm}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_StMartin_BN2>
+    xrr:logicalSource <#LS_SBD_StMartin>; rr:subjectMap <#SM_SBG_StMartin_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3578421/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_StMartin_BN3>
+    xrr:logicalSource <#LS_SBD_StMartin>; rr:subjectMap <#SM_SBG_StMartin_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:LEE-SM; WOEID:56042305"; ].
+<#TM_SBG_StMartin_BN4>
+    xrr:logicalSource <#LS_SBD_StMartin>; rr:subjectMap <#SM_SBG_StMartin_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Saint-Martin"; ].
+
+
+<#LS_SBD_StBarthelemy> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'sb' : {$ne: ''}, 'sb': {$ne: null} } )""".
+<#SM_SBG_StBarthelemy_BN> rr:template "{$.codeTaxon}_SB"; rr:termType rr:BlankNode.
+<#TM_SBG_StBarthelemy>
+    xrr:logicalSource <#LS_SBD_StBarthelemy>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_StBarthelemy_BN>;
+    ].
+<#TM_SBG_StBarthelemy_BN1>
+    xrr:logicalSource <#LS_SBD_StBarthelemy>; rr:subjectMap <#SM_SBG_StBarthelemy_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.sb}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_StBarthelemy_BN2>
+    xrr:logicalSource <#LS_SBD_StBarthelemy>; rr:subjectMap <#SM_SBG_StBarthelemy_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3578476/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_StBarthelemy_BN3>
+    xrr:logicalSource <#LS_SBD_StBarthelemy>; rr:subjectMap <#SM_SBG_StBarthelemy_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:LEE-SM; WOEID:56042304"; ].
+<#TM_SBG_StBarthelemy_BN4>
+    xrr:logicalSource <#LS_SBD_StBarthelemy>; rr:subjectMap <#SM_SBG_StBarthelemy_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Saint-Barthelemy"; ].
+
+
+<#LS_SBD_SPM> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'spm' : {$ne: ''}, 'spm': {$ne: null} } )""".
+<#SM_SBG_SPM_BN> rr:template "{$.codeTaxon}_SPM"; rr:termType rr:BlankNode.
+<#TM_SBG_SPM>
+    xrr:logicalSource <#LS_SBD_SPM>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_SPM_BN>;
+    ].
+<#TM_SBG_SPM_BN1>
+    xrr:logicalSource <#LS_SBD_SPM>; rr:subjectMap <#SM_SBG_SPM_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.spm}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_SPM_BN2>
+    xrr:logicalSource <#LS_SBD_SPM>; rr:subjectMap <#SM_SBG_SPM_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/3424932/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_SPM_BN3>
+    xrr:logicalSource <#LS_SBD_SPM>; rr:subjectMap <#SM_SBG_SPM_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:NFL-SP"; ].
+<#TM_SBG_SPM_BN4>
+    xrr:logicalSource <#LS_SBD_SPM>; rr:subjectMap <#SM_SBG_SPM_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Saint-Pierre-et-Miquelon"; ].
+
+    
+<#LS_SBD_Mayotte> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'may' : {$ne: ''}, 'may': {$ne: null} } )""".
+<#SM_SBG_Mayotte_BN> rr:template "{$.codeTaxon}_MAY"; rr:termType rr:BlankNode.
+<#TM_SBG_Mayotte>
+    xrr:logicalSource <#LS_SBD_Mayotte>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Mayotte_BN>;
+    ].
+<#TM_SBG_Mayotte_BN1>
+    xrr:logicalSource <#LS_SBD_Mayotte>; rr:subjectMap <#SM_SBG_Mayotte_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.may}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Mayotte_BN2>
+    xrr:logicalSource <#LS_SBD_Mayotte>; rr:subjectMap <#SM_SBG_Mayotte_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/1024031/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Mayotte_BN3>
+    xrr:logicalSource <#LS_SBD_Mayotte>; rr:subjectMap <#SM_SBG_Mayotte_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:COM-MA; WOEID:23424886"; ].
+<#TM_SBG_Mayotte_BN4>
+    xrr:logicalSource <#LS_SBD_Mayotte>; rr:subjectMap <#SM_SBG_Mayotte_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Mayotte"; ].
+
+
+<#LS_SBD_Reunion> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'reu' : {$ne: ''}, 'reu': {$ne: null} } )""".
+<#SM_SBG_Reunion_BN> rr:template "{$.codeTaxon}_REU"; rr:termType rr:BlankNode.
+<#TM_SBG_Reunion>
+    xrr:logicalSource <#LS_SBD_Reunion>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Reunion_BN>;
+    ].
+<#TM_SBG_Reunion_BN1>
+    xrr:logicalSource <#LS_SBD_Reunion>; rr:subjectMap <#SM_SBG_Reunion_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.reu}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Reunion_BN2>
+    xrr:logicalSource <#LS_SBD_Reunion>; rr:subjectMap <#SM_SBG_Reunion_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/935317/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Reunion_BN3>
+    xrr:logicalSource <#LS_SBD_Reunion>; rr:subjectMap <#SM_SBG_Reunion_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:REU-OO; WOEID:23424931"; ].
+<#TM_SBG_Reunion_BN4>
+    xrr:logicalSource <#LS_SBD_Reunion>; rr:subjectMap <#SM_SBG_Reunion_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Reunion"; ].
+
+
+<#LS_SBD_Eparses> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'epa' : {$ne: ''}, 'epa': {$ne: null} } )""".
+<#SM_SBG_Eparses_BN> rr:template "{$.codeTaxon}_EPA"; rr:termType rr:BlankNode.
+<#TM_SBG_Eparses>
+    xrr:logicalSource <#LS_SBD_Eparses>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Eparses_BN>;
+    ].
+<#TM_SBG_Eparses_BN1>
+    xrr:logicalSource <#LS_SBD_Eparses>; rr:subjectMap <#SM_SBG_Eparses_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.epa}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Eparses_BN2>
+    xrr:logicalSource <#LS_SBD_Eparses>; rr:subjectMap <#SM_SBG_Eparses_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/6690916/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Eparses_BN3>
+    xrr:logicalSource <#LS_SBD_Eparses>; rr:subjectMap <#SM_SBG_Eparses_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:ANT-OO; WOEID:28289409"; ].
+<#TM_SBG_Eparses_BN4>
+    xrr:logicalSource <#LS_SBD_Eparses>; rr:subjectMap <#SM_SBG_Eparses_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Eparses Islands"; ].
+
+
+<#LS_SBD_TAAF> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'taaf' : {$ne: ''}, 'taaf': {$ne: null} } )""".
+<#SM_SBG_TAAF_BN> rr:template "{$.codeTaxon}_TAAF"; rr:termType rr:BlankNode.
+<#TM_SBG_TAAF>
+    xrr:logicalSource <#LS_SBD_TAAF>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_TAAF_BN>;
+    ].
+<#TM_SBG_TAAF_BN1>
+    xrr:logicalSource <#LS_SBD_TAAF>; rr:subjectMap <#SM_SBG_TAAF_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.taaf}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_TAAF_BN2>
+    xrr:logicalSource <#LS_SBD_TAAF>; rr:subjectMap <#SM_SBG_TAAF_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/1546748/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_TAAF_BN3>
+    xrr:logicalSource <#LS_SBD_TAAF>; rr:subjectMap <#SM_SBG_TAAF_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; 
+        rr:object "WOEID:28301619; TDWG:CRZ-OO; TDWG:KEG-OO; TDWG:ASP-OO; TDWG:ANT-OO; WOEID:28289409";
+    ].
+<#TM_SBG_TAAF_BN4>
+    xrr:logicalSource <#LS_SBD_TAAF>; rr:subjectMap <#SM_SBG_TAAF_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "French Southern and Antarctic Lands"; ].
+
+
+<#LS_SBD_Polyn> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'pf' : {$ne: ''}, 'pf': {$ne: null} } )""".
+<#SM_SBG_Polyn_BN> rr:template "{$.codeTaxon}_PF"; rr:termType rr:BlankNode.
+<#TM_SBG_Polyn>
+    xrr:logicalSource <#LS_SBD_Polyn>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Polyn_BN>;
+    ].
+<#TM_SBG_Polyn_BN1>
+    xrr:logicalSource <#LS_SBD_Polyn>; rr:subjectMap <#SM_SBG_Polyn_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.pf}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Polyn_BN2>
+    xrr:logicalSource <#LS_SBD_Polyn>; rr:subjectMap <#SM_SBG_Polyn_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/4030656/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Polyn_BN3>
+    xrr:logicalSource <#LS_SBD_Polyn>; rr:subjectMap <#SM_SBG_Polyn_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "WOEID:23424817";].
+<#TM_SBG_Polyn_BN4>
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "French Polynesia"; ].
+    
+
+<#LS_SBD_NouvCal> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'nc' : {$ne: ''}, 'nc': {$ne: null} } )""".
+<#SM_SBG_NouvCal_BN> rr:template "{$.codeTaxon}_NC"; rr:termType rr:BlankNode.
+<#TM_SBG_NouvCal>
+    xrr:logicalSource <#LS_SBD_NouvCal>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_NouvCal_BN>;
+    ].
+<#TM_SBG_NouvCal_BN1>
+    xrr:logicalSource <#LS_SBD_NouvCal>; rr:subjectMap <#SM_SBG_NouvCal_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.nc}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_NouvCal_BN2>
+    xrr:logicalSource <#LS_SBD_NouvCal>; rr:subjectMap <#SM_SBG_NouvCal_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/2139685/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_NouvCal_BN3>
+    xrr:logicalSource <#LS_SBD_NouvCal>; rr:subjectMap <#SM_SBG_NouvCal_BN>;
+    rr:predicateObjectMap [rr:predicate dwc:locationId; rr:object "TDWG:NWC-OO; WOEID:23424903"; ].
+<#TM_SBG_NouvCal_BN4>
+    xrr:logicalSource <#LS_SBD_NouvCal>; rr:subjectMap <#SM_SBG_NouvCal_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "New Caledonia"; ].
+
+
+<#LS_SBD_WallisFutuna> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'wf' : {$ne: ''}, 'wf': {$ne: null} } )""".
+<#SM_SBG_WallisFutuna_BN> rr:template "{$.codeTaxon}_WF"; rr:termType rr:BlankNode.
+<#TM_SBG_WallisFutuna>
+    xrr:logicalSource <#LS_SBD_WallisFutuna>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_WallisFutuna_BN>;
+    ].
+<#TM_SBG_WallisFutuna_BN1>
+    xrr:logicalSource <#LS_SBD_WallisFutuna>; rr:subjectMap <#SM_SBG_WallisFutuna_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.wf}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_WallisFutuna_BN2>
+    xrr:logicalSource <#LS_SBD_WallisFutuna>; rr:subjectMap <#SM_SBG_WallisFutuna_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/4034749/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_WallisFutuna_BN3>
+    xrr:logicalSource <#LS_SBD_WallisFutuna>; rr:subjectMap <#SM_SBG_WallisFutuna_BN>;
+    rr:predicateObjectMap [ rr:predicate dwc:locationId; rr:object "TDWG:WAL-OO"; ].
+<#TM_SBG_WallisFutuna_BN4>
+    xrr:logicalSource <#LS_SBD_WallisFutuna>; rr:subjectMap <#SM_SBG_WallisFutuna_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Wallis-et-Futuna"; ].
+
+
+<#LS_SBD_Clipperton> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'cli' : {$ne: ''}, 'cli': {$ne: null} } )""".
+<#SM_SBG_Clipperton_BN> rr:template "{$.codeTaxon}_CLI"; rr:termType rr:BlankNode.
+<#TM_SBG_Clipperton>
+    xrr:logicalSource <#LS_SBD_Clipperton>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate taxrefprop:bioGeoStatusIn;
+        rr:objectMap <#SM_SBG_Clipperton_BN>;
+    ].
+<#TM_SBG_Clipperton_BN1>
+    xrr:logicalSource <#LS_SBD_Clipperton>; rr:subjectMap <#SM_SBG_Clipperton_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dwc:occurrenceStatus;
+        rr:objectMap [ rr:template "http://inpn.mnhn.fr/taxref/bioGeoStatus#{$.cli}"; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Clipperton_BN2>
+    xrr:logicalSource <#LS_SBD_Clipperton>; rr:subjectMap <#SM_SBG_Clipperton_BN>;
+    rr:predicateObjectMap [
+        rr:predicate dct:spatial; 
+        rr:objectMap [ rr:constant <http://sws.geonames.org/4020092/>; rr:termType rr:IRI; ];
+    ].
+<#TM_SBG_Clipperton_BN3>
+    xrr:logicalSource <#LS_SBD_Clipperton>; rr:subjectMap <#SM_SBG_Clipperton_BN>;
+    rr:predicateObjectMap [ rr:predicate dwc:locationId; rr:object "TDWG:CPI-CL; WOEID:12493383"; ].
+<#TM_SBG_Clipperton_BN4>
+    xrr:logicalSource <#LS_SBD_Clipperton>; rr:subjectMap <#SM_SBG_Clipperton_BN>;
+    rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Clipperton"; ].

@@ -1,0 +1,54 @@
+<http://inpn.mnhn.fr/taxref/8.0/taxon/60585>
+      a skos:Concept ;
+      skos:inScheme taxref:Taxref ;
+      skosxl:prefLabel <http://inpn.mnhn.fr/taxref/label/60585>;
+      skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587>, <http://inpn.mnhn.fr/taxref/label/458790>;
+      skos:broader <http://inpn.mnhn.fr/taxref/taxon/198937> ;
+      taxrefprop:habitat taxhab:Terrestrial ;
+      nt:has_rank taxrank:Species ;
+      skos:note "Vulpes vulpes" ;
+      taxrefprop:bioGeoStatusIn
+              [ rdfs:label "Metropolitan France" ;
+                dct:spatial <http://sws.geonames.org/3017382/> ;
+                dwc:locationID "TDWG:FRA; WOEID:23424819" ;
+                dwc:occurrenceStatus taxrefbgs:P 
+              ] ;
+      taxrefprop:bioGeoStatusIn
+              [ rdfs:label "Saint-Pierre-et-Miquelon" ;
+                dct:spatial <http://sws.geonames.org/3424932/> ;
+                dwc:locationID "TDWG:NFL-SP" ;
+                dwc:occurrenceStatus taxrefbgs:C 
+              ] .
+      
+<http://inpn.mnhn.fr/taxref/label/60585>
+      a skosxl:Label ;
+      taxrefprop:isPrefLabelOf <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ;
+      taxrefprop:vernacularName "Renard roux"@fr , "Red Fox"@en ;
+      txn:authority "(Linnaeus, 1758)" ;
+      skosxl:literalForm "Vulpes vulpes" .
+      
+<http://inpn.mnhn.fr/taxref/label/60587>
+      a skosxl:Label;
+      taxrefprop:isAltLabelOf <http://inpn.mnhn.fr/taxref/taxon/60585> ;
+      taxrefprop:vernacularName "Renard roux"@fr , "Red Fox"@en ;
+      skosxl:literalForm "Vulpes fulva" .
+
+<http://inpn.mnhn.fr/taxref/label/458790>
+      a skosxl:Label ;
+      taxrefprop:isAltLabelOf <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ;
+      taxrefprop:vernacularName "Renard roux"@fr , "Red Fox"@en ;
+      skosxl:literalForm "Canis vulpes" .
+      
+<http://inpn.mnhn.fr/taxref/8.0/taxon/653797>
+      a skos:Concept ;
+      taxrefprop:bioGeoStatusIn
+              [ rdfs:label "Saint-Pierre-et-Miquelon" ;
+                dct:spatial <http://sws.geonames.org/3424932/> ;
+                dwc:locationId "TDWG:NFL-SP" ;
+                dwc:occurrenceStatus taxrefbgs:C
+              ] ;
+      nt:has_rank taxrank:SubSpecies ;
+      skos:broader <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ;
+      skos:inScheme taxref:Taxref ;
+      skos:note "Vulpes vulpes fulvus" ;
+      skosxl:prefLabel <http://inpn.mnhn.fr/taxref/label/653797> .
