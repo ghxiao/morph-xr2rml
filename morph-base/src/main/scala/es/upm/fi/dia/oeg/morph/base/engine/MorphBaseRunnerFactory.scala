@@ -55,8 +55,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     override def getQueryResultProcessor: MorphBaseQueryResultProcessor = queryResultProcessor
 
-    override def getTriplePatternBinder: MorphBaseTriplePatternBinder = triplePatternBinder
-
     val logger = Logger.getLogger(this.getClass());
 
     def createRunner: MorphBaseRunner = {
@@ -77,8 +75,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
     def createDataSourceReader: MorphBaseDataSourceReader
 
     def createDataTranslator: MorphBaseDataTranslator
-
-    def createTriplePatternBinder: MorphBaseTriplePatternBinder = { new MorphBaseTriplePatternBinder(this) }
 
     def createQueryTranslator: MorphBaseQueryTranslator
 
@@ -112,7 +108,6 @@ object MorphBaseRunnerFactory {
         factory.dataSourceReader = factory.createDataSourceReader
         factory.materializer = factory.createMaterializer
         factory.dataTranslator = factory.createDataTranslator
-        factory.triplePatternBinder = factory.createTriplePatternBinder
         factory.queryTranslator = factory.createQueryTranslator
         factory.queryResultProcessor = factory.createQueryResultProcessor
         factory

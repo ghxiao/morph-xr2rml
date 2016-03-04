@@ -24,8 +24,6 @@ trait IMorphFactory {
 
     def getDataTranslator: MorphBaseDataTranslator
 
-    def getTriplePatternBinder: MorphBaseTriplePatternBinder
-
     def getQueryTranslator: MorphBaseQueryTranslator
 
     def getQueryResultProcessor: MorphBaseQueryResultProcessor
