@@ -24,7 +24,15 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
  */
 abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
-    var optimizer: MorphBaseQueryOptimizer = null;
+    val properties = factory.getProperties
+    
+    val optimizer = new MorphBaseQueryOptimizer()
+    
+    optimizer.selfJoinElimination = properties.selfJoinElimination;
+    optimizer.subQueryElimination = properties.subQueryElimination;
+    optimizer.transJoinSubQueryElimination = properties.transJoinSubQueryElimination;
+    optimizer.transSTGSubQueryElimination = properties.transSTGSubQueryElimination;
+    optimizer.subQueryAsView = properties.subQueryAsView;
 
     val logger = Logger.getLogger(this.getClass());
 

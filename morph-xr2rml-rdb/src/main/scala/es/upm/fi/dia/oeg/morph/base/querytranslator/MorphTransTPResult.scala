@@ -13,7 +13,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
 import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryOptimizer
 
 /**
  * This class is the container for the result of the translation of a triple pattern into a query.
@@ -26,7 +25,7 @@ class MorphTransTPResult(
 
     val logger = Logger.getLogger(this.getClass());
 
-    def toQuery(optimizer: MorphRDBQueryOptimizer, databaseType: String): ISqlQuery = {
+    def toQuery(optimizer: MorphBaseQueryOptimizer, databaseType: String): ISqlQuery = {
         val alphaSubject = alphaResult.alphaSubject;
         val alphaPredicateObjects = alphaResult.alphaPredicateObjects.flatMap(
             x => { if (x._1 != null) { Some(x._1) } else { None } });

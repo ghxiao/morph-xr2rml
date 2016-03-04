@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import java.sql.Connection
 import java.util.regex.Matcher
+
 import scala.collection.JavaConversions.asJavaCollection
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaSet
@@ -10,7 +11,9 @@ import scala.collection.JavaConversions.mutableSetAsJavaSet
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.JavaConversions.setAsJavaSet
 import scala.collection.mutable.LinkedHashSet
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
@@ -50,6 +53,7 @@ import com.hp.hpl.jena.sparql.expr.aggregate.AggMin
 import com.hp.hpl.jena.sparql.expr.aggregate.AggSum
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.XSD
+
 import Zql.ZConstant
 import Zql.ZExp
 import Zql.ZExpression
@@ -59,6 +63,7 @@ import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.abstractquery.MorphAbstractQuerySql
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
@@ -80,11 +85,9 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.NameGenerator
-import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
-    val properties = factory.getProperties
     val unfolder = factory.getUnfolder
     val mappingDocument = factory.getMappingDocument
 
@@ -94,16 +97,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
     val condSQLGenerator: MorphRDBCondSQLGenerator = new MorphRDBCondSQLGenerator(mappingDocument, unfolder)
     val prSQLGenerator: MorphRDBPRSQLGenerator = new MorphRDBPRSQLGenerator(mappingDocument, unfolder)
 
-    /** Connection to the RDB */
     val connection: Connection = factory.getConnection.concreteCnx.asInstanceOf[Connection];
-
-    val queryOptimizer = new MorphRDBQueryOptimizer()
-    queryOptimizer.selfJoinElimination = properties.selfJoinElimination;
-    queryOptimizer.subQueryElimination = properties.subQueryElimination;
-    queryOptimizer.transJoinSubQueryElimination = properties.transJoinSubQueryElimination;
-    queryOptimizer.transSTGSubQueryElimination = properties.transSTGSubQueryElimination;
-    queryOptimizer.subQueryAsView = properties.subQueryAsView;
-    this.optimizer = queryOptimizer;
 
     val databaseType: String = factory.getProperties.databaseType
 
@@ -137,8 +131,6 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
     def getPRSQLGen(): MorphRDBPRSQLGenerator = { prSQLGenerator }
 
-    private def rdbOptimizer(): MorphRDBQueryOptimizer = { this.optimizer.asInstanceOf[MorphRDBQueryOptimizer] }
-
     /**
      * High level entry point to the query translation process.
      */
@@ -155,7 +147,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
         val resultQuery = {
             // Eliminate self-joins from the SPARQL query before translation
-            if (this.rdbOptimizer != null && this.rdbOptimizer.selfJoinElimination) {
+            if (this.optimizer != null && this.optimizer.selfJoinElimination) {
                 val mapNodeLogicalTableSize = mapInferredTMs.keySet.map(node => {
                     val cms = this.mapInferredTMs(node);
                     val cm = cms.iterator.next();
@@ -163,7 +155,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
                     (node -> logicalTableSize);
                 })
 
-                val reorderSTG = this.properties.reorderSTG;
+                val reorderSTG = factory.getProperties.reorderSTG;
 
                 val queryRewritter = new MorphQueryRewriter(mapNodeLogicalTableSize.toMap, reorderSTG);
                 val opSparqlQuery2 = {
@@ -326,11 +318,11 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
                 val triples = bgp.getPattern().getList().toList;
                 val isSTG = MorphQueryTranslatorUtility.isSTG(bgp);
 
-                if (this.rdbOptimizer != null && this.rdbOptimizer.selfJoinElimination && isSTG) {
+                if (this.optimizer != null && this.optimizer.selfJoinElimination && isSTG) {
                     this.transSTG(triples);
                 } else {
                     val separationIndex = {
-                        if (this.rdbOptimizer != null && this.rdbOptimizer.selfJoinElimination) {
+                        if (this.optimizer != null && this.optimizer.selfJoinElimination) {
                             MorphQueryTranslatorUtility.getFirstTBEndIndex(triples);
                         } else {
                             1
@@ -393,7 +385,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         val exprList = opFilter.getExprs();
 
         val resultFrom = {
-            if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
+            if (this.optimizer != null && this.optimizer.subQueryAsView) {
                 val conn = this.connection;
                 val subQueryViewName = "sqf" + Math.abs(opFilterSubOp.hashCode());
                 val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -416,7 +408,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         val exprListSQL = this.transExprList(opFilterSubOp, exprList, subOpSelectItems, subOpSQL.getAlias());
 
         val transFilterSQL = {
-            if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryElimination) {
+            if (this.optimizer != null && this.optimizer.subQueryElimination) {
                 subOpSQL.pushFilterDown(exprListSQL);
                 subOpSQL;
             } else {
@@ -594,7 +586,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         val newSelectItemsVar = newSelectItemsTuple.map(tuple => tuple._1);
         val newSelectItemsMappingId = newSelectItemsTuple.map(tuple => tuple._2);
 
-        if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
+        if (this.optimizer != null && this.optimizer.subQueryAsView) {
             val conn = this.connection;
             val subQueryViewName = "sqp" + Math.abs(opProject.hashCode());
             val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -610,7 +602,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
         val newSelectItems: List[ZSelectItem] = newSelectItemsVar.flatten.toList ::: newSelectItemsMappingId.flatten.toList;
         val transProjectSQL = {
-            if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryElimination) {
+            if (this.optimizer != null && this.optimizer.subQueryElimination) {
                 //push group by down
                 opProjectSubOpSQL.pushGroupByDown();
 
@@ -815,7 +807,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
             if (tpPredicate.isURI()) {
                 try {
                     val transTPResult = this.transTP(tp, cm, tpPredicate.getURI(), false);
-                    transTPResult.toQuery(this.rdbOptimizer, databaseType);
+                    transTPResult.toQuery(this.optimizer, databaseType);
                 } catch {
                     case e: Exception => {
                         logger.debug("InsatisfiableSQLExpression for tp: " + tp);
@@ -843,7 +835,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
                         if (boundedTriplePatternErrorMessages == null || boundedTriplePatternErrorMessages.isEmpty()) {
                             try {
                                 val transTPResult = this.transTP(tp, cm, predicateURI, true);
-                                val sqlQuery = transTPResult.toQuery(this.rdbOptimizer, databaseType);
+                                val sqlQuery = transTPResult.toQuery(this.optimizer, databaseType);
                                 Some(sqlQuery);
                             } catch {
                                 case e: Exception => {
@@ -1221,7 +1213,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
             val transGP1Alias = transGP1SQL.generateAlias();
             val transGP1FromItem = {
-                if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
+                if (this.optimizer != null && this.optimizer.subQueryAsView) {
                     val conn = this.connection;
                     val subQueryViewName = "sql" + Math.abs(gp1.hashCode());
                     val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -1239,7 +1231,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
             val transGP2Alias = transGP2SQL.generateAlias();
             val transGP2FromItem = {
-                if (this.rdbOptimizer != null && this.rdbOptimizer.subQueryAsView) {
+                if (this.optimizer != null && this.optimizer.subQueryAsView) {
                     val conn = this.connection;
                     val subQueryViewName = "sqr" + Math.abs(gp2.hashCode());
                     val dropViewSQL = "DROP VIEW IF EXISTS " + subQueryViewName;
@@ -1360,9 +1352,9 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
             }
 
             val transJoin: ISqlQuery = {
-                if (this.rdbOptimizer != null) {
+                if (this.optimizer != null) {
                     val isTransJoinSubQueryElimination =
-                        this.rdbOptimizer.transJoinSubQueryElimination;
+                        this.optimizer.transJoinSubQueryElimination;
                     if (isTransJoinSubQueryElimination) {
                         try {
                             if (transGP1SQL.isInstanceOf[SQLQuery] && transGP2SQL.isInstanceOf[SQLQuery]) {
@@ -1515,7 +1507,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
                 this.trans(opJoin);
             } else {
                 val transSTGResult = this.transSTGUnionFree(stg, cm);
-                transSTGResult.toQuery(this.rdbOptimizer, databaseType);
+                transSTGResult.toQuery(this.optimizer, databaseType);
             }
         }
 
