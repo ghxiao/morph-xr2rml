@@ -1,7 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
@@ -15,9 +14,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
-        extends MorphBaseUnfolder(md, properties) {
+class MorphMongoUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -25,9 +24,9 @@ class MorphMongoUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * Parse the query string provided in the mapping and build an instance of GenericQuery containing
      * a MongoDBQuery for the case of MongoDB, to be extended for other types of db.
      * @return GenericQuery instance corresponding to the query provided in the logical source
+     * @throws MorphException
      */
-    @throws[MorphException]
-    override def unfoldConceptMapping(triplesMap: R2RMLTriplesMap): GenericQuery = {
+    override def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): GenericQuery = {
 
         if (logger.isDebugEnabled()) logger.debug("Unfolding triples map " + triplesMap.toString)
         val logicalSrc = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];

@@ -1,21 +1,17 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import java.io.Writer
-
 import com.hp.hpl.jena.query.Query
-
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 /**
  * Abstract class for the engine that shall translate results of a SPARQL query into RDF triples
  */
-abstract class MorphBaseQueryResultProcessor(
-        var mappingDocument: R2RMLMappingDocument,
-        var properties: MorphProperties,
-        var outputStream: Writer) {
+abstract class MorphBaseQueryResultProcessor(factory: IMorphFactory) {
 
     def preProcess(sparqlQuery: Query): Unit;
 

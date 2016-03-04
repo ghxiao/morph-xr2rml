@@ -1,9 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import scala.collection.JavaConversions._
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
@@ -16,7 +14,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
-
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
@@ -25,7 +22,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBindings
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
@@ -39,6 +36,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -50,9 +49,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
-class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQueryTranslator {
-
-    this.mappingDocument = md
+class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
     override val logger = Logger.getLogger(this.getClass());
 
@@ -76,7 +73,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
 
         // Calculate the triple pattern bindings
         val start = System.currentTimeMillis()
-        val bindings = MorphBaseTriplePatternBindings.bindm(op)
+        val bindings = factory.getTriplePatternBinder.bindm(op)
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.");
 
         // Translate the SPARQL query into an abstract query
@@ -232,7 +229,7 @@ class MorphMongoQueryTranslator(val md: R2RMLMappingDocument) extends MorphBaseQ
                     val q1 = new MorphAbstractAtomicQuery(None, None, from, project, where) // no tp nor TM in case of a RefObjectMap
 
                     val rom = pom.getRefObjectMap(0)
-                    val Pfrom = mappingDocument.getParentTriplesMap(rom).logicalSource
+                    val Pfrom = factory.getMappingDocument.getParentTriplesMap(rom).logicalSource
                     val Pproject = genProjectionParent(tp, tm)
                     var Pwhere = genCondParent(tp, tm)
 

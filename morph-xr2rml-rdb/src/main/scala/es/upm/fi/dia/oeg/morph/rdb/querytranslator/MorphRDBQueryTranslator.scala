@@ -2,7 +2,6 @@ package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
 import java.sql.Connection
 import java.util.regex.Matcher
-
 import scala.collection.JavaConversions.asJavaCollection
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaSet
@@ -11,9 +10,7 @@ import scala.collection.JavaConversions.mutableSetAsJavaSet
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.collection.JavaConversions.setAsJavaSet
 import scala.collection.mutable.LinkedHashSet
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
@@ -53,7 +50,6 @@ import com.hp.hpl.jena.sparql.expr.aggregate.AggMin
 import com.hp.hpl.jena.sparql.expr.aggregate.AggSum
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.XSD
-
 import Zql.ZConstant
 import Zql.ZExp
 import Zql.ZExpression
@@ -84,18 +80,32 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.NameGenerator
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-class MorphRDBQueryTranslator(
-    nameGenerator: NameGenerator,
-    alphaGenerator: MorphRDBAlphaGenerator,
-    betaGenerator: MorphRDBBetaGenerator,
-    condSQLGenerator: MorphRDBCondSQLGenerator,
-    val prSQLGenerator: MorphRDBPRSQLGenerator)
+class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
-        extends MorphBaseQueryTranslator {
+    val properties = factory.getProperties
+    val unfolder = factory.getUnfolder
+    val mappingDocument = factory.getMappingDocument
+
+    val nameGenerator: NameGenerator = new NameGenerator()
+    val alphaGenerator: MorphRDBAlphaGenerator = new MorphRDBAlphaGenerator(mappingDocument, unfolder)
+    val betaGenerator: MorphRDBBetaGenerator = new MorphRDBBetaGenerator(mappingDocument, unfolder)
+    val condSQLGenerator: MorphRDBCondSQLGenerator = new MorphRDBCondSQLGenerator(mappingDocument, unfolder)
+    val prSQLGenerator: MorphRDBPRSQLGenerator = new MorphRDBPRSQLGenerator(mappingDocument, unfolder)
 
     /** Connection to the RDB */
-    var connection: Connection = null
+    val connection: Connection = factory.getConnection.concreteCnx.asInstanceOf[Connection];
+
+    val queryOptimizer = new MorphRDBQueryOptimizer()
+    queryOptimizer.selfJoinElimination = properties.selfJoinElimination;
+    queryOptimizer.subQueryElimination = properties.subQueryElimination;
+    queryOptimizer.transJoinSubQueryElimination = properties.transJoinSubQueryElimination;
+    queryOptimizer.transSTGSubQueryElimination = properties.transSTGSubQueryElimination;
+    queryOptimizer.subQueryAsView = properties.subQueryAsView;
+    this.optimizer = queryOptimizer;
+
+    val databaseType: String = factory.getProperties.databaseType
 
     var mapAggreatorAlias: Map[String, ZSelectItem] = Map.empty; //varname - selectitem
 

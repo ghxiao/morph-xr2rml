@@ -25,12 +25,34 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractAtomicQuery
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.GenericConnection
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+
+class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
+
+    override def createConnection: GenericConnection = null
+    override def createUnfolder: MorphBaseUnfolder = null
+    override def createDataSourceReader: MorphBaseDataSourceReader = null
+    override def createDataTranslator: MorphBaseDataTranslator = null
+    override def createTriplePatternBinder: MorphBaseTriplePatternBinder = null
+    override def createQueryTranslator: MorphBaseQueryTranslator = null
+    override def createQueryResultProcessor: MorphBaseQueryResultProcessor = null
+}
 
 class MorphMongoQueryTranslatorTest {
 
     var props = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")
-    var mappingDocument = R2RMLMappingDocument("query_translator/mapping.ttl", props, null)
-    var queryTranslator = new MorphMongoQueryTranslator(mappingDocument)
+    var mappingDocument = R2RMLMappingDocument(props, null)
+
+    val factory = new MorphFactoryConcret2
+    factory.mappingDocument = mappingDocument
+    var queryTranslator = new MorphMongoQueryTranslator(factory)
 
     val tmMovies = mappingDocument.getClassMappingsByName("Movies")
     val tmDirectors = mappingDocument.getClassMappingsByName("Directors")
@@ -210,5 +232,4 @@ class MorphMongoQueryTranslatorTest {
         assertEquals("$.directed.*", q.childRef)
         assertEquals("$.dirname", q.parentRef)
     }
-
 }

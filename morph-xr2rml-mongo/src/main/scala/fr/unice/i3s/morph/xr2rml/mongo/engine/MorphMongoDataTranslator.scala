@@ -1,40 +1,32 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractAtomicQuery
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryUnion
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 
-class MorphMongoDataTranslator(
-    md: R2RMLMappingDocument,
-    materializer: MorphBaseMaterializer,
-    unfolder: MorphMongoUnfolder,
-    dataSourceReader: MorphBaseDataSourceReader,
-    properties: MorphProperties)
+class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, properties) {
-
-    if (!dataSourceReader.connection.isMongoDB)
+    if (!factory.getConnection.isMongoDB)
         throw new MorphException("Database connection type does not match MongoDB")
 
     override val logger = Logger.getLogger(this.getClass().getName());
@@ -57,10 +49,10 @@ class MorphMongoDataTranslator(
         val ls = tm.logicalSource;
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;
-        val query = this.unfolder.unfoldConceptMapping(tm)
+        val query = factory.getUnfolder.unfoldTriplesMap(tm)
 
         // Execute the query against the database and apply the iterator
-        val childResultSet = dataSourceReader.executeQueryAndIterator(query, ls.docIterator).asInstanceOf[MorphMongoResultSet].resultSet.toList
+        val childResultSet = factory.getDataSourceReader.executeQueryAndIterator(query, ls.docIterator).asInstanceOf[MorphMongoResultSet].resultSet.toList
 
         // Execute the queries of all the parent triples maps (in the join conditions) against the database 
         // and apply their iterators. There queries will serve in computing the joins.
@@ -71,11 +63,11 @@ class MorphMongoDataTranslator(
         val parentResultSets: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
         poms.foreach(pom => {
             pom.refObjectMaps.foreach(rom => {
-                val parentTM = this.md.getParentTriplesMap(rom)
-                val parentQuery = this.unfolder.unfoldConceptMapping(parentTM)
+                val parentTM = factory.getMappingDocument.getParentTriplesMap(rom)
+                val parentQuery = factory.getUnfolder.unfoldTriplesMap(parentTM)
                 val queryMapId = makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator)
                 if (!parentResultSets.contains(queryMapId)) {
-                    val resultSet = dataSourceReader.executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
+                    val resultSet = factory.getDataSourceReader.executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
                     parentResultSets += (queryMapId -> resultSet.toList)
                 }
             })
@@ -103,16 +95,16 @@ class MorphMongoDataTranslator(
 
                 // Add subject resource to the JENA model with its class (rdf:type) and target graphs
                 sm.classURIs.foreach(classURI => {
-                    val classRes = this.materializer.model.createResource(classURI);
+                    val classRes = factory.getMaterializer.model.createResource(classURI);
                     if (subjectGraphs == null || subjectGraphs.isEmpty) {
                         for (sub <- subjects) {
-                            this.materializer.materializeQuad(sub, RDF.`type`, classRes, null);
-                            this.materializer.outputStream.flush();
+                            factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, null);
+                            factory.getMaterializer.outputStream.flush();
                         }
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
                             for (sub <- subjects)
-                                this.materializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
+                                factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
                         });
                     }
                 });
@@ -130,7 +122,7 @@ class MorphMongoDataTranslator(
                     // ----- For each RefObjectMap get the IRIs from the subject map of the parent triples map
                     val refObjects = pom.refObjectMaps.flatMap(refObjectMap => {
 
-                        val parentTM = this.md.getParentTriplesMap(refObjectMap)
+                        val parentTM = factory.getMappingDocument.getParentTriplesMap(refObjectMap)
 
                         // Compute a list of subject IRIs for each of the join conditions, that we will intersect later
                         val parentSubjectsCandidates: Set[List[RDFNode]] = for (joinCond <- refObjectMap.joinConditions) yield {
@@ -145,7 +137,7 @@ class MorphMongoDataTranslator(
                             val parentMsp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
 
                             // Get the results of the parent query
-                            val queryMapId = makeQueryMapId(this.unfolder.unfoldConceptMapping(parentTM), parentTM.logicalSource.docIterator)
+                            val queryMapId = makeQueryMapId(factory.getUnfolder.unfoldTriplesMap(parentTM), parentTM.logicalSource.docIterator)
                             val parentRes = parentResultSets.get(queryMapId).get
 
                             // Evaluate the mixed syntax path on each parent query result. The result is stored as pairs:
@@ -189,7 +181,7 @@ class MorphMongoDataTranslator(
                         if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                     // ----- Finally, combine all the terms to generate triples in the target graphs or default graph
-                    this.materializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
+                    factory.getMaterializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
                 })
             } catch {
                 case e: MorphException => {
@@ -220,9 +212,9 @@ class MorphMongoDataTranslator(
         if (!query.isTargetQuerySet)
             throw new MorphException("Target queries not set in " + query)
 
-        val listTerms = query.generateRdfTerms(this.dataSourceReader, this)
+        val listTerms = query.generateRdfTerms(factory.getDataSourceReader, this)
         for (terms <- listTerms) {
-            this.materializer.materializeQuads(terms.subjects, terms.predicates, terms.objects, List.empty, terms.graphs)
+            factory.getMaterializer.materializeQuads(terms.subjects, terms.predicates, terms.objects, List.empty, terms.graphs)
         }
     }
 
@@ -346,16 +338,16 @@ class MorphMongoDataTranslator(
 
             val result: Literal =
                 if (language.isDefined)
-                    this.materializer.model.createLiteral(valueConverted, language.get);
+                    factory.getMaterializer.model.createLiteral(valueConverted, language.get);
                 else {
                     if (datatype.isDefined)
-                        this.materializer.model.createTypedLiteral(valueConverted, datatype.get);
+                        factory.getMaterializer.model.createTypedLiteral(valueConverted, datatype.get);
                     else {
                         val inferedDT = inferDataType(value)
                         if (inferedDT == null)
-                            this.materializer.model.createLiteral(valueConverted);
+                            factory.getMaterializer.model.createLiteral(valueConverted);
                         else
-                            this.materializer.model.createTypedLiteral(valueConverted, inferedDT);
+                            factory.getMaterializer.model.createTypedLiteral(valueConverted, inferedDT);
                     }
                 }
 

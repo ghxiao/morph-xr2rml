@@ -3,106 +3,118 @@ package es.upm.fi.dia.oeg.morph.base.engine
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.io.Writer
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.query.QueryFactory
-
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 
-abstract class MorphBaseRunnerFactory {
+abstract class MorphBaseRunnerFactory extends IMorphFactory {
+
+    var properties: MorphProperties = null
+
+    var connection: GenericConnection = null
+
+    var mappingDocument: R2RMLMappingDocument = null
+
+    var unfolder: MorphBaseUnfolder = null
+
+    var dataSourceReader: MorphBaseDataSourceReader = null
+
+    var materializer: MorphBaseMaterializer = null
+
+    var dataTranslator: MorphBaseDataTranslator = null
+
+    var triplePatternBinder: MorphBaseTriplePatternBinder = null
+
+    var queryTranslator: MorphBaseQueryTranslator = null
+
+    var queryResultProcessor: MorphBaseQueryResultProcessor = null
+
+    override def getProperties: MorphProperties = properties
+
+    override def getConnection: GenericConnection = connection
+
+    override def getMappingDocument: R2RMLMappingDocument = mappingDocument
+
+    override def getUnfolder: MorphBaseUnfolder = unfolder
+
+    override def getDataSourceReader: MorphBaseDataSourceReader = dataSourceReader
+
+    override def getMaterializer: MorphBaseMaterializer = materializer
+
+    override def getDataTranslator: MorphBaseDataTranslator = dataTranslator
+
+    override def getQueryTranslator: MorphBaseQueryTranslator = queryTranslator
+
+    override def getQueryResultProcessor: MorphBaseQueryResultProcessor = queryResultProcessor
+
+    override def getTriplePatternBinder: MorphBaseTriplePatternBinder = triplePatternBinder
+
     val logger = Logger.getLogger(this.getClass());
 
-    def createRunner(configurationDirectory: String, configurationFile: String): MorphBaseRunner = {
-        val configurationProperties = MorphProperties.apply(configurationDirectory, configurationFile);
-        this.createRunner(configurationProperties);
-    }
-
-    def createRunner(properties: MorphProperties): MorphBaseRunner = {
+    def createRunner: MorphBaseRunner = {
 
         if (logger.isDebugEnabled) logger.debug("Creating MorphBaseRunner")
-
-        // Building CONNECTION
-        val connection = this.createConnection(properties);
-
-        // Building MAPPING DOCUMENT
-        val mappingDocument = R2RMLMappingDocument(properties.mappingDocumentFilePath, properties, connection);
-
-        // Building UNFOLDER
-        val unfolder = this.createUnfolder(properties, mappingDocument);
-
-        // Building MATERIALIZER
-        val outputStream: Writer =
-            if (properties.outputFilePath.isDefined)
-                new PrintWriter(properties.outputFilePath.get, "UTF-8")
-            else new StringWriter
-        val materializer = this.buildMaterializer(properties, mappingDocument, outputStream);
-
-        // Building DATA SOURCE READER
-        val dataSourceReader = this.createDataSourceReader(mappingDocument, properties, connection);
-
-        // Building DATA TRANSLATOR
-        val dataTranslator = this.createDataTranslator(mappingDocument, materializer, unfolder, dataSourceReader, properties)
-
-        // ---------------------------------------------------------------------------------
-        // The Data Source Reader, Query Translator, Query Result Writer, Result Processor, are only applicable
-        // in the case of query rewriting access mode, i.e. not in data materialization.
-        // ---------------------------------------------------------------------------------
-
-        // Building QUERY TRANSLATOR
-        val queryTranslator = this.createQueryTranslator(properties, mappingDocument, dataSourceReader)
-
-        // Building RESULT PROCESSOR to translate the SQL result set into a SPARQL result set and serialize it into a file
-        val resultProcessor = this.createQueryResultProcessor(properties, mappingDocument, dataSourceReader, dataTranslator, queryTranslator, outputStream)
-
-        // ---------------------------------------------------------------------------------
-        // Creation of final runner object
-        // ---------------------------------------------------------------------------------
 
         val sparqlQuery =
             if (properties.queryFilePath.isDefined)
                 Some(QueryFactory.read(properties.queryFilePath.get))
             else None
-        val runner = new MorphBaseRunner(mappingDocument, unfolder, dataTranslator, queryTranslator, resultProcessor, outputStream, sparqlQuery)
-        runner;
+        new MorphBaseRunner(this, sparqlQuery)
     }
 
-    def createConnection(configurationProperties: MorphProperties): GenericConnection
+    def createConnection: GenericConnection
 
-    def createUnfolder(properties: MorphProperties, md: R2RMLMappingDocument): MorphBaseUnfolder
+    def createUnfolder: MorphBaseUnfolder
 
-    def createDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader
+    def createDataSourceReader: MorphBaseDataSourceReader
 
-    def createDataTranslator(
-        md: R2RMLMappingDocument,
-        materializer: MorphBaseMaterializer,
-        unfolder: MorphBaseUnfolder,
-        dataSourceReader: MorphBaseDataSourceReader,
-        properties: MorphProperties): MorphBaseDataTranslator
+    def createDataTranslator: MorphBaseDataTranslator
 
-    def createQueryTranslator(properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): MorphBaseQueryTranslator
+    def createTriplePatternBinder: MorphBaseTriplePatternBinder = { new MorphBaseTriplePatternBinder(this) }
 
-    def createQueryResultProcessor(
-        properties: MorphProperties,
-        md: R2RMLMappingDocument,
-        dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator,
-        queryTranslator: MorphBaseQueryTranslator,
-        outputStream: Writer): MorphBaseQueryResultProcessor;
+    def createQueryTranslator: MorphBaseQueryTranslator
 
-    private def buildMaterializer(configurationProperties: MorphProperties, mappingDocument: R2RMLMappingDocument, outputStream: Writer): MorphBaseMaterializer = {
-        val jenaMode = configurationProperties.jenaMode;
-        val materializer = MaterializerFactory.create(outputStream, jenaMode);
-        val mappingDocumentPrefixMap = mappingDocument.mappingDocumentPrefixMap;
-        if (mappingDocumentPrefixMap != null) {
-            materializer.setModelPrefixMap(mappingDocumentPrefixMap);
-        }
+    def createQueryResultProcessor: MorphBaseQueryResultProcessor;
+
+    private def createMaterializer: MorphBaseMaterializer = {
+        val outputStream: Writer =
+            if (this.getProperties.outputFilePath.isDefined)
+                new PrintWriter(this.getProperties.outputFilePath.get, "UTF-8")
+            else new StringWriter
+
+        val jenaMode = this.getProperties.jenaMode;
+        val materializer = MaterializerFactory.create(outputStream, jenaMode)
+        val prefix = this.getMappingDocument.mappingDocumentPrefixMap
+        if (prefix != null)
+            materializer.setModelPrefixMap(prefix);
         materializer
+    }
+}
+
+object MorphBaseRunnerFactory {
+    def createFactory(properties: MorphProperties): MorphBaseRunnerFactory = {
+
+        val factory = Class.forName(properties.runnerFactoryClassName).newInstance().asInstanceOf[MorphBaseRunnerFactory]
+
+        // DO NOT CHANGE ORDER - Objects must be created in this order because of their dependencies
+        factory.properties = properties
+        factory.connection = factory.createConnection
+        factory.mappingDocument = R2RMLMappingDocument(factory.properties, factory.connection);
+        factory.unfolder = factory.createUnfolder
+        factory.dataSourceReader = factory.createDataSourceReader
+        factory.materializer = factory.createMaterializer
+        factory.dataTranslator = factory.createDataTranslator
+        factory.triplePatternBinder = factory.createTriplePatternBinder
+        factory.queryTranslator = factory.createQueryTranslator
+        factory.queryResultProcessor = factory.createQueryResultProcessor
+        factory
     }
 }

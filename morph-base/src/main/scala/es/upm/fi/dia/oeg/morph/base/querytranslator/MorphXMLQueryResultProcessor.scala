@@ -1,26 +1,17 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import java.io.Writer
 import scala.collection.JavaConversions.asScalaBuffer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.query.Query
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
+
 import es.upm.fi.dia.oeg.morph.base.XMLUtility
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-abstract class MorphXMLQueryResultProcessor(
-    mappingDocument: R2RMLMappingDocument,
-    properties: MorphProperties,
-    output: Writer)
-
-        extends MorphBaseQueryResultProcessor(
-            mappingDocument,
-            properties,
-            output) {
-
-    this.outputStream = output;
+abstract class MorphXMLQueryResultProcessor(factory: IMorphFactory)
+        extends MorphBaseQueryResultProcessor(factory) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -64,7 +55,7 @@ abstract class MorphXMLQueryResultProcessor(
      */
     override def postProcess() = {
         if (logger.isDebugEnabled()) logger.debug("Writing query result document:\n" + XMLUtility.printXMLDocument(xmlDoc, true, false))
-        XMLUtility.saveXMLDocument(xmlDoc, outputStream);
+        XMLUtility.saveXMLDocument(xmlDoc, factory.getMaterializer.outputStream);
     }
 
     override def getOutput() = {

@@ -1,7 +1,5 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConversions.asScalaBuffer
-
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.graph.Node
@@ -9,24 +7,13 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
-import com.hp.hpl.jena.sparql.algebra.op.OpBGP
-import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
-import com.hp.hpl.jena.sparql.algebra.op.OpFilter
-import com.hp.hpl.jena.sparql.algebra.op.OpJoin
-import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
-import com.hp.hpl.jena.sparql.algebra.op.OpOrder
-import com.hp.hpl.jena.sparql.algebra.op.OpProject
-import com.hp.hpl.jena.sparql.algebra.op.OpSlice
-import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
@@ -35,17 +22,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
-abstract class MorphBaseQueryTranslator {
-
-    var genCnx: GenericConnection = null;
+abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
     var optimizer: MorphBaseQueryOptimizer = null;
-
-    var properties: MorphProperties = null;
-
-    var databaseType: String = null;
-
-    var mappingDocument: R2RMLMappingDocument = null;
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -65,7 +44,6 @@ abstract class MorphBaseQueryTranslator {
      */
     def translate(sparqlQuery: Query): Option[MorphAbstractQuery] = {
         val start = System.currentTimeMillis()
-        MorphBaseTriplePatternBindings.mappingDocument = this.mappingDocument
         val result = this.translate(Algebra.compile(sparqlQuery));
         logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
         result
@@ -147,7 +125,7 @@ abstract class MorphBaseQueryTranslator {
 
         // In addition, if tp.obj is a variable, the subject of the parent TM must be projected too.
         if (tp.getObject().isVariable()) {
-            val parentTM = mappingDocument.getParentTriplesMap(rom)
+            val parentTM = factory.getMappingDocument.getParentTriplesMap(rom)
             listRefs = listRefs :+ new MorphBaseQueryProjection(parentTM.subjectMap.getReferences, Some(tp.getObject.toString))
         }
 
@@ -272,7 +250,7 @@ abstract class MorphBaseQueryTranslator {
             // tp.obj is a constant IRI to be matched with the subject of the parent TM:
             // add an equality condition for each reference in the subject map of the parent TM
             val rom = pom.getRefObjectMap(0)
-            val parentSM = mappingDocument.getParentTriplesMap(rom).subjectMap
+            val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
             if (parentSM.isReferenceOrTemplateValued)
                 conditions = conditions ++ genEqualityConditions(parentSM, tpTerm)
 
@@ -283,7 +261,7 @@ abstract class MorphBaseQueryTranslator {
         } else if (tpTerm.isVariable) {
             // tp.obj is a SPARQL variable to be matched with the subject of the parent TM
             val rom = pom.getRefObjectMap(0)
-            val parentSM = mappingDocument.getParentTriplesMap(rom).subjectMap
+            val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
             if (parentSM.isReferenceOrTemplateValued)
                 conditions = conditions ++ parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
 

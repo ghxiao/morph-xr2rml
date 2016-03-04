@@ -2,9 +2,7 @@ package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
@@ -18,7 +16,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
@@ -26,6 +23,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 class TPBindings(val tp: Triple, val bound: List[R2RMLTriplesMap]) {
     override def toString = { bound.toString }
@@ -41,9 +39,7 @@ object TPBindings {
  *
  * See full definitions in https://hal.archives-ouvertes.fr/hal-01245883.
  */
-object MorphBaseTriplePatternBindings {
-
-    var mappingDocument: R2RMLMappingDocument = null // set in MorphBaseQueryTranslator constructor
+class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -259,19 +255,19 @@ object MorphBaseTriplePatternBindings {
      */
     private def bindmTP(tp: Triple): List[R2RMLTriplesMap] = {
 
-        val boundTMs = this.mappingDocument.triplesMaps.toList.map(tm => {
+        val boundTMs = factory.getMappingDocument.triplesMaps.toList.map(tm => {
             val pom = tm.predicateObjectMaps.head
 
             if (tm.predicateObjectMaps.size > 1 || pom.predicateMaps.size > 1 ||
                 pom.objectMaps.size > 1 || pom.refObjectMaps.size > 1)
                 throw new MorphException("Error, non-normalized triples map: " + tm)
 
-            var bound: Boolean = MorphBaseTriplePatternBindings.compatible(tm.subjectMap, tp.getSubject) &&
-                MorphBaseTriplePatternBindings.compatible(pom.predicateMaps.head, tp.getPredicate) &&
+            var bound: Boolean = compatible(tm.subjectMap, tp.getSubject) &&
+                compatible(pom.predicateMaps.head, tp.getPredicate) &&
                 (if (pom.hasObjectMap)
-                    MorphBaseTriplePatternBindings.compatible(pom.objectMaps.head, tp.getObject)
+                    compatible(pom.objectMaps.head, tp.getObject)
                 else if (pom.hasRefObjectMap)
-                    MorphBaseTriplePatternBindings.compatible(pom.refObjectMaps.head, tp.getObject)
+                    compatible(pom.refObjectMaps.head, tp.getObject)
                 else {
                     logger.warn("Unormalized triples map " + tm.toString + ": no object maps nor referencing object maps")
                     false
@@ -428,7 +424,7 @@ object MorphBaseTriplePatternBindings {
                 // In that case, it necessarily produces blank nodes.
                 false
             else {
-                val parentTM = mappingDocument.getParentTriplesMap(termMap)
+                val parentTM = factory.getMappingDocument.getParentTriplesMap(termMap)
                 compatible(parentTM.subjectMap, tpTerm)
             }
         } else
@@ -462,7 +458,7 @@ object MorphBaseTriplePatternBindings {
             } else if (tm2.isInstanceOf[R2RMLRefObjectMap]) {
                 // ---- tm1 is a TermMap and tm2 is a RefObjectMap
                 val termMap2 = tm2.asInstanceOf[R2RMLRefObjectMap]
-                compatibleTermMaps(termMap1, mappingDocument.getParentTriplesMap(termMap2).subjectMap)
+                compatibleTermMaps(termMap1, factory.getMappingDocument.getParentTriplesMap(termMap2).subjectMap)
             } else
                 throw new MorphException("tm2 is neither an R2RMLTermMap or R2RMLRefObjectMap: " + tm2)
 
@@ -472,12 +468,12 @@ object MorphBaseTriplePatternBindings {
             if (tm2.isInstanceOf[R2RMLTermMap]) {
                 // ---- tm1 is a RefObjectMMap and tm2 is a TermMap
                 val termMap2 = tm2.asInstanceOf[R2RMLTermMap]
-                compatibleTermMaps(mappingDocument.getParentTriplesMap(termMap1).subjectMap, termMap2)
+                compatibleTermMaps(factory.getMappingDocument.getParentTriplesMap(termMap1).subjectMap, termMap2)
 
             } else if (tm2.isInstanceOf[R2RMLRefObjectMap]) {
                 // ---- tm1 and tm2 are RefObjectMMaps
                 val termMap2 = tm2.asInstanceOf[R2RMLRefObjectMap]
-                compatibleTermMaps(mappingDocument.getParentTriplesMap(termMap1).subjectMap, mappingDocument.getParentTriplesMap(termMap2).subjectMap)
+                compatibleTermMaps(factory.getMappingDocument.getParentTriplesMap(termMap1).subjectMap, factory.getMappingDocument.getParentTriplesMap(termMap2).subjectMap)
             } else
                 throw new MorphException("tm2 is neither an R2RMLTermMap or R2RMLRefObjectMap: " + tm2)
         } else
@@ -563,5 +559,3 @@ object MorphBaseTriplePatternBindings {
         !(getTpVars(tp1).intersect(getTpVars(tp2)).isEmpty)
     }
 }
-
-

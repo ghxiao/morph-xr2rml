@@ -123,7 +123,7 @@ class MorphAbstractQueryInnerJoinRef(
         val parentResultSet = {
             if (!pom.refObjectMaps.isEmpty) {
                 val rom = pom.refObjectMaps.head
-                val parentTM = dataSourceReader.md.getParentTriplesMap(rom)
+                val parentTM = dataSourceReader.factory.getMappingDocument.getParentTriplesMap(rom)
 
                 // Execute the parent queries and create a MorphMongoResultSet with a UNION (flatMap) of all the results
                 val parentResSets = parent.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, parentTM.logicalSource.docIterator))
@@ -163,7 +163,7 @@ class MorphAbstractQueryInnerJoinRef(
 
                         // ---- Compute a list of subject IRIs for the join condition
                         val rom = pom.refObjectMaps.head
-                        val parentTM = dataTranslator.md.getParentTriplesMap(rom)
+                        val parentTM = dataTranslator.factory.getMappingDocument.getParentTriplesMap(rom)
                         val joinCond = rom.joinConditions.head
 
                         // Evaluate the child reference on the current document (of the child triples map)

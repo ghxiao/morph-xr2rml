@@ -19,16 +19,15 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 
-class MorphMongoDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties)
-        extends MorphBaseDataSourceReader(md, properties) {
+class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSourceReader(factory) {
 
     /** Cache of already executed queries. The key of the map is the query string itself. */
     private val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
@@ -42,7 +41,7 @@ class MorphMongoDataSourceReader(md: R2RMLMappingDocument, properties: MorphProp
      */
     override def execute(query: GenericQuery): MorphBaseResultSet = {
         val mongoQ = query.concreteQuery.asInstanceOf[MongoDBQuery]
-        val jongoCnx = connection.concreteCnx.asInstanceOf[Jongo]
+        val jongoCnx = factory.getConnection.concreteCnx.asInstanceOf[Jongo]
 
         val collec: MongoCollection = jongoCnx.getCollection(mongoQ.collection)
 
@@ -78,7 +77,7 @@ class MorphMongoDataSourceReader(md: R2RMLMappingDocument, properties: MorphProp
                 // Save the result of this query in case it is asked again later (in a join)
                 // @TODO USE WITH CARE: this would need to be strongly improved with the use of a real cache library,
                 // and memory-consumption-based eviction.
-                if (properties.cacheQueryResult) {
+                if (factory.getProperties.cacheQueryResult) {
                     executedQueries += (queryMapId -> resultSet)
                     if (logger.isTraceEnabled()) logger.trace("Adding query to cache: " + query)
                 }
@@ -94,12 +93,6 @@ class MorphMongoDataSourceReader(md: R2RMLMappingDocument, properties: MorphProp
 
         if (logger.isDebugEnabled()) logger.debug("Query \n" + query + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
         new MorphMongoResultSet(queryResultIter.toList)
-    }
-
-    override def setConnection(connection: GenericConnection) {
-        if (!connection.isMongoDB)
-            throw new MorphException("Connection type is not MongoDB")
-        this.connection = connection
     }
 
     override def setTimeout(timeout: Int) {

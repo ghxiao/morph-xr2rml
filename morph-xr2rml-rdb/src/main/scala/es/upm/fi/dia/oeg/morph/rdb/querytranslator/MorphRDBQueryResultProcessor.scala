@@ -22,18 +22,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-class MorphRDBQueryResultProcessor(
-    mappingDocument: R2RMLMappingDocument,
-    properties: MorphProperties,
-    xmlOutputStream: Writer,
-    dataSourceReader: MorphBaseDataSourceReader,
-    queryTranslator: MorphBaseQueryTranslator)
-
-        extends MorphXMLQueryResultProcessor(
-            mappingDocument: R2RMLMappingDocument,
-            properties: MorphProperties,
-            xmlOutputStream: Writer) {
+class MorphRDBQueryResultProcessor(factory: IMorphFactory) extends MorphXMLQueryResultProcessor(factory) {
 
     override val logger = Logger.getLogger(this.getClass().getName());
 
@@ -41,7 +32,7 @@ class MorphRDBQueryResultProcessor(
 
     private var mapTemplateAttributes: Map[String, List[String]] = Map.empty;
 
-    var projectionGenerator = queryTranslator.asInstanceOf[MorphRDBQueryTranslator].getPRSQLGen
+    var projectionGenerator = factory.getQueryTranslator.asInstanceOf[MorphRDBQueryTranslator].getPRSQLGen
 
     /**
      * Execute the query and translate the results from the database into triples.<br>
@@ -58,7 +49,7 @@ class MorphRDBQueryResultProcessor(
             val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database
-            val resultSet = this.dataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
+            val resultSet = factory.getDataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
             val columnNames = iQuery.getSelectItemAliases();
             resultSet.setColumnNames(columnNames);
 
@@ -149,7 +140,7 @@ class MorphRDBQueryResultProcessor(
                                     mappedValueTermMap;
                                 }
                                 case mappedValueRefObjectMap: R2RMLRefObjectMap => {
-                                    val parentTriplesMap = this.mappingDocument.getParentTriplesMap(mappedValueRefObjectMap);
+                                    val parentTriplesMap = factory.getMappingDocument.getParentTriplesMap(mappedValueRefObjectMap);
                                     parentTriplesMap.subjectMap;
                                 }
                                 case _ => {
@@ -233,7 +224,7 @@ class MorphRDBQueryResultProcessor(
                             if (resultAux != null) {
                                 if (termMapType != null) {
                                     if (termMapType.equals(Constants.R2RML_IRI_URI))
-                                        GeneralUtility.encodeURI(resultAux, properties.mapURIEncodingChars, properties.uriTransformationOperation);
+                                        GeneralUtility.encodeURI(resultAux, factory.getProperties.mapURIEncodingChars, factory.getProperties.uriTransformationOperation);
                                     else if (termMapType.equals(Constants.R2RML_LITERAL_URI))
                                         GeneralUtility.encodeLiteral(resultAux);
                                     else

@@ -10,19 +10,20 @@ import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 /**
  * This class is used in case of the query rewriting access method,
  * to execute queries on the fly.
  * It is not used in the data materialization access method.
  */
-class MorphRDBDataSourceReader(md: R2RMLMappingDocument, properties: MorphProperties)
-        extends MorphBaseDataSourceReader(md, properties) {
+class MorphRDBDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSourceReader(factory) {
 
-    var sqlCnx: Connection = null;
+    var timeout: Int = factory.getProperties.databaseTimeout
 
     override def execute(query: GenericQuery): MorphBaseResultSet = {
-        val rs = DBUtility.execute(this.sqlCnx, query.concreteQuery.asInstanceOf[ISqlQuery].toString(), this.timeout);
+        val sqlCnx: Connection = factory.getConnection.concreteCnx.asInstanceOf[Connection]
+        val rs = DBUtility.execute(sqlCnx, query.concreteQuery.asInstanceOf[ISqlQuery].toString(), this.timeout);
         val resultSet = new MorphRDBResultSet(rs);
         resultSet;
     }
@@ -31,18 +32,12 @@ class MorphRDBDataSourceReader(md: R2RMLMappingDocument, properties: MorphProper
         throw new MorphException("Unsupported method.")
     }
 
-    override def setConnection(connection: GenericConnection) {
-        if (!connection.isRelationalDB)
-            throw new MorphException("Connection type is not relational database")
-        this.connection = connection
-        this.sqlCnx = connection.concreteCnx.asInstanceOf[Connection]
-    }
-
     override def setTimeout(timeout: Int) {
         this.timeout = timeout
     }
 
     override def closeConnection() {
-        DBUtility.closeConnection(this.sqlCnx, this.getClass().getName());
+        val sqlCnx: Connection = factory.getConnection.concreteCnx.asInstanceOf[Connection]
+        DBUtility.closeConnection(sqlCnx, this.getClass().getName());
     }
 }

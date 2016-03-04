@@ -44,23 +44,17 @@ object MorphRunner {
 
             val parser: CommandLineParser = new BasicParser()
             val cmd: CommandLine = parser.parse(options, args)
-            if (cmd.hasOption("d"))
-                configDir = cmd.getOptionValue("d")
-            if (cmd.hasOption("f"))
-                configFile = cmd.getOptionValue("f")
-
+            if (cmd.hasOption("d")) configDir = cmd.getOptionValue("d")
+            if (cmd.hasOption("f")) configFile = cmd.getOptionValue("f")
             logger.info("properties Directory = " + configDir)
             logger.info("properties File      = " + configFile)
 
-            val properties = MorphProperties(configDir, configFile)
-
             // Create the runner factory based on the class name given in configuration file
-            val runnerFact = Class.forName(properties.runnerFactoryClassName).newInstance().asInstanceOf[MorphBaseRunnerFactory]
+            val properties = MorphProperties(configDir, configFile)
+            val runnerFact = MorphBaseRunnerFactory.createFactory(properties)
 
-            // Create the runner, parse the mapping document, create the unfolder, data materializer, data translator etc.
-            val runner = runnerFact.createRunner(properties);
-
-            // Start the translation process
+            // Create the runner and start the translation process
+            val runner = runnerFact.createRunner
             logger.info("Running data translation...")
             runner.run()
 

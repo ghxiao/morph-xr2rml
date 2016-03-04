@@ -228,11 +228,10 @@ class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
 object R2RMLMappingDocument {
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def apply(mdPath: String): R2RMLMappingDocument = {
-        R2RMLMappingDocument(mdPath, null, null);
-    }
-
-    def apply(mdPath: String, props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
+    def apply(props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
+        
+        val mdPath = props.mappingDocumentFilePath
+        
         if (logger.isDebugEnabled) logger.debug("Creating R2RMLMappingDocument ");
 
         val model = ModelFactory.createDefaultModel();

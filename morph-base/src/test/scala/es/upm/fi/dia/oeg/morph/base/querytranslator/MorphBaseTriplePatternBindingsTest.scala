@@ -1,24 +1,20 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import org.junit.Assert
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
+
 import com.hp.hpl.jena.graph.NodeFactory
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLObjectMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
-import com.hp.hpl.jena.datatypes.RDFDatatype
-import com.hp.hpl.jena.rdf.model.Model
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 
 class MorphBaseTriplePatternBindingsTest {
+
+    val triplePatternBinder = new MorphBaseTriplePatternBinder(null)
 
     @Test
     def test_compatible_VariableTpTerm {
@@ -32,7 +28,7 @@ class MorphBaseTriplePatternBindingsTest {
             None, // xR2RMLNestedTermMap]
             "JSONPath") // Reference formulation
         termMap.setConstantValue("val")
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, variable))
+        assertTrue(triplePatternBinder.compatible(termMap, variable))
 
         termMap = new R2RMLSubjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
@@ -40,13 +36,13 @@ class MorphBaseTriplePatternBindingsTest {
             Set.empty, // class URIs
             Set.empty, // graph URIs
             "JSONPath") // Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, variable))
+        assertTrue(triplePatternBinder.compatible(termMap, variable))
 
         termMap = new R2RMLPredicateMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
             Some(Constants.R2RML_BLANKNODE_URI), // term type
             "JSONPath") // Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, variable))
+        assertTrue(triplePatternBinder.compatible(termMap, variable))
     }
 
     @Test
@@ -65,9 +61,9 @@ class MorphBaseTriplePatternBindingsTest {
             None, // language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
         termMap.setConstantValue("3")
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_dt))
+        assertTrue(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_lang))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_dt))
 
         termMap = new R2RMLObjectMap(
             Constants.MorphTermMapType.ConstantTermMap, // term map type
@@ -76,10 +72,10 @@ class MorphBaseTriplePatternBindingsTest {
             None, // language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
         termMap.setConstantValue("3")
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal_dt))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_dtl))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
+        assertTrue(triplePatternBinder.compatible(termMap, literal_dt))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_dtl))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_lang))
 
         termMap = new R2RMLObjectMap(
             Constants.MorphTermMapType.ConstantTermMap, // term map type
@@ -88,10 +84,10 @@ class MorphBaseTriplePatternBindingsTest {
             Some("fr"), // language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
         termMap.setConstantValue("3")
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_langde))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_dt))
+        assertTrue(triplePatternBinder.compatible(termMap, literal_lang))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_langde))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_dt))
     }
 
     @Test
@@ -107,10 +103,10 @@ class MorphBaseTriplePatternBindingsTest {
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
         termMap.setConstantValue("http://example.org/%20starring")
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, iri))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri2))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, bn))
+        assertTrue(triplePatternBinder.compatible(termMap, iri))
+        assertFalse(triplePatternBinder.compatible(termMap, iri2))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, bn))
     }
 
     @Test
@@ -127,11 +123,11 @@ class MorphBaseTriplePatternBindingsTest {
             Some(Constants.R2RML_LITERAL_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_dt))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, bn))
+        assertTrue(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_lang))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_dt))
+        assertFalse(triplePatternBinder.compatible(termMap, iri))
+        assertFalse(triplePatternBinder.compatible(termMap, bn))
 
         termMap = new R2RMLObjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
@@ -139,9 +135,9 @@ class MorphBaseTriplePatternBindingsTest {
             Some("http://www.w3.org/2001/XMLSchema#string"), // data type
             None, // language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal_dt))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
+        assertTrue(triplePatternBinder.compatible(termMap, literal_dt))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_lang))
 
         termMap = new R2RMLObjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
@@ -149,10 +145,10 @@ class MorphBaseTriplePatternBindingsTest {
             None, // data type
             Some("fr"), // language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_langde))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_dt))
+        assertTrue(triplePatternBinder.compatible(termMap, literal_lang))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_langde))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_dt))
     }
 
     @Test
@@ -166,9 +162,9 @@ class MorphBaseTriplePatternBindingsTest {
             Some(Constants.R2RML_IRI_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, iri))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, bn))
+        assertTrue(triplePatternBinder.compatible(termMap, iri))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
+        assertFalse(triplePatternBinder.compatible(termMap, bn))
     }
 
     @Test
@@ -186,12 +182,12 @@ class MorphBaseTriplePatternBindingsTest {
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
         termMap.templateString = "http://example.org/{$.toto.*}/{$.x[5]}"
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal))
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, literal1))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal2))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal3))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal_lang))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri))
+        assertTrue(triplePatternBinder.compatible(termMap, literal))
+        assertTrue(triplePatternBinder.compatible(termMap, literal1))
+        assertFalse(triplePatternBinder.compatible(termMap, literal2))
+        assertFalse(triplePatternBinder.compatible(termMap, literal3))
+        assertFalse(triplePatternBinder.compatible(termMap, literal_lang))
+        assertFalse(triplePatternBinder.compatible(termMap, iri))
     }
 
     @Test
@@ -208,11 +204,11 @@ class MorphBaseTriplePatternBindingsTest {
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
         termMap.templateString = "http://example.org/{$.toto.*}/{$.x[5]}"
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, iri))
-        assertTrue(MorphBaseTriplePatternBindings.compatible(termMap, iri1))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri2))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, iri3))
-        assertFalse(MorphBaseTriplePatternBindings.compatible(termMap, literal))
+        assertTrue(triplePatternBinder.compatible(termMap, iri))
+        assertTrue(triplePatternBinder.compatible(termMap, iri1))
+        assertFalse(triplePatternBinder.compatible(termMap, iri2))
+        assertFalse(triplePatternBinder.compatible(termMap, iri3))
+        assertFalse(triplePatternBinder.compatible(termMap, literal))
     }
 
     @Test
@@ -224,21 +220,21 @@ class MorphBaseTriplePatternBindingsTest {
             Some(Constants.R2RML_IRI_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap1))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap1, termMap1))
 
         var termMap2 = new R2RMLObjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
             Some(Constants.R2RML_IRI_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap1, termMap2))
 
         termMap2 = new R2RMLObjectMap(
             Constants.MorphTermMapType.TemplateTermMap, // term map type
             Some(Constants.R2RML_IRI_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap1, termMap2))
     }
 
     @Test
@@ -250,23 +246,23 @@ class MorphBaseTriplePatternBindingsTest {
             Some(Constants.R2RML_LITERAL_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap1))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap1, termMap1))
 
         var termMap2 = new R2RMLObjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
             Some(Constants.R2RML_LITERAL_URI), // term type
             None, Some("fr"), // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
-        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(triplePatternBinder.compatibleTermMaps(termMap1, termMap2))
 
         termMap2 = new R2RMLObjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
             Some(Constants.R2RML_LITERAL_URI), // term type
             Some("http://www.w3.org/2001/XMLSchema#string"), None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
-        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(triplePatternBinder.compatibleTermMaps(termMap1, termMap2))
     }
 
     @Test
@@ -285,15 +281,15 @@ class MorphBaseTriplePatternBindingsTest {
             Some(Constants.R2RML_IRI_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
-        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(triplePatternBinder.compatibleTermMaps(termMap1, termMap2))
 
         termMap2 = new R2RMLObjectMap(
             Constants.MorphTermMapType.ReferenceTermMap, // term map type
             Some(Constants.R2RML_BLANKNODE_URI), // term type
             None, None, // data type, language tag
             None, "JSONPath") // xR2RMLNestedTermMap, Reference formulation
-        assertTrue(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap2, termMap2))
-        assertFalse(MorphBaseTriplePatternBindings.compatibleTermMaps(termMap1, termMap2))
+        assertTrue(triplePatternBinder.compatibleTermMaps(termMap2, termMap2))
+        assertFalse(triplePatternBinder.compatibleTermMaps(termMap1, termMap2))
     }
 }

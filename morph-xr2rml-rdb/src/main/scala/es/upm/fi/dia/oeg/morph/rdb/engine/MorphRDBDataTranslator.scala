@@ -27,17 +27,11 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-class MorphRDBDataTranslator(
-    md: R2RMLMappingDocument,
-    materializer: MorphBaseMaterializer,
-    unfolder: MorphRDBUnfolder,
-    dataSourceReader: MorphRDBDataSourceReader,
-    properties: MorphProperties)
+class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
 
-        extends MorphBaseDataTranslator(md, materializer, unfolder, properties) {
-
-    if (!dataSourceReader.connection.isRelationalDB)
+    if (!factory.getConnection.isRelationalDB)
         throw new MorphException("Database connection type does not match relational database")
 
     override val logger = Logger.getLogger(this.getClass().getName())
@@ -59,10 +53,10 @@ class MorphRDBDataTranslator(
         val ls = tm.logicalSource;
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;
-        val query = this.unfolder.unfoldConceptMapping(tm)
+        val query = factory.getUnfolder.unfoldTriplesMap(tm)
 
         // Run the query against the database
-        val rows = dataSourceReader.execute(query).asInstanceOf[MorphRDBResultSet].resultSet
+        val rows = factory.getDataSourceReader.execute(query).asInstanceOf[MorphRDBResultSet].resultSet
 
         // Make mappings of each column in the result set and its data type and equivalent XML data type
         var mapXMLDatatype: Map[String, String] = Map.empty;
@@ -119,14 +113,14 @@ class MorphRDBDataTranslator(
 
                 // Add subject resource to the JENA model with its class (rdf:type) and target graphs
                 sm.classURIs.foreach(classURI => {
-                    val classRes = this.materializer.model.createResource(classURI);
+                    val classRes = factory.getMaterializer.model.createResource(classURI);
                     if (subjectGraphs == null || subjectGraphs.isEmpty) {
                         for (sub <- subjects)
-                            this.materializer.materializeQuad(sub, RDF.`type`, classRes, null);
+                            factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, null);
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
                             for (sub <- subjects)
-                                this.materializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
+                                factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
                         });
                     }
                 });
@@ -152,8 +146,8 @@ class MorphRDBDataTranslator(
                     // ----- For each RefObjectMap get the IRIs from the subject map of the parent triples map
 
                     val refObjects = pom.refObjectMaps.flatMap(refObjectMap => {
-                        val parentTM = this.md.getParentTriplesMap(refObjectMap)
-                        val parentTabAlias = this.unfolder.mapRefObjectMapAlias.getOrElse(refObjectMap, null)
+                        val parentTM = factory.getMappingDocument.getParentTriplesMap(refObjectMap)
+                        val parentTabAlias = factory.getUnfolder.asInstanceOf[MorphRDBUnfolder].mapRefObjectMapAlias.getOrElse(refObjectMap, null)
 
                         val parentSubjectsCandidates = refObjectMap.joinConditions.flatMap(joinCond => {
 
@@ -214,7 +208,7 @@ class MorphRDBDataTranslator(
                     // ----------------------------------------------------------------------------------------------
                     // Finally, combine all the terms to generate triples in the target graphs or default graph
                     // ----------------------------------------------------------------------------------------------
-                    this.materializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
+                    factory.getMaterializer.materializeQuads(subjects, predicates, objects, refObjects, subjectGraphs ++ predicateObjectGraphs)
                 });
 
             } catch {
@@ -435,7 +429,7 @@ class MorphRDBDataTranslator(
     private def getColumnNameFromResultSet(colRef: String, alias: String): String = {
         if (alias != null && !"".equals(alias)) {
             val termMapColSplit = colRef.split("\\.")
-            val dbEnclosedCharacter = Constants.getEnclosedCharacter(this.properties.databaseType)
+            val dbEnclosedCharacter = Constants.getEnclosedCharacter(factory.getProperties.databaseType)
             val columnName = termMapColSplit(termMapColSplit.length - 1).replaceAll("\"", dbEnclosedCharacter); ;
             alias + "_" + columnName;
         } else

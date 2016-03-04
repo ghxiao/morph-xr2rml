@@ -13,11 +13,9 @@ import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
-
-    this.properties = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")
-    this.mappingDocument = R2RMLMappingDocument("query_translator/mapping.ttl", properties, null)
+class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
     override def translate(op: Op): Option[MorphAbstractQuery] = { None }
 
@@ -28,11 +26,15 @@ class MorphBaseQueryTranslatorConcret extends MorphBaseQueryTranslator {
 
 class MorphBaseQueryTranslatorTest {
 
-    var queryTranslator = new MorphBaseQueryTranslatorConcret()
+    val factory = new MorphFactoryConcret
+    factory.properties = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")
+    factory.mappingDocument = R2RMLMappingDocument(factory.properties, null)
 
-    val tmMovies = queryTranslator.mappingDocument.getClassMappingsByName("Movies")
-    val tmDirectors = queryTranslator.mappingDocument.getClassMappingsByName("Directors")
-    val tmOther = queryTranslator.mappingDocument.getClassMappingsByName("Other")
+    var queryTranslator = new MorphQueryTranslatorConcret(factory)
+
+    val tmMovies = factory.mappingDocument.getClassMappingsByName("Movies")
+    val tmDirectors = factory.mappingDocument.getClassMappingsByName("Directors")
+    val tmOther = factory.mappingDocument.getClassMappingsByName("Other")
 
     @Test def test_genProjection() {
         println("------ test_genProjection")
@@ -205,7 +207,7 @@ class MorphBaseQueryTranslatorTest {
         assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
         assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
     }
-    
+
     @Test def test() {
         var s1 = NodeFactory.createVariable("x")
         var s2 = NodeFactory.createVariable("x")
@@ -221,7 +223,6 @@ class MorphBaseQueryTranslatorTest {
         println(s1 == o2)
         println(o1 == p2)
         println(p1 == s1)
-        
     }
 }
 

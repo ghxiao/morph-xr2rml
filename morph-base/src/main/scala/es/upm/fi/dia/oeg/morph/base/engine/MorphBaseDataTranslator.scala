@@ -1,30 +1,23 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
 import scala.collection.JavaConversions.asJavaIterator
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.AnonId
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
-abstract class MorphBaseDataTranslator(
-        val md: R2RMLMappingDocument,
-        val materializer: MorphBaseMaterializer,
-        val unfolder: MorphBaseUnfolder,
-        properties: MorphProperties) {
+abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -151,7 +144,7 @@ abstract class MorphBaseDataTranslator(
                         case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, languageTag)
                         case Constants.R2RML_BLANKNODE_URI => {
                             var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
-                            this.materializer.model.createResource(new AnonId(rep))
+                            factory.getMaterializer.model.createResource(new AnonId(rep))
                         }
                     }
                     Some(node)
@@ -163,20 +156,21 @@ abstract class MorphBaseDataTranslator(
 
     /**
      *  Create a JENA resource with an IRI after URL-encoding the string
-     *  
+     *
      * @throws MorphException
      */
     protected def createIRI(originalIRI: String) = {
+        val properties = factory.getProperties
         var resultIRI = originalIRI;
         try {
             resultIRI = GeneralUtility.encodeURI(resultIRI, properties.mapURIEncodingChars, properties.uriTransformationOperation);
-            if (this.properties.encodeUnsafeChars)
+            if (properties.encodeUnsafeChars)
                 resultIRI = GeneralUtility.encodeUnsafeChars(resultIRI);
 
-            if (this.properties.encodeReservedChars)
+            if (properties.encodeReservedChars)
                 resultIRI = GeneralUtility.encodeReservedChars(resultIRI);
 
-            this.materializer.model.createResource(resultIRI);
+            factory.getMaterializer.model.createResource(resultIRI);
         } catch {
             case e: Exception => {
                 val msg = "Error translating object uri value : " + resultIRI
@@ -188,7 +182,7 @@ abstract class MorphBaseDataTranslator(
 
     /**
      * Create a JENA literal resource with optional datatype and language tag
-     * 
+     *
      * @throws MorphException
      */
     protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
@@ -213,12 +207,12 @@ abstract class MorphBaseDataTranslator(
 
             val result: Literal =
                 if (language.isDefined)
-                    this.materializer.model.createLiteral(valueConverted, language.get);
+                    factory.getMaterializer.model.createLiteral(valueConverted, language.get);
                 else {
                     if (datatype.isDefined)
-                        this.materializer.model.createTypedLiteral(valueConverted, datatype.get);
+                        factory.getMaterializer.model.createTypedLiteral(valueConverted, datatype.get);
                     else
-                        this.materializer.model.createLiteral(valueConverted);
+                        factory.getMaterializer.model.createLiteral(valueConverted);
                 }
 
             result
@@ -232,11 +226,11 @@ abstract class MorphBaseDataTranslator(
     }
 
     /**
-     * Convert a list of RDFNodes into an RDF collection or container. 
+     * Convert a list of RDFNodes into an RDF collection or container.
      * The result is returned as a list with one element.
      *
      * If the list of nodes is empty, return an empty list, but no empty collection/container is returned.
-     * 
+     *
      * @throws MorphException
      */
     def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
@@ -247,22 +241,22 @@ abstract class MorphBaseDataTranslator(
 
         val translated: RDFNode = collecTermType match {
             case Constants.xR2RML_RDFLIST_URI => {
-                val node = this.materializer.model.createList(values.iterator)
-                this.materializer.model.add(node, RDF.`type`, RDF.List)
+                val node = factory.getMaterializer.model.createList(values.iterator)
+                factory.getMaterializer.model.add(node, RDF.`type`, RDF.List)
                 node
             }
             case Constants.xR2RML_RDFBAG_URI => {
-                var list = this.materializer.model.createBag()
+                var list = factory.getMaterializer.model.createBag()
                 for (value <- values) list.add(value)
                 list
             }
             case Constants.xR2RML_RDFALT_URI => {
-                val list = this.materializer.model.createAlt()
+                val list = factory.getMaterializer.model.createAlt()
                 for (value <- values) list.add(value)
                 list
             }
             case Constants.xR2RML_RDFSEQ_URI => {
-                val list = this.materializer.model.createSeq()
+                val list = factory.getMaterializer.model.createSeq()
                 for (value <- values) list.add(value)
                 list
             }

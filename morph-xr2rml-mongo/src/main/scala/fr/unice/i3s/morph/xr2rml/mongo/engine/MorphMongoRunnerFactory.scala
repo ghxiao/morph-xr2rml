@@ -1,15 +1,13 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import java.io.Writer
-
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
@@ -17,6 +15,8 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryResultProcessor
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 
 class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
 
@@ -25,7 +25,8 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     /**
      * Return a valid connection to the database or raises a runtime exception if anything goes wrong
      */
-    override def createConnection(props: MorphProperties): GenericConnection = {
+    override def createConnection: GenericConnection = {
+        val props = this.getProperties
         if (props.noOfDatabase == 0)
             throw new Exception("No database connection parameters found in the configuration.")
 
@@ -39,43 +40,23 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
         cnx
     }
 
-    override def createUnfolder(props: MorphProperties, md: R2RMLMappingDocument): MorphMongoUnfolder = {
-        val dbType = props.databaseType
-        val unfolder = new MorphMongoUnfolder(md, props)
-        unfolder.dbType = dbType
-        unfolder
+    override def createUnfolder: MorphMongoUnfolder = {
+        new MorphMongoUnfolder(this)
     }
 
-    override def createDataSourceReader(
-        md: R2RMLMappingDocument, properties: MorphProperties, connection: GenericConnection): MorphBaseDataSourceReader = {
-        val reader = new MorphMongoDataSourceReader(md, properties)
-        reader.setConnection(connection);
-        reader
+    override def createDataSourceReader: MorphBaseDataSourceReader = {
+        new MorphMongoDataSourceReader(this)
     }
 
-    override def createDataTranslator(
-        mappingDocument: R2RMLMappingDocument,
-        materializer: MorphBaseMaterializer,
-        unfolder: MorphBaseUnfolder,
-        dataSourceReader: MorphBaseDataSourceReader,
-        properties: MorphProperties): MorphBaseDataTranslator = {
-
-        new MorphMongoDataTranslator(
-            mappingDocument, materializer, unfolder.asInstanceOf[MorphMongoUnfolder], dataSourceReader, properties);
+    override def createDataTranslator: MorphBaseDataTranslator = {
+        new MorphMongoDataTranslator(this);
     }
 
-    override def createQueryTranslator(
-        properties: MorphProperties, md: R2RMLMappingDocument, dataSourceReader: MorphBaseDataSourceReader): MorphBaseQueryTranslator = {
-        new MorphMongoQueryTranslator(md)
+    override def createQueryTranslator: MorphBaseQueryTranslator = {
+        new MorphMongoQueryTranslator(this)
     }
 
-    override def createQueryResultProcessor(
-        properties: MorphProperties,
-        md: R2RMLMappingDocument,
-        dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator,
-        queryTranslator: MorphBaseQueryTranslator,
-        outputStream: Writer): MorphBaseQueryResultProcessor = {
-        new MorphMongoQueryResultProcessor(md, properties, dataSourceReader, dataTranslator.asInstanceOf[MorphMongoDataTranslator], outputStream)
+    override def createQueryResultProcessor: MorphBaseQueryResultProcessor = {
+        new MorphMongoQueryResultProcessor(this)
     }
 }

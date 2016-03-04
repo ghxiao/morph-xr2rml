@@ -13,7 +13,7 @@ import Zql.ZConstant
 import Zql.ZExpression
 import Zql.ZQuery
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
@@ -26,7 +26,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
@@ -37,8 +36,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import es.upm.fi.dia.oeg.morph.rdb.MorphRDBUtility
 
-class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
-        extends MorphBaseUnfolder(md, properties) {
+class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -62,8 +60,8 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * or an SQLQuery in case of a logical table with a query string
      *
      * @return instance of SQLFromItem or SQLQuery
+     * @throws MorphException
      */
-    @throws[MorphException]
     override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
 
@@ -102,8 +100,8 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
      * Return a list of select items corresponding to the columns referenced by the term map.
      * Nil in case of a constant-valued term-map, a list of one select item for a column-valued term map,
      * and a list of several select items for a template-valued term map.
+     * @throws MorphException
      */
-    @throws[MorphException]
     private def unfoldTermMap(termMap: R2RMLTermMap, logicalTableAlias: String): List[MorphSQLSelectItem] = {
 
         val result =
@@ -260,7 +258,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
                     for (refObjectMap <- pom.refObjectMaps) {
                         if (refObjectMap != null) {
 
-                            val parentTM = this.md.getParentTriplesMap(refObjectMap);
+                            val parentTM = factory.getMappingDocument.getParentTriplesMap(refObjectMap);
 
                             // Create an alias for the parent SQL query
                             val sqlParentLogSrc = this.unfoldLogicalSource(parentTM.logicalSource.asInstanceOf[xR2RMLLogicalSource]);
@@ -328,13 +326,13 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
         }
 
         try {
-            val sliceString = this.properties.mapDataTranslationLimits.find(_._1.equals(triplesMapId));
+            val sliceString = factory.getProperties.mapDataTranslationLimits.find(_._1.equals(triplesMapId));
             if (sliceString.isDefined) {
                 val sliceLong = sliceString.get._2.toLong;
                 result.setSlice(sliceLong);
             }
 
-            val offsetString = this.properties.mapDataTranslationOffsets.find(_._1.equals(triplesMapId));
+            val offsetString = factory.getProperties.mapDataTranslationOffsets.find(_._1.equals(triplesMapId));
             if (offsetString.isDefined) {
                 val offsetLong = offsetString.get._2.toLong;
                 result.setOffset(offsetLong);
@@ -347,32 +345,6 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
             }
         }
         result;
-    }
-
-    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap, subjectURI: String): ISqlQuery = {
-        val logicalTable = triplesMap.getLogicalSource().asInstanceOf[xR2RMLLogicalSource];
-        val subjectMap = triplesMap.subjectMap;
-        val predicateObjectMaps = triplesMap.predicateObjectMaps;
-        val triplesMapId = triplesMap.id;
-
-        val resultAux = this.unfoldTriplesMap(triplesMapId, logicalTable, subjectMap, predicateObjectMaps);
-        val result = if (subjectURI != null) {
-            val whereExpression = MorphRDBUtility.generateCondForWellDefinedURI(
-                subjectMap, triplesMap, subjectURI, logicalTable.alias);
-            if (whereExpression != null) {
-                resultAux.addWhere(whereExpression);
-                resultAux;
-            } else {
-                null;
-            }
-        } else {
-            resultAux;
-        }
-        result;
-    }
-
-    def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): ISqlQuery = {
-        this.unfoldTriplesMap(triplesMap, null);
     }
 
     /**
@@ -390,7 +362,7 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     /**
      * Entry point of the unfolder in the data materialization case
      */
-    override def unfoldConceptMapping(cm: R2RMLTriplesMap): GenericQuery = {
+    override def unfoldTriplesMap(cm: R2RMLTriplesMap): GenericQuery = {
 
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)
@@ -403,11 +375,11 @@ class MorphRDBUnfolder(md: R2RMLMappingDocument, properties: MorphProperties)
     }
 
     def unfoldMappingDocument() = {
-        val triplesMaps = this.md.triplesMaps
+        val triplesMaps = factory.getMappingDocument.triplesMaps
         val result = if (triplesMaps != null) {
             triplesMaps.flatMap(triplesMap => {
                 try {
-                    val triplesMapUnfolded = this.unfoldConceptMapping(triplesMap);
+                    val triplesMapUnfolded = this.unfoldTriplesMap(triplesMap);
                     Some(triplesMapUnfolded);
                 } catch {
                     case e: Exception => {
