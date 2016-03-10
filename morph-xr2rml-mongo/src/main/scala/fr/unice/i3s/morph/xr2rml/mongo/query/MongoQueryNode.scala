@@ -4,7 +4,8 @@ import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
- * Abstract class to describe MongoDB queries
+ * Abstract representation of a MongoDB query. This is used during query construction and
+ * optimization phases, and allows to generate concrete MongoDB queries.
  */
 abstract class MongoQueryNode {
 

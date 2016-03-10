@@ -118,7 +118,7 @@ class MorphAbstractQueryInnerJoinRef(
         val childResSets = child.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
         val childResultSet = childResSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
         if (logger.isDebugEnabled()) logger.debug()
-        
+
         // Execute the parent queries (in the parent triples map), apply the iterator, and make a UNION (flatMap) of the results
         val parentResultSet = {
             if (!pom.refObjectMaps.isEmpty) {
@@ -225,4 +225,9 @@ class MorphAbstractQueryInnerJoinRef(
         }
         terms.flatten // get rid of the None's (in case there was an exception)
     }
+
+    override def optimizeQuery: MorphAbstractQuery = {
+        throw new MorphException("Not umplemented")
+    }
+
 }

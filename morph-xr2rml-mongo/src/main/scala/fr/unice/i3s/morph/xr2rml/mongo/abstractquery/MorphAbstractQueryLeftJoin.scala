@@ -9,6 +9,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
  * Representation of the LEFT JOIN abstract query generated from two basic graph patterns.
@@ -132,4 +133,9 @@ class MorphAbstractQueryLeftJoin(
     private def getSharedVariables = {
         left.getVariables.intersect(right.getVariables)
     }
+
+    override def optimizeQuery: MorphAbstractQuery = {
+        throw new MorphException("Not umplemented")
+    }
+
 }

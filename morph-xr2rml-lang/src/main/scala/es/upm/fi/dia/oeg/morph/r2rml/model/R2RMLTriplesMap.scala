@@ -170,7 +170,7 @@ object R2RMLTriplesMap {
         val tm = new R2RMLTriplesMap(logSource, refFormulation, subjectMap, predicateObjectMaps.toSet);
         tm.resource = tmResource
         tm.name = tmResource.getLocalName();
-        logger.debug("Completed parsing triples map: " + tmResource.getLocalName())
+        if (logger.isTraceEnabled) logger.trace("Completed parsing triples map: " + tmResource.getLocalName())
         tm;
     }
 }

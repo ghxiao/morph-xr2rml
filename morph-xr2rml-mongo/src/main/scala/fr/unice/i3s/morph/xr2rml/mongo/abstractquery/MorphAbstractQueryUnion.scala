@@ -7,6 +7,7 @@ import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import org.apache.log4j.Logger
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
  * Representation of the UNION abstract query of several abstract queries
@@ -64,7 +65,7 @@ class MorphAbstractQueryUnion(
      *
      * @param dataSourceReader the data source reader to query the database
      * @param dataTrans the data translator to create RDF terms
-     * @return a list of MorphBaseResultRdfTerms instances, one for each result document of each member 
+     * @return a list of MorphBaseResultRdfTerms instances, one for each result document of each member
      * of the union query. May return an empty result but NOT null.
      */
     override def generateRdfTerms(
@@ -74,4 +75,9 @@ class MorphAbstractQueryUnion(
         logger.info("Generating RDF terms from union query below:\n" + this.toStringConcrete);
         members.flatMap(m => m.generateRdfTerms(dataSourceReader, dataTranslator))
     }
+
+    override def optimizeQuery: MorphAbstractQuery = {
+        throw new MorphException("Not umplemented")
+    }
+
 }

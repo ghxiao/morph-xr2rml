@@ -228,4 +228,8 @@ class MorphAbstractAtomicQuery(
         }
         terms.flatten // get rid of the None's (in case there was an exception)
     }
+
+    override def optimizeQuery: MorphAbstractQuery = {
+        throw new MorphException("Not umplemented")
+    }
 }

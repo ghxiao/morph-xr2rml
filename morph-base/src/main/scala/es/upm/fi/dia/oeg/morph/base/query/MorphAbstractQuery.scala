@@ -39,6 +39,8 @@ abstract class MorphAbstractQuery(
 
     //---- Abstract methods ----
 
+    override def toString: String
+
     /**
      * Check if atomic abstract queries within this query have a target query properly initialized
      * i.e. targetQuery is not empty
@@ -68,4 +70,9 @@ abstract class MorphAbstractQuery(
     def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms]
+
+    /**
+     * Misc optimizations of the abstract query, notation self-join eliminations
+     */
+    def optimizeQuery: MorphAbstractQuery
 }

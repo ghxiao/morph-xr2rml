@@ -9,6 +9,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
  * Representation of the INNER JOIN abstract query generated from two basic graph patterns.
@@ -93,7 +94,7 @@ class MorphAbstractQueryInnerJoin(
 
         val sharedVars = this.getSharedVariables
         if (sharedVars.isEmpty)
-            leftTriples ++ rightTriples	// no filtering if no common variable
+            leftTriples ++ rightTriples // no filtering if no common variable
         else {
             // For each variable x shared by both graph patterns, select the left and right triples
             // in which at least one term is bound to x, then join the documents on these terms.
@@ -124,5 +125,9 @@ class MorphAbstractQueryInnerJoin(
 
     private def getSharedVariables = {
         left.getVariables.intersect(right.getVariables)
+    }
+
+    override def optimizeQuery: MorphAbstractQuery = {
+        throw new MorphException("Not umplemented")
     }
 }

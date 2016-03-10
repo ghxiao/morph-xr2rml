@@ -31,8 +31,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     var dataTranslator: MorphBaseDataTranslator = null
 
-    var triplePatternBinder: MorphBaseTriplePatternBinder = null
-
     var queryTranslator: MorphBaseQueryTranslator = null
 
     var queryResultProcessor: MorphBaseQueryResultProcessor = null

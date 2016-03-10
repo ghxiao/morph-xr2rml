@@ -10,7 +10,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 /**
  * This class is used as a simple encapsulation of an SQL query in the RDB case, because the original SPARQL-to-SQL query
  * translation method from Morph-RDB has not been updated to deal with abstract queries.
- * Therefore all functions below thrown an exception. Only the targetQuery is used in this class. 
+ * Therefore all functions below thrown an exception. Only the targetQuery is used in this class.
  */
 class MorphAbstractQuerySql extends MorphAbstractQuery(None) {
 
@@ -52,4 +52,9 @@ class MorphAbstractQuerySql extends MorphAbstractQuery(None) {
         throw new MorphException("Not supported")
     }
 
+    override def optimizeQuery: MorphAbstractQuery = {
+        throw new MorphException("Not umplemented")
+    }
+
+    override def toString: String = { this.toString }
 }
