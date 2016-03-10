@@ -239,11 +239,11 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     val jc = rom.joinConditions.toIterable.head // assume only one join condition. @TODO
 
                     // If there is an equality condition, in the child query, about the child reference of the join condition, 
-                    // then we can set the same equality condition on the parent reference since child/childRef == parent/parentRef
+                    // then we can set the same equality condition on the parent reference in the parent query since child/childRef == parent/parentRef
                     val eqChild = where.filter(w => (w.condType == ConditionType.Equals) && (w.reference == jc.childRef))
                     if (!eqChild.isEmpty) {
                         val eqParent = MorphBaseQueryCondition.equality(jc.parentRef, eqChild.head.eqValue.toString)
-                        if (logger.isTraceEnabled) logger.trace("Copying equality condition on child ref to parent ref: " + eqParent)
+                        if (logger.isDebugEnabled) logger.debug("Copying equality condition on child ref to parent ref: " + eqParent)
                         Pwhere = Pwhere :+ eqParent
                     }
                     val q2 = new MorphAbstractAtomicQuery(None, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 

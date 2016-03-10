@@ -55,6 +55,4 @@ class MorphAbstractQuerySql extends MorphAbstractQuery(None) {
     override def optimizeQuery: MorphAbstractQuery = {
         throw new MorphException("Not umplemented")
     }
-
-    override def toString: String = { this.toString }
 }

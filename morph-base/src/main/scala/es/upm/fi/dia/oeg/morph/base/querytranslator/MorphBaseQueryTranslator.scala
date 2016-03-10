@@ -25,9 +25,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
     val properties = factory.getProperties
-    
+
     val optimizer = new MorphBaseQueryOptimizer()
-    
+
     optimizer.selfJoinElimination = properties.selfJoinElimination;
     optimizer.subQueryElimination = properties.subQueryElimination;
     optimizer.transJoinSubQueryElimination = properties.transJoinSubQueryElimination;
@@ -169,10 +169,10 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             if (termMap.isReferenceOrTemplateValued)
                 if (tpTerm.isVariable)
                     // Add a not-null condition for each reference in the term map
-                    conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+                    conditions = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
                 else if (tpTerm.isURI) {
                     // Add an equality condition for each reference in the term map
-                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
+                    conditions = genEqualityConditions(termMap, tpTerm)
                 }
         }
         { // === Predicate map ===
@@ -180,12 +180,19 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             val termMap = tm.predicateObjectMaps.head.predicateMaps.head
 
             if (termMap.isReferenceOrTemplateValued)
-                if (tpTerm.isVariable)
+                if (tpTerm.isVariable) {
                     // Add a not-null condition for each reference in the term map
-                    conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                else if (tpTerm.isURI)
+                    val cond = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+                    cond.foreach(c => {
+                        if (!conditions.contains(c)) conditions = conditions :+ c
+                    })
+                } else if (tpTerm.isURI) {
                     // Add an equality condition for each reference in the term map
-                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
+                    val cond = genEqualityConditions(termMap, tpTerm)
+                    cond.foreach(c => {
+                        if (!conditions.contains(c)) conditions = conditions :+ c
+                    })
+                }
         }
         { // === Object map ===
             val tpTerm = tp.getObject
@@ -196,21 +203,31 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                 if (!pom.hasObjectMap)
                     throw new MorphException("Triples map " + tm + " has no object map. Presumably an inccorect triple pattern binding.")
                 val termMap = pom.objectMaps.head
-                if (termMap.isReferenceOrTemplateValued)
-                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
+                if (termMap.isReferenceOrTemplateValued) {
+                    val cond = genEqualityConditions(termMap, tpTerm)
+                    cond.foreach(c => {
+                        if (!conditions.contains(c)) conditions = conditions :+ c
+                    })
+                }
 
             } else if (tpTerm.isURI) {
 
                 if (pom.hasRefObjectMap) {
                     val rom = pom.getRefObjectMap(0)
                     // Add non-null condition on the child reference 
-                    for (jc <- rom.joinConditions)
-                        conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.childRef)
+                    for (jc <- rom.joinConditions) {
+                        val cond = MorphBaseQueryCondition.notNull(jc.childRef)
+                        if (!conditions.contains(cond)) conditions = conditions :+ cond
+                    }
                 } else {
                     // tp.obj is a constant IRI and there is no RefObjectMap: add an equality condition for each reference in the term map
                     val termMap = pom.objectMaps.head
-                    if (termMap.isReferenceOrTemplateValued)
-                        conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
+                    if (termMap.isReferenceOrTemplateValued) {
+                        val cond = genEqualityConditions(termMap, tpTerm)
+                        cond.foreach(c => {
+                            if (!conditions.contains(c)) conditions = conditions :+ c
+                        })
+                    }
                 }
 
             } else if (tpTerm.isVariable) {
@@ -218,13 +235,19 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                 if (pom.hasRefObjectMap) {
                     val rom = pom.getRefObjectMap(0)
                     // Add non-null condition on the child reference 
-                    for (jc <- rom.joinConditions)
-                        conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.childRef)
+                    for (jc <- rom.joinConditions) {
+                        val cond = MorphBaseQueryCondition.notNull(jc.childRef)
+                        if (!conditions.contains(cond)) conditions = conditions :+ cond
+                    }
                 } else {
                     // tp.obj is a Variable and there is no RefObjectMap: add a non-null condition for each reference in the term map
                     val termMap = pom.objectMaps.head
-                    if (termMap.isReferenceOrTemplateValued)
-                        conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+                    if (termMap.isReferenceOrTemplateValued) {
+                        val cond = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+                        cond.foreach(c => {
+                            if (!conditions.contains(c)) conditions = conditions :+ c
+                        })
+                    }
                 }
             }
         }
@@ -259,23 +282,35 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             // add an equality condition for each reference in the subject map of the parent TM
             val rom = pom.getRefObjectMap(0)
             val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
-            if (parentSM.isReferenceOrTemplateValued)
-                conditions = conditions ++ genEqualityConditions(parentSM, tpTerm)
+            if (parentSM.isReferenceOrTemplateValued) {
+                val cond = genEqualityConditions(parentSM, tpTerm)
+                cond.foreach(c => {
+                    if (!conditions.contains(c)) conditions = conditions :+ c
+                })
+            }
 
             // Add non-null condition on the parent reference
-            for (jc <- rom.joinConditions)
-                conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.parentRef)
+            for (jc <- rom.joinConditions) {
+                val cond = MorphBaseQueryCondition.notNull(jc.parentRef)
+                if (!conditions.contains(cond)) conditions = conditions :+ cond
+            }
 
         } else if (tpTerm.isVariable) {
             // tp.obj is a SPARQL variable to be matched with the subject of the parent TM
             val rom = pom.getRefObjectMap(0)
             val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
-            if (parentSM.isReferenceOrTemplateValued)
-                conditions = conditions ++ parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+            if (parentSM.isReferenceOrTemplateValued) {
+                val cond = parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+                cond.foreach(c => {
+                    if (!conditions.contains(c)) conditions = conditions :+ c
+                })
+            }
 
             // Add non-null condition on the parent reference
-            for (jc <- rom.joinConditions)
-                conditions = conditions :+ MorphBaseQueryCondition.notNull(jc.parentRef)
+            for (jc <- rom.joinConditions) {
+                val cond = MorphBaseQueryCondition.notNull(jc.parentRef)
+                if (!conditions.contains(cond)) conditions = conditions :+ cond
+            }
         }
 
         if (logger.isDebugEnabled()) logger.debug("Translation returns Parent conditions: " + conditions)
