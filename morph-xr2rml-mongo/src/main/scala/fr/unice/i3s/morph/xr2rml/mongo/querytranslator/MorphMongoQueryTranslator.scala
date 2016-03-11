@@ -51,7 +51,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
     val triplePatternBinder: MorphBaseTriplePatternBinder = new MorphBaseTriplePatternBinder(factory)
-    
+
     override val logger = Logger.getLogger(this.getClass());
 
     /**
@@ -79,16 +79,25 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
 
         // Translate the SPARQL query into an abstract query
         val emptyBindings = bindings.filter(b => b._2.bound.isEmpty)
-        if (bindings.isEmpty || ! emptyBindings.isEmpty) {
+        if (bindings.isEmpty || !emptyBindings.isEmpty) {
             logger.warn("Could not find bindings for all triple patterns of the query:\n" + bindings)
             None
         } else {
-            val res = translateSparqlQuery(bindings, op)
+            var res = translateSparqlQuery(bindings, op)
 
-            // Translate the atomic abstract queries into concrete MongoDB queries
             if (res.isDefined) {
-                res.get.translateAtomicAbstactQueriesToConcrete(this)
-                Some(res.get)
+                // Optimize the abstract query
+                var absq = res.get
+                if (properties.selfJoinElimination)
+                    absq = absq.optimizeQuery
+                    
+                    if (absq != res.get) {
+                        logger.info("Abstract query BEFORE optimization:\n" + res.get)
+                        logger.info("Abstract query AFTER optimization:\n" + absq)
+                    }
+                // Translate the atomic abstract queries into concrete MongoDB queries
+                absq.translateAtomicAbstactQueriesToConcrete(this)
+                Some(absq)
             } else
                 throw new MorphException("Error: cannot translate SPARQL query to an abstract query")
         }

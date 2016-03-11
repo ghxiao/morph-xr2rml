@@ -23,11 +23,11 @@ class MorphAbstractQueryUnion(
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def toString = {
-        "[" + members.mkString("\n] UNION [\n") + "]"
+        "[" + members.mkString("\n] UNION [\n") + "\n]"
     }
 
     override def toStringConcrete: String = {
-        "[" + members.map(q => q.toStringConcrete).mkString("\n] UNION [\n") + "]"
+        "[" + members.map(q => q.toStringConcrete).mkString("\n] UNION [\n") + "\n]"
     }
 
     /**
@@ -76,8 +76,13 @@ class MorphAbstractQueryUnion(
         members.flatMap(m => m.generateRdfTerms(dataSourceReader, dataTranslator))
     }
 
+    /**
+     * Optimize the members of the union
+     */
     override def optimizeQuery: MorphAbstractQuery = {
-        throw new MorphException("Not umplemented")
+
+        val membersOpt = members.map(_.optimizeQuery)
+        new MorphAbstractQueryUnion(membersOpt)
     }
 
 }

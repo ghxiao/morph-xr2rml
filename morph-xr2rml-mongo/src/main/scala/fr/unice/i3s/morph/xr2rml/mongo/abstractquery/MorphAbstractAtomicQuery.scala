@@ -57,8 +57,9 @@ class MorphAbstractAtomicQuery(
                 from.getValue
 
         val tripleStr = if (triples.nonEmpty) " triple : " + triples + "\n " else ""
+        val boundTMStr = if (boundTriplesMap.isDefined) " boundTM: " + boundTriplesMap.get.toString + "\n " else ""
 
-        "{" + tripleStr +
+        "{" + tripleStr + boundTMStr + 
             " from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }"
@@ -174,7 +175,7 @@ class MorphAbstractAtomicQuery(
             // Execute the queries of tagetQuery and make a UNION (flatMap) of all the results
             val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
             val resultSet = resSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
-            logger.info("Query returned " + resultSet.size + " results.");
+            logger.info("Query returned " + resultSet.size + " results.")
 
             // Main loop: iterate and process each result document of the result set
             var i = 0;
@@ -234,8 +235,11 @@ class MorphAbstractAtomicQuery(
         })
     }
 
+    /**
+     * An atomic query cannot be optimized. return self
+     */
     override def optimizeQuery: MorphAbstractQuery = {
-        throw new MorphException("Not umplemented")
+        this
     }
 
     /**
@@ -271,7 +275,7 @@ class MorphAbstractAtomicQuery(
 
         var result: Option[MorphAbstractAtomicQuery] = None
         val left = this
-        var canMerge = (left.from == right.from && left.triples == right.triples)
+        var canMerge = (left.from == right.from)
         if (canMerge) {
             val sharedVars = left.getVariables.intersect(right.getVariables)
             canMerge = sharedVars.nonEmpty
@@ -288,7 +292,7 @@ class MorphAbstractAtomicQuery(
                 if (canMerge) {
                     var mergedWhere = left.where ++ right.where
                     var mergedProj = left.project ++ right.project
-                    result = Some(new MorphAbstractAtomicQuery(triples, boundTriplesMap, from, mergedProj, mergedWhere))
+                    result = Some(new MorphAbstractAtomicQuery(left.triples ++ right.triples, boundTriplesMap, from, mergedProj, mergedWhere))
                 }
             }
         }

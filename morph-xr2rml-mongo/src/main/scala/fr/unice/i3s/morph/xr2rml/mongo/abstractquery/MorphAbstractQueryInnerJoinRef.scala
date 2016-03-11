@@ -227,8 +227,15 @@ class MorphAbstractQueryInnerJoinRef(
         terms.flatten // get rid of the None's (in case there was an exception)
     }
 
+    /**
+     * Optimize the child and parent queries and try to merge them
+     */
     override def optimizeQuery: MorphAbstractQuery = {
-        throw new MorphException("Not umplemented")
+        val opt = child.mergeWithAbstractAtmoicQuery(parent)
+        if (opt.isDefined)
+            opt.get
+        else
+            this
     }
 
 }

@@ -127,7 +127,19 @@ class MorphAbstractQueryInnerJoin(
         left.getVariables.intersect(right.getVariables)
     }
 
+
+    /**
+     * Optimize left and right members and try to merge them if they are atomic queries  
+     */
     override def optimizeQuery: MorphAbstractQuery = {
-        throw new MorphException("Not umplemented")
+        
+        val leftOpt = left.optimizeQuery
+        val rightOpt = right.optimizeQuery
+        if (leftOpt.isInstanceOf[MorphAbstractAtomicQuery] && rightOpt.isInstanceOf[MorphAbstractAtomicQuery]) {
+            val opt = leftOpt.asInstanceOf[MorphAbstractAtomicQuery].mergeWithAbstractAtmoicQuery(rightOpt.asInstanceOf[MorphAbstractAtomicQuery])
+            if (opt.isDefined) return opt.get
+        }
+
+        new MorphAbstractQueryInnerJoin(leftOpt, rightOpt)
     }
 }

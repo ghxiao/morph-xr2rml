@@ -16,16 +16,18 @@ prefix taxrefhab: <http://inpn.mnhn.fr/taxref/habitat#>
 prefix taxrefbgs: <http://inpn.mnhn.fr/taxref/bioGeoStatus#>
 prefix taxrefprop: <http://inpn.mnhn.fr/taxref/properties/>
 
-SELECT ?p ?a
+SELECT *
 WHERE {
-    # <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ?p ?x .
-    # <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skos:broader ?u .
+    #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ?p ?x .
+    #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skos:broader ?u .
 
-    <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:prefLabel ?p .
-    OPTIONAL { <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:altLabel ?a . }
+    #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:prefLabel ?p .
+    #OPTIONAL { <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:altLabel ?a . }
     
-    # ?t taxrefprop:bioGeoStatusIn ?bgs .
-    # ?bgs 
-    #     dct:spatial <http://sws.geonames.org/3424932/> ; # Saint-Pierre-Et-Miquelon
-    #     dwc:occurrenceStatus taxrefbgs:C . # Cryptogène
+    ?t taxrefprop:bioGeoStatusIn ?bgs . 
+    ?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
+    { ?bgs dwc:occurrenceStatus taxrefbgs:C . } # Cryptogene
+    UNION
+    { ?bgs dwc:occurrenceStatus taxrefbgs:E . } # Endemic
+    
 }
