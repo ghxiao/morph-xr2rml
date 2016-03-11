@@ -60,8 +60,8 @@ class MorphAbstractQueryLeftJoin(
     /**
      * Return the list of SPARQL variables projected in this abstract query
      */
-    override def getVariables: List[String] = {
-        (left.getVariables ++ right.getVariables).sortWith(_ < _).distinct
+    override def getVariables: Set[String] = {
+        (left.getVariables ++ right.getVariables)
     }
 
     /**
@@ -130,7 +130,7 @@ class MorphAbstractQueryLeftJoin(
         }
     }
 
-    private def getSharedVariables = {
+    private def getSharedVariables:Set[String] = {
         left.getVariables.intersect(right.getVariables)
     }
 

@@ -244,7 +244,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     if (!eqChild.isEmpty) {
                         val eqParent = MorphBaseQueryCondition.equality(jc.parentRef, eqChild.head.eqValue.toString)
                         if (logger.isDebugEnabled) logger.debug("Copying equality condition on child ref to parent ref: " + eqParent)
-                        Pwhere = Pwhere :+ eqParent
+                        Pwhere = Pwhere + eqParent
                     }
                     val q2 = new MorphAbstractAtomicQuery(None, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
                     new MorphAbstractQueryInnerJoinRef(tp, Some(tm), q1, jc.childRef, q2, jc.parentRef)
@@ -283,7 +283,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      */
     def mongoAbstractQuerytoConcrete(
         from: MongoDBQuery,
-        project: List[MorphBaseQueryProjection],
+        project: Set[MorphBaseQueryProjection],
         absQuery: MongoQueryNode): List[MongoDBQuery] = {
 
         // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query

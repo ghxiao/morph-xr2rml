@@ -55,8 +55,8 @@ class MorphAbstractQueryUnion(
     /**
      * Return the list of SPARQL variables projected in all the abstract queries of this UNION query
      */
-    override def getVariables: List[String] = {
-        members.flatMap(m => m.getVariables).sortWith(_ < _).distinct
+    override def getVariables: Set[String] = {
+        members.flatMap(m => m.getVariables).toSet
     }
 
     /**

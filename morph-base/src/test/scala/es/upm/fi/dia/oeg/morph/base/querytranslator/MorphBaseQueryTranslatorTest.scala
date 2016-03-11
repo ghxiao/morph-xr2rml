@@ -46,8 +46,8 @@ class MorphBaseQueryTranslatorTest {
         var tp = Triple.create(s, p, o)
         var proj = queryTranslator.genProjection(tp, tmMovies)
         println(proj)
-        assertEquals(List("$.code"), proj(0).references)
-        assertEquals("?x", proj(0).as.get)
+        assertEquals(Set("$.code"), proj.head.references)
+        assertEquals("?x", proj.head.as.get)
 
         // Triple pattern: ex:movieY ex:starring ?y
         s = NodeFactory.createURI("http://example.org/movieY")
@@ -56,8 +56,8 @@ class MorphBaseQueryTranslatorTest {
         tp = Triple.create(s, p, o)
         proj = queryTranslator.genProjection(tp, tmMovies)
         println(proj)
-        assertEquals(List("$.actors.*"), proj(0).references)
-        assertEquals("?y", proj(0).as.get)
+        assertEquals(Set("$.actors.*"), proj.head.references)
+        assertEquals("?y", proj.head.as.get)
 
         // Triple pattern: ex:movieY ?p "T. Leung" - projection of a constant term map
         s = NodeFactory.createURI("http://example.org/movieY")
@@ -66,8 +66,8 @@ class MorphBaseQueryTranslatorTest {
         tp = Triple.create(s, p, o)
         proj = queryTranslator.genProjection(tp, tmMovies)
         println(proj)
-        assertEquals(List("http://example.org/starring"), proj(0).references)
-        assertEquals("?p", proj(0).as.get)
+        assertEquals(Set("http://example.org/starring"), proj.head.references)
+        assertEquals("?p", proj.head.as.get)
 
         // Triple pattern: ?x ?p ?y
         s = NodeFactory.createVariable("x")
@@ -76,12 +76,12 @@ class MorphBaseQueryTranslatorTest {
         tp = Triple.create(s, p, o)
         proj = queryTranslator.genProjection(tp, tmOther)
         println(proj)
-        assertTrue(proj(0).references.contains("$.code"))
-        assertEquals("?x", proj(0).as.get)
-        assertTrue(proj(1).references.contains("$.relation.prop"))
-        assertEquals("?p", proj(1).as.get)
-        assertTrue(proj(2).references.contains("$.relation.actors.*"))
-        assertEquals("?y", proj(2).as.get)
+        assertTrue(proj.head.references.contains("$.code"))
+        assertEquals("?x", proj.head.as.get)
+        assertTrue(proj.tail.head.references.contains("$.relation.prop"))
+        assertEquals("?p", proj.tail.head.as.get)
+        assertTrue(proj.tail.tail.head.references.contains("$.relation.actors.*"))
+        assertEquals("?y", proj.tail.tail.head.as.get)
     }
 
     @Test def test_genProjection_RefObjectMap() {
@@ -95,13 +95,13 @@ class MorphBaseQueryTranslatorTest {
 
         var proj = queryTranslator.genProjection(tp, tmDirectors)
         println(proj)
-        assertTrue(proj(0).references.contains("$.name"))
-        assertEquals("?x", proj(0).as.get)
-        assertFalse(proj(0).references.contains("$.dirname"))
+        assertTrue(proj.head.references.contains("$.name"))
+        assertEquals("?x", proj.head.as.get)
+        assertFalse(proj.head.references.contains("$.dirname"))
 
-        assertTrue(proj(1).references.contains("$.directed.*"))
-        assertEquals(None, proj(1).as)
-        assertFalse(proj(1).references.contains("$.code"))
+        assertTrue(proj.tail.head.references.contains("$.directed.*"))
+        assertEquals(None, proj.tail.head.as)
+        assertFalse(proj.tail.head.references.contains("$.code"))
     }
 
     @Test def test_genProjectionParent() {
@@ -115,12 +115,12 @@ class MorphBaseQueryTranslatorTest {
 
         var proj = queryTranslator.genProjectionParent(tp, tmDirectors)
         println(proj)
-        assertFalse(proj(0).references.contains("$.name"))
-        assertFalse(proj(0).references.contains("$.directed.*"))
-        assertFalse(proj(0).references.contains("$.code"))
+        assertFalse(proj.head.references.contains("$.name"))
+        assertFalse(proj.head.references.contains("$.directed.*"))
+        assertFalse(proj.head.references.contains("$.code"))
 
-        assertTrue(proj(0).references.contains("$.dirname"))
-        assertEquals(None, proj(0).as)
+        assertTrue(proj.head.references.contains("$.dirname"))
+        assertEquals(None, proj.head.as)
     }
 
     @Test def test_genCond_equalsLiteral() {

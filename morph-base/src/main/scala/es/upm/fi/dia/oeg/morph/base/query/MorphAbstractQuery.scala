@@ -52,9 +52,9 @@ abstract class MorphAbstractQuery(
     def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit
 
     /**
-     * Return the list of SPARQL variables projected in this abstract query
+     * Return the set of SPARQL variables projected in this abstract query
      */
-    def getVariables: List[String]
+    def getVariables: Set[String]
 
     /**
      * Execute the query and produce the RDF terms for each of the result documents

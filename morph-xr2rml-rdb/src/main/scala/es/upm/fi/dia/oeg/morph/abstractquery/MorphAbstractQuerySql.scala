@@ -33,7 +33,7 @@ class MorphAbstractQuerySql extends MorphAbstractQuery(None) {
     /**
      * Return the list of SPARQL variables projected in this abstract query
      */
-    override def getVariables: List[String] = {
+    override def getVariables: Set[String] = {
         throw new MorphException("Not supported")
     }
 

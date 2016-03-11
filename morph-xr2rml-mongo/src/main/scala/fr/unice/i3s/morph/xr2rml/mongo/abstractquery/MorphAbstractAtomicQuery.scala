@@ -28,7 +28,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
- * @param triple the triple pattern for which we create this atomic query
+ * @param triple the triple pattern for which we create this atomic query. None in the case
+ * of a a parent query in a referencing object map
  * @param boundTriplesMap the triples map, bound to the triple pattern, from which this query is derived
  * @param from consists of the triples map logical source
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
@@ -41,8 +42,8 @@ class MorphAbstractAtomicQuery(
     val triple: Option[Triple],
     boundTriplesMap: Option[R2RMLTriplesMap],
     val from: xR2RMLLogicalSource,
-    val project: List[MorphBaseQueryProjection],
-    val where: List[MorphBaseQueryCondition])
+    val project: Set[MorphBaseQueryProjection],
+    val where: Set[MorphBaseQueryCondition])
 
         extends MorphAbstractQuery(boundTriplesMap) {
 
@@ -55,7 +56,8 @@ class MorphAbstractAtomicQuery(
             else
                 from.getValue
 
-        "{ from   :  " + fromStr + "\n" +
+        "{ triple : " + triple + "\n" + 
+        	"  from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }"
     }
@@ -79,7 +81,7 @@ class MorphAbstractAtomicQuery(
         if (logger.isDebugEnabled()) logger.debug("Translating conditions:" + whereConds)
 
         // Generate one abstract MongoDB query for each isNotNull and Equality condition
-        val mongAbsQs: List[MongoQueryNode] = whereConds.map(cond => {
+        val mongAbsQs: Set[MongoQueryNode] = whereConds.map(cond => {
             // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
             val iter = this.from.docIterator
             val reference =
@@ -98,8 +100,8 @@ class MorphAbstractAtomicQuery(
 
         // If there are several queries (more than 1), encapsulate them under a top-level AND
         val mongAbsQ =
-            if (mongAbsQs.size > 1) new MongoQueryNodeAnd(mongAbsQs)
-            else mongAbsQs(0)
+            if (mongAbsQs.size > 1) new MongoQueryNodeAnd(mongAbsQs.toList)
+            else mongAbsQs.head
         if (logger.isDebugEnabled())
             logger.debug("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
 
@@ -118,10 +120,10 @@ class MorphAbstractAtomicQuery(
     override def isTargetQuerySet: Boolean = { !targetQuery.isEmpty }
 
     /**
-     * Return the list of SPARQL variables projected in this abstract query
+     * Return the set of SPARQL variables projected in this abstract query
      */
-    override def getVariables: List[String] = {
-        project.filter(_.as.isDefined).map(_.as.get).sortWith(_ < _).distinct
+    override def getVariables: Set[String] = {
+        project.filter(_.as.isDefined).map(_.as.get)
     }
 
     /**
@@ -231,5 +233,62 @@ class MorphAbstractAtomicQuery(
 
     override def optimizeQuery: MorphAbstractQuery = {
         throw new MorphException("Not umplemented")
+    }
+
+    /**
+     * Merge this atomic abstract query with another one in order to perform self-join elimination.
+     * This is allowed if and only if:
+     * (i) they have the same from (the logical source),
+     * (ii) they have at least one shared variable (on which the join is to be done),
+     * (iii) the shared variables are projected as the same xR2RML reference(s) in both queries.
+     *
+     * Example 1: if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
+     * then they need to project the same reference as ?x: "$.fieldName AS ?x".
+     * If we have "$.field1 AS ?x" in Q1 "$.field2 AS ?x" is Q2, then this is not a self-join,
+     * on the contrary this is a legitimate join.
+     *
+     * Example 2:
+     * If Q1 and Q2 have the same logical source, and
+     * Q1 has projections "$.a AS ?x", "$.b AS ?x",
+     * Q2 has projections "$.a AS ?x", "$.c AS ?x"
+     * then this is a proper self join. 
+     * => for each shared variable ?x, there should be at least one common projection of ?x.
+     * 
+     * Note that the same variable can be projected several times, e.g. when the same variable is used 
+     * several times in a triple pattern e.g.: ?x :predicate ?x.
+     * Besides a projection can contain several references in case the variable is matched with a template
+     * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
+     * Set($.ref1, $.ref2.*) AS ?x => in that case, we must have the same projection in the second query
+     * for the merge to be possible.
+     * 
+     * @param right the right query of the join
+     * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
+     */
+    def mergeWithAbstractAtmoicQuery(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+
+        var result: Option[MorphAbstractAtomicQuery] = None
+        val left = this
+        var canMerge = (left.from == right.from && left.triple == right.triple)
+        if (canMerge) {
+            val sharedVars = left.getVariables.intersect(right.getVariables)
+            canMerge = sharedVars.nonEmpty
+            if (canMerge) {
+                sharedVars.foreach(x => {
+                    // Get the references corresponding to the variable ?x in each query.
+                    // In a template there may be several references for one variable, e.g. ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}"
+                    // In that case, the merge is possible iif ?x is bound to Set($.ref1, $.ref2.*) in both queries
+                    val leftRefs = left.project.filter(_.as.get == x).map(_.references)
+                    val rightRefs = right.project.filter(_.as.get == x).map(_.references)
+                    canMerge = canMerge && leftRefs.intersect(rightRefs).nonEmpty
+                })
+
+                if (canMerge) {
+                    var mergedWhere = left.where ++ right.where
+                    var mergedProj = left.project ++ right.project
+                    result = Some(new MorphAbstractAtomicQuery(triple, boundTriplesMap, from, mergedProj, mergedWhere))
+                }
+            }
+        }
+        result
     }
 }

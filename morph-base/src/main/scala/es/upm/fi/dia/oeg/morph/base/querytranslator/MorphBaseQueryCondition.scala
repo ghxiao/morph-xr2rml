@@ -10,7 +10,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * typically the column name or JSONPath expression
  * @param condType The type of condition
  * @param eqValue value in case of an equality condition. Ignored in another condition type
- * 
+ *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
 class MorphBaseQueryCondition(
@@ -27,10 +27,10 @@ class MorphBaseQueryCondition(
     }
 
     override def equals(a: Any): Boolean = {
-        if (a.isInstanceOf[MorphBaseQueryCondition]) {
-            val m = a.asInstanceOf[MorphBaseQueryCondition]
-            this.reference == m.reference && this.condType == m.condType && this.eqValue == m.eqValue
-        } else false
+        a.isInstanceOf[MorphBaseQueryCondition] && {
+            val c = a.asInstanceOf[MorphBaseQueryCondition]
+            this.reference == c.reference && this.condType == c.condType && this.eqValue == c.eqValue
+        }
     }
 }
 

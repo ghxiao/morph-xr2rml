@@ -60,8 +60,8 @@ class MorphAbstractQueryInnerJoin(
     /**
      * Return the list of SPARQL variables projected in this abstract query
      */
-    override def getVariables: List[String] = {
-        (left.getVariables ++ right.getVariables).sortWith(_ < _).distinct
+    override def getVariables: Set[String] = {
+        (left.getVariables ++ right.getVariables)
     }
 
     /**

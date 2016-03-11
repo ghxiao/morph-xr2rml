@@ -46,7 +46,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      *
      * @param sparqlQuery the SPARQL query to translate
      * @return a MorphAbstractQuery instance in which the targetQuery parameter has been set with
-     * a list containing a set of concrete queries. In the RDB case there is only one query.
+     * a set containing a set of concrete queries. In the RDB case there is only one query.
      * In the MongoDB case there may be several queries, which means a union of the results of all queries.
      * The result is None in case an error occurred.
      */
@@ -73,52 +73,52 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery
 
     /**
-     * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.
+     * Generate the set of xR2RML references that are evaluated when generating the triples that match tp.
      * Those references are used to select the data elements to mention in the projection part of the
      * target database query.
      *
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return list of projections
+     * @return set of projections
      * @throws MorphException if the triples map has no object map
      */
-    def genProjection(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryProjection] = {
+    def genProjection(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryProjection] = {
 
-        var listRefs: List[MorphBaseQueryProjection] = List.empty
+        var refs: Set[MorphBaseQueryProjection] = Set.empty
 
         if (tp.getSubject().isVariable())
-            listRefs = listRefs :+ new MorphBaseQueryProjection(tm.subjectMap.getReferences, Some(tp.getSubject.toString))
+            refs = refs + new MorphBaseQueryProjection(tm.subjectMap.getReferences.toSet, Some(tp.getSubject.toString))
 
         val pom = tm.getPropertyMappings.head
         if (tp.getPredicate().isVariable())
-            listRefs = listRefs :+ new MorphBaseQueryProjection(pom.predicateMaps.head.getReferences, Some(tp.getPredicate.toString))
+            refs = refs + new MorphBaseQueryProjection(pom.predicateMaps.head.getReferences.toSet, Some(tp.getPredicate.toString))
 
         if (pom.hasRefObjectMap) {
             // The joined fields must always be projected, whether tp.obj is an IRI or a variable.
             // Useless for an RDB, but necessary for MongoDB since it cannot compute joins itself.
             val rom = pom.getRefObjectMap(0)
             for (jc <- rom.joinConditions)
-                listRefs = listRefs :+ new MorphBaseQueryProjection(jc.childRef)
+                refs = refs + new MorphBaseQueryProjection(jc.childRef)
         } else if (tp.getObject().isVariable()) {
-            listRefs = listRefs :+ new MorphBaseQueryProjection(pom.objectMaps.head.getReferences, Some(tp.getObject.toString))
+            refs = refs + new MorphBaseQueryProjection(pom.objectMaps.head.getReferences.toSet, Some(tp.getObject.toString))
         }
-        listRefs
+        refs
     }
 
     /**
-     * Generate the list of xR2RML references that are evaluated when generating the triples that match tp.
+     * Generate the set of xR2RML references that are evaluated when generating the triples that match tp.
      * Those references are used to select the data elements to mention in the projection part of the
      * target database query.
      * This version applies to the parent triples map of a relation child/parent triples map.
      *
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
-     * @return list of projections
+     * @return set of projections
      * @thrown MorphException if the triples map has no referencing object map
      */
-    def genProjectionParent(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryProjection] = {
+    def genProjectionParent(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryProjection] = {
 
-        var listRefs: List[MorphBaseQueryProjection] = List.empty
+        var refs: Set[MorphBaseQueryProjection] = Set.empty
 
         val pom = tm.getPropertyMappings.head
         if (!pom.hasRefObjectMap)
@@ -128,16 +128,16 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
         // cannot compute joins, the xR2RML processor has to do it, thus joined fields must be returned by both queries.
         val rom = pom.getRefObjectMap(0)
         for (jc <- rom.joinConditions) {
-            listRefs = listRefs :+ new MorphBaseQueryProjection(jc.parentRef)
+            refs = refs + new MorphBaseQueryProjection(jc.parentRef)
         }
 
         // In addition, if tp.obj is a variable, the subject of the parent TM must be projected too.
         if (tp.getObject().isVariable()) {
             val parentTM = factory.getMappingDocument.getParentTriplesMap(rom)
-            listRefs = listRefs :+ new MorphBaseQueryProjection(parentTM.subjectMap.getReferences, Some(tp.getObject.toString))
+            refs = refs + new MorphBaseQueryProjection(parentTM.subjectMap.getReferences.toSet, Some(tp.getObject.toString))
         }
 
-        listRefs
+        refs
     }
 
     /**
@@ -158,9 +158,9 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @return set of conditions, either non-null or equality
      * @throws MorphException if the triples map has no object map
      */
-    def genCond(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
+    def genCond(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryCondition] = {
 
-        var conditions: List[MorphBaseQueryCondition] = List.empty
+        var conditions: Set[MorphBaseQueryCondition] = Set.empty
 
         { // === Subject map ===
             val tpTerm = tp.getSubject
@@ -169,7 +169,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             if (termMap.isReferenceOrTemplateValued)
                 if (tpTerm.isVariable)
                     // Add a not-null condition for each reference in the term map
-                    conditions = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
+                    conditions = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref)).toSet
                 else if (tpTerm.isURI) {
                     // Add an equality condition for each reference in the term map
                     conditions = genEqualityConditions(termMap, tpTerm)
@@ -182,16 +182,10 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             if (termMap.isReferenceOrTemplateValued)
                 if (tpTerm.isVariable) {
                     // Add a not-null condition for each reference in the term map
-                    val cond = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                    cond.foreach(c => {
-                        if (!conditions.contains(c)) conditions = conditions :+ c
-                    })
+                    conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref)).toSet
                 } else if (tpTerm.isURI) {
                     // Add an equality condition for each reference in the term map
-                    val cond = genEqualityConditions(termMap, tpTerm)
-                    cond.foreach(c => {
-                        if (!conditions.contains(c)) conditions = conditions :+ c
-                    })
+                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
                 }
         }
         { // === Object map ===
@@ -204,10 +198,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                     throw new MorphException("Triples map " + tm + " has no object map. Presumably an inccorect triple pattern binding.")
                 val termMap = pom.objectMaps.head
                 if (termMap.isReferenceOrTemplateValued) {
-                    val cond = genEqualityConditions(termMap, tpTerm)
-                    cond.foreach(c => {
-                        if (!conditions.contains(c)) conditions = conditions :+ c
-                    })
+                    conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
                 }
 
             } else if (tpTerm.isURI) {
@@ -216,17 +207,13 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                     val rom = pom.getRefObjectMap(0)
                     // Add non-null condition on the child reference 
                     for (jc <- rom.joinConditions) {
-                        val cond = MorphBaseQueryCondition.notNull(jc.childRef)
-                        if (!conditions.contains(cond)) conditions = conditions :+ cond
+                        conditions = conditions + MorphBaseQueryCondition.notNull(jc.childRef)
                     }
                 } else {
                     // tp.obj is a constant IRI and there is no RefObjectMap: add an equality condition for each reference in the term map
                     val termMap = pom.objectMaps.head
                     if (termMap.isReferenceOrTemplateValued) {
-                        val cond = genEqualityConditions(termMap, tpTerm)
-                        cond.foreach(c => {
-                            if (!conditions.contains(c)) conditions = conditions :+ c
-                        })
+                        conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
                     }
                 }
 
@@ -235,18 +222,13 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                 if (pom.hasRefObjectMap) {
                     val rom = pom.getRefObjectMap(0)
                     // Add non-null condition on the child reference 
-                    for (jc <- rom.joinConditions) {
-                        val cond = MorphBaseQueryCondition.notNull(jc.childRef)
-                        if (!conditions.contains(cond)) conditions = conditions :+ cond
-                    }
+                    for (jc <- rom.joinConditions)
+                        conditions = conditions + MorphBaseQueryCondition.notNull(jc.childRef)
                 } else {
                     // tp.obj is a Variable and there is no RefObjectMap: add a non-null condition for each reference in the term map
                     val termMap = pom.objectMaps.head
                     if (termMap.isReferenceOrTemplateValued) {
-                        val cond = termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                        cond.foreach(c => {
-                            if (!conditions.contains(c)) conditions = conditions :+ c
-                        })
+                        conditions = conditions ++ termMap.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref)).toSet
                     }
                 }
             }
@@ -266,9 +248,9 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @return set of conditions, either non-null or equality
      * @thrown MorphException if the triples map has no referencing object map
      */
-    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): List[MorphBaseQueryCondition] = {
+    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryCondition] = {
 
-        var conditions: List[MorphBaseQueryCondition] = List.empty
+        var conditions: Set[MorphBaseQueryCondition] = Set.empty
 
         // === Object map ===
         val tpTerm = tp.getObject
@@ -282,35 +264,24 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             // add an equality condition for each reference in the subject map of the parent TM
             val rom = pom.getRefObjectMap(0)
             val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
-            if (parentSM.isReferenceOrTemplateValued) {
-                val cond = genEqualityConditions(parentSM, tpTerm)
-                cond.foreach(c => {
-                    if (!conditions.contains(c)) conditions = conditions :+ c
-                })
-            }
+            if (parentSM.isReferenceOrTemplateValued)
+                conditions = conditions ++ genEqualityConditions(parentSM, tpTerm)
 
             // Add non-null condition on the parent reference
             for (jc <- rom.joinConditions) {
-                val cond = MorphBaseQueryCondition.notNull(jc.parentRef)
-                if (!conditions.contains(cond)) conditions = conditions :+ cond
+                conditions = conditions + MorphBaseQueryCondition.notNull(jc.parentRef)
             }
 
         } else if (tpTerm.isVariable) {
             // tp.obj is a SPARQL variable to be matched with the subject of the parent TM
             val rom = pom.getRefObjectMap(0)
             val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
-            if (parentSM.isReferenceOrTemplateValued) {
-                val cond = parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref))
-                cond.foreach(c => {
-                    if (!conditions.contains(c)) conditions = conditions :+ c
-                })
-            }
+            if (parentSM.isReferenceOrTemplateValued)
+                conditions = conditions ++ parentSM.getReferences.map(ref => MorphBaseQueryCondition.notNull(ref)).toSet
 
             // Add non-null condition on the parent reference
-            for (jc <- rom.joinConditions) {
-                val cond = MorphBaseQueryCondition.notNull(jc.parentRef)
-                if (!conditions.contains(cond)) conditions = conditions :+ cond
-            }
+            for (jc <- rom.joinConditions)
+                conditions = conditions + MorphBaseQueryCondition.notNull(jc.parentRef)
         }
 
         if (logger.isDebugEnabled()) logger.debug("Translation returns Parent conditions: " + conditions)
@@ -325,19 +296,19 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * If the term map is template-value, possibly several equality conditions are generated, i.e. one for each
      * capturing group in the template string.
      *
-     * Return an empty list for other types of term map.
+     * Return an empty set for other types of term map.
      *
      * @param targetQuery child or parent, i.e. the query to which references of termMap relate to
      * @param termMap the term map that should possibly generate terms that match the triple pattern term tpTerm
      * @param tpTerm a term from a triple pattern
-     * @return a list of one equality condition for a reference-value term map, possibly several conditions
+     * @return a set of one equality condition for a reference-value term map, possibly several conditions
      * for a template-valued term map
      */
-    private def genEqualityConditions(termMap: R2RMLTermMap, tpTerm: Node): List[MorphBaseQueryCondition] = {
+    private def genEqualityConditions(termMap: R2RMLTermMap, tpTerm: Node): Set[MorphBaseQueryCondition] = {
 
         if (termMap.isReferenceValued) {
             // Make a new equality condition between the reference in the term map and the value in the triple pattern term
-            List(MorphBaseQueryCondition.equality(termMap.getOriginalValue, tpTerm.toString(false)))
+            Set(MorphBaseQueryCondition.equality(termMap.getOriginalValue, tpTerm.toString(false)))
 
         } else if (termMap.isTemplateValued) {
             // Get the references of the template string and the associated values in the triple pattern term
@@ -350,8 +321,8 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                 else
                     MorphBaseQueryCondition.equality(m._1, m._2)
             })
-            refValueConds.toList
+            refValueConds.toSet
         } else
-            List.empty
+            Set.empty
     }
 }

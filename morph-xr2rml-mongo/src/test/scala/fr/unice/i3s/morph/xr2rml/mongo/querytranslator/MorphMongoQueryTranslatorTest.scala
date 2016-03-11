@@ -51,6 +51,7 @@ class MorphMongoQueryTranslatorTest {
 
     val factory = new MorphFactoryConcret2
     factory.mappingDocument = mappingDocument
+    factory.properties = props
     var queryTranslator = new MorphMongoQueryTranslator(factory)
 
     val tmMovies = mappingDocument.getClassMappingsByName("Movies")
@@ -67,7 +68,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         var fromPart = new MongoDBQuery("collection", "tititutu")
-        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, field)
+        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, field)
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -88,7 +89,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // Remove top-level AND
-        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, and2)
+        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, and2)
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -96,7 +97,7 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(cleanString(result(0).query).contains("'b.0.b':{$eq:'b0b'}"))
 
         println("---------------------------------")
-        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, new MongoQueryNodeAnd(List(compare, field2)))
+        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(compare, field2)))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -105,7 +106,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // Remove top-level AND from AND(OR, AND)
-        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, new MongoQueryNodeAnd(List(or, and2)))
+        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(or, and2)))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -115,7 +116,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // Top-level UNION
-        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, union)
+        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, union)
         println(result)
         assertTrue(result.size == 2)
         assertTrue(cleanString(result(0).query).contains("tititutu"))
@@ -133,14 +134,14 @@ class MorphMongoQueryTranslatorTest {
         val field = new MongoQueryNodeField("c", List(new MongoQueryNodeCond(ConditionType.Equals, "ccc")))
 
         println("---------------------------------")
-        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, new MongoQueryNodeAnd(List(compare, field, exists)))
+        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(compare, field, exists)))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("'a.b':{$gt:10,$exists:true}"))
         assertTrue(cleanString(result(0).query).contains("'c':{$eq:'ccc'}"))
 
         println("---------------------------------")
-        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, new MongoQueryNodeAnd(List(compare, field, exists)))
+        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(compare, field, exists)))
         println(result)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("'a.b':{$gt:10,$exists:true}"))
@@ -162,7 +163,7 @@ class MorphMongoQueryTranslatorTest {
             "a.b", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.SIZE, "99"))
 
         // 2 arrays with one slice
-        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, new MongoQueryNodeAnd(List(elemmatch, elemmatch2)))
+        var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(elemmatch, elemmatch2)))
         println(result(0).toString)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("{'a.b':{$elemMatch:{$gt:10,$lt:20}}}"))
@@ -170,7 +171,7 @@ class MorphMongoQueryTranslatorTest {
 
         println("---------------------------------")
         // 2 arrays with one slice and one size
-        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, List.empty, new MongoQueryNodeAnd(List(elemmatch, elemmatch2, arraysize)))
+        result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(elemmatch, elemmatch2, arraysize)))
         println(result(0).toString)
         assertTrue(result.size == 1)
         assertTrue(cleanString(result(0).query).contains("{'a.b':{$size:99,$elemMatch:{$gt:10,$lt:20}}}"))
@@ -212,8 +213,8 @@ class MorphMongoQueryTranslatorTest {
         assertTrue(Q.isInstanceOf[MorphAbstractAtomicQuery])
         val q = Q.asInstanceOf[MorphAbstractAtomicQuery]
         assertEquals(q.from.getValue, "db.movies.find({decade:{$exists:true}})")
-        assertTrue(q.project(0).references.contains("$.code"))
-        assertEquals("?x", q.project(0).as.get)
+        assertTrue(q.project.head.references.contains("$.code"))
+        assertEquals("?x", q.project.head.as.get)
     }
 
     @Test def test_transTPm_parentTM() {
