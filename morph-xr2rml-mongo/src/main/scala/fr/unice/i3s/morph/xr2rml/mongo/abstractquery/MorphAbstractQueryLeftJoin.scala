@@ -27,17 +27,17 @@ class MorphAbstractQueryLeftJoin(
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def toString = {
-        "[" + left.toString + "]\n" +
-            "LEFt JOIN\n[" +
-            right.toString + "]\n" +
-            "ON " + getSharedVariables
+        "[" + left.toString + "\n" +
+            "] LEFt JOIN [\n" +
+            right.toString + "\n" +
+            "] ON " + getSharedVariables
     }
 
     override def toStringConcrete: String = {
-        "[" + left.toStringConcrete + "]\n" +
-            "LEFT JOIN\n[" +
-            right.toStringConcrete + "]\n" +
-            "ON " + getSharedVariables
+        "[" + left.toStringConcrete + "\n" +
+            "] LEFT JOIN [\n" +
+            right.toStringConcrete + "\n" +
+            "] ON " + getSharedVariables
     }
 
     /**

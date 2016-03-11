@@ -224,10 +224,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             val Q =
                 if (!pom.hasRefObjectMap)
                     // If there is no parent triples map, simply return this atomic abstract query
-                    new MorphAbstractAtomicQuery(Some(tp), Some(tm), from, project, where)
+                    new MorphAbstractAtomicQuery(Set(tp), Some(tm), from, project, where)
                 else {
                     // If there is a parent triples map, create an INNER JOIN ON childRef = parentRef
-                    val q1 = new MorphAbstractAtomicQuery(None, None, from, project, where) // no tp nor TM in case of a RefObjectMap
+                    val q1 = new MorphAbstractAtomicQuery(Set.empty, None, from, project, where) // no tp nor TM in case of a RefObjectMap
 
                     val rom = pom.getRefObjectMap(0)
                     val Pfrom = factory.getMappingDocument.getParentTriplesMap(rom).logicalSource
@@ -246,7 +246,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         if (logger.isDebugEnabled) logger.debug("Copying equality condition on child ref to parent ref: " + eqParent)
                         Pwhere = Pwhere + eqParent
                     }
-                    val q2 = new MorphAbstractAtomicQuery(None, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
+                    val q2 = new MorphAbstractAtomicQuery(Set.empty, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
                     new MorphAbstractQueryInnerJoinRef(tp, Some(tm), q1, jc.childRef, q2, jc.parentRef)
                 }
             Q // yield query Q for triples map tm

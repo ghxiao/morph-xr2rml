@@ -23,11 +23,11 @@ class MorphAbstractQueryUnion(
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def toString = {
-        "[" + members.mkString("]\nUNION\n[") + "]"
+        "[" + members.mkString("\n] UNION [\n") + "]"
     }
 
     override def toStringConcrete: String = {
-        "[" + members.map(q => q.toStringConcrete).mkString("]\nUNION\n[") + "]"
+        "[" + members.map(q => q.toStringConcrete).mkString("\n] UNION [\n") + "]"
     }
 
     /**

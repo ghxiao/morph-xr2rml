@@ -40,7 +40,8 @@ class MorphAbstractQueryInnerJoinRef(
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def toString = {
-        child.toString + " AS child\n" +
+        "triple: " + triple + "\n" +
+            child.toString + " AS child\n" +
             "INNER JOIN\n" +
             parent.toString + " AS parent\n" +
             "ON child/" + childRef + " = parent/" + parentRef

@@ -27,17 +27,17 @@ class MorphAbstractQueryInnerJoin(
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def toString = {
-        "[" + left.toString + "]\n" +
-            "INNER JOIN\n[" +
-            right.toString + "]\n" +
-            "ON " + getSharedVariables
+        "[" + left.toString + "\n" +
+            "] INNER JOIN [\n" +
+            right.toString + "\n" +
+            "] ON " + getSharedVariables
     }
 
     override def toStringConcrete: String = {
-        "[" + left.toStringConcrete + "]\n" +
-            "INNER JOIN\n[" +
-            right.toStringConcrete + "]\n" +
-            "ON " + getSharedVariables
+        "[" + left.toStringConcrete + "\n" +
+            "] INNER JOIN [\n" +
+            right.toStringConcrete + "\n" +
+            "] ON " + getSharedVariables
     }
 
     /**

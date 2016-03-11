@@ -19,9 +19,13 @@ class MorphBaseQueryProjection(
     def this(reference: String) = { this(Set(reference), None) }
 
     override def toString: String = {
+        val refs =
+            if (references.size == 1) references.head
+            else "(" + references.mkString(",") + ")"
+
         if (as.isDefined)
-            references.toString + " AS " + as.get
-        else references.toString
+            refs + " AS " + as.get
+        else refs
     }
 
     override def equals(a: Any): Boolean = {

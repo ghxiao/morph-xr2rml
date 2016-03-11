@@ -33,8 +33,8 @@ class MorphMongoAbstractQueryTest {
         val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
         val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
 
-        var q1 = new MorphAbstractAtomicQuery(Some(tp1), None, ls1, Set(proj1), Set(cond1))
-        var q2 = new MorphAbstractAtomicQuery(Some(tp1bis), None, ls1bis, Set(proj1bis), Set(cond2))
+        var q1 = new MorphAbstractAtomicQuery(Set(tp1), None, ls1, Set(proj1), Set(cond1))
+        var q2 = new MorphAbstractAtomicQuery(Set(tp1bis), None, ls1bis, Set(proj1bis), Set(cond2))
 
         var q = q1.mergeWithAbstractAtmoicQuery(q2)
         println(q.get)
@@ -62,23 +62,23 @@ class MorphMongoAbstractQueryTest {
         val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
 
         // Not the same triple
-        var q1 = new MorphAbstractAtomicQuery(Some(tp1), None, ls1, Set(proj1), Set(cond1))
-        var q2 = new MorphAbstractAtomicQuery(Some(tp2), None, ls1bis, Set(proj1bis), Set(cond2))
+        var q1 = new MorphAbstractAtomicQuery(Set(tp1), None, ls1, Set(proj1), Set(cond1))
+        var q2 = new MorphAbstractAtomicQuery(Set(tp2), None, ls1bis, Set(proj1bis), Set(cond2))
         var q = q1.mergeWithAbstractAtmoicQuery(q2)
         q = q1.mergeWithAbstractAtmoicQuery(q2)
         println(q)
         assertFalse(q.isDefined)
 
         // Not the same logical source
-        q1 = new MorphAbstractAtomicQuery(Some(tp1), None, ls1, Set(proj1), Set(cond1))
-        q2 = new MorphAbstractAtomicQuery(Some(tp1bis), None, ls2, Set(proj2), Set(cond2))
+        q1 = new MorphAbstractAtomicQuery(Set(tp1), None, ls1, Set(proj1), Set(cond1))
+        q2 = new MorphAbstractAtomicQuery(Set(tp1bis), None, ls2, Set(proj2), Set(cond2))
         q = q1.mergeWithAbstractAtmoicQuery(q2)
         println(q)
         assertFalse(q.isDefined)
 
         // Same triple but not the same projection
-        q1 = new MorphAbstractAtomicQuery(Some(tp1), None, ls1, Set(proj1), Set(cond1))
-        q2 = new MorphAbstractAtomicQuery(Some(tp1bis), None, ls1bis, Set(proj2), Set(cond2))
+        q1 = new MorphAbstractAtomicQuery(Set(tp1), None, ls1, Set(proj1), Set(cond1))
+        q2 = new MorphAbstractAtomicQuery(Set(tp1bis), None, ls1bis, Set(proj2), Set(cond2))
         q = q1.mergeWithAbstractAtmoicQuery(q2)
         println(q)
         assertFalse(q.isDefined)
@@ -103,8 +103,8 @@ class MorphMongoAbstractQueryTest {
         val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
         val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
 
-        var q1 = new MorphAbstractAtomicQuery(Some(tp1), None, ls, Set(proj1, proj3), Set(cond1))
-        var q2 = new MorphAbstractAtomicQuery(Some(tp1bis), None, ls, Set(proj2, proj1bis), Set(cond2))
+        var q1 = new MorphAbstractAtomicQuery(Set(tp1), None, ls, Set(proj1, proj3), Set(cond1))
+        var q2 = new MorphAbstractAtomicQuery(Set(tp1bis), None, ls, Set(proj2, proj1bis), Set(cond2))
 
         var q = q1.mergeWithAbstractAtmoicQuery(q2)
         println(q.get)

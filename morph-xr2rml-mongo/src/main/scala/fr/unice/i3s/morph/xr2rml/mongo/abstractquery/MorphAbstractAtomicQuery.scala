@@ -28,8 +28,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
- * @param triple the triple pattern for which we create this atomic query. None in the case
- * of a a parent query in a referencing object map
+ * @param triples the triple pattern for which we create this atomic query. Empty in the case
+ * of a a parent query in a referencing object map. This may contain several triples after optimization e.g. self-join elimination
  * @param boundTriplesMap the triples map, bound to the triple pattern, from which this query is derived
  * @param from consists of the triples map logical source
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
@@ -39,7 +39,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
  */
 class MorphAbstractAtomicQuery(
 
-    val triple: Option[Triple],
+    val triples: Set[Triple],
     boundTriplesMap: Option[R2RMLTriplesMap],
     val from: xR2RMLLogicalSource,
     val project: Set[MorphBaseQueryProjection],
@@ -56,8 +56,10 @@ class MorphAbstractAtomicQuery(
             else
                 from.getValue
 
-        "{ triple : " + triple + "\n" + 
-        	"  from   : " + fromStr + "\n" +
+        val tripleStr = if (triples.nonEmpty) " triple : " + triples + "\n " else ""
+
+        "{" + tripleStr +
+            " from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }"
     }
@@ -140,7 +142,7 @@ class MorphAbstractAtomicQuery(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
-        if (!triple.isDefined || !boundTriplesMap.isDefined) {
+        if (triples.isEmpty || !boundTriplesMap.isDefined) {
             val errMsg = "Atomic abstract query with either no associtaed triple pattern or no triples map bound to the triple pattern" +
                 " => the query is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
             logger.error(errMsg)
@@ -148,87 +150,88 @@ class MorphAbstractAtomicQuery(
             throw new MorphException(errMsg)
         }
 
-        val tp = triple.get
-        val subjectAsVariable =
-            if (tp.getSubject.isVariable)
-                Some(tp.getSubject.toString)
-            else None
-        val predicateAsVariable =
-            if (tp.getPredicate.isVariable)
-                Some(tp.getPredicate.toString)
-            else None
-        val objectAsVariable =
-            if (tp.getObject.isVariable)
-                Some(tp.getObject.toString)
-            else None
+        triples.toList.flatMap(tp => {
+            val subjectAsVariable =
+                if (tp.getSubject.isVariable)
+                    Some(tp.getSubject.toString)
+                else None
+            val predicateAsVariable =
+                if (tp.getPredicate.isVariable)
+                    Some(tp.getPredicate.toString)
+                else None
+            val objectAsVariable =
+                if (tp.getObject.isVariable)
+                    Some(tp.getObject.toString)
+                else None
 
-        val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
-        val tm = this.boundTriplesMap.get
-        val sm = tm.subjectMap;
-        val pom = tm.predicateObjectMaps.head
-        val iter: Option[String] = tm.logicalSource.docIterator
-        logger.info("Generating RDF terms under triples map " + tm.toString + " for atomic query: \n" + this.toStringConcrete);
+            val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
+            val tm = this.boundTriplesMap.get
+            val sm = tm.subjectMap;
+            val pom = tm.predicateObjectMaps.head
+            val iter: Option[String] = tm.logicalSource.docIterator
+            logger.info("Generating RDF terms under triples map " + tm.toString + " for atomic query: \n" + this.toStringConcrete);
 
-        // Execute the queries of tagetQuery and make a UNION (flatMap) of all the results
-        val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
-        val resultSet = resSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
-        logger.info("Query returned " + resultSet.size + " results.");
+            // Execute the queries of tagetQuery and make a UNION (flatMap) of all the results
+            val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
+            val resultSet = resSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+            logger.info("Query returned " + resultSet.size + " results.");
 
-        // Main loop: iterate and process each result document of the result set
-        var i = 0;
-        val terms = for (document <- resultSet) yield {
-            try {
-                i = i + 1;
-                if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for document " + i + "/" + resultSet.size + ": " + document)
+            // Main loop: iterate and process each result document of the result set
+            var i = 0;
+            val terms = for (document <- resultSet) yield {
+                try {
+                    i = i + 1;
+                    if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for document " + i + "/" + resultSet.size + ": " + document)
 
-                //---- Create the subject resource
-                val subjects = dataTranslator.translateData(sm, document)
-                if (subjects == null) { throw new Exception("null value in the subject triple") }
-                if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
+                    //---- Create the subject resource
+                    val subjects = dataTranslator.translateData(sm, document)
+                    if (subjects == null) { throw new Exception("null value in the subject triple") }
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
 
-                //---- Create the list of resources representing subject target graphs
-                val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
-                    dataTranslator.translateData(sgmElement, document)
-                })
-                if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
+                    //---- Create the list of resources representing subject target graphs
+                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
+                        dataTranslator.translateData(sgmElement, document)
+                    })
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
 
-                // ----- Make a list of resources for the predicate map of the predicate-object map
-                val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
-                if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
+                    // ----- Make a list of resources for the predicate map of the predicate-object map
+                    val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
 
-                // ------ Make a list of resources for the object map of the predicate-object map
-                val objects =
-                    if (!pom.objectMaps.isEmpty)
-                        dataTranslator.translateData(pom.objectMaps.head, document)
-                    else List.empty
-                if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
+                    // ------ Make a list of resources for the object map of the predicate-object map
+                    val objects =
+                        if (!pom.objectMaps.isEmpty)
+                            dataTranslator.translateData(pom.objectMaps.head, document)
+                        else List.empty
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
 
-                // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
-                    dataTranslator.translateData(pogmElement, document)
-                });
-                if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+                    // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
+                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
+                        dataTranslator.translateData(pogmElement, document)
+                    });
+                    if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
-                // Result 
-                Some(new MorphBaseResultRdfTerms(
-                    subjects, subjectAsVariable,
-                    predicates, predicateAsVariable,
-                    objects, objectAsVariable,
-                    (subjectGraphs ++ predicateObjectGraphs).toList))
-            } catch {
-                case e: MorphException => {
-                    logger.error("Error while translating data of document " + i + ": " + e.getMessage);
-                    e.printStackTrace()
-                    None
-                }
-                case e: Exception => {
-                    logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
-                    e.printStackTrace()
-                    None
+                    // Result 
+                    Some(new MorphBaseResultRdfTerms(
+                        subjects, subjectAsVariable,
+                        predicates, predicateAsVariable,
+                        objects, objectAsVariable,
+                        (subjectGraphs ++ predicateObjectGraphs).toList))
+                } catch {
+                    case e: MorphException => {
+                        logger.error("Error while translating data of document " + i + ": " + e.getMessage);
+                        e.printStackTrace()
+                        None
+                    }
+                    case e: Exception => {
+                        logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
+                        e.printStackTrace()
+                        None
+                    }
                 }
             }
-        }
-        terms.flatten // get rid of the None's (in case there was an exception)
+            terms.flatten // get rid of the None's (in case there was an exception)
+        })
     }
 
     override def optimizeQuery: MorphAbstractQuery = {
@@ -251,16 +254,16 @@ class MorphAbstractAtomicQuery(
      * If Q1 and Q2 have the same logical source, and
      * Q1 has projections "$.a AS ?x", "$.b AS ?x",
      * Q2 has projections "$.a AS ?x", "$.c AS ?x"
-     * then this is a proper self join. 
+     * then this is a proper self join.
      * => for each shared variable ?x, there should be at least one common projection of ?x.
-     * 
-     * Note that the same variable can be projected several times, e.g. when the same variable is used 
+     *
+     * Note that the same variable can be projected several times, e.g. when the same variable is used
      * several times in a triple pattern e.g.: ?x :predicate ?x.
      * Besides a projection can contain several references in case the variable is matched with a template
      * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
      * Set($.ref1, $.ref2.*) AS ?x => in that case, we must have the same projection in the second query
      * for the merge to be possible.
-     * 
+     *
      * @param right the right query of the join
      * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
      */
@@ -268,7 +271,7 @@ class MorphAbstractAtomicQuery(
 
         var result: Option[MorphAbstractAtomicQuery] = None
         val left = this
-        var canMerge = (left.from == right.from && left.triple == right.triple)
+        var canMerge = (left.from == right.from && left.triples == right.triples)
         if (canMerge) {
             val sharedVars = left.getVariables.intersect(right.getVariables)
             canMerge = sharedVars.nonEmpty
@@ -285,7 +288,7 @@ class MorphAbstractAtomicQuery(
                 if (canMerge) {
                     var mergedWhere = left.where ++ right.where
                     var mergedProj = left.project ++ right.project
-                    result = Some(new MorphAbstractAtomicQuery(triple, boundTriplesMap, from, mergedProj, mergedWhere))
+                    result = Some(new MorphAbstractAtomicQuery(triples, boundTriplesMap, from, mergedProj, mergedWhere))
                 }
             }
         }
