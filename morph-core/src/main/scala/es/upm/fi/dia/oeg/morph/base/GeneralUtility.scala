@@ -36,11 +36,10 @@ object GeneralUtility {
         val resultAux = originalURI.trim();
         var result = resultAux;
         try {
-            if (mapURIEncodingChars != null) {
+            if (mapURIEncodingChars != null)
                 mapURIEncodingChars.foreach {
                     case (key, value) => result = result.replaceAll(key, value)
                 }
-            }
         } catch {
             case e: Exception => {
                 logger.error("Error encoding uri for uri = " + originalURI + " because of " + e.getMessage());
@@ -62,41 +61,77 @@ object GeneralUtility {
         result;
     }
 
-    def encodeUnsafeChars(originalValue: String): String = {
+    /**
+     * URL-encode special characters in a template string (this is different from the special chars read from the database).
+     * => URL special chars '#', '?', "/", ":" and '&' are unchanged: if they are in a template string this must be intentional.
+     */
+    def encodeUrl(originalValue: String): String = {
         var result = originalValue;
         if (result != null) {
-            // result = result.replaceAll("\\%", "%25"); //put this first
-            // result = result.replaceAll("#", "%23");
+            result = result.replaceAll(" ", "%20");
+            result = result.replaceAll("!", "%21");
+            result = result.replaceAll("\"", "%22");
+            result = result.replaceAll("\\$", "%24");
+            result = result.replaceAll("'", "%27");
+            result = result.replaceAll("\\(", "%28");
+            result = result.replaceAll("\\)", "%29");
+            result = result.replaceAll("\\*", "%2A");
+            result = result.replaceAll("\\+", "%2B");
+            result = result.replaceAll(",", "%2C");
+            result = result.replaceAll(";", "%3B");
             result = result.replaceAll("<", "%3C");
+            result = result.replaceAll("=", "%3D");
             result = result.replaceAll(">", "%3E");
-            result = result.replaceAll("\\{", "%7B");
-            result = result.replaceAll("\\}", "%7D");
-            result = result.replaceAll("\\|", "%7C");
-            result = result.replaceAll("\\\\", "%5C");
+            result = result.replaceAll("@", "%40");
             result = result.replaceAll("\\^", "%5E");
-            result = result.replaceAll("~", "%7E");
             result = result.replaceAll("\\[", "%5B");
+            result = result.replaceAll("\\\\", "%5C");
             result = result.replaceAll("\\]", "%5D");
             result = result.replaceAll("`", "%60");
-            result = result.replaceAll(" ", "%20");
-            result = result.replaceAll("\"", "%22");
+            result = result.replaceAll("\\{", "%7B");
+            result = result.replaceAll("\\|", "%7C");
+            result = result.replaceAll("\\}", "%7D");
+            result = result.replaceAll("~", "%7E");
         }
         result;
     }
 
+    /**
+     * URL-encode reserved chars in the database values when they must be used to build IRIs
+     */
     def encodeReservedChars(originalValue: String): String = {
         var result = originalValue;
         if (result != null) {
+            result = result.replaceAll("%", "%25");	// keep in first place!
+            result = result.replaceAll(" ", "%20");
+            result = result.replaceAll("!", "%21");
+            result = result.replaceAll("\"", "%22");
+            result = result.replaceAll("#", "%23");
             result = result.replaceAll("\\$", "%24");
             result = result.replaceAll("&", "%26");
+            result = result.replaceAll("'", "%27");
+            result = result.replaceAll("\\(", "%28");
+            result = result.replaceAll("\\)", "%29");
+            result = result.replaceAll("\\*", "%2A");
             result = result.replaceAll("\\+", "%2B");
             result = result.replaceAll(",", "%2C");
-            result = result.replaceAll(";", "%3B");
-            result = result.replaceAll("=", "%3D");
-            result = result.replaceAll("\\?", "%3F");
-            result = result.replaceAll("@", "%40");
             result = result.replaceAll("/", "%2F");
             result = result.replaceAll(":", "%3A");
+            result = result.replaceAll(";", "%3B");
+            result = result.replaceAll("<", "%3C");
+            result = result.replaceAll("=", "%3D");
+            result = result.replaceAll(">", "%3E");
+            result = result.replaceAll("\\?", "%3F");
+            result = result.replaceAll("@", "%40");
+            result = result.replaceAll("\\^", "%5E");
+            result = result.replaceAll("\\[", "%5B");
+            result = result.replaceAll("\\\\", "%5C");
+            result = result.replaceAll("\\]", "%5D");
+            result = result.replaceAll("`", "%60");
+            result = result.replaceAll("\\{", "%7B");
+            result = result.replaceAll("\\|", "%7C");
+            result = result.replaceAll("\\}", "%7D");
+            result = result.replaceAll("~", "%7E");
         }
         result;
     }

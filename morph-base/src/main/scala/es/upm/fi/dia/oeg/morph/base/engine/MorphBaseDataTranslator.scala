@@ -59,7 +59,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
             this.generateRDFTriples(query)
         } catch {
             case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + query.tpBindings  + ": " + e.getMessage)
+                logger.error("Unexpected error while generatring triples for " + query.tpBindings + ": " + e.getMessage)
                 e.printStackTrace()
             }
         }
@@ -143,7 +143,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
                         case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
                         case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, languageTag)
                         case Constants.R2RML_BLANKNODE_URI => {
-                            var rep = GeneralUtility.encodeReservedChars(GeneralUtility.encodeUnsafeChars(value.toString))
+                            var rep = GeneralUtility.encodeUrl(value.toString)
                             factory.getMaterializer.model.createResource(new AnonId(rep))
                         }
                     }
@@ -164,11 +164,8 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
         var resultIRI = originalIRI;
         try {
             resultIRI = GeneralUtility.encodeURI(resultIRI, properties.mapURIEncodingChars, properties.uriTransformationOperation);
-            if (properties.encodeUnsafeChars)
-                resultIRI = GeneralUtility.encodeUnsafeChars(resultIRI);
-
-            if (properties.encodeReservedChars)
-                resultIRI = GeneralUtility.encodeReservedChars(resultIRI);
+            if (properties.encodeUnsafeCharsInUri)
+                resultIRI = GeneralUtility.encodeUrl(resultIRI);
 
             factory.getMaterializer.model.createResource(resultIRI);
         } catch {
@@ -278,5 +275,14 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
             "true"
         else
             "false"
+    }
+
+    /**
+     * URL encode database values if the term type is IRI
+     */
+    def encodeResvdCharsIfUri(value: Object, termType: String) = {
+        if (termType == Constants.R2RML_IRI_URI && value.isInstanceOf[String] && factory.getProperties.encodeUnsafeCharsInDbValues)
+            GeneralUtility.encodeReservedChars(value.asInstanceOf[String])
+        else value
     }
 }

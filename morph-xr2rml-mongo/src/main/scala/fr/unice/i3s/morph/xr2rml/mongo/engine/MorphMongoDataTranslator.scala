@@ -265,7 +265,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
                 // Evaluate the value against the mixed syntax path
                 val msPath = termMap.getMixedSyntaxPaths()(0) // '(0)' because in a reference there is only one mixed syntax path
-                val values: List[Object] = msPath.evaluate(jsonDoc)
+                val values: List[Object] = msPath.evaluate(jsonDoc).map(v => encodeResvdCharsIfUri(v, memberTermType))
 
                 // Generate RDF terms from the values resulting from the evaluation
                 this.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag)
@@ -280,7 +280,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
                     // Evaluate the raw value against the mixed-syntax path.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
-                    valuesRaw.filter(_ != null)
+                    valuesRaw.filter(_ != null).map(v => encodeResvdCharsIfUri(v, memberTermType))
                 }
 
                 val replacements: List[List[Object]] = listReplace.toList
@@ -299,7 +299,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                     List()
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
-                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements);
+                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements)
                     this.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag)
                 }
             }

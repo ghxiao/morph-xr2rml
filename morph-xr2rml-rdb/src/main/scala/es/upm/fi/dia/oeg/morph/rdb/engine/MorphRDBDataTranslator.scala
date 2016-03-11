@@ -290,12 +290,11 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                     if (termMap.datatype.isDefined) { termMap.datatype }
                     else {
                         val columnNameAux = termMap.columnName.replaceAll("\"", "");
-                        val datatypeAux = mapXMLDatatype.get(columnNameAux)
-                        datatypeAux
+                        mapXMLDatatype.get(columnNameAux)
                     }
 
                 // Generate the RDF terms
-                this.translateSingleValue(dbValue, collecTermType, memberTermType, datatype, languageTag)
+                this.translateSingleValue(encodeResvdCharsIfUri(dbValue, memberTermType), collecTermType, memberTermType, datatype, languageTag)
             }
 
             // --- Reference-valued term map
@@ -312,7 +311,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
 
                 // Evaluate the value against the mixed syntax path
                 val msPath = termMap.getMixedSyntaxPaths()(0)
-                val values: List[Object] = msPath.evaluate(dbValue)
+                val values: List[Object] = msPath.evaluate(dbValue).map(v => encodeResvdCharsIfUri(v, memberTermType))
 
                 // Generate RDF terms from the values
                 val datatype =
@@ -348,9 +347,10 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                     // If the reference is not a mixed-syntax path, then the value is simply returned in a list.
                     // If the db value is null, then return an empty list.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(dbValueRaw)
-                    valuesRaw.filter(_ != null)
+                    valuesRaw.filter(_ != null).map(v => encodeResvdCharsIfUri(v, memberTermType))
                 }
-                logger.trace("Template replacements: " + listReplace.toList)
+                val lstRep = listReplace.toList
+                logger.trace("Template replacements: " + lstRep)
 
                 // Check if all replacements are empty, i.e. NOT(at least one replacement is not empty)
                 var isAllEmptyReplacements: Boolean = true
@@ -365,7 +365,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                     List()
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
-                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, listReplace.toList);
+                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, lstRep)
                     this.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag)
                 }
             }

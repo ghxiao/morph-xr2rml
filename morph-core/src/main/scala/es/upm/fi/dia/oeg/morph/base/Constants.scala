@@ -123,8 +123,8 @@ object Constants {
     val QUERY_RESULT_XMLWRITER_OUTPUT_DEFAULT = "output.rdf.xml";
 
     val REMOVE_STRANGE_CHARS_FROM_LITERAL = "literal.removestrangechars";
-    val ENCODE_UNSAFE_CHARS_IN_URI_COLUMN = "uricolumn.encodeunsafecharacters";
-    val ENCODE_RESERVED_CHARS_IN_URI_COLUMN = "uricolumn.encodereserveccharacters";
+    val ENCODE_UNSAFE_CHARS_IN_URI = "uricolumn.encode_uri";
+    val ENCODE_UNSAFE_CHARS_IN_DB_VALUES = "uricolumn.encode_unsafe_chars_dbvalues";
 
     val URI_ENCODE = "uri.encode";
 

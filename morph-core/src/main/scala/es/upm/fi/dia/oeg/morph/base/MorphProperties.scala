@@ -32,8 +32,8 @@ class MorphProperties extends java.util.Properties {
 
     //batch upgrade
     var literalRemoveStrangeChars: Boolean = true;
-    var encodeUnsafeChars: Boolean = true;
-    var encodeReservedChars: Boolean = false;
+    var encodeUnsafeCharsInUri: Boolean = true;
+    var encodeUnsafeCharsInDbValues: Boolean = true;
     var transformString: Option[String] = None;
     var mapDataTranslationLimits: Map[String, String] = Map.empty;
     var mapDataTranslationOffsets: Map[String, String] = Map.empty;
@@ -158,11 +158,11 @@ class MorphProperties extends java.util.Properties {
         this.literalRemoveStrangeChars = this.readBoolean(Constants.REMOVE_STRANGE_CHARS_FROM_LITERAL, true);
         logger.info("Remove Strange Chars From Literal Column = " + this.literalRemoveStrangeChars);
 
-        this.encodeUnsafeChars = this.readBoolean(Constants.ENCODE_UNSAFE_CHARS_IN_URI_COLUMN, true);
-        logger.info("Encode Unsafe Chars From URI Column = " + this.encodeUnsafeChars);
+        this.encodeUnsafeCharsInUri = this.readBoolean(Constants.ENCODE_UNSAFE_CHARS_IN_URI, true);
+        logger.info("URL-encode reserved chars IRI tempalte string = " + this.encodeUnsafeCharsInUri);
 
-        this.encodeReservedChars = this.readBoolean(Constants.ENCODE_RESERVED_CHARS_IN_URI_COLUMN, false);
-        logger.info("Encode Reserved Chars From URI Column = " + this.encodeReservedChars);
+        this.encodeUnsafeCharsInDbValues = this.readBoolean(Constants.ENCODE_UNSAFE_CHARS_IN_DB_VALUES, true);
+        logger.info("URL-encode reserved chars in database values = " + this.encodeUnsafeCharsInDbValues);
 
         this.transformString = this.readString(MorphProperties.TRANSFORM_STRING_PROPERTY, None);
         logger.info("String transformation = " + this.transformString);
