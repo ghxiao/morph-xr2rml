@@ -118,10 +118,7 @@ class MorphProperties extends java.util.Properties {
             }
         }
 
-        this.rdfLanguageForResult = this.readString(Constants.OUTPUTFILE_RDF_LANGUAGE, Constants.OUTPUT_FORMAT_NTRIPLE);
-        if (this.rdfLanguageForResult == null) {
-            this.rdfLanguageForResult = Constants.OUTPUT_FORMAT_NTRIPLE;
-        }
+        this.rdfLanguageForResult = this.readString(Constants.OUTPUTFILE_RDF_LANGUAGE, Constants.DEFAULT_OUTPUT_FORMAT);
         logger.info("Output RDF syntax = " + this.rdfLanguageForResult);
 
         this.outputDisplay = this.readBoolean(Constants.OUTPUTFILE_DISPLAY, true);
@@ -172,7 +169,7 @@ class MorphProperties extends java.util.Properties {
 
         this.mapURIEncodingChars = this.readMapStringString(MorphProperties.URI_ENCODE_PROPERTY, Map.empty);
         // Example: uri.encode=(" "->"%20"),,(","->"")
-        
+
         this.uriTransformationOperation = this.readListString(MorphProperties.URI_TRANSFORM_PROPERTY, Nil, ",")
 
         this.mapDataTranslationLimits = this.readMapStringString(MorphProperties.DATATRANSLATION_LIMIT, Map.empty);

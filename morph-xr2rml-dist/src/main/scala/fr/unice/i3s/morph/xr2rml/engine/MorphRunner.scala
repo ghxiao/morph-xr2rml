@@ -63,8 +63,8 @@ object MorphRunner {
 
             if (properties.outputDisplay || !outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
 
-                // Reload the resulting file: 
-                // WARNING: to use only with materialization that produces RDF, but query rewriting produces an XML result set
+                // Reload the resulting RDF file. 
+                // WARNING: to use ONLY with materialization that produces RDF, but query rewriting produces an XML result set
                 var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
                 if (properties.outputDisplay) {
                     // Display the result on the std output
