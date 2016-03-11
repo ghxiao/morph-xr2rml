@@ -33,6 +33,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
@@ -189,13 +190,13 @@ class MorphMongoQueryTranslatorTest {
 
         try {
             var tm = mappingDocument.getClassMappingsByName("TM_NoPOM")
-            var res = queryTranslator.transTPm(tp, List(tm))
+            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)))
             fail()
         } catch { case e: Exception => {} }
 
         try {
             var tm = mappingDocument.getClassMappingsByName("TM_MultiplePOM")
-            var res = queryTranslator.transTPm(tp, List(tm))
+            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)))
             fail()
         } catch { case e: Exception => {} }
     }
@@ -209,7 +210,7 @@ class MorphMongoQueryTranslatorTest {
         val o = NodeFactory.createLiteral("T. Leung")
         val tp = Triple.create(s, p, o)
 
-        val Q = queryTranslator.transTPm(tp, List(tmMovies))
+        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmMovies)))
         assertTrue(Q.isInstanceOf[MorphAbstractAtomicQuery])
         val q = Q.asInstanceOf[MorphAbstractAtomicQuery]
         assertEquals(q.from.getValue, "db.movies.find({decade:{$exists:true}})")
@@ -226,7 +227,7 @@ class MorphMongoQueryTranslatorTest {
         val o = NodeFactory.createURI("http://example.org/movie/Manh")
         val tp = Triple.create(s, p, o)
 
-        val Q = queryTranslator.transTPm(tp, List(tmDirectors))
+        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmDirectors)))
         assertTrue(Q.isInstanceOf[MorphAbstractQueryInnerJoinRef])
         val q = Q.asInstanceOf[MorphAbstractQueryInnerJoinRef]
         assertEquals("$.directed.*", q.childRef)

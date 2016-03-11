@@ -7,6 +7,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 
 /**
  * Representation of an abstract query as defined in https://hal.archives-ouvertes.fr/hal-01245883.
@@ -14,13 +15,13 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
  * Also used to store the concrete query (attribute targetQuery) that results from
  * the translation of this abstract query into the target database language.
  *
- * @param boundTriplesMap in the query rewriting context, this field is significant only for an instance
- * of MorphAbstractAtomicQuery and it is a triples map that is bound to the triple pattern
+ * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
+ * May contain several bindings after query optimization e.g. self-join elimination => 2 merged atomic queries
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
 abstract class MorphAbstractQuery(
-        val boundTriplesMap: Option[R2RMLTriplesMap]) {
+        val tpBindings: Set[TPBinding]) {
 
     /**
      * Result of translating this abstract query into a target database query.

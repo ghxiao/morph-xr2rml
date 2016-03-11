@@ -24,14 +24,16 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
- * @param triples the triple pattern for which we create this atomic query. Empty in the case
- * of a a parent query in a referencing object map. This may contain several triples after optimization e.g. self-join elimination
- * @param boundTriplesMap the triples map, bound to the triple pattern, from which this query is derived
- * @param from consists of the triples map logical source
+ * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
+ * Empty in the case of a child or parent query in a referencing object map, and in this case the binding is
+ * in the instance of MorphAbstractQueryInnerJoinRef. 
+ * tpBindings may contain several bindings after query optimization e.g. self-join elimination => 2 merged atomic queries
+ * @param from the logical source, which must be the same as in the triples map of tpBindings
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
  * needed to generate the RDF terms of the result triples
  * @param where set of conditions applied to xR2RML references, entailed by matching the triples map
@@ -39,13 +41,12 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
  */
 class MorphAbstractAtomicQuery(
 
-    val triples: Set[Triple],
-    boundTriplesMap: Option[R2RMLTriplesMap],
+    tpBindings: Set[TPBinding],
     val from: xR2RMLLogicalSource,
     val project: Set[MorphBaseQueryProjection],
     val where: Set[MorphBaseQueryCondition])
 
-        extends MorphAbstractQuery(boundTriplesMap) {
+        extends MorphAbstractQuery(tpBindings) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -56,10 +57,8 @@ class MorphAbstractAtomicQuery(
             else
                 from.getValue
 
-        val tripleStr = if (triples.nonEmpty) " triple : " + triples + "\n " else ""
-        val boundTMStr = if (boundTriplesMap.isDefined) " boundTM: " + boundTriplesMap.get.toString + "\n " else ""
-
-        "{" + tripleStr + boundTMStr + 
+        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n " else ""
+        "{ " + bdgs +
             " from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }"
@@ -143,15 +142,16 @@ class MorphAbstractAtomicQuery(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
-        if (triples.isEmpty || !boundTriplesMap.isDefined) {
-            val errMsg = "Atomic abstract query with either no associtaed triple pattern or no triples map bound to the triple pattern" +
-                " => the query is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
+        if (tpBindings.isEmpty) {
+            val errMsg = "Atomic abstract query with no triple pattern binding " +
+                " => this is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
             logger.error(errMsg)
             logger.error("Query: " + this.toString)
             throw new MorphException(errMsg)
         }
 
-        triples.toList.flatMap(tp => {
+        tpBindings.toList.flatMap(tpb => {
+            val tp = tpb.tp
             val subjectAsVariable =
                 if (tp.getSubject.isVariable)
                     Some(tp.getSubject.toString)
@@ -166,7 +166,7 @@ class MorphAbstractAtomicQuery(
                 else None
 
             val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
-            val tm = this.boundTriplesMap.get
+            val tm = tpb.bound
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
             val iter: Option[String] = tm.logicalSource.docIterator
@@ -290,9 +290,10 @@ class MorphAbstractAtomicQuery(
                 })
 
                 if (canMerge) {
-                    var mergedWhere = left.where ++ right.where
-                    var mergedProj = left.project ++ right.project
-                    result = Some(new MorphAbstractAtomicQuery(left.triples ++ right.triples, boundTriplesMap, from, mergedProj, mergedWhere))
+                    val mergedWhere = left.where ++ right.where
+                    val mergedProj = left.project ++ right.project
+                    val mergedBindings = left.tpBindings ++ right.tpBindings
+                    result = Some(new MorphAbstractAtomicQuery(mergedBindings, from, mergedProj, mergedWhere))
                 }
             }
         }

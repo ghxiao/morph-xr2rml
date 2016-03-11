@@ -2,9 +2,7 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
@@ -17,7 +15,6 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
-
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
@@ -37,6 +34,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -90,11 +88,11 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 var absq = res.get
                 if (properties.selfJoinElimination)
                     absq = absq.optimizeQuery
-                    
-                    if (absq != res.get) {
-                        logger.info("Abstract query BEFORE optimization:\n" + res.get)
-                        logger.info("Abstract query AFTER optimization:\n" + absq)
-                    }
+
+                if (absq != res.get) {
+                    logger.info("Abstract query BEFORE optimization:\n" + res.get)
+                    logger.info("Abstract query AFTER optimization:\n" + absq)
+                }
                 // Translate the atomic abstract queries into concrete MongoDB queries
                 absq.translateAtomicAbstactQueriesToConcrete(this)
                 Some(absq)
@@ -120,16 +118,30 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 val triples: List[Triple] = bgp.getPattern.getList.toList
                 if (triples.size == 0)
                     None
-                else if (triples.size == 1)
-                    Some(this.transTPm(triples.head, this.getBoundTriplesMaps(bindings, triples.head)))
-                else {
+                else if (triples.size == 1) {
+                    val tpBindings = this.getTpBindings(bindings, triples.head)
+                    if (!tpBindings.isDefined) {
+                        logger.warn("No binding defined for triple pattern " + triples.head.toString)
+                        None
+                    } else
+                        Some(this.transTPm(tpBindings.get))
+                } else {
                     // Make an INER JOIN between the first triple pattern and the rest of the triple patterns
-                    val left = this.transTPm(triples.head, this.getBoundTriplesMaps(bindings, triples.head))
-                    val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
-                    if (right.isDefined)
-                        Some(new MorphAbstractQueryInnerJoin(left, right.get))
-                    else
-                        Some(left)
+
+                    val tpBindingsLeft = this.getTpBindings(bindings, triples.head)
+                    if (!tpBindingsLeft.isDefined) {
+                        logger.warn("No binding defined for triple pattern " + triples.head.toString)
+                        None
+                    } else {
+
+                        val left = this.transTPm(tpBindingsLeft.get)
+
+                        val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
+                        if (right.isDefined)
+                            Some(new MorphAbstractQueryInnerJoin(left, right.get))
+                        else
+                            Some(left)
+                    }
                 }
             }
             case opJoin: OpJoin => { // AND pattern
@@ -192,30 +204,26 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     /**
      * Retrieve the triples maps bound to a triple pattern
      */
-    private def getBoundTriplesMaps(bindings: Map[String, TPBindings], triple: Triple): List[R2RMLTriplesMap] = {
+    private def getTpBindings(bindings: Map[String, TPBindings], triple: Triple): Option[TPBindings] = {
 
         if (bindings.contains(triple.toString))
-            bindings(triple.toString).bound
-        else {
-            logger.warn("No binding defined for triple pattern " + triple.toString)
-            List.empty
-        }
+            Some(bindings(triple.toString))
+        else
+            None
     }
 
     /**
      * Translation of a triple pattern into an abstract query under a set of xR2RML triples maps
      *
-     * @param tp a SPARQL triple pattern
-     * @param tmSet a set of triples map that are bound to tp, i.e. they are candidates
-     * that may potentially generate triples matching tp
+     * @param tpBindings a SPARQL triple pattern and the triples maps bound to it
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
      * @throws MorphException
      */
-    override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
-
-        val unionOf = for (tm <- tmSet) yield {
+    override def transTPm(tpBindings: TPBindings): MorphAbstractQuery = {
+        val tp = tpBindings.tp
+        val unionOf = for (tm <- tpBindings.bound) yield {
 
             // Sanity checks about the @NORMALIZED_ASSUMPTION
             val poms = tm.getPropertyMappings
@@ -233,10 +241,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             val Q =
                 if (!pom.hasRefObjectMap)
                     // If there is no parent triples map, simply return this atomic abstract query
-                    new MorphAbstractAtomicQuery(Set(tp), Some(tm), from, project, where)
+                    new MorphAbstractAtomicQuery(Set(new TPBinding(tp, tm)), from, project, where)
                 else {
                     // If there is a parent triples map, create an INNER JOIN ON childRef = parentRef
-                    val q1 = new MorphAbstractAtomicQuery(Set.empty, None, from, project, where) // no tp nor TM in case of a RefObjectMap
+                    val q1 = new MorphAbstractAtomicQuery(Set.empty, from, project, where) // no tp nor TM in case of a RefObjectMap
 
                     val rom = pom.getRefObjectMap(0)
                     val Pfrom = factory.getMappingDocument.getParentTriplesMap(rom).logicalSource
@@ -255,8 +263,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         if (logger.isDebugEnabled) logger.debug("Copying equality condition on child ref to parent ref: " + eqParent)
                         Pwhere = Pwhere + eqParent
                     }
-                    val q2 = new MorphAbstractAtomicQuery(Set.empty, None, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
-                    new MorphAbstractQueryInnerJoinRef(tp, Some(tm), q1, jc.childRef, q2, jc.parentRef)
+                    val q2 = new MorphAbstractAtomicQuery(Set.empty, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
+                    new MorphAbstractQueryInnerJoinRef(Set(new TPBinding(tp, tm)), q1, jc.childRef, q2, jc.parentRef)
                 }
             Q // yield query Q for triples map tm
         }
@@ -270,7 +278,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 new MorphAbstractQueryUnion(unionOf)
 
         if (logger.isDebugEnabled())
-            logger.debug("transTPm: Translation of triple pattern: [" + tp + "] with triples maps " + tmSet + ":\n" + resultQ.toString)
+            logger.debug("transTPm: Translation of triple pattern: [" + tp + "] with triples maps " + tpBindings.bound + ":\n" + resultQ.toString)
         resultQ
     }
 

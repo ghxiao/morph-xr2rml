@@ -71,6 +71,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTransTPResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TriplePatternPredicateBounder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
@@ -115,7 +116,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
      * the query translation method is still the one defined in Morph-RDB, it has not been upgrade
      * to support the abstract query mechanism used in the MongoDB case.
      */
-    override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
+    override def transTPm(tpBindingds: TPBindings): MorphAbstractQuery = {
         throw new MorphException("Not supported")
     }
 

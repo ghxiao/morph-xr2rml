@@ -62,15 +62,13 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     /**
      * Translation of a triple pattern into an abstract query under a set of xR2RML triples maps
      *
-     * @param tp a SPARQL triple pattern
-     * @param tmSet a set of triples map that are bound to tp, i.e. they are candidates
-     * that may potentially generate triples matching tp
+     * @param tpBindings a SPARQL triple pattern and the triples maps bound to it
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
      * @throws MorphException
      */
-    def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery
+    def transTPm(tpBindings: TPBindings): MorphAbstractQuery
 
     /**
      * Generate the set of xR2RML references that are evaluated when generating the triples that match tp.

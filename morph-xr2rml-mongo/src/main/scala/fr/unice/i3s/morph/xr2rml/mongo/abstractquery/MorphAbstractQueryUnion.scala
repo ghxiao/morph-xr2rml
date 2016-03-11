@@ -18,7 +18,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  */
 class MorphAbstractQueryUnion(
     val members: List[MorphAbstractQuery])
-        extends MorphAbstractQuery(None) {
+        extends MorphAbstractQuery(Set.empty) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 

@@ -59,7 +59,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
             this.generateRDFTriples(query)
         } catch {
             case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + query.boundTriplesMap + ": " + e.getMessage)
+                logger.error("Unexpected error while generatring triples for " + query.tpBindings  + ": " + e.getMessage)
                 e.printStackTrace()
             }
         }

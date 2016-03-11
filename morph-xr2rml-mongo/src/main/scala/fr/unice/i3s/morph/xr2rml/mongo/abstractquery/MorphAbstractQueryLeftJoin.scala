@@ -22,7 +22,7 @@ class MorphAbstractQueryLeftJoin(
     val left: MorphAbstractQuery,
     val right: MorphAbstractQuery)
 
-        extends MorphAbstractQuery(None) {
+        extends MorphAbstractQuery(Set.empty) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 

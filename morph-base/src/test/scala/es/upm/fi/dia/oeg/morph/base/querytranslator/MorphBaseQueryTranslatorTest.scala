@@ -19,7 +19,7 @@ class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQ
 
     override def translate(op: Op): Option[MorphAbstractQuery] = { None }
 
-    override def transTPm(tp: Triple, tmSet: List[R2RMLTriplesMap]): MorphAbstractQuery = {
+    override def transTPm(tpBindings: TPBindings): MorphAbstractQuery = {
         throw new MorphException("Not supported")
     }
 }

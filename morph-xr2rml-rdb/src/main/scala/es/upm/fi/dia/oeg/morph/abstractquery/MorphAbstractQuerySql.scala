@@ -12,7 +12,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
  * translation method from Morph-RDB has not been updated to deal with abstract queries.
  * Therefore all functions below thrown an exception. Only the targetQuery is used in this class.
  */
-class MorphAbstractQuerySql extends MorphAbstractQuery(None) {
+class MorphAbstractQuerySql extends MorphAbstractQuery(Set.empty) {
 
     /**
      * Translate all atomic abstract queries within this abstract query into concrete queries.

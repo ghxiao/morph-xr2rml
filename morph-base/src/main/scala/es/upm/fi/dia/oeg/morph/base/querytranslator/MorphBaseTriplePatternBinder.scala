@@ -25,12 +25,30 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
+/**
+ * Representation of the bindings of several triples map to a triple pattern
+ */
 class TPBindings(val tp: Triple, val bound: List[R2RMLTriplesMap]) {
     override def toString = { bound.toString }
 }
 
 object TPBindings {
     def apply(tp: Triple, bound: List[R2RMLTriplesMap]) = { (tp.toString -> new TPBindings(tp, bound)) }
+}
+
+/**
+ * Simple representation of a binding of one triples map to a triple pattern
+ */
+class TPBinding(val tp: Triple, val bound: R2RMLTriplesMap) {
+    override def toString = { "Binding(" + tp + " -> " + bound + ")" }
+
+    override def equals(q: Any): Boolean = {
+        q.isInstanceOf[TPBinding] && {
+            val tpb = q.asInstanceOf[TPBinding]
+            this.tp == tpb.tp && this.bound != null && tpb.bound != null && this.bound.toString == tpb.bound.toString
+        }
+    }
+
 }
 
 /**
