@@ -294,7 +294,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                     }
 
                 // Generate the RDF terms
-                this.translateSingleValue(encodeResvdCharsIfUri(dbValue, memberTermType), collecTermType, memberTermType, datatype, languageTag)
+                this.translateSingleValue(dbValue, collecTermType, memberTermType, datatype, languageTag)
             }
 
             // --- Reference-valued term map
@@ -311,7 +311,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
 
                 // Evaluate the value against the mixed syntax path
                 val msPath = termMap.getMixedSyntaxPaths()(0)
-                val values: List[Object] = msPath.evaluate(dbValue).map(v => encodeResvdCharsIfUri(v, memberTermType))
+                val values: List[Object] = msPath.evaluate(dbValue)
 
                 // Generate RDF terms from the values
                 val datatype =

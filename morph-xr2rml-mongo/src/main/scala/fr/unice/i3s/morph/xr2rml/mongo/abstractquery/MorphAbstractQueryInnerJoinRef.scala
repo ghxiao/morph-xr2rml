@@ -14,6 +14,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 
 /**
  * Representation of the INNER JOIN abstract query generated from the relation between a child and a parent triples map.
@@ -94,6 +95,9 @@ class MorphAbstractQueryInnerJoinRef(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
+        // Cache queries in case we have several bindings for this query
+        val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+
         val total = this.tpBindings.toList.flatMap(tpb => {
             val triple = tpb.tp
             val tm = tpb.bound
@@ -115,12 +119,23 @@ class MorphAbstractQueryInnerJoinRef(
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
             val iter: Option[String] = tm.logicalSource.docIterator
-            logger.info("Generating RDF terms from inner join ref query under triples map " + tm.toString + ": \n" + this.toStringConcrete);
+            logger.info("Generating RDF triples from inner join Ref query under triples map " + tm.toString + ": \n" + this.toStringConcrete);
 
-            // Execute the child queries and create a MorphMongoResultSet with a UNION (flatMap) of all the results
-            val childResSets = child.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
-            val childResultSet = childResSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
-            if (logger.isDebugEnabled()) logger.debug()
+            // Execute the child queries
+            val childResSets = child.targetQuery.map(query => {
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter)
+                if (executedQueries.contains(queryMapId)) {
+                    logger.info("Returning query results from cache.")
+                    executedQueries(queryMapId)
+                } else {
+                    val resultSet = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
+                    executedQueries += (queryMapId -> resultSet)
+                    resultSet
+                }
+            })
+            // Make a UNION (flatten) of all the child results
+            val childResultSet = childResSets.flatten
+            logger.info("Query returned " + childResultSet.size + " results.")
 
             // Execute the parent queries (in the parent triples map), apply the iterator, and make a UNION (flatMap) of the results
             val parentResultSet = {
@@ -128,10 +143,22 @@ class MorphAbstractQueryInnerJoinRef(
                     val rom = pom.refObjectMaps.head
                     val parentTM = dataSourceReader.factory.getMappingDocument.getParentTriplesMap(rom)
 
-                    // Execute the parent queries and create a MorphMongoResultSet with a UNION (flatMap) of all the results
-                    val parentResSets = parent.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, parentTM.logicalSource.docIterator))
-                    val parentRes = parentResSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
-                    parentRes
+                    // Execute the parent queries 
+                    val parentResSets = parent.targetQuery.map(query => {
+                        val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, parentTM.logicalSource.docIterator)
+                        if (executedQueries.contains(queryMapId)) {
+                            logger.info("Returning query results from cache.")
+                            executedQueries(queryMapId)
+                        } else {
+                            val resultSet = dataSourceReader.executeQueryAndIterator(query, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
+                            executedQueries += (queryMapId -> resultSet)
+                            resultSet
+                        }
+                    })
+                    // Make a UNION (flatten) of all the parent results
+                    val parentResultSet = parentResSets.flatten
+                    logger.info("Query returned " + parentResultSet.size + " results.")
+                    parentResultSet
                 } else
                     throw new MorphException("Error: inner join ref query bound to a triples map that has no RefObjectMap.")
             }
@@ -228,18 +255,16 @@ class MorphAbstractQueryInnerJoinRef(
             }
             terms.flatten // get rid of the None's (in case there was an exception)
         })
+        logger.info("Inner join Ref computed " + total.size + " triples.")
         total
     }
 
     /**
-     * Optimize the child and parent queries and try to merge them
+     * Try to merge the the child and parent queries
      */
     override def optimizeQuery: MorphAbstractQuery = {
-        val opt = child.mergeWithAbstractAtmoicQuery(parent)
-        if (opt.isDefined)
-            opt.get
-        else
-            this
+        val opt = child.mergeForInnerJoin(this.parent)
+        opt.getOrElse(this)
     }
 
 }

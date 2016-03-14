@@ -9,7 +9,6 @@ WHERE {
     ?y ex:starring ?z .
     
 	#<http://example.org/dir/Wong%20Kar-wai> ex:directed ?x .
+	
     #?x ex:directed <http://example.org/movie/Manh> .
-
-
 }

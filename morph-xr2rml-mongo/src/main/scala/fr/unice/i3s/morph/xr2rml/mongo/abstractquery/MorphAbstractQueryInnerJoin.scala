@@ -78,12 +78,14 @@ class MorphAbstractQueryInnerJoin(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
-        logger.info("Generating RDF terms from the inner join query:\n" + this.toStringConcrete)
+        logger.info("Generating RDF triples from the inner join query:\n" + this.toStringConcrete)
         val joinResult: scala.collection.mutable.Map[String, MorphBaseResultRdfTerms] = new scala.collection.mutable.HashMap
 
         // First, generate the triples for both left and right graph patterns of the join
         val leftTriples = left.generateRdfTerms(dataSourceReader, dataTranslator)
         val rightTriples = right.generateRdfTerms(dataSourceReader, dataTranslator)
+        var nonJoinedLeft = leftTriples
+        var nonJoinedRight = rightTriples
 
         if (logger.isDebugEnabled)
             logger.debug("Inner joining " + leftTriples.size + " left triples with " + rightTriples.size + " right triples.")
@@ -93,9 +95,12 @@ class MorphAbstractQueryInnerJoin(
         }
 
         val sharedVars = this.getSharedVariables
-        if (sharedVars.isEmpty)
-            leftTriples ++ rightTriples // no filtering if no common variable
-        else {
+
+        if (sharedVars.isEmpty) {
+            val res = leftTriples ++ rightTriples // no filtering if no common variable
+            logger.info("Inner join on empty set of variables computed " + res.size + " triples.")
+            res
+        } else {
             // For each variable x shared by both graph patterns, select the left and right triples
             // in which at least one term is bound to x, then join the documents on these terms.
             for (x <- sharedVars) {
@@ -116,10 +121,16 @@ class MorphAbstractQueryInnerJoin(
                         }
                     }
                 }
+
+                // All left and right triples that do not contain any of the shared variables are kept
+                nonJoinedLeft = nonJoinedLeft.filter(!_.hasVariable(x))
+                nonJoinedRight = nonJoinedRight.filter(!_.hasVariable(x))
             }
-            if (logger.isDebugEnabled)
-                logger.debug("Inner join computed " + joinResult.size + " results.")
-            joinResult.values.toList
+
+            val res = joinResult.values.toList
+            val resNonJoined = nonJoinedLeft ++ nonJoinedLeft
+            logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
+            res ++ resNonJoined
         }
     }
 
@@ -127,19 +138,81 @@ class MorphAbstractQueryInnerJoin(
         left.getVariables.intersect(right.getVariables)
     }
 
-
     /**
-     * Optimize left and right members and try to merge them if they are atomic queries  
+     * Optimize left and right members and try to merge them if they are atomic queries
      */
     override def optimizeQuery: MorphAbstractQuery = {
-        
+
         val leftOpt = left.optimizeQuery
         val rightOpt = right.optimizeQuery
+
+        // Inner join of 2 atomic queries
         if (leftOpt.isInstanceOf[MorphAbstractAtomicQuery] && rightOpt.isInstanceOf[MorphAbstractAtomicQuery]) {
-            val opt = leftOpt.asInstanceOf[MorphAbstractAtomicQuery].mergeWithAbstractAtmoicQuery(rightOpt.asInstanceOf[MorphAbstractAtomicQuery])
-            if (opt.isDefined) return opt.get
+            val opt = leftOpt.asInstanceOf[MorphAbstractAtomicQuery].mergeForInnerJoin(rightOpt.asInstanceOf[MorphAbstractAtomicQuery])
+            if (opt.isDefined) {
+                if (logger.isDebugEnabled())
+                    logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + opt.get.toString)
+                return opt.get
+            }
         }
 
-        new MorphAbstractQueryInnerJoin(leftOpt, rightOpt)
+        // Inner join of one atomic query (left) and an inner join (right)
+        if (leftOpt.isInstanceOf[MorphAbstractAtomicQuery] && rightOpt.isInstanceOf[MorphAbstractQueryInnerJoin]) {
+            val leftAtom = leftOpt.asInstanceOf[MorphAbstractAtomicQuery]
+            val rightInnerJ = rightOpt.asInstanceOf[MorphAbstractQueryInnerJoin]
+
+            if (rightInnerJ.left.isInstanceOf[MorphAbstractAtomicQuery]) {
+                // Merge left and right.left
+                val opt = leftAtom.mergeForInnerJoin(rightInnerJ.left.asInstanceOf[MorphAbstractAtomicQuery])
+                if (opt.isDefined) {
+                    val result = new MorphAbstractQueryInnerJoin(opt.get, rightInnerJ.right)
+                    if (logger.isDebugEnabled())
+                        logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + result.toString)
+                    return result
+                }
+            }
+            if (rightInnerJ.right.isInstanceOf[MorphAbstractAtomicQuery]) {
+                // Merge left and right.right
+                val opt = leftAtom.mergeForInnerJoin(rightInnerJ.right.asInstanceOf[MorphAbstractAtomicQuery])
+                if (opt.isDefined) {
+                    val result = new MorphAbstractQueryInnerJoin(opt.get, rightInnerJ.left)
+                    if (logger.isDebugEnabled())
+                        logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + result.toString)
+                    return result
+                }
+            }
+        }
+
+        // Inner join of one inner (left) and one atomic query (right)
+        if (leftOpt.isInstanceOf[MorphAbstractQueryInnerJoin] && rightOpt.isInstanceOf[MorphAbstractAtomicQuery]) {
+            val leftInnerJ = leftOpt.asInstanceOf[MorphAbstractQueryInnerJoin]
+            val rightAtom = rightOpt.asInstanceOf[MorphAbstractAtomicQuery]
+
+            if (leftInnerJ.left.isInstanceOf[MorphAbstractAtomicQuery]) {
+                // Merge left.left and right
+                val opt = leftInnerJ.left.asInstanceOf[MorphAbstractAtomicQuery].mergeForInnerJoin(rightAtom)
+                if (opt.isDefined) {
+                    val result = new MorphAbstractQueryInnerJoin(opt.get, leftInnerJ.right).optimizeQuery
+                    if (logger.isDebugEnabled())
+                        logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + result.toString)
+                    return result
+                }
+            }
+            if (leftInnerJ.right.isInstanceOf[MorphAbstractAtomicQuery]) {
+                // Merge left.right and right
+                val opt = leftInnerJ.right.asInstanceOf[MorphAbstractAtomicQuery].mergeForInnerJoin(rightAtom)
+                if (opt.isDefined) {
+                    val result = new MorphAbstractQueryInnerJoin(opt.get, leftInnerJ.left).optimizeQuery
+                    if (logger.isDebugEnabled())
+                        logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + result.toString)
+                    return result
+                }
+            }
+        }
+
+        val res = new MorphAbstractQueryInnerJoin(leftOpt, rightOpt)
+        if (logger.isDebugEnabled())
+            logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + res.toString)
+        res
     }
 }

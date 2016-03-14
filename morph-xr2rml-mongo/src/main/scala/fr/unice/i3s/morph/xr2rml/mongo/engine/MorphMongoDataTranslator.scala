@@ -265,7 +265,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
                 // Evaluate the value against the mixed syntax path
                 val msPath = termMap.getMixedSyntaxPaths()(0) // '(0)' because in a reference there is only one mixed syntax path
-                val values: List[Object] = msPath.evaluate(jsonDoc).map(v => encodeResvdCharsIfUri(v, memberTermType))
+                val values: List[Object] = msPath.evaluate(jsonDoc)
 
                 // Generate RDF terms from the values resulting from the evaluation
                 this.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag)

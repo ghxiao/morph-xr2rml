@@ -90,8 +90,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     absq = absq.optimizeQuery
 
                 if (absq != res.get) {
-                    logger.info("Abstract query BEFORE optimization:\n" + res.get)
-                    logger.info("Abstract query AFTER optimization:\n" + absq)
+                    logger.info("\n-------------------------------------------------------------------------\n" +
+                        "------------------ Abstract query BEFORE optimization: ------------------\n" + res.get)
+                    logger.info("\n------------------ Abstract query AFTER optimization: -------------------\n" + absq +
+                            "\n-------------------------------------------------------------------------")
                 }
                 // Translate the atomic abstract queries into concrete MongoDB queries
                 absq.translateAtomicAbstactQueriesToConcrete(this)

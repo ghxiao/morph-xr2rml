@@ -28,13 +28,6 @@ abstract class xR2RMLLogicalSource(
 
     val logger = Logger.getLogger(this.getClass().getName());
 
-    override def equals(q: Any): Boolean = {
-        q.isInstanceOf[xR2RMLLogicalSource] && {
-            val ls = q.asInstanceOf[xR2RMLLogicalSource]
-            this.logicalTableType == ls.logicalTableType && this.refFormulation == ls.refFormulation && this.docIterator == ls.docIterator
-        }
-    }
-
     def getLogicalTableSize(): Long = {
         if (this.tableMetaData.isDefined) { this.tableMetaData.get.getTableRows(); }
         else { -1 }

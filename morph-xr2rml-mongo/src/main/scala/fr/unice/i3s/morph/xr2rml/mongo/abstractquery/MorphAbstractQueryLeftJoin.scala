@@ -84,6 +84,8 @@ class MorphAbstractQueryLeftJoin(
         // First, generate the triples for both left and right graph patterns of the join
         val leftTriples = left.generateRdfTerms(dataSourceReader, dataTranslator)
         val rightTriples = right.generateRdfTerms(dataSourceReader, dataTranslator)
+        var nonJoinedLeft = leftTriples
+        var nonJoinedRight = rightTriples
 
         if (logger.isDebugEnabled)
             logger.debug("Left joining " + leftTriples.size + " left triple(s) with " + rightTriples.size + " right triple(s).")
@@ -93,10 +95,10 @@ class MorphAbstractQueryLeftJoin(
         }
 
         val sharedVars = this.getSharedVariables
+        
         if (sharedVars.isEmpty) {
             val res = leftTriples ++ rightTriples // no filtering if no common variable
-            if (logger.isDebugEnabled)
-                logger.debug("Left join computed " + res.size + " results.")
+            logger.info("Left join on empty set of variables computed " + res.size + " triples.")
             res
         } else {
             // For each variable x shared by both graph patterns, select the left and right triples
@@ -123,26 +125,32 @@ class MorphAbstractQueryLeftJoin(
                         }
                     }
                 }
+
+                // All left and right triples that do not contain any of the shared variables are kept
+                nonJoinedLeft = nonJoinedLeft.filter(!_.hasVariable(x))
+                nonJoinedRight = nonJoinedRight.filter(!_.hasVariable(x))
             }
-            if (logger.isDebugEnabled)
-                logger.debug("Left join computed " + joinResult.size + " results.")
-            joinResult.values.toList
+
+            val res = joinResult.values.toList
+            val resNonJoined = nonJoinedLeft ++ nonJoinedLeft
+            logger.info("Left join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
+            res ++ resNonJoined
         }
     }
 
-    private def getSharedVariables:Set[String] = {
+    private def getSharedVariables: Set[String] = {
         left.getVariables.intersect(right.getVariables)
     }
 
     /**
-     * Optimize left and right members and try to merge them if they are atomic queries  
+     * Optimize left and right members and try to merge them if they are atomic queries
      */
     override def optimizeQuery: MorphAbstractQuery = {
-        
+
         val leftOpt = left.optimizeQuery
         val rightOpt = right.optimizeQuery
         if (leftOpt.isInstanceOf[MorphAbstractAtomicQuery] && rightOpt.isInstanceOf[MorphAbstractAtomicQuery]) {
-            val opt = leftOpt.asInstanceOf[MorphAbstractAtomicQuery].mergeWithAbstractAtmoicQuery(rightOpt.asInstanceOf[MorphAbstractAtomicQuery])
+            val opt = leftOpt.asInstanceOf[MorphAbstractAtomicQuery].mergeForLeftJoin(rightOpt.asInstanceOf[MorphAbstractAtomicQuery])
             if (opt.isDefined) return opt.get
         }
 

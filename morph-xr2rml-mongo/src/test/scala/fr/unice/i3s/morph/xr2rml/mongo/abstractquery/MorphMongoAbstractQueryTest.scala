@@ -39,7 +39,7 @@ class MorphMongoAbstractQueryTest {
         var q1 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1, tm), new TPBinding(tp2, tm)), ls1, Set(proj1), Set(cond1))
         var q2 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls1bis, Set(proj1bis), Set(cond2))
 
-        var q = q1.mergeWithAbstractAtmoicQuery(q2)
+        var q = q1.mergeForInnerJoin(q2)
         println(q.get)
         assertTrue(q.isDefined)
         assertTrue(q.get.where.contains(new MorphBaseQueryCondition("ref_cond1", ConditionType.Equals, "value1")))
@@ -56,7 +56,7 @@ class MorphMongoAbstractQueryTest {
 
         val ls1 = new xR2RMLQuery("query1", "JSONPath", None)
         val ls1bis = new xR2RMLQuery("query1", "JSONPath", None)
-        val ls2 = new xR2RMLQuery("query2", "JSONPath", None)
+        val ls2 = new xR2RMLQuery("query1 query2", "JSONPath", None)
 
         val proj1 = new MorphBaseQueryProjection(Set("ref1"), Some("?x"))
         val proj1bis = new MorphBaseQueryProjection(Set("ref1"), Some("?x"))
@@ -72,14 +72,14 @@ class MorphMongoAbstractQueryTest {
         // Not the same logical source
         var q1 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls1, Set(proj1), Set(cond1))
         var q2 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls2, Set(proj2), Set(cond2))
-        var q = q1.mergeWithAbstractAtmoicQuery(q2)
+        var q = q1.mergeForInnerJoin(q2)
         println(q)
         assertFalse(q.isDefined)
 
         // Same triple but not the same projection
         q1 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls1, Set(proj1), Set(cond1))
         q2 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls1bis, Set(proj2), Set(cond2))
-        q = q1.mergeWithAbstractAtmoicQuery(q2)
+        q = q1.mergeForInnerJoin(q2)
         println(q)
         assertFalse(q.isDefined)
     }
@@ -109,7 +109,7 @@ class MorphMongoAbstractQueryTest {
         var q1 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls, Set(proj1, proj3), Set(cond1))
         var q2 = new MorphAbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls, Set(proj2, proj1bis), Set(cond2))
 
-        var q = q1.mergeWithAbstractAtmoicQuery(q2)
+        var q = q1.mergeForInnerJoin(q2)
         println(q.get)
         assertTrue(q.isDefined)
         assertTrue(q.get.where.contains(new MorphBaseQueryCondition("ref_cond1", ConditionType.Equals, "value1")))

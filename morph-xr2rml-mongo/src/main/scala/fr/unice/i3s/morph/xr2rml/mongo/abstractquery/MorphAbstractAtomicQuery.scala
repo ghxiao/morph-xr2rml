@@ -25,14 +25,16 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
  * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
  * Empty in the case of a child or parent query in a referencing object map, and in this case the binding is
- * in the instance of MorphAbstractQueryInnerJoinRef. 
- * tpBindings may contain several bindings after query optimization e.g. self-join elimination => 2 merged atomic queries
+ * in the instance of MorphAbstractQueryInnerJoinRef.
+ * tpBindings may contain several bindings after query optimization e.g. self-join elimination => 2 atomic queries are merged
+ * into a single one that will be used to generate triples for by 2 triples maps => 2 bindings
  * @param from the logical source, which must be the same as in the triples map of tpBindings
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
  * needed to generate the RDF terms of the result triples
@@ -142,6 +144,9 @@ class MorphAbstractAtomicQuery(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
+        // Cache queries in case we have several bindings for this query
+        val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+
         if (tpBindings.isEmpty) {
             val errMsg = "Atomic abstract query with no triple pattern binding " +
                 " => this is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
@@ -172,9 +177,20 @@ class MorphAbstractAtomicQuery(
             val iter: Option[String] = tm.logicalSource.docIterator
             logger.info("Generating RDF terms under triples map " + tm.toString + " for atomic query: \n" + this.toStringConcrete);
 
-            // Execute the queries of tagetQuery and make a UNION (flatMap) of all the results
-            val resSets = this.targetQuery.map(query => dataSourceReader.executeQueryAndIterator(query, iter))
-            val resultSet = resSets.flatMap(res => res.asInstanceOf[MorphMongoResultSet].resultSet)
+            // Execute the queries of tagetQuery
+            val resSets = this.targetQuery.map(query => {
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter)
+                if (executedQueries.contains(queryMapId)) {
+                    logger.info("Returning query results from cache.")
+                    executedQueries(queryMapId)
+                } else {
+                    val resultSet = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
+                    executedQueries += (queryMapId -> resultSet)
+                    resultSet
+                }
+            })
+            // Make a UNION (flatten) of all the results
+            val resultSet = resSets.flatten
             logger.info("Query returned " + resultSet.size + " results.")
 
             // Main loop: iterate and process each result document of the result set
@@ -182,7 +198,7 @@ class MorphAbstractAtomicQuery(
             val terms = for (document <- resultSet) yield {
                 try {
                     i = i + 1;
-                    if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for document " + i + "/" + resultSet.size + ": " + document)
+                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + resultSet.size + ": " + document)
 
                     //---- Create the subject resource
                     val subjects = dataTranslator.translateData(sm, document)
@@ -231,7 +247,9 @@ class MorphAbstractAtomicQuery(
                     }
                 }
             }
-            terms.flatten // get rid of the None's (in case there was an exception)
+            val result = terms.flatten // get rid of the None's (in case there was an exception)
+            logger.info("Atomic query computed " + result.size + " triples for binding " + tpb)
+            result
         })
     }
 
@@ -244,8 +262,8 @@ class MorphAbstractAtomicQuery(
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
-     * This is allowed if and only if:
-     * (i) they have the same from (the logical source),
+     * The merge is allowed if and only if:
+     * (i) both queries have the same From part (the logical source),
      * (ii) they have at least one shared variable (on which the join is to be done),
      * (iii) the shared variables are projected as the same xR2RML reference(s) in both queries.
      *
@@ -258,34 +276,33 @@ class MorphAbstractAtomicQuery(
      * If Q1 and Q2 have the same logical source, and
      * Q1 has projections "$.a AS ?x", "$.b AS ?x",
      * Q2 has projections "$.a AS ?x", "$.c AS ?x"
-     * then this is a proper self join.
-     * => for each shared variable ?x, there should be at least one common projection of ?x.
+     * then this is a proper self join because the same reference "$.a" is project as ?x in both qeries.
+     * => In general, for each shared variable ?x, there should be at least one common projection of ?x.
      *
      * Note that the same variable can be projected several times, e.g. when the same variable is used
-     * several times in a triple pattern e.g.: ?x :predicate ?x.
+     * several times in a triple pattern e.g.: "?x ns:predicate ?x ."
      * Besides a projection can contain several references in case the variable is matched with a template
      * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
-     * Set($.ref1, $.ref2.*) AS ?x => in that case, we must have the same projection in the second query
+     * "Set($.ref1, $.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
      * for the merge to be possible.
      *
      * @param right the right query of the join
      * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeWithAbstractAtmoicQuery(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+    def mergeForInnerJoin(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
 
         var result: Option[MorphAbstractAtomicQuery] = None
         val left = this
-        var canMerge = (left.from == right.from)
-        if (canMerge) {
+        if (left.from == right.from) {
+
             val sharedVars = left.getVariables.intersect(right.getVariables)
-            canMerge = sharedVars.nonEmpty
-            if (canMerge) {
+            if (sharedVars.nonEmpty) {
+                var canMerge: Boolean = true
                 sharedVars.foreach(x => {
-                    // Get the references corresponding to the variable ?x in each query.
-                    // In a template there may be several references for one variable, e.g. ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}"
-                    // In that case, the merge is possible iif ?x is bound to Set($.ref1, $.ref2.*) in both queries
+                    // Get the references corresponding to variable ?x in each query.
                     val leftRefs = left.project.filter(_.as.get == x).map(_.references)
                     val rightRefs = right.project.filter(_.as.get == x).map(_.references)
+                    // Check if at least one projection of ?x is the same in the left and right queries
                     canMerge = canMerge && leftRefs.intersect(rightRefs).nonEmpty
                 })
 
@@ -299,4 +316,15 @@ class MorphAbstractAtomicQuery(
         }
         result
     }
+
+    def mergeForLeftJoin(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+        logger.error("Optional-Self-Join Elimination: Operation not supported")
+        None
+    }
+
+    def mergeForUnion(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+        logger.error("Union-Elimination: Operation not supported")
+        None
+    }
+
 }

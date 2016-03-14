@@ -72,8 +72,10 @@ class MorphAbstractQueryUnion(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
-        logger.info("Generating RDF terms from union query below:\n" + this.toStringConcrete);
-        members.flatMap(m => m.generateRdfTerms(dataSourceReader, dataTranslator))
+        logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
+        val result = members.flatMap(m => m.generateRdfTerms(dataSourceReader, dataTranslator))
+        logger.info("Union computed " + result.size + " triples.")
+        result
     }
 
     /**
