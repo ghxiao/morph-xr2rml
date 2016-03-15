@@ -263,7 +263,8 @@ class MorphAbstractAtomicQuery(
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
      * The merge is allowed if and only if:
-     * (i) both queries have the same From part (the logical source),
+     * (i) both queries have the same From part (the logical source), or one is more specific than
+     * the other (in that case we take the most specific one).
      * (ii) they have at least one shared variable (on which the join is to be done),
      * (iii) the shared variables are projected as the same xR2RML reference(s) in both queries.
      *
@@ -293,8 +294,9 @@ class MorphAbstractAtomicQuery(
 
         var result: Option[MorphAbstractAtomicQuery] = None
         val left = this
-        if (left.from == right.from) {
-
+        
+        val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
+        if (mostSpec.isDefined) {
             val sharedVars = left.getVariables.intersect(right.getVariables)
             if (sharedVars.nonEmpty) {
                 var canMerge: Boolean = true
@@ -310,7 +312,7 @@ class MorphAbstractAtomicQuery(
                     val mergedWhere = left.where ++ right.where
                     val mergedProj = left.project ++ right.project
                     val mergedBindings = left.tpBindings ++ right.tpBindings
-                    result = Some(new MorphAbstractAtomicQuery(mergedBindings, from, mergedProj, mergedWhere))
+                    result = Some(new MorphAbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
                 }
             }
         }

@@ -152,7 +152,7 @@ class MorphAbstractQueryInnerJoin(
             if (opt.isDefined) {
                 if (logger.isDebugEnabled())
                     logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + opt.get.toString)
-                return opt.get
+                return opt.get.optimizeQuery
             }
         }
 
@@ -165,7 +165,7 @@ class MorphAbstractQueryInnerJoin(
                 // Merge left and right.left
                 val opt = leftAtom.mergeForInnerJoin(rightInnerJ.left.asInstanceOf[MorphAbstractAtomicQuery])
                 if (opt.isDefined) {
-                    val result = new MorphAbstractQueryInnerJoin(opt.get, rightInnerJ.right)
+                    val result = new MorphAbstractQueryInnerJoin(opt.get, rightInnerJ.right).optimizeQuery
                     if (logger.isDebugEnabled())
                         logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + result.toString)
                     return result
@@ -175,7 +175,7 @@ class MorphAbstractQueryInnerJoin(
                 // Merge left and right.right
                 val opt = leftAtom.mergeForInnerJoin(rightInnerJ.right.asInstanceOf[MorphAbstractAtomicQuery])
                 if (opt.isDefined) {
-                    val result = new MorphAbstractQueryInnerJoin(opt.get, rightInnerJ.left)
+                    val result = new MorphAbstractQueryInnerJoin(opt.get, rightInnerJ.left).optimizeQuery
                     if (logger.isDebugEnabled())
                         logger.debug("\n------------------ Optimized ------------------\n" + this.toString + "\n------------------ into ------------------ \n" + result.toString)
                     return result

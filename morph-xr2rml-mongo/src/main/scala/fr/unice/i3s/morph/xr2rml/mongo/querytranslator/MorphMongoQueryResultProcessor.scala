@@ -45,7 +45,6 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
             val resultSet: ResultSet = qexec.execSelect();
             while (resultSet.hasNext()) {
                 val strResultSet = ResultSetFormatter.asXMLString(resultSet)
-                if (logger.isInfoEnabled()) logger.info("Writing query result document:\n" + strResultSet)
                 factory.getMaterializer.outputStream.write(strResultSet)
             }
             end = System.currentTimeMillis();
