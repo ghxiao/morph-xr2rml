@@ -1,10 +1,11 @@
 package es.upm.fi.dia.oeg.morph.base
 
 import java.io.File
-import org.apache.log4j.Logger
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
+
+import org.apache.log4j.Logger
 
 class MorphProperties extends java.util.Properties {
     val logger = Logger.getLogger(this.getClass());
@@ -102,10 +103,14 @@ class MorphProperties extends java.util.Properties {
         }
 
         val outputFilePropertyValue = this.getProperty(Constants.OUTPUTFILE_PROP_NAME);
-        this.outputFilePath = if (outputFilePropertyValue != null
-            && !outputFilePropertyValue.equals("")) {
-            Some(outputFilePropertyValue)
-        } else { None }
+        this.outputFilePath =
+            if (outputFilePropertyValue != null && !outputFilePropertyValue.isEmpty) {
+                Some(outputFilePropertyValue)
+            } else {
+                logger.error("Parameter output.file.path is mandatory. Please fill it in file " + this.configurationFileURL + ".")
+                System.exit(-1)
+                None
+            }
 
         if (configurationDirectory != null) {
             if (this.outputFilePath.isDefined)
@@ -295,7 +300,7 @@ object MorphProperties {
         properties.configurationFileURL = absoluteConfigurationFile;
         properties.configurationDirectory = configurationDirectory;
 
-        logger.info("reading configuration file : " + absoluteConfigurationFile);
+        logger.info("Reading configuration file : " + absoluteConfigurationFile);
         try {
             properties.load(new FileInputStream(absoluteConfigurationFile));
         } catch {

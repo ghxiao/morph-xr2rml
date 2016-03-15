@@ -16,6 +16,8 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import java.io.FileInputStream
+import scala.io.Source
 
 /**
  * MorphRunner is the main entry point of the Morph-xR2RML application.
@@ -61,21 +63,27 @@ object MorphRunner {
             var outputFilepath = properties.outputFilePath.get
             var outputFormat = properties.rdfLanguageForResult
 
-            if (properties.outputDisplay || !outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
-
-                // Reload the resulting RDF file. 
-                // WARNING: to use ONLY with materialization that produces RDF, but query rewriting produces an XML result set
-                var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
+            if (runner.sparqlQuery.isDefined) {
+                // --- Query rewriting mode: display XML SPARQL result set
                 if (properties.outputDisplay) {
-                    // Display the result on the std output
-                    model.write(System.out, Constants.DEFAULT_OUTPUT_FORMAT, null)
+                    logger.info("Query result set:")
+                    Source.fromFile(outputFilepath).foreach { print }
                 }
+            } else {
+                // --- Graph materialization
+                if (properties.outputDisplay || !outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
 
-                if (!outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
-                    // Save the result in the output file again but with the requested format (in case it is different)
-                    logger.info("Saving output to format " + outputFormat + "...");
-                    // MorphBaseRunner.erasefile(outputFilepath)
-                    model.write(new PrintWriter(properties.outputFilePath.get + "_rewritten.rdf", "UTF-8"), outputFormat)
+                    // Reload the resulting RDF file
+                    var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
+
+                    if (properties.outputDisplay)
+                        model.write(System.out, outputFormat, null)
+
+                    if (!outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
+                        // Save the result in the output file again but with the requested format (in case it is different)
+                        logger.info("Saving output to format " + outputFormat + "...");
+                        model.write(new PrintWriter(properties.outputFilePath.get, "UTF-8"), outputFormat)
+                    }
                 }
             }
 
