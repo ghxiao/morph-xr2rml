@@ -19,9 +19,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 /**
- * Representation of the INNER JOIN abstract query generated from the relation between a child and a parent triples map.
+ * Representation of the INNER JOIN abstract query between two atomic abstract queries,
+ * generated from the relation between a child and a parent triples map.
  *
- * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
+ * @param tpBindings a couple (triple pattern, triples map) for which we create this query.
  * May contain several bindings after query optimization e.g. self-join elimination => 2 merged atomic queries
  * @param child the query representing the child triples map
  * @param childRef the xR2RML child reference of the join condition: rr:joinCondition [ ... rr:child ... ]
@@ -39,6 +40,13 @@ class MorphAbstractQueryInnerJoinRef(
         extends MorphAbstractQuery(tpBindings) {
 
     val logger = Logger.getLogger(this.getClass().getName());
+
+    override def equals(a: Any): Boolean = {
+        a.isInstanceOf[MorphAbstractQueryInnerJoinRef] && {
+            val q = a.asInstanceOf[MorphAbstractQueryInnerJoinRef]
+            this.child == q.child && this.childRef == q.childRef && this.parent == q.parent && this.parentRef == q.parentRef
+        }
+    }
 
     override def toString = {
         val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n" else ""

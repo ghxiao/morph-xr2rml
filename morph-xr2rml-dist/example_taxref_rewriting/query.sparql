@@ -27,8 +27,8 @@ WHERE {
     ?t taxrefprop:bioGeoStatusIn ?bgs . 
     ?t skosxl:prefLabel ?p .
     ?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
-    ?bgs dwc:occurrenceStatus ?occ .
-    #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . } # Cryptogene
-    #UNION
-    #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
+    ###?bgs dwc:occurrenceStatus ?occ .
+    { ?bgs dwc:occurrenceStatus taxrefbgs:C . } # Cryptogene
+    UNION
+    { ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
 }

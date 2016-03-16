@@ -26,6 +26,13 @@ class MorphAbstractQueryLeftJoin(
 
     val logger = Logger.getLogger(this.getClass().getName());
 
+    override def equals(a: Any): Boolean = {
+        a.isInstanceOf[MorphAbstractQueryLeftJoin] && {
+            val q = a.asInstanceOf[MorphAbstractQueryLeftJoin]
+            this.left == q.left && this.right == q.right
+        }
+    }
+
     override def toString = {
         "[" + left.toString + "\n" +
             "] LEFt JOIN [\n" +
@@ -95,7 +102,7 @@ class MorphAbstractQueryLeftJoin(
         }
 
         val sharedVars = this.getSharedVariables
-        
+
         if (sharedVars.isEmpty) {
             val res = leftTriples ++ rightTriples // no filtering if no common variable
             logger.info("Left join on empty set of variables computed " + res.size + " triples.")

@@ -29,7 +29,9 @@ import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
  * Representation of the bindings of several triples map to a triple pattern
  */
 class TPBindings(val tp: Triple, val bound: List[R2RMLTriplesMap]) {
-    override def toString = { bound.toString }
+    
+    override def toString = { "Binding(" + tp + " -> " + bound.mkString(", ") + ")" }
+    
 }
 
 object TPBindings {

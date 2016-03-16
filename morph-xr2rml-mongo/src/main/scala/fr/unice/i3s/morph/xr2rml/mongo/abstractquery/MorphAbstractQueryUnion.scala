@@ -22,6 +22,11 @@ class MorphAbstractQueryUnion(
 
     val logger = Logger.getLogger(this.getClass().getName());
 
+    override def equals(a: Any): Boolean = {
+        a.isInstanceOf[MorphAbstractQueryUnion] &&
+            this.members == a.asInstanceOf[MorphAbstractQueryUnion].members
+    }
+
     override def toString = {
         "[" + members.mkString("\n] UNION [\n") + "\n]"
     }

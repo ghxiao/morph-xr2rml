@@ -14,6 +14,10 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
  */
 class MorphAbstractQuerySql extends MorphAbstractQuery(Set.empty) {
 
+    override def toStringConcrete: String = {
+        throw new MorphException("Not supported")
+    }
+
     /**
      * Translate all atomic abstract queries within this abstract query into concrete queries.
      * @param translator the query translator

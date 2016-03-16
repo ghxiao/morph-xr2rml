@@ -83,16 +83,17 @@ object MongoDBQuery {
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
     /**
-     * Return the most specific query string of q1 and q2, i.e. when one is a sub-query of the other.
+     * Return the most specific logical source of q1 and q2, i.e. when one is a sub-query of the other.
      * Sub-query meaning that they have the same type, reference formulation and iterator,
-     * and the query string of the one starts with the query string of the other (minus the tailing '}'.
+     * and the query string of the one starts like the query string of the other.
      * Example:
-     * q1 = db.collection.find('{field1: 10}') and
-     * q2 = db.collection.find('{field1: 10, field2: 20}')
-     * q2 is more specific than q1 => return q2
+     * q1 = db.collection.find({field1: 10}) and
+     * q2 = db.collection.find({field1: 10, field2: 20})
+     * q2 is more specific than q1 => return an xR2RMLQuet with query string q2
      *
-     * @return None if the queries are not sub-queries of each-other. Or the query string
-     * of the most specific query.
+     * @param q1 an xR2RMLQuery with a MongoDB query string
+     * @param q2 an xR2RMLQuery with a MongoDB query string
+     * @return the most specific query if one is a sub-query of the other, or None otherwise.
      */
     def mostSpecificQuery(q1: xR2RMLLogicalSource, q2: xR2RMLLogicalSource): Option[xR2RMLQuery] = {
 
@@ -110,6 +111,18 @@ object MongoDBQuery {
         else None
     }
 
+    /**
+     * Return the most specific query string of q1 and q2, i.e. when one is a sub-query of the other.
+     * Sub-query meaning that they the query string of the one starts like the query string of the other.
+     * Example:
+     * q1 = db.collection.find({field1: 10}) and
+     * q2 = db.collection.find({field1: 10, field2: 20})
+     * q2 is more specific than q1 => return Some(q2)
+     *
+     * @param q1 an MongoDB query string
+     * @param q2 an MongoDB query string
+     * @return the most specific query string if one is a sub-query of the other, or None otherwise.
+     */
     private def mostSpecificQuery(q1: String, q2: String): Option[String] = {
 
         val mq1 = parseQueryString(cleanString(q1), true)

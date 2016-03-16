@@ -88,13 +88,4 @@ class GeneralUtilityTest {
         assertFalse(GeneralUtility.compareRdfContainer(lst1, lst2))
         assertFalse(GeneralUtility.compareRdfContainer(lst2, lst1))
     }
-
-    @Test def test() {
-
-        val ref1 = Set(Set("toto"), Set("tata", "tutu"))
-        val ref2 = Set(Set("titi"), Set("tutu", "tata"))
-        println(ref1.intersect(ref2))
-
-    }
-
 }

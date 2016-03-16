@@ -31,12 +31,16 @@ abstract class MorphAbstractQuery(
      */
     var targetQuery: List[GenericQuery] = List.empty
 
+    override def equals(a: Any): Boolean = {
+        throw new MorphException("Method not implemented")
+    }
+
     def setTargetQuery(tq: List[GenericQuery]): MorphAbstractQuery = {
         this.targetQuery = tq
         this
     }
 
-    def toStringConcrete: String = { targetQuery.toString }
+    def toStringConcrete: String
 
     //---- Abstract methods ----
 
@@ -74,4 +78,11 @@ abstract class MorphAbstractQuery(
      * Misc optimizations of the abstract query, notation self-join eliminations
      */
     def optimizeQuery: MorphAbstractQuery
+}
+
+object MorphAbstractQuery {
+
+    def getSharedVariables(left: MorphAbstractQuery, right: MorphAbstractQuery) = {
+        left.getVariables.intersect(right.getVariables)
+    }
 }

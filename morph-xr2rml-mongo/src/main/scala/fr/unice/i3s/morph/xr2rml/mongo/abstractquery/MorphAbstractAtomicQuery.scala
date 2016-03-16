@@ -50,7 +50,14 @@ class MorphAbstractAtomicQuery(
 
         extends MorphAbstractQuery(tpBindings) {
 
-    val logger = Logger.getLogger(this.getClass().getName());
+    val logger = Logger.getLogger(this.getClass().getName())
+
+    override def equals(a: Any): Boolean = {
+        a.isInstanceOf[MorphAbstractAtomicQuery] && {
+            val p = a.asInstanceOf[MorphAbstractAtomicQuery]
+            this.from == p.from && this.project == p.project && this.where == p.where
+        }
+    }
 
     override def toString = {
         val fromStr =
@@ -59,11 +66,17 @@ class MorphAbstractAtomicQuery(
             else
                 from.getValue
 
-        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n " else ""
-        "{ " + bdgs +
-            " from   : " + fromStr + "\n" +
+        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(" " , ", ", "\n  ") else " "
+        "{" + bdgs +
+            "from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }"
+    }
+
+    override def toStringConcrete = {
+        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n " else ""
+        "{ " + bdgs +
+           targetQuery.mkString("\nUNION\n") + " }"
     }
 
     /**
@@ -254,19 +267,17 @@ class MorphAbstractAtomicQuery(
     }
 
     /**
-     * An atomic query cannot be optimized. return self
+     * An atomic query cannot be optimized. Return self
      */
-    override def optimizeQuery: MorphAbstractQuery = {
-        this
-    }
+    override def optimizeQuery: MorphAbstractQuery = { this }
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
-     * The merge is allowed if and only if:
+     * The merge is allowed if and only if 3 conditions are met:
      * (i) both queries have the same From part (the logical source), or one is more specific than
      * the other (in that case we take the most specific one).
      * (ii) they have at least one shared variable (on which the join is to be done),
-     * (iii) the shared variables are projected as the same xR2RML reference(s) in both queries.
+     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
      *
      * Example 1: if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
      * then they need to project the same reference as ?x: "$.fieldName AS ?x".
@@ -290,11 +301,15 @@ class MorphAbstractAtomicQuery(
      * @param right the right query of the join
      * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForInnerJoin(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+    def mergeForInnerJoin(q: MorphAbstractQuery): Option[MorphAbstractAtomicQuery] = {
 
+        if (!q.isInstanceOf[MorphAbstractAtomicQuery])
+            return None
+
+        val right = q.asInstanceOf[MorphAbstractAtomicQuery]
         var result: Option[MorphAbstractAtomicQuery] = None
         val left = this
-        
+
         val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
         if (mostSpec.isDefined) {
             val sharedVars = left.getVariables.intersect(right.getVariables)
@@ -306,6 +321,7 @@ class MorphAbstractAtomicQuery(
                     val rightRefs = right.project.filter(_.as.get == x).map(_.references)
                     // Check if at least one projection of ?x is the same in the left and right queries
                     canMerge = canMerge && leftRefs.intersect(rightRefs).nonEmpty
+                    if (!canMerge) return None
                 })
 
                 if (canMerge) {
@@ -328,5 +344,4 @@ class MorphAbstractAtomicQuery(
         logger.error("Union-Elimination: Operation not supported")
         None
     }
-
 }

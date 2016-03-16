@@ -73,7 +73,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         // Calculate the triple pattern bindings
         val start = System.currentTimeMillis()
         val bindings = triplePatternBinder.bindm(op)
-        logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.");
+        logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
+        logger.info("Triple pattern bindings:\n" + bindings.values.mkString("\n"))
 
         // Translate the SPARQL query into an abstract query
         val emptyBindings = bindings.filter(b => b._2.bound.isEmpty)
@@ -140,7 +141,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
 
                         val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
                         if (right.isDefined)
-                            Some(new MorphAbstractQueryInnerJoin(left, right.get))
+                            Some(MorphAbstractQueryInnerJoin(left, right.get))
                         else
                             Some(left)
                     }
@@ -150,7 +151,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 val left = translateSparqlQuery(bindings, opJoin.getLeft)
                 val right = translateSparqlQuery(bindings, opJoin.getRight)
                 if (left.isDefined && right.isDefined)
-                    Some(new MorphAbstractQueryInnerJoin(left.get, right.get))
+                    Some(MorphAbstractQueryInnerJoin(left.get, right.get))
                 else if (left.isDefined)
                     left
                 else if (right.isDefined)

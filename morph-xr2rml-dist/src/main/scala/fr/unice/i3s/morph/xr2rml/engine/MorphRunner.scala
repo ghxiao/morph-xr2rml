@@ -97,6 +97,7 @@ object MorphRunner {
             }
             case e: MorphException => {
                 logger.fatal("An error has occured: " + e.getMessage())
+                //e.printStackTrace()
                 System.exit(-1)
             }
             case e: Exception => {
