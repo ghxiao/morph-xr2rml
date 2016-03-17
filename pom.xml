@@ -172,12 +172,14 @@
 					<configuration>
 						<scalaVersion>${scala.version}</scalaVersion>
 					</configuration>
-				</plugin>
-
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.19.1</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>compile</goal>
+								<goal>testCompile</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 
 				<!--This plugin's configuration is used to store Eclipse m2e settings 
@@ -214,11 +216,22 @@
 
 	<reporting>
 		<plugins>
+			<!-- <plugin> <groupId>org.scala-tools</groupId> <artifactId>maven-scala-plugin</artifactId> 
+				<version>2.15.2</version> <configuration> <aggregateDirectOnly>true</aggregateDirectOnly> 
+				</configuration> </plugin> -->
+
 			<plugin>
-				<groupId>org.scala-tools</groupId>
-				<artifactId>maven-scala-plugin</artifactId>
-				<version>2.15.2</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>2.9</version>
+			</plugin>
+			
+			<plugin>
+				<groupId>net.alchim31.maven</groupId>
+				<artifactId>scala-maven-plugin</artifactId>
+				<version>3.2.0</version>
 				<configuration>
+					<forceAggregate>true</forceAggregate>
 					<aggregateDirectOnly>true</aggregateDirectOnly>
 				</configuration>
 			</plugin>
