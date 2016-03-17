@@ -66,7 +66,7 @@ class MorphAbstractAtomicQuery(
             else
                 from.getValue
 
-        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(" " , ", ", "\n  ") else " "
+        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(" ", ", ", "\n  ") else " "
         "{" + bdgs +
             "from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
@@ -76,7 +76,7 @@ class MorphAbstractAtomicQuery(
     override def toStringConcrete = {
         val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n " else ""
         "{ " + bdgs +
-           targetQuery.mkString("\nUNION\n") + " }"
+            targetQuery.mkString("\nUNION\n") + " }"
     }
 
     /**
@@ -297,7 +297,7 @@ class MorphAbstractAtomicQuery(
      * "Set($.ref1, $.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
      * for the merge to be possible.
      *
-     * @param right the right query of the join
+     * @param q the right query of the join
      * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
      */
     def mergeForInnerJoin(q: MorphAbstractQuery): Option[MorphAbstractAtomicQuery] = {
@@ -339,8 +339,32 @@ class MorphAbstractAtomicQuery(
         None
     }
 
-    def mergeForUnion(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
-        logger.error("Union-Elimination: Operation not supported")
-        None
+    /**
+     * Merge this atomic abstract query with another one in order to perform self-union elimination.
+     * The merge is allowed if and only if both queries have the same From part (the logical source).
+     *
+     * The resulting query Q merges queries Q1 and Q2 this way:
+     * (i) the project part of Q is simply the merge of the two sets of projections.
+     * (ii) the where part of Q is an OR of the 2 where parts: OR(Q1.where, Q2.where)
+     *
+     * @param q the right query of the union
+     * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
+     */
+    def mergeForUnion(q: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+
+        if (!q.isInstanceOf[MorphAbstractAtomicQuery])
+            return None
+
+        val right = q.asInstanceOf[MorphAbstractAtomicQuery]
+        var result: Option[MorphAbstractAtomicQuery] = None
+        val left = this
+
+        if (left.from == right.from) {
+            val mergedBindings = left.tpBindings ++ right.tpBindings
+            val mergedProj = left.project ++ right.project
+            val mergedWhere = left.where ++ right.where // @todo replace with a new OR condition
+            result = Some(new MorphAbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
+        }
+        result
     }
 }

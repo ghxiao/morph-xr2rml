@@ -38,13 +38,20 @@ class MongoDBQuery(
 
     override def equals(a: Any): Boolean = {
         val m = a.asInstanceOf[MongoDBQuery]
-        this.collection == m.collection && this.query == m.query && this.iterator == m.iterator
+        this.collection == m.collection && MongoDBQuery.cleanString(this.query) == MongoDBQuery.cleanString(m.query) && {
+            if (!this.iterator.isDefined || !m.iterator.isDefined)
+                this.iterator == m.iterator
+            else
+                MongoDBQuery.cleanString(this.iterator.get) == MongoDBQuery.cleanString(m.iterator.get)
+        }
     }
 }
 
 object MongoDBQuery {
 
     val logger = Logger.getLogger(this.getClass().getName());
+
+    private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
     /**
      * Create a MongoDBQuery with no iterator.
@@ -80,13 +87,11 @@ object MongoDBQuery {
         parseQueryString(query, stripCurlyBracket).setIterator(iterator)
     }
 
-    private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
-
     /**
      * Return the most specific logical source of q1 and q2, i.e. when one is a sub-query of the other.
      * Sub-query meaning that they have the same type, reference formulation and iterator,
      * and the query string of the one starts like the query string of the other.
-     * 
+     *
      * @example
      * q1 = db.collection.find({field1: 10}) and
      * q2 = db.collection.find({field1: 10, field2: 20}).
@@ -115,7 +120,7 @@ object MongoDBQuery {
     /**
      * Return the most specific query string of q1 and q2, i.e. when one is a sub-query of the other.
      * Sub-query meaning that they the query string of the one starts like the query string of the other.
-     * 
+     *
      * @example
      * q1 = db.collection.find({field1: 10}) and
      * q2 = db.collection.find({field1: 10, field2: 20}).
