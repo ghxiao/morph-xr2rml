@@ -327,7 +327,7 @@ object R2RMLMappingDocument {
 
     /**
      * Read the reference formulation from the config properties and checks it has is an authorized value.
-     * @throws MorphException in case the value in the configuration is invalid
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException in case the value in the configuration is invalid
      */
     private def readReferenceFormulation(props: MorphProperties): String = {
         var result = Constants.xR2RML_REFFORMULATION_COLUMN

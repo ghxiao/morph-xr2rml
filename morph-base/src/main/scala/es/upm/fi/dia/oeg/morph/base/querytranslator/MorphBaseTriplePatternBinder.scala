@@ -336,7 +336,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                 logger.trace("Checking compatibility of term maps for variable " + x)
 
             // Search the positions of variable x in each triple pattern
-            // e.g.: ?x :prop ?x => positions sub and obj
+            // e.g.: ?x :prop ?x -> positions sub and obj
             val xInTp1 = varPosTp1.filter(q => q._2 == x).map(_._1) // positions of variable x in tp1
             val xInTp2 = varPosTp2.filter(q => q._2 == x).map(_._1) // positions of variable x in tp2
 
@@ -383,7 +383,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
      *
      * @param tm an instance of R2RMLTermMap or R2RMLRefObjectMap
      * @return true if compatible
-     * @throws MorphException if tm is neither an R2RMLTermMap or R2RMLRefObjectMap
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if tm is neither an R2RMLTermMap or R2RMLRefObjectMap
      */
     def compatible(tm: Object, tpTerm: Node): Boolean = {
 
@@ -457,7 +457,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
      * @param tm1 an instance of R2RMLTermMap or R2RMLRefObjectMap
      * @param tm2 an instance of R2RMLTermMap or R2RMLRefObjectMap
      * @return true if compatible
-     * @throws MorphException if tm1 or tm2 is neither an R2RMLTermMap or R2RMLRefObjectMap
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if tm1 or tm2 is neither an R2RMLTermMap or R2RMLRefObjectMap
      */
     def compatibleTermMaps(tm1: Object, tm2: Object): Boolean = {
 

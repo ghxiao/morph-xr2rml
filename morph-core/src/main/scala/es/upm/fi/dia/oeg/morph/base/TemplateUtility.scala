@@ -75,12 +75,12 @@ object TemplateUtility {
      * since they can contain '{' and '}'. As a result this method does this in several steps. We exemplify this
      * on template string http://example.org/{ID}/{Column(NAME)/JSONPath(...)}
      * <ol>
-     * <li>Save all mixed-syntax paths from the template string to a list => List("Column(NAME)", "JSONPath(...)").</li>
-     * <li>Replace each path expression with a place holder "xR2RML_replacer" => "http://example.org/{ID}/{xR2RML_replacer/xR2RML_replacer}".</li>
-     * <li>Extract all template groups between '{' and '}' to a list => List("{ID}", "{xR2RML_replacer/xR2RML_replacer}").</li>
+     * <li>Save all mixed-syntax paths from the template string to a list i.e. List("Column(NAME)", "JSONPath(...)").</li>
+     * <li>Replace each path expression with a place holder "xR2RML_replacer" i.e. "http://example.org/{ID}/{xR2RML_replacer/xR2RML_replacer}".</li>
+     * <li>Extract all template groups between '{' and '}' to a list i.e. List("{ID}", "{xR2RML_replacer/xR2RML_replacer}").</li>
      * <li>Then, in this last list, we replace place holders with original mixed syntax path
      * expressions saved in step 1: List("{ID}", "{"Column(NAME)/JSONPath(...)}").</li>
-     * <li>Finally, remove the first '{' and last '}' characters => List("ID", "Column(NAME)/JSONPath(...)")</li>
+     * <li>Finally, remove the first '{' and last '}' characters i.e. List("ID", "Column(NAME)/JSONPath(...)")</li>
      * </ol>
      */
     def getTemplateGroups(tplStr: String): List[String] = {

@@ -14,7 +14,8 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  *
  * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
  * from which we have derived this query
- * @members the abstract query members of the union
+ * 
+ * @param members the abstract query members of the union
  */
 class MorphAbstractQueryUnion(
     val members: List[MorphAbstractQuery])

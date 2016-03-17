@@ -23,7 +23,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
  * generated from the relation between a child and a parent triples map.
  *
  * @param tpBindings a couple (triple pattern, triples map) for which we create this query.
- * May contain several bindings after query optimization e.g. self-join elimination => 2 merged atomic queries
+ * May contain several bindings after query optimization e.g. self-join elimination i.e. 2 merged atomic queries
  * @param child the query representing the child triples map
  * @param childRef the xR2RML child reference of the join condition: rr:joinCondition [ ... rr:child ... ]
  * @param parent the query representing the parent triples map
@@ -99,7 +99,7 @@ class MorphAbstractQueryInnerJoinRef(
      * @param dataTrans the data translator to create RDF terms
      * @return a list of MorphBaseResultRdfTerms instances, one for each result document
      * May return an empty result but NOT null.
-     * @throws MorphException if the triples map bound to the query has no referencing object map
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map bound to the query has no referencing object map
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,

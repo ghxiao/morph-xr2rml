@@ -23,7 +23,7 @@ class MongoQueryNodeUnion(val members: List[MongoQueryNode]) extends MongoQueryN
 
     /**
      * Group WHEREs:
-     * 	UNION(..., WHERE(W1), WHERE(W2)) => UNION(..., WHERE(W1 || W2)
+     * 	UNION(..., WHERE(W1), WHERE(W2)) =&gt; UNION(..., WHERE(W1 || W2)
      */
     def groupWheres: MongoQueryNodeUnion = {
         // Split WHERE nodes and other nodes

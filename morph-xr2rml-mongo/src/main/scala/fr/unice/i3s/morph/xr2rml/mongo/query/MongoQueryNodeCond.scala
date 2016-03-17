@@ -7,11 +7,9 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
 /**
  * MongoDB query element representing an equality or not null condition on a field.
  * For an equality:
- * 		$eq: value (non string value)
- *   or
- * 		$eq: "value" (string value)
+ * 		"$eq: value" (non string value)
  * For a not null condition:
- * 		$exists: true, $ne: null
+ * 		"$exists: true, $ne: null"
  */
 class MongoQueryNodeCond(
     val cond: ConditionType.Value,

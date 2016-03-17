@@ -4,7 +4,7 @@ import scala.collection.mutable.Queue
 
 /**
  * MongoDB query starting with an OR node:
- * 	$or: [{doc1}, {doc1}... {docN}]
+ * 	"$or: [{doc1}, {doc1}... {docN}]"
  */
 class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode {
 
@@ -38,7 +38,7 @@ class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode
 
     /**
      * Group WHEREs:
-     * 	OR(..., WHERE(W1), WHERE(W2)) => OR(..., WHERE(W1 || W2)
+     * 	OR(..., WHERE(W1), WHERE(W2)) =&gt; OR(..., WHERE(W1 || W2)
      */
     def groupWheres: MongoQueryNodeOr = {
         // Split WHERE nodes and other nodes
@@ -103,7 +103,7 @@ class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode
     }
 
     /**
-     * Rule w1: OR(A1,...An, W) <=> UNION(OR(A1,...An), W)
+     * Rule w1: OR(A1,...An, W) &lt;=&gt; UNION(OR(A1,...An), W)
      *
      * If this OR node has no WHERE, then it is returned. Otherwise a UNION is returned.
      *
@@ -116,7 +116,7 @@ class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode
     }
 
     /**
-     * Rule w2: OR(A1,...An, AND(B1,...Bn, W)) <=> UNION(OR(A1,...An), AND(B1,...Bn, W)).
+     * Rule w2: OR(A1,...An, AND(B1,...Bn, W)) &lt;=&gt; UNION(OR(A1,...An), AND(B1,...Bn, W)).
      *
      * If this OR node has no AND with a WHERE, then it is returned. Otherwise a UNION is returned.
      */
@@ -139,7 +139,7 @@ class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode
     }
 
     /**
-     * Rule w6: OR(A1,...An, UNION(B1,...Bn)) <=> UNION(OR(A1,...An), B1,...Bn)).
+     * Rule w6: OR(A1,...An, UNION(B1,...Bn)) &lt;=&gt; UNION(OR(A1,...An), B1,...Bn)).
      *
      * If this OR node has no UNION then it is returned. Otherwise a UNION is returned.
      */

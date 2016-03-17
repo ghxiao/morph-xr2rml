@@ -61,9 +61,10 @@ object GeneralUtility {
         result;
     }
 
+
     /**
      * URL-encode special characters in a template string (this is different from the special chars read from the database).
-     * => URL special chars '#', '?', "/", ":" and '&' are unchanged: if they are in a template string this must be intentional.
+     * URL special chars '#', '?', "/", ":" and '&' are unchanged: if they are in a template string this must be intentional.
      */
     def encodeUrl(originalValue: String): String = {
         var result = originalValue;

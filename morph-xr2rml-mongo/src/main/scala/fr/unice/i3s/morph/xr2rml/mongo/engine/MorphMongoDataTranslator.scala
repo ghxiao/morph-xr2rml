@@ -206,7 +206,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
      * equivalent normalized triples map.
      *
      * @param query an abstract query in which the targetQuery fields must have been set
-     * @throws MorphException if one of the atomic abstract queries in this query has no target query
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if one of the atomic abstract queries in this query has no target query
      */
     override def generateRDFTriples(query: MorphAbstractQuery): Unit = {
         if (!query.isTargetQuerySet)
@@ -314,7 +314,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
      * This method is overriden in the case of JSON to enable the mapping between JSON data types
      * and XSD data types
      *
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     override protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {

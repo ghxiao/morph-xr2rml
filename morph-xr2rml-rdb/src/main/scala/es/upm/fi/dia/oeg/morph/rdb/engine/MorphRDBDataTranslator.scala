@@ -232,7 +232,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
      * This method has been implemented for MongoDB only, in the RDB case the query rewriting is how it was
      * initially developed in Morph-RDB.
      *
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     override def generateRDFTriples(query: MorphAbstractQuery): Unit = {
         throw new MorphException("Unsupported action.")

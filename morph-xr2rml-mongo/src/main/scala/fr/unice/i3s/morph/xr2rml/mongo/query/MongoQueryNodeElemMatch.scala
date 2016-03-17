@@ -4,7 +4,7 @@ import scala.collection.mutable.Queue
 
 /**
  * MongoDB query starting with an elemMath node:
- * 	$elemMatch: {...}
+ * 	"$elemMatch: {...}"
  */
 class MongoQueryNodeElemMatch(val members: List[MongoQueryNode]) extends MongoQueryNode {
 

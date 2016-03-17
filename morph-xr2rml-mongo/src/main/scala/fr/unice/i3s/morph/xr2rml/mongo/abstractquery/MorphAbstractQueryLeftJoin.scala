@@ -79,7 +79,7 @@ class MorphAbstractQueryLeftJoin(
      * @param dataTrans the data translator to create RDF terms
      * @return a list of MorphBaseResultRdfTerms instances, one for each result document
      * May return an empty result but NOT null.
-     * @throws MorphException if the triples map bound to the query has no referencing object map
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map bound to the query has no referencing object map
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,

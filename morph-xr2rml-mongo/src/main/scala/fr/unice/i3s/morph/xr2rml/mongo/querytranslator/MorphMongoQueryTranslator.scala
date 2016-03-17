@@ -55,12 +55,12 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     /**
      * High level entry point to the query translation process.
      *
-     * @TODO Several features are not implemented:
+     * @todo Several features are not implemented:
      * - The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
      * Besides, only the references are listed, but they must be bound to the variable they represent
      * (the AS of the project part) so that the INNER JOIN can be computed, and from the reference
      * we must figure out which field exactly is to be projected and translate this into a MongoDB
-     * collection.find() projection parameter. E.g.: $.field.* => {'field':true}
+     * collection.find() projection parameter. E.g.: $.field.* =&gt; {'field':true}
      * - The iterator of the logical source is not taken into account when computing the WHERE part, i.e.
      * the conditions on the JSONPath references from the mapping.
      *
@@ -222,7 +222,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     override def transTPm(tpBindings: TPBindings): MorphAbstractQuery = {
         val tp = tpBindings.tp
@@ -293,7 +293,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      * from the logical source is appended.
      * A UNION is translated into several concrete queries. For any other type of query only one query string is returned.
      *
-     * @TODO the project part is not managed: must transform JSONPath references into actually projectable
+     * @todo the project part is not managed: must transform JSONPath references into actually projectable
      * fields in a MongoDB query
      *
      * @param from from part of the atomic abstract query (query from the logical source)

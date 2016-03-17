@@ -60,7 +60,7 @@ class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory
      * or an SQLQuery in case of a logical table with a query string
      *
      * @return instance of SQLFromItem or SQLQuery
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
@@ -100,7 +100,7 @@ class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory
      * Return a list of select items corresponding to the columns referenced by the term map.
      * Nil in case of a constant-valued term-map, a list of one select item for a column-valued term map,
      * and a list of several select items for a template-valued term map.
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     private def unfoldTermMap(termMap: R2RMLTermMap, logicalTableAlias: String): List[MorphSQLSelectItem] = {
 

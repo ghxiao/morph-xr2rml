@@ -46,7 +46,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     /**
      * Materialize triples based on a triples map definition.
      * This is the method where all the database-specific work will be done
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     protected def generateRDFTriples(tm: R2RMLTriplesMap): Unit
 
@@ -68,7 +68,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     /**
      * Generate triples in the context of the query rewriting: run the child and optional parent queries,
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     protected def generateRDFTriples(query: MorphAbstractQuery): Unit
 
@@ -157,7 +157,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     /**
      *  Create a JENA resource with an IRI after URL-encoding the string
      *
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     protected def createIRI(originalIRI: String) = {
         val properties = factory.getProperties
@@ -180,7 +180,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     /**
      * Create a JENA literal resource with optional datatype and language tag
      *
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
         try {
@@ -228,7 +228,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
      *
      * If the list of nodes is empty, return an empty list, but no empty collection/container is returned.
      *
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
 

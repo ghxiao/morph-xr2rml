@@ -1,7 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
 /**
- * MongoDB projection of the slice of an array, like: 'p': {$slice: -10}
+ * MongoDB projection of the slice of an array, like: "'p': {$slice: -10}"
  */
 class MongoQueryProjectionArraySlice(val path: String, val index: String) extends MongoQueryProjection {
 

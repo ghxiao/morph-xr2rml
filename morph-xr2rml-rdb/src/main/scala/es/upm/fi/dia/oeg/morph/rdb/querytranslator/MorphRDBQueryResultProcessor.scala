@@ -252,7 +252,7 @@ class MorphRDBQueryResultProcessor(factory: IMorphFactory) extends MorphXMLQuery
     }
 
     /**
-     * Retrieve the column names that start like the SPARQL variable name => the columns from the result set,
+     * Retrieve the column names that start like the SPARQL variable name =&gt; the columns from the result set,
      * that correspond to that SPARQL variable
      */
     private def getElementsStartWith(columnNames: List[String], varName: String): List[String] = {

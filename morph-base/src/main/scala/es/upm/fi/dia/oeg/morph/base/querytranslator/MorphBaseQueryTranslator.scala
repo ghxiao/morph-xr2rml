@@ -66,7 +66,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     def transTPm(tpBindings: TPBindings): MorphAbstractQuery
 
@@ -78,7 +78,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of projections
-     * @throws MorphException if the triples map has no object map
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map has no object map
      */
     def genProjection(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryProjection] = {
 
@@ -112,7 +112,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of projections
-     * @thrown MorphException if the triples map has no referencing object map
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map has no referencing object map
      */
     def genProjectionParent(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryProjection] = {
 
@@ -154,7 +154,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of conditions, either non-null or equality
-     * @throws MorphException if the triples map has no object map
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map has no object map
      */
     def genCond(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryCondition] = {
 
@@ -244,7 +244,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @param tp a SPARQL triple pattern
      * @param tm a triples map that has been assessed as a candidate triples map for the translation of tp into a query
      * @return set of conditions, either non-null or equality
-     * @thrown MorphException if the triples map has no referencing object map
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map has no referencing object map
      */
     def genCondParent(tp: Triple, tm: R2RMLTriplesMap): Set[MorphBaseQueryCondition] = {
 

@@ -270,7 +270,7 @@ object R2RMLTermMap {
     /**
      * Deduce the type of the term map (constant, column, reference, template) based on its properties
      * @param rdfNode the term map node
-     * @throws Exception in case the term map type cannot be decided
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException in case the term map type cannot be decided
      */
     def extractTermMapType(rdfNode: RDFNode) = {
         rdfNode match {
@@ -322,7 +322,7 @@ object R2RMLTermMap {
      *
      * LIMITATION: only the term type, datatype and language tag are supported for now.
      * No reference or template nor further nested term map is supported.
-     * @TODO implement the full support of nested term maps
+     * @todo implement the full support of nested term maps
      */
     def extractNestedTermMap(parentTermMapType: Constants.MorphTermMapType.Value, rdfNode: RDFNode): Option[xR2RMLNestedTermMap] = {
         rdfNode match {

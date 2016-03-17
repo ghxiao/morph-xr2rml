@@ -40,7 +40,7 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
 
     /**
      * Group WHEREs:
-     * 	AND(..., WHERE(W1), WHERE(W2)) => AND(..., WHERE(W1 && W2)
+     * 	AND(..., WHERE(W1), WHERE(W2)) =&gt; AND(..., WHERE(W1 && W2)
      */
     def groupWheres: MongoQueryNodeAnd = {
         // Split WHERE nodes and other nodes
@@ -105,7 +105,7 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
     }
 
     /**
-     * Rule w4: AND(A1,...An, OR(B1,...Bn, W)) <=> UNION(AND(A1,...An, OR(B1,...Bn)), AND(A1,...An, W))
+     * Rule w4: AND(A1,...An, OR(B1,...Bn, W)) &lt;=&gt; UNION(AND(A1,...An, OR(B1,...Bn)), AND(A1,...An, W))
      *
      * If this AND node has no OR with a WHERE, then it is returned. Otherwise a UNION is returned.
      */
@@ -130,7 +130,7 @@ class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNod
         this
     }
     /**
-     * Rule w5: AND(A1,...An, UNION(B1,...Bn)) <=> UNION(AND(A1,...An, B1),... AND(A1,...An, Bn))
+     * Rule w5: AND(A1,...An, UNION(B1,...Bn)) &lt;=&gt; UNION(AND(A1,...An, B1),... AND(A1,...An, Bn))
      *
      * If this AND node has no UNION then it is returned, otherwise a UNION is returned.
      * If it has several UNIONs, the first one is considered as UNION(B1,...Bn).

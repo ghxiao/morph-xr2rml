@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                               http://maven.apache.org/maven-v4_0_0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                        http://maven.apache.org/maven-v4_0_0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>fr.unice.i3s</groupId>
@@ -8,6 +10,22 @@
 	<version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>morph-xr2rml parent project</name>
+
+	<organization>
+		<name>I3S laboratory - CNRS, University of Nice-Sophia</name>
+		<url>http://i3s.unice.fr/</url>
+	</organization>
+	<url>https://github.com/frmichel/morph-xr2rml/</url>
+
+	<developers>
+		<developer>
+			<id>fmichel</id>
+			<name>Franck Michel</name>
+			<email>franck.michel@cnrs.fr</email>
+			<organization>CNRS</organization>
+			<timezone>Europe/Paris</timezone>
+		</developer>
+	</developers>
 
 	<modules>
 		<module>morph-core</module>
@@ -19,8 +37,10 @@
 	</modules>
 
 	<properties>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
+		<javaVersion>7</javaVersion>
+		<maven.compiler.source>1.${javaVersion}</maven.compiler.source>
+		<maven.compiler.target>1.${javaVersion}</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<distributionManagement>
@@ -39,9 +59,6 @@
 		</snapshotRepository>
 
 	</distributionManagement>
-
-	<!-- <reporting> <plugins> <plugin> <groupId>org.scala-tools</groupId> <artifactId>maven-scala-plugin</artifactId> 
-		<version>2.15.2</version> </plugin> </plugins> </reporting> -->
 
 	<repositories>
 		<repository>
@@ -74,6 +91,13 @@
 	<!-- Common dependencies -->
 	<dependencies>
 		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.8.1</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
 			<version>2.11.7</version>
@@ -89,13 +113,6 @@
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.17</version>
-		</dependency>
-
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
-			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -157,6 +174,12 @@
 					</configuration>
 				</plugin>
 
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.19.1</version>
+				</plugin>
+
 				<!--This plugin's configuration is used to store Eclipse m2e settings 
 					only. It has no influence on the Maven build itself. Uncomment if Eclipse 
 					complains about the maven-scala-plugin executions in child project poms. -->
@@ -194,11 +217,21 @@
 			<plugin>
 				<groupId>org.scala-tools</groupId>
 				<artifactId>maven-scala-plugin</artifactId>
+				<version>2.15.2</version>
 				<configuration>
-                    <aggregateDirectOnly>true</aggregateDirectOnly>
-                    <forceAggregate>true</forceAggregate>
+					<aggregateDirectOnly>true</aggregateDirectOnly>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<aggregate>true</aggregate>
+				</configuration>
+			</plugin>
+
 		</plugins>
 	</reporting>
 

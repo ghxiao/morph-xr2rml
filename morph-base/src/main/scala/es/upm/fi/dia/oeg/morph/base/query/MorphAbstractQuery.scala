@@ -16,7 +16,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
  * the translation of this abstract query into the target database language.
  *
  * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
- * May contain several bindings after query optimization e.g. self-join elimination => 2 merged atomic queries
+ * May contain several bindings after query optimization e.g. self-join elimination i.e. 2 merged atomic queries
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */

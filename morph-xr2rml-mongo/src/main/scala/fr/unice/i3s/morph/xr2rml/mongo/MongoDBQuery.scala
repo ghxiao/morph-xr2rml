@@ -49,7 +49,7 @@ object MongoDBQuery {
     /**
      * Create a MongoDBQuery with no iterator.
      *
-     * A query string looks like this: db.myCollection.find({ 'a': { $exists: true} })
+     * A query string looks like this: "db.myCollection.find({ 'a': { $exists: true} })".
      * This method return a MongoDBQuery instance where collection = myCollection
      * and query string = "{ 'a': { $exists: true} }"
      */
@@ -86,10 +86,11 @@ object MongoDBQuery {
      * Return the most specific logical source of q1 and q2, i.e. when one is a sub-query of the other.
      * Sub-query meaning that they have the same type, reference formulation and iterator,
      * and the query string of the one starts like the query string of the other.
-     * Example:
+     * 
+     * @example
      * q1 = db.collection.find({field1: 10}) and
-     * q2 = db.collection.find({field1: 10, field2: 20})
-     * q2 is more specific than q1 => return an xR2RMLQuet with query string q2
+     * q2 = db.collection.find({field1: 10, field2: 20}).
+     * q2 is more specific than q1 =&gt;return an xR2RMLQuet with query string q2
      *
      * @param q1 an xR2RMLQuery with a MongoDB query string
      * @param q2 an xR2RMLQuery with a MongoDB query string
@@ -114,10 +115,11 @@ object MongoDBQuery {
     /**
      * Return the most specific query string of q1 and q2, i.e. when one is a sub-query of the other.
      * Sub-query meaning that they the query string of the one starts like the query string of the other.
-     * Example:
+     * 
+     * @example
      * q1 = db.collection.find({field1: 10}) and
-     * q2 = db.collection.find({field1: 10, field2: 20})
-     * q2 is more specific than q1 => return Some(q2)
+     * q2 = db.collection.find({field1: 10, field2: 20}).
+     * q2 is more specific than q1 =&gt; return Some(q2)
      *
      * @param q1 an MongoDB query string
      * @param q2 an MongoDB query string

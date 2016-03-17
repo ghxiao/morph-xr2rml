@@ -424,7 +424,7 @@ object JsonPathToMongoTranslator {
      * @param altPath a JSONPath that should start with a field alternative
      * @param cond the global condition (not null of equality)
      * @return a MongoQueryNode if altPath was a field alternative, none otherwise.
-     * @throws MorphException in case of serious parsing issue (probably due to a mistaken call to this method)
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException in case of serious parsing issue (probably due to a mistaken call to this method)
      */
     def translateFieldAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): Option[MongoQueryNode] = {
         val pre =
@@ -462,7 +462,7 @@ object JsonPathToMongoTranslator {
      * @param altPath a JSONPath that should start with an array index alternative
      * @param cond the global condition (not null of equality)
      * @result a MongoQueryNode if altPath was an array index alternative, none otherwise.
-     * @throws MorphException in case of serious parsing issue (probably due to a mistaken call to this method)
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException in case of serious parsing issue (probably due to a mistaken call to this method)
      */
     private def translateArrayIndexAlternative(prePath: String, altPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): Option[MongoQueryNode] = {
         val pre =

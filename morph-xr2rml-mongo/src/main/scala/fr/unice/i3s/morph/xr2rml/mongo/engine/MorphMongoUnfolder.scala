@@ -24,7 +24,7 @@ class MorphMongoUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(facto
      * Parse the query string provided in the mapping and build an instance of GenericQuery containing
      * a MongoDBQuery for the case of MongoDB, to be extended for other types of db.
      * @return GenericQuery instance corresponding to the query provided in the logical source
-     * @throws MorphException
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
     override def unfoldTriplesMap(triplesMap: R2RMLTriplesMap): GenericQuery = {
 

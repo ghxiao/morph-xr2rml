@@ -180,7 +180,7 @@ object MixedSyntaxPath {
      * Unescape the chars escaped in a path construct expression, name '/', '(', ')', '{' and '}'.
      */
     def unescapeChars(expr: String): String = {
-        // replaceAll takes a regex as first argument => '\' must be escaped: to replace '\/', the rexeg is '\\/'
+        // replaceAll takes a regex as first argument i.e. '\' must be escaped: to replace '\/', the rexeg is '\\/'
         expr.replaceAll("""\\/""", "/").replaceAll("""\\\(""", "(").replaceAll("""\\\)""", ")").replaceAll("""\\\}""", "}").replaceAll("""\\\{""", "{")
     }
 

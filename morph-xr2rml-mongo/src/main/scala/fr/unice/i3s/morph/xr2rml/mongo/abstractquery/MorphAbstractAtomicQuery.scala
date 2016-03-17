@@ -33,8 +33,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
  * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
  * Empty in the case of a child or parent query in a referencing object map, and in this case the binding is
  * in the instance of MorphAbstractQueryInnerJoinRef.
- * tpBindings may contain several bindings after query optimization e.g. self-join elimination => 2 atomic queries are merged
- * into a single one that will be used to generate triples for by 2 triples maps => 2 bindings
+ * tpBindings may contain several bindings after query optimization e.g. self-join elimination i.e. 2 atomic queries are merged
+ * into a single one that will be used to generate triples for by 2 triples maps i.e. 2 bindings
  * @param from the logical source, which must be the same as in the triples map of tpBindings
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
  * needed to generate the RDF terms of the result triples
@@ -279,17 +279,16 @@ class MorphAbstractAtomicQuery(
      * (ii) they have at least one shared variable (on which the join is to be done),
      * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
      *
-     * Example 1: if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
+     * @example if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
      * then they need to project the same reference as ?x: "$.fieldName AS ?x".
      * If we have "$.field1 AS ?x" in Q1 "$.field2 AS ?x" is Q2, then this is not a self-join,
      * on the contrary this is a legitimate join.
      *
-     * Example 2:
-     * If Q1 and Q2 have the same logical source, and
+     * @example If Q1 and Q2 have the same logical source, and
      * Q1 has projections "$.a AS ?x", "$.b AS ?x",
      * Q2 has projections "$.a AS ?x", "$.c AS ?x"
-     * then this is a proper self join because the same reference "$.a" is project as ?x in both qeries.
-     * => In general, for each shared variable ?x, there should be at least one common projection of ?x.
+     * then this is a proper self join because the same reference "$.a" is project as ?x in both queries.
+     * i.e. In general, for each shared variable ?x, there should be at least one common projection of ?x.
      *
      * Note that the same variable can be projected several times, e.g. when the same variable is used
      * several times in a triple pattern e.g.: "?x ns:predicate ?x ."

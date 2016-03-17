@@ -8,7 +8,6 @@ import com.hp.hpl.jena.rdf.model.Resource
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
-@throws[MorphException]
 class R2RMLPredicateObjectMap(
         val predicateMaps: List[R2RMLPredicateMap],
         val objectMaps: List[R2RMLObjectMap],
