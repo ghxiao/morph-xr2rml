@@ -4,22 +4,24 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
+
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
+import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
-    override def translate(op: Op): Option[MorphAbstractQuery] = { None }
+    override def translate(op: Op): Option[AbstractQuery] = { None }
 
-    override def transTPm(tpBindings: TPBindings): MorphAbstractQuery = {
+    override def transTPm(tpBindings: TPBindings): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 }
@@ -135,8 +137,8 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCond(tp, tmMovies)
         println(cond)
 
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.IsNotNull, null)))
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.actors.*", ConditionType.Equals, "T. Leung")))
+        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.code")))
+        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.actors.*", "T. Leung")))
     }
 
     @Test def test_genCond_equalsUri() {
@@ -151,8 +153,8 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCond(tp, tmMovies)
         println(cond)
 
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.Equals, "MovieY")))
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.actors.*", ConditionType.IsNotNull, null)))
+        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.code", "MovieY")))
+        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.actors.*")))
     }
 
     @Test def test_genCond_equalsUriPred() {
@@ -167,9 +169,9 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCond(tp, tmOther)
         println(cond)
 
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.Equals, "MovieY")))
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.relation.prop", ConditionType.Equals, "starring")))
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.relation.actors.*", ConditionType.IsNotNull, null)))
+        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.code", "MovieY")))
+        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.relation.prop", "starring")))
+        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.relation.actors.*")))
     }
 
     @Test def test_genCondParent_Uri() {
@@ -184,10 +186,10 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCondParent(tp, tmDirectors)
         println(cond)
 
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.dirname", ConditionType.IsNotNull, null)))
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.Equals, "Manh")))
-        assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
-        assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
+        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.dirname")))
+        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.code", "Manh")))
+        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.directed.*")))
+        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.name")))
     }
 
     @Test def test_genCondParent_Variable() {
@@ -202,10 +204,10 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCondParent(tp, tmDirectors)
         println(cond)
 
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.dirname", ConditionType.IsNotNull, null))) // join parent reference
-        assertTrue(cond.contains(new MorphBaseQueryCondition("$.code", ConditionType.IsNotNull, null))) // parent subject
-        assertFalse(cond.contains(new MorphBaseQueryCondition("$.directed.*", ConditionType.IsNotNull, null)))
-        assertFalse(cond.contains(new MorphBaseQueryCondition("$.name", ConditionType.IsNotNull, null)))
+        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.dirname"))) // join parent reference
+        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.code"))) // parent subject
+        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.directed.*")))
+        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.name")))
     }
 
     @Test def test() {

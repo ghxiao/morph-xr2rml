@@ -13,7 +13,7 @@ import com.hp.hpl.jena.vocabulary.RDF
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
@@ -54,7 +54,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
      * Generate triples in the context of the query rewriting: run the child and optional parent queries,
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
      */
-    def translateData_QueryRewriting(query: MorphAbstractQuery): Unit = {
+    def translateData_QueryRewriting(query: AbstractQuery): Unit = {
         try {
             this.generateRDFTriples(query)
         } catch {
@@ -70,7 +70,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
      * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    protected def generateRDFTriples(query: MorphAbstractQuery): Unit
+    protected def generateRDFTriples(query: AbstractQuery): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.

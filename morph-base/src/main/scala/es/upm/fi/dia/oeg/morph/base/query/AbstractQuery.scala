@@ -20,7 +20,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
-abstract class MorphAbstractQuery(
+abstract class AbstractQuery(
         val tpBindings: Set[TPBinding]) {
 
     /**
@@ -35,7 +35,7 @@ abstract class MorphAbstractQuery(
         throw new MorphException("Method not implemented")
     }
 
-    def setTargetQuery(tq: List[GenericQuery]): MorphAbstractQuery = {
+    def setTargetQuery(tq: List[GenericQuery]): AbstractQuery = {
         this.targetQuery = tq
         this
     }
@@ -77,12 +77,12 @@ abstract class MorphAbstractQuery(
     /**
      * Misc optimizations of the abstract query, notation self-join eliminations
      */
-    def optimizeQuery: MorphAbstractQuery
+    def optimizeQuery: AbstractQuery
 }
 
-object MorphAbstractQuery {
+object AbstractQuery {
 
-    def getSharedVariables(left: MorphAbstractQuery, right: MorphAbstractQuery) = {
+    def getSharedVariables(left: AbstractQuery, right: AbstractQuery) = {
         left.getVariables.intersect(right.getVariables)
     }
 }

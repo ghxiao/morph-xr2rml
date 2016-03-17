@@ -17,12 +17,12 @@ import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractAtomicQuery
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryInnerJoinRef
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.MorphAbstractQueryUnion
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQuery
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryUnion
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 
 class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
 
@@ -208,7 +208,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
      * @param query an abstract query in which the targetQuery fields must have been set
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if one of the atomic abstract queries in this query has no target query
      */
-    override def generateRDFTriples(query: MorphAbstractQuery): Unit = {
+    override def generateRDFTriples(query: AbstractQuery): Unit = {
         if (!query.isTargetQuerySet)
             throw new MorphException("Target queries not set in " + query)
 

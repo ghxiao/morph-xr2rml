@@ -8,7 +8,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
@@ -29,21 +29,21 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
  * @param parent the query representing the parent triples map
  * @param parentRef the xR2RML parent reference of the join condition: rr:joinCondition [ ... rr:parent ... ]
  */
-class MorphAbstractQueryInnerJoinRef(
+class AbstractQueryInnerJoinRef(
 
     tpBindings: Set[TPBinding],
-    val child: MorphAbstractAtomicQuery,
+    val child: AbstractAtomicQuery,
     val childRef: String,
-    val parent: MorphAbstractAtomicQuery,
+    val parent: AbstractAtomicQuery,
     val parentRef: String)
 
-        extends MorphAbstractQuery(tpBindings) {
+        extends AbstractQuery(tpBindings) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[MorphAbstractQueryInnerJoinRef] && {
-            val q = a.asInstanceOf[MorphAbstractQueryInnerJoinRef]
+        a.isInstanceOf[AbstractQueryInnerJoinRef] && {
+            val q = a.asInstanceOf[AbstractQueryInnerJoinRef]
             this.child == q.child && this.childRef == q.childRef && this.parent == q.parent && this.parentRef == q.parentRef
         }
     }
@@ -272,7 +272,7 @@ class MorphAbstractQueryInnerJoinRef(
     /**
      * Try to merge the the child and parent queries
      */
-    override def optimizeQuery: MorphAbstractQuery = {
+    override def optimizeQuery: AbstractQuery = {
         val opt = child.mergeForInnerJoin(this.parent)
         opt.getOrElse(this)
     }

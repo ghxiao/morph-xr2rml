@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.morph.abstractquery
 
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
@@ -12,7 +12,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
  * translation method from Morph-RDB has not been updated to deal with abstract queries.
  * Therefore all functions below thrown an exception. Only the targetQuery is used in this class.
  */
-class MorphAbstractQuerySql extends MorphAbstractQuery(Set.empty) {
+class AbstractQuerySql extends AbstractQuery(Set.empty) {
 
     override def toStringConcrete: String = {
         this.targetQuery.toString
@@ -56,7 +56,7 @@ class MorphAbstractQuerySql extends MorphAbstractQuery(Set.empty) {
         throw new MorphException("Not supported")
     }
 
-    override def optimizeQuery: MorphAbstractQuery = {
+    override def optimizeQuery: AbstractQuery = {
         throw new MorphException("Not umplemented")
     }
 }

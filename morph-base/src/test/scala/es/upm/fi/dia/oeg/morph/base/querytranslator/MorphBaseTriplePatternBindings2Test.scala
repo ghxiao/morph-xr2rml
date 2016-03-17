@@ -19,15 +19,15 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
-    override def translate(op: Op): Option[MorphAbstractQuery] = { None }
+    override def translate(op: Op): Option[AbstractQuery] = { None }
 
-    override def transTPm(tpBindings: TPBindings): MorphAbstractQuery = {
+    override def transTPm(tpBindings: TPBindings): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 }

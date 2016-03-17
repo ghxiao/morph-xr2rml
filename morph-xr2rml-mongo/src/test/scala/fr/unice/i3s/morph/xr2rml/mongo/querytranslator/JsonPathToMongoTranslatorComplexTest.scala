@@ -2,7 +2,7 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.junit.Test
 
-import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
+import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 
 class JsonPathToMongoTranslatorComplexTest {

@@ -1,38 +1,38 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
-import com.hp.hpl.jena.graph.Triple
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProjection
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
+import es.upm.fi.dia.oeg.morph.base.query.ConditionType
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.query.IReference
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
-import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
-import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
-import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
  * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
  * Empty in the case of a child or parent query in a referencing object map, and in this case the binding is
- * in the instance of MorphAbstractQueryInnerJoinRef.
+ * in the instance of AbstractQueryInnerJoinRef.
  * tpBindings may contain several bindings after query optimization e.g. self-join elimination i.e. 2 atomic queries are merged
  * into a single one that will be used to generate triples for by 2 triples maps i.e. 2 bindings
  * @param from the logical source, which must be the same as in the triples map of tpBindings
@@ -41,20 +41,20 @@ import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
  * @param where set of conditions applied to xR2RML references, entailed by matching the triples map
  * with the triple pattern.
  */
-class MorphAbstractAtomicQuery(
+class AbstractAtomicQuery(
 
     tpBindings: Set[TPBinding],
     val from: xR2RMLLogicalSource,
-    val project: Set[MorphBaseQueryProjection],
-    val where: Set[MorphBaseQueryCondition])
+    val project: Set[AbstractQueryProjection],
+    val where: Set[AbstractQueryCondition])
 
-        extends MorphAbstractQuery(tpBindings) {
+        extends AbstractQuery(tpBindings) {
 
     val logger = Logger.getLogger(this.getClass().getName())
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[MorphAbstractAtomicQuery] && {
-            val p = a.asInstanceOf[MorphAbstractAtomicQuery]
+        a.isInstanceOf[AbstractAtomicQuery] && {
+            val p = a.asInstanceOf[AbstractAtomicQuery]
             this.from == p.from && this.project == p.project && this.where == p.where
         }
     }
@@ -102,15 +102,15 @@ class MorphAbstractAtomicQuery(
             // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
             val iter = this.from.docIterator
             val reference =
-                if (iter.isDefined) cond.reference.replace("$", iter.get)
-                else cond.reference
+                if (iter.isDefined) cond.asInstanceOf[IReference].reference.replace("$", iter.get)
+                else cond.asInstanceOf[IReference].reference
 
             // Translate the condition on a JSONPath reference into an abstract MongoDB query (a MongoQueryNode)
             cond.condType match {
                 case ConditionType.IsNotNull =>
                     JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.IsNotNull, null))
                 case ConditionType.Equals =>
-                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue))
+                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.Equals, cond.asInstanceOf[AbstractQueryConditionEquals].eqValue))
                 case _ => throw new MorphException("Unsupported condition type " + cond.condType)
             }
         })
@@ -269,7 +269,7 @@ class MorphAbstractAtomicQuery(
     /**
      * An atomic query cannot be optimized. Return self
      */
-    override def optimizeQuery: MorphAbstractQuery = { this }
+    override def optimizeQuery: AbstractQuery = { this }
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
@@ -300,13 +300,13 @@ class MorphAbstractAtomicQuery(
      * @param q the right query of the join
      * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForInnerJoin(q: MorphAbstractQuery): Option[MorphAbstractAtomicQuery] = {
+    def mergeForInnerJoin(q: AbstractQuery): Option[AbstractAtomicQuery] = {
 
-        if (!q.isInstanceOf[MorphAbstractAtomicQuery])
+        if (!q.isInstanceOf[AbstractAtomicQuery])
             return None
 
-        val right = q.asInstanceOf[MorphAbstractAtomicQuery]
-        var result: Option[MorphAbstractAtomicQuery] = None
+        val right = q.asInstanceOf[AbstractAtomicQuery]
+        var result: Option[AbstractAtomicQuery] = None
         val left = this
 
         val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
@@ -327,14 +327,14 @@ class MorphAbstractAtomicQuery(
                     val mergedWhere = left.where ++ right.where
                     val mergedProj = left.project ++ right.project
                     val mergedBindings = left.tpBindings ++ right.tpBindings
-                    result = Some(new MorphAbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
+                    result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
                 }
             }
         }
         result
     }
 
-    def mergeForLeftJoin(right: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+    def mergeForLeftJoin(right: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
         logger.error("Optional-Self-Join Elimination: Operation not supported")
         None
     }
@@ -350,20 +350,20 @@ class MorphAbstractAtomicQuery(
      * @param q the right query of the union
      * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForUnion(q: MorphAbstractAtomicQuery): Option[MorphAbstractAtomicQuery] = {
+    def mergeForUnion(q: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
 
-        if (!q.isInstanceOf[MorphAbstractAtomicQuery])
+        if (!q.isInstanceOf[AbstractAtomicQuery])
             return None
 
-        val right = q.asInstanceOf[MorphAbstractAtomicQuery]
-        var result: Option[MorphAbstractAtomicQuery] = None
+        val right = q.asInstanceOf[AbstractAtomicQuery]
+        var result: Option[AbstractAtomicQuery] = None
         val left = this
 
         if (left.from == right.from) {
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
             val mergedWhere = left.where ++ right.where // @todo replace with a new OR condition
-            result = Some(new MorphAbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
+            result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
         }
         result
     }

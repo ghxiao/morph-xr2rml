@@ -1,8 +1,9 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
+import es.upm.fi.dia.oeg.morph.base.query.ConditionType
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 
 /**
  * MongoDB query element representing an equality or not null condition on a field.
@@ -37,10 +38,10 @@ object MongoQueryNodeCond {
     /**
      *  Create a MongoQueryNodeCond from a generic MorphBaseQueryCondition
      */
-    def apply(cond: MorphBaseQueryCondition): MongoQueryNodeCond = {
+    def apply(cond: AbstractQueryCondition): MongoQueryNodeCond = {
         cond.condType match {
             case ConditionType.IsNotNull => new MongoQueryNodeCond(ConditionType.IsNotNull, null)
-            case ConditionType.Equals => new MongoQueryNodeCond(ConditionType.Equals, cond.eqValue)
+            case ConditionType.Equals => new MongoQueryNodeCond(ConditionType.Equals, cond.asInstanceOf[AbstractQueryConditionEquals].eqValue)
             case ConditionType.SparqlFilter => throw new MorphException("No equivalent Mongo condition for a SPARQL filter condition")
         }
     }

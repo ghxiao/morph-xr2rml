@@ -4,7 +4,7 @@ import java.io.Writer
 import com.hp.hpl.jena.query.Query
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
@@ -31,6 +31,6 @@ abstract class MorphBaseQueryResultProcessor(factory: IMorphFactory) {
      * Conversely, MongoDB does not support joins, therefore there may be several queries in the AbstractQuery.
      * In this case the xR2RML processor shall compute the join itself.
      */
-    def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery])
+    def translateResult(mapSparqlSql: Map[Query, AbstractQuery])
 
 }

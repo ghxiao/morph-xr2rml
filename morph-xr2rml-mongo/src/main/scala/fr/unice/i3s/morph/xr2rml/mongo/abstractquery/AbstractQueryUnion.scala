@@ -3,7 +3,7 @@ package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import org.apache.log4j.Logger
@@ -17,15 +17,15 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * 
  * @param members the abstract query members of the union
  */
-class MorphAbstractQueryUnion(
-    val members: List[MorphAbstractQuery])
-        extends MorphAbstractQuery(Set.empty) {
+class AbstractQueryUnion(
+    val members: List[AbstractQuery])
+        extends AbstractQuery(Set.empty) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[MorphAbstractQueryUnion] &&
-            this.members == a.asInstanceOf[MorphAbstractQueryUnion].members
+        a.isInstanceOf[AbstractQueryUnion] &&
+            this.members == a.asInstanceOf[AbstractQueryUnion].members
     }
 
     override def toString = {
@@ -87,10 +87,10 @@ class MorphAbstractQueryUnion(
     /**
      * Optimize the members of the union
      */
-    override def optimizeQuery: MorphAbstractQuery = {
+    override def optimizeQuery: AbstractQuery = {
 
         val membersOpt = members.map(_.optimizeQuery)
-        new MorphAbstractQueryUnion(membersOpt)
+        new AbstractQueryUnion(membersOpt)
     }
 
 }

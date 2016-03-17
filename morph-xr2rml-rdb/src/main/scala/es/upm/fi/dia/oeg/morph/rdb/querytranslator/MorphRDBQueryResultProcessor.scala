@@ -20,7 +20,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
@@ -39,7 +39,7 @@ class MorphRDBQueryResultProcessor(factory: IMorphFactory) extends MorphXMLQuery
      * In the RDB case the AbstractQuery should contain only one element, since
      * the UNION is supported in SQL.<br>
      */
-    override def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery]) {
+    override def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
         val start = System.currentTimeMillis();
         var i = 0;
         mapSparqlSql.foreach(mapElement => {

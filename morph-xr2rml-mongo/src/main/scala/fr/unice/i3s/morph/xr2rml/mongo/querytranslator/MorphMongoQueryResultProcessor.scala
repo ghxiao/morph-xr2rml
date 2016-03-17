@@ -10,7 +10,7 @@ import com.hp.hpl.jena.query.ResultSetFormatter
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
@@ -27,10 +27,10 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
      * Execute the database query, translate the database results into triples,
      * evaluate the SPARQL query on the resulting graph and save the XML output to a file.
      *
-     * @param mapSparqlSql map of SPARQL queries and associated MorphAbstractQuery instances.
-     * Each MorphAbstractQuery has been translated into executable target queries
+     * @param mapSparqlSql map of SPARQL queries and associated AbstractQuery instances.
+     * Each AbstractQuery has been translated into executable target queries
      */
-    override def translateResult(mapSparqlSql: Map[Query, MorphAbstractQuery]) {
+    override def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
 
         mapSparqlSql.foreach(mapElement => {
             var start = System.currentTimeMillis();

@@ -26,7 +26,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
@@ -234,7 +234,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
      *
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    override def generateRDFTriples(query: MorphAbstractQuery): Unit = {
+    override def generateRDFTriples(query: AbstractQuery): Unit = {
         throw new MorphException("Unsupported action.")
     }
 

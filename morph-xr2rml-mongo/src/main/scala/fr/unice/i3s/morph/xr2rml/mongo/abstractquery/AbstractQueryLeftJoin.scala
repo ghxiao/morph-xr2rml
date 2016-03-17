@@ -4,7 +4,7 @@ import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
@@ -17,18 +17,18 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * @param left the query representing the left basic graph pattern of the join
  * @param right the query representing the right basic graph pattern of the join
  */
-class MorphAbstractQueryLeftJoin(
+class AbstractQueryLeftJoin(
 
-    val left: MorphAbstractQuery,
-    val right: MorphAbstractQuery)
+    val left: AbstractQuery,
+    val right: AbstractQuery)
 
-        extends MorphAbstractQuery(Set.empty) {
+        extends AbstractQuery(Set.empty) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[MorphAbstractQueryLeftJoin] && {
-            val q = a.asInstanceOf[MorphAbstractQueryLeftJoin]
+        a.isInstanceOf[AbstractQueryLeftJoin] && {
+            val q = a.asInstanceOf[AbstractQueryLeftJoin]
             this.left == q.left && this.right == q.right
         }
     }
@@ -152,15 +152,15 @@ class MorphAbstractQueryLeftJoin(
     /**
      * Optimize left and right members and try to merge them if they are atomic queries
      */
-    override def optimizeQuery: MorphAbstractQuery = {
+    override def optimizeQuery: AbstractQuery = {
 
         val leftOpt = left.optimizeQuery
         val rightOpt = right.optimizeQuery
-        if (leftOpt.isInstanceOf[MorphAbstractAtomicQuery] && rightOpt.isInstanceOf[MorphAbstractAtomicQuery]) {
-            val opt = leftOpt.asInstanceOf[MorphAbstractAtomicQuery].mergeForLeftJoin(rightOpt.asInstanceOf[MorphAbstractAtomicQuery])
+        if (leftOpt.isInstanceOf[AbstractAtomicQuery] && rightOpt.isInstanceOf[AbstractAtomicQuery]) {
+            val opt = leftOpt.asInstanceOf[AbstractAtomicQuery].mergeForLeftJoin(rightOpt.asInstanceOf[AbstractAtomicQuery])
             if (opt.isDefined) return opt.get
         }
 
-        new MorphAbstractQueryLeftJoin(leftOpt, rightOpt)
+        new AbstractQueryLeftJoin(leftOpt, rightOpt)
     }
 }

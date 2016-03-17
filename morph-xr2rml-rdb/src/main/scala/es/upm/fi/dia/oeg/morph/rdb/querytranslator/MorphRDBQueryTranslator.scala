@@ -60,13 +60,13 @@ import Zql.ZExpression
 import Zql.ZGroupBy
 import Zql.ZOrderBy
 import Zql.ZSelectItem
-import es.upm.fi.dia.oeg.morph.abstractquery.MorphAbstractQuerySql
+import es.upm.fi.dia.oeg.morph.abstractquery.AbstractQuerySql
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.query.MorphAbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTransTPResult
@@ -116,7 +116,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
      * the query translation method is still the one defined in Morph-RDB, it has not been upgrade
      * to support the abstract query mechanism used in the MongoDB case.
      */
-    override def transTPm(tpBindingds: TPBindings): MorphAbstractQuery = {
+    override def transTPm(tpBindingds: TPBindings): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 
@@ -135,7 +135,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
     /**
      * High level entry point to the query translation process.
      */
-    override def translate(op: Op): Option[MorphAbstractQuery] = {
+    override def translate(op: Op): Option[AbstractQuery] = {
         logger.debug("opSparqlQuery = " + op);
 
         // Find candidate triples maps
@@ -184,7 +184,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         }
 
         logger.debug("Rewritten sql query = \n" + resultQuery + "\n");
-        Some(new MorphAbstractQuerySql().setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None))))
+        Some(new AbstractQuerySql().setTargetQuery(List(new GenericQuery(Constants.DatabaseType.Relational, resultQuery, None))))
     }
 
     private def getColumnsByNode(node: Node, oldSelectItems: List[ZSelectItem]): LinkedHashSet[String] = {

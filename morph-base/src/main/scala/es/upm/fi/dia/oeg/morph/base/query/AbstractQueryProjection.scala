@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg.morph.base.querytranslator
+package es.upm.fi.dia.oeg.morph.base.query
 
 /**
  * Representation of one or several xR2RML references to be projected out of a target database query.
@@ -11,7 +11,7 @@ package es.upm.fi.dia.oeg.morph.base.querytranslator
  *
  * @author Franck Michel (franck.michel@cnrs.fr)
  */
-class MorphBaseQueryProjection(
+class AbstractQueryProjection(
         val references: Set[String],
         val as: Option[String]) {
 
@@ -29,8 +29,8 @@ class MorphBaseQueryProjection(
     }
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[MorphBaseQueryProjection] && {
-            val p = a.asInstanceOf[MorphBaseQueryProjection]
+        a.isInstanceOf[AbstractQueryProjection] && {
+            val p = a.asInstanceOf[AbstractQueryProjection]
             this.references == p.references && this.as == p.as
         }
     }

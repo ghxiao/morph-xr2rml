@@ -5,7 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-import es.upm.fi.dia.oeg.morph.base.querytranslator.ConditionType
+import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 
 class MongoQueryNodeTest {
 
