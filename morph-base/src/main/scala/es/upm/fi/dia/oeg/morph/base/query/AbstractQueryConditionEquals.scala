@@ -9,11 +9,9 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * @param reference the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies,
  * typically the column name or JSONPath expression
  * @param eqValue object of the equality condition
- *
- * @author Franck Michel (franck.michel@cnrs.fr)
  */
 class AbstractQueryConditionEquals(
-        val reference: String,
+        var reference: String,
         val eqValue: Object) extends AbstractQueryCondition(ConditionType.Equals) with IReference {
 
     override def toString: String = {

@@ -23,7 +23,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 
@@ -99,20 +98,14 @@ class AbstractAtomicQuery(
 
         // Generate one abstract MongoDB query for each isNotNull and Equality condition
         val mongAbsQs: Set[MongoQueryNode] = whereConds.map(cond => {
+            val condIRef = cond.asInstanceOf[IReference]
             // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
             val iter = this.from.docIterator
-            val reference =
-                if (iter.isDefined) cond.asInstanceOf[IReference].reference.replace("$", iter.get)
-                else cond.asInstanceOf[IReference].reference
+            if (iter.isDefined)
+                condIRef.reference = condIRef.reference.replace("$", iter.get)
 
             // Translate the condition on a JSONPath reference into an abstract MongoDB query (a MongoQueryNode)
-            cond.condType match {
-                case ConditionType.IsNotNull =>
-                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.IsNotNull, null))
-                case ConditionType.Equals =>
-                    JsonPathToMongoTranslator.trans(reference, new MongoQueryNodeCond(ConditionType.Equals, cond.asInstanceOf[AbstractQueryConditionEquals].eqValue))
-                case _ => throw new MorphException("Unsupported condition type " + cond.condType)
-            }
+            JsonPathToMongoTranslator.trans(cond)
         })
 
         // If there are several queries (more than 1), encapsulate them under a top-level AND

@@ -7,14 +7,16 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * process by matching terms of a triple pattern with references from a term map.
  *
  * @param condType The type of condition
- * @author Franck Michel (franck.michel@cnrs.fr)
  */
 abstract class AbstractQueryCondition(
         val condType: ConditionType.Value) {
-
-    def hasReference = false
+    
+    def hasReference: Boolean
 }
 
+/**
+ * Types of conditions in the <i>Where</i> part an atomic abstract query.
+ */
 object ConditionType extends Enumeration {
     val Equals, IsNotNull, IsNull, Or, SparqlFilter = Value
 }

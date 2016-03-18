@@ -17,8 +17,6 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
  *
  * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
  * May contain several bindings after query optimization e.g. self-join elimination i.e. 2 merged atomic queries
- *
- * @author Franck Michel (franck.michel@cnrs.fr)
  */
 abstract class AbstractQuery(
         val tpBindings: Set[TPBinding]) {

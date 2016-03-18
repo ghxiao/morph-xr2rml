@@ -1,9 +1,10 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.junit.Test
-
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 
 class JsonPathToMongoTranslatorComplexTest {
 
@@ -12,8 +13,8 @@ class JsonPathToMongoTranslatorComplexTest {
     @Test def test_Complex() {
         println("------ test_Complex")
         var jpExpr = """$.a[?(@.q.length == 5 || @.q.length == 3)].r"""
-        var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
-        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        var cond = new AbstractQueryConditionEquals(jpExpr, "val")
+        var query = JsonPathToMongoTranslator.trans(cond)
 
         println("Query unoptimized: " + query.toTopLevelQuery("tititutu"))
         println("Query optimized  : " + query.optimize.toTopLevelQuery("tititutu"))
@@ -23,8 +24,8 @@ class JsonPathToMongoTranslatorComplexTest {
         println("------ test_ComplexUnsupportedFilter")
 
         var jpExpr = """$.a[?( @.q.length == 5 || (@.s.length > 3 && @.t.length <= 6) )].r"""
-        var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
-        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        var cond = new AbstractQueryConditionEquals(jpExpr, "val")
+        var query = JsonPathToMongoTranslator.trans(cond)
 
         println("Query optimized  : " + query.optimize.toTopLevelQuery("tititutu"))
         println("Query unoptimized: " + query.toTopLevelQuery("tititutu"))
@@ -34,8 +35,8 @@ class JsonPathToMongoTranslatorComplexTest {
         println("------ test_ComplexPullupWhere")
 
         var jpExpr = """$["a","b"][1,3][(@.length-1)].r"""
-        var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
-        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        var cond = new AbstractQueryConditionEquals(jpExpr, "val")
+        var query = JsonPathToMongoTranslator.trans(cond)
 
         println("Query optimized  : " + query.optimize)
         println("Query unoptimized: " + query)
@@ -45,8 +46,8 @@ class JsonPathToMongoTranslatorComplexTest {
         println("------ test_Complex2")
 
         var jpExpr = """$.p.*[?(@.s)].r"""
-        var cond = new MongoQueryNodeCond(ConditionType.Equals, "val")
-        var query = JsonPathToMongoTranslator.trans(jpExpr, cond)
+        var cond = new AbstractQueryConditionEquals(jpExpr, "val")
+        var query = JsonPathToMongoTranslator.trans(cond)
 
         println("Query optimized  : " + query.optimize.toTopLevelQuery("tititutu"))
         println("Query unoptimized: " + query.toTopLevelQuery("tititutu"))

@@ -3,11 +3,20 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 import org.apache.log4j.Logger
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
+import es.upm.fi.dia.oeg.morph.base.query.IReference
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondEquals
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondFactory
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondIsNull
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondNotExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondNotNull
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
@@ -130,22 +139,54 @@ object JsonPathToMongoTranslator {
 
     /**
      * Entry point of the translation of a JSONPath expression with a top-level condition into a MongoDB query.
-     * The resulting query is not optimized. To get it optimized, call the optimize method or use
-     * the other trans() method with parameter optimize set to true.
+     * The resulting query is not optimized.
      *
-     * @param jpPath the JSONPath expression to translate, may be empty or null
+     * @param cond and condition on a JSONPath expression to translate, must NOT be empty or null
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
-     * The result CAN'T be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
+     * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
      *
      */
-    def trans(jpPath: String, cond: MongoQueryNodeCond): MongoQueryNode = {
-        val path = if (jpPath == null) "" else jpPath
-        transJsonPathToMongo(path, cond, List.empty)
+    def trans(cond: AbstractQueryCondition): MongoQueryNode = {
+        trans(cond, List.empty)
     }
 
-    def trans(jpPath: String, cond: MongoQueryNodeCond, projection: List[MongoQueryProjection]): MongoQueryNode = {
-        val path = if (jpPath == null) "" else jpPath
-        transJsonPathToMongo(path, cond, projection)
+    /**
+     * Entry point of the translation of a JSONPath expression with a top-level condition into a MongoDB query.
+     * The resulting query is not optimized.
+     *
+     * @param cond and condition on a JSONPath expression to translate, must NOT be empty or null
+     * @param projection set of projections to push in the MongoDB query (@todo not implemented)
+     * @return a MongoQueryNode instance representing the top-level MongoDB query.
+     * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
+     *
+     */
+    def trans(cond: AbstractQueryCondition, projection: List[MongoQueryProjection]): MongoQueryNode = {
+        var path =
+            if (cond.hasReference) {
+                val ref = cond.asInstanceOf[IReference].reference
+                if (ref == null) "" else ref
+            } else ""
+
+        cond.condType match {
+            case ConditionType.IsNull => {
+                // isNull(ref) => OR(FIELD(ref) NOTEXISTS, FIELD(ref) ISNULL)
+                val condIsNull = cond.asInstanceOf[AbstractQueryConditionIsNull]
+                new MongoQueryNodeOr(List(
+                    transJsonPathToMongo(path, new MongoQueryNodeCondNotExists, projection),
+                    transJsonPathToMongo(path, new MongoQueryNodeCondIsNull, projection)
+                ))
+            }
+
+            case ConditionType.Or => {
+                val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
+                new MongoQueryNodeOr(condOr.members.map(c =>
+                    transJsonPathToMongo(path, MongoQueryNodeCondFactory(c), projection)
+                ))
+            }
+
+            case _ =>
+                transJsonPathToMongo(path, MongoQueryNodeCondFactory(cond), projection)
+        }
     }
 
     /**
@@ -188,7 +229,7 @@ object JsonPathToMongoTranslator {
             if (path.length == 1)
                 return new MongoQueryNodeNotSupported(path)
             else
-                return trans(path.substring(1), cond, projection)
+                return transJsonPathToMongo(path.substring(1), cond, projection)
         }
 
         // ------ Rule R2: Field alternative (a) or array index alternative (b)
@@ -205,7 +246,7 @@ object JsonPathToMongoTranslator {
                 // ------ Rule R2a:
                 // trans(<JP:F>["p","q",...]<JP>, <cond>) ->
                 //       OR(trans(<JP:F>.p<JP>, <cond>), trans(<JP:F>.q<JP>, <cond>), ...)
-                var result = translateFieldAlternative(match0, after_match0.toString(), cond, projection)
+                var result = translateFieldAlternative(match0, after_match0.toString, cond, projection)
                 if (result.isDefined) {
                     if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matched rule R2a")
                     return result.get
@@ -265,12 +306,12 @@ object JsonPathToMongoTranslator {
                 if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule R4")
                 val transJsBoolExpr = JavascriptToMongoTranslator.transJS(replaceAt("this", match0))
                 if (transJsBoolExpr.isDefined) {
-                    val members = List(trans(after_match0.toString, cond, projection), transJsBoolExpr.get)
+                    val members = List(transJsonPathToMongo(after_match0.toString, cond, projection), transJsBoolExpr.get)
                     if (logger.isTraceEnabled()) logger.trace("Rule 4, ELEMMATCH members: " + members.map(m => m.toString))
                     return new MongoQueryNodeElemMatch(members)
                 } else {
                     logger.error("Rule R4: JS expression [" + match0 + "] could not be translated into a MongoDB query. Ignoring it.")
-                    return trans(after_match0.toString, cond, projection)
+                    return transJsonPathToMongo(after_match0.toString, cond, projection)
                 }
             }
         }
@@ -308,7 +349,7 @@ object JsonPathToMongoTranslator {
                     }
                 }
                 if (arraySliceNode.isDefined)
-                    return trans(match0.toString + ".*" + after_match1, cond, projection :+ arraySliceNode.get)
+                    return transJsonPathToMongo(match0.toString + ".*" + after_match1, cond, projection :+ arraySliceNode.get)
             }
         }
 
@@ -393,7 +434,7 @@ object JsonPathToMongoTranslator {
                 fieldMatch = matched(0).group(0)
                 afterMatch = matched(0).after(0).toString
                 if (logger.isTraceEnabled()) logger.trace("Rule R7, matched: " + fieldMatch + ", afterMatch: " + afterMatch);
-                return new MongoQueryNodeElemMatch(trans(afterMatch, cond, projection))
+                return new MongoQueryNodeElemMatch(transJsonPathToMongo(afterMatch, cond, projection))
             }
         }
 
@@ -408,7 +449,7 @@ object JsonPathToMongoTranslator {
                 val match0 = match0_JPF_list(0).group(0) // Match0 is a <JP:F>
                 val after_match0 = match0_JPF_list(0).after(0).toString()
                 if (logger.isTraceEnabled()) logger.trace("Rule R8, matched: " + match0 + ", afterMatch: " + after_match0);
-                return new MongoQueryNodeField(match0, List(trans(after_match0, cond, projection)), projection)
+                return new MongoQueryNodeField(match0, List(transJsonPathToMongo(after_match0, cond, projection)), projection)
             }
         }
 
@@ -450,7 +491,7 @@ object JsonPathToMongoTranslator {
             if (logger.isTraceEnabled()) logger.trace("OR members: " + orMembers)
 
             // Run the translation of each OR member
-            Some(new MongoQueryNodeOr(orMembers.map(om => trans(om, cond, projection))))
+            Some(new MongoQueryNodeOr(orMembers.map(om => transJsonPathToMongo(om, cond, projection))))
         } else
             None
     }
@@ -488,7 +529,7 @@ object JsonPathToMongoTranslator {
             if (logger.isTraceEnabled()) logger.trace("OR members: " + orMembers)
 
             // Run the translation of each OR member
-            Some(new MongoQueryNodeOr(orMembers.map(om => trans(om, cond, projection))))
+            Some(new MongoQueryNodeOr(orMembers.map(om => transJsonPathToMongo(om, cond, projection))))
         } else
             None
     }
@@ -502,9 +543,9 @@ object JsonPathToMongoTranslator {
      * Translate a top-level condition into a JavaScript condition
      */
     private def condJS(cond: MongoQueryNodeCond): String = {
-        cond.cond match {
-            case ConditionType.IsNotNull => " != null"
-            case ConditionType.Equals => " == " + cond.value
+        cond match {
+            case _: MongoQueryNodeCondNotNull => " != null"
+            case c: MongoQueryNodeCondEquals => " == " + c.asInstanceOf[MongoQueryNodeCondEquals].value
         }
     }
 }

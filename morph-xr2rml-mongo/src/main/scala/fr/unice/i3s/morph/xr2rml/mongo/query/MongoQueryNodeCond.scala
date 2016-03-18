@@ -2,47 +2,39 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
-import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 
-/**
- * MongoDB query element representing an equality or not null condition on a field.
- * For an equality:
- * 		"$eq: value" (non string value)
- * For a not null condition:
- * 		"$exists: true, $ne: null"
- */
-class MongoQueryNodeCond(
-    val cond: ConditionType.Value,
-    val value: Object)
-        extends MongoQueryNode {
-
-    override def equals(q: Any): Boolean = {
-        q.isInstanceOf[MongoQueryNodeCond] && this.cond == q.asInstanceOf[MongoQueryNodeCond].cond &&
-            this.value == q.asInstanceOf[MongoQueryNodeCond].value
-    }
-
-    override def toString() = {
-        cond match {
-            case ConditionType.IsNotNull => "$exists: true, $ne: null"
-            case ConditionType.Equals =>
-                if (value.isInstanceOf[String])
-                    "$eq: '" + value + "'"
-                else
-                    "$eq: " + value
-        }
-    }
+abstract class MongoQueryNodeCond extends MongoQueryNode {
 }
 
-object MongoQueryNodeCond {
+object MongoQueryNodeCondFactory {
     /**
-     *  Create a MongoQueryNodeCond from a generic MorphBaseQueryCondition
+     *  Create a condition node from a generic AbstractQueryCondition.
+     *  
+     *  Equals and IsNotNull are terminal conditions, i.e. they can be translated
+     *  straight into a MongoDB condition appended after a field name, example:
+     *  " 'field': {$eq: 10} "
+     *   
+     *  Conversely, IsNull and Or conditions are non terminal for MongoDB.
+     *  Example: "IsNull($.field)" means that the field is either null or it does not exists. 
+     *  MongoDB does not allow the following expression that could be produced straight away:
+     *  
+     *  "  'field': $or: [{$eq: null}, {$exists: false}] "
+     *  
+     *  Instead we have to produce:
+     *   
+     *  "  $or: [{'field': {$eq: null}}, {'field': {$exists: false}}] "
+     *  
+     *  This factory only deals with the first two cases. The next two will be handled in JsonPathToMongoTranslator.
      */
     def apply(cond: AbstractQueryCondition): MongoQueryNodeCond = {
         cond.condType match {
-            case ConditionType.IsNotNull => new MongoQueryNodeCond(ConditionType.IsNotNull, null)
-            case ConditionType.Equals => new MongoQueryNodeCond(ConditionType.Equals, cond.asInstanceOf[AbstractQueryConditionEquals].eqValue)
-            case ConditionType.SparqlFilter => throw new MorphException("No equivalent Mongo condition for a SPARQL filter condition")
+            case ConditionType.IsNotNull => new MongoQueryNodeCondNotNull
+
+            case ConditionType.Equals => new MongoQueryNodeCondEquals(cond.asInstanceOf[AbstractQueryConditionEquals].eqValue)
+
+            case _ => throw new MorphException("Condition type not supported: " + cond)
         }
     }
 }

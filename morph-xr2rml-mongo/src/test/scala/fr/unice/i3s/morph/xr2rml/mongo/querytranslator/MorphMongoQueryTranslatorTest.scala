@@ -14,7 +14,6 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
@@ -24,7 +23,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQuery
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondEquals
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
@@ -61,8 +60,8 @@ class MorphMongoQueryTranslatorTest {
     @Test def test_mongoAbstractQuerytoConcrete_Field() {
         println("------ test_mongoAbstractQuerytoConcrete_Field")
 
-        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCond(ConditionType.Equals, "bbb")))
-        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")))
+        val field = new MongoQueryNodeField("b", List(new MongoQueryNodeCondEquals("bbb")))
+        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCondEquals("b0b")))
 
         println("---------------------------------")
         var fromPart = new MongoDBQuery("collection", "tititutu")
@@ -78,7 +77,7 @@ class MorphMongoQueryTranslatorTest {
         var fromPart = new MongoDBQuery("collection", "tititutu")
 
         val compare = new MongoQueryNodeField("a", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))
-        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")))
+        val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCondEquals("b0b")))
         val exists1 = new MongoQueryNodeField("c", new MongoQueryNodeCondExists)
         val exists2 = new MongoQueryNodeField("d", new MongoQueryNodeCondExists)
         val or = new MongoQueryNodeOr(List(exists1, exists2))
@@ -129,7 +128,7 @@ class MorphMongoQueryTranslatorTest {
 
         val compare = new MongoQueryNodeField("a.b", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))
         val exists = new MongoQueryNodeField("a.b", new MongoQueryNodeCondExists)
-        val field = new MongoQueryNodeField("c", List(new MongoQueryNodeCond(ConditionType.Equals, "ccc")))
+        val field = new MongoQueryNodeField("c", List(new MongoQueryNodeCondEquals("ccc")))
 
         println("---------------------------------")
         var result = queryTranslator.mongoAbstractQuerytoConcrete(fromPart, Set.empty, new MongoQueryNodeAnd(List(compare, field, exists)))

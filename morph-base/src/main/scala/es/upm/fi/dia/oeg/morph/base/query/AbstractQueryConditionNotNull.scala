@@ -5,10 +5,9 @@ package es.upm.fi.dia.oeg.morph.base.query
  * process by matching terms of a triple pattern with references from a term map.
  *
  * @param reference the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies
- * @author Franck Michel (franck.michel@cnrs.fr)
  */
 class AbstractQueryConditionNotNull(
-        val reference: String) extends AbstractQueryCondition(ConditionType.IsNotNull) with IReference {
+        var reference: String) extends AbstractQueryCondition(ConditionType.IsNotNull) with IReference {
 
     override def toString: String = {
         "NotNull(" + reference + ")"

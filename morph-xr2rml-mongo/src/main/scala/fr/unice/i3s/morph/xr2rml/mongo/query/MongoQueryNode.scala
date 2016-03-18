@@ -120,11 +120,6 @@ abstract class MongoQueryNode {
      */
     def optimizeQuery: MongoQueryNode = {
         val optd = this match {
-            case a: MongoQueryNodeCond => a
-            case a: MongoQueryNodeCompare => a
-            case a: MongoQueryNodeCondExists => a
-            case a: MongoQueryNodeCondNotExists => a
-            case a: MongoQueryNodeNotSupported => a
             case a: MongoQueryNodeWhere => a
 
             case a: MongoQueryNodeUnion => {
@@ -185,6 +180,9 @@ abstract class MongoQueryNode {
                     else new MongoQueryNodeOr(optMembers)
                 }
             }
+
+            // Anything else
+            case a => a
         }
 
         if (this != optd) {
@@ -200,11 +198,6 @@ abstract class MongoQueryNode {
      */
     def pullUpWheres: MongoQueryNode = {
         val optd = this match {
-            case a: MongoQueryNodeCond => a
-            case a: MongoQueryNodeCompare => a
-            case a: MongoQueryNodeCondExists => a
-            case a: MongoQueryNodeCondNotExists => a
-            case a: MongoQueryNodeNotSupported => a
             case a: MongoQueryNodeField => a
             case a: MongoQueryNodeElemMatch => a
             case a: MongoQueryNodeWhere => a
@@ -243,6 +236,9 @@ abstract class MongoQueryNode {
                     togo.rewriteOrAndWhere
                 }
             }
+
+            // Anything else
+            case a => a
         }
 
         if (this != optd) {

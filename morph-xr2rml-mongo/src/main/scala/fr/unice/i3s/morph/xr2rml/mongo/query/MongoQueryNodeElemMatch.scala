@@ -8,9 +8,10 @@ import scala.collection.mutable.Queue
  */
 class MongoQueryNodeElemMatch(val members: List[MongoQueryNode]) extends MongoQueryNode {
 
-    override def isElemMatch: Boolean = true
-
+    /** Constructor with only one member */
     def this(member: MongoQueryNode) = this(List(member))
+
+    override def isElemMatch: Boolean = true
 
     override def equals(q: Any): Boolean = {
         q.isInstanceOf[MongoQueryNodeElemMatch] && this.members == q.asInstanceOf[MongoQueryNodeElemMatch].members
