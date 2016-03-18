@@ -16,6 +16,13 @@
 		<url>http://i3s.unice.fr/</url>
 	</organization>
 	<url>https://github.com/frmichel/morph-xr2rml/</url>
+	<description>See https://hal.archives-ouvertes.fr/hal-01245883</description>
+	<licenses>
+		<license>
+			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+			<name>Apache 2.0</name>
+		</license>
+	</licenses>
 
 	<developers>
 		<developer>
@@ -225,7 +232,7 @@
 				<artifactId>maven-project-info-reports-plugin</artifactId>
 				<version>2.9</version>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
