@@ -1,7 +1,8 @@
 package es.upm.fi.dia.oeg.morph.base.query
 
 /**
- * OR condition of the where part an atomic abstract query.
+ * OR condition of the <i>Where</i> part an atomic abstract query created during the
+ * abstract query optimization phase.
  *
  * @param members the member conditions of the OR
  */

@@ -1,7 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
@@ -25,6 +24,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -266,10 +267,10 @@ class AbstractAtomicQuery(
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
-     * The merge is allowed if and only if 3 conditions are met:
+     * The merge is allowed if and only if 3 conditions are met:<br>
      * (i) both queries have the same From part (the logical source), or one is more specific than
-     * the other (in that case we take the most specific one).
-     * (ii) they have at least one shared variable (on which the join is to be done),
+     * the other (in that case we take the most specific one).<br>
+     * (ii) they have at least one shared variable (on which the join is to be done),<br>
      * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
      *
      * @example if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
@@ -291,16 +292,16 @@ class AbstractAtomicQuery(
      * for the merge to be possible.
      *
      * @param q the right query of the join
-     * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
+     * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
     def mergeForInnerJoin(q: AbstractQuery): Option[AbstractAtomicQuery] = {
 
         if (!q.isInstanceOf[AbstractAtomicQuery])
             return None
 
+        val left = this
         val right = q.asInstanceOf[AbstractAtomicQuery]
         var result: Option[AbstractAtomicQuery] = None
-        val left = this
 
         val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
         if (mostSpec.isDefined) {
@@ -336,12 +337,14 @@ class AbstractAtomicQuery(
      * Merge this atomic abstract query with another one in order to perform self-union elimination.
      * The merge is allowed if and only if both queries have the same From part (the logical source).
      *
-     * The resulting query Q merges queries Q1 and Q2 this way:
-     * (i) the project part of Q is simply the merge of the two sets of projections.
-     * (ii) the where part of Q is an OR of the 2 where parts: OR(Q1.where, Q2.where)
-     *
+     * The resulting query Q merges queries Q1 and Q2 this way:<br>
+     * (i) the project part of Q is simply the merge of the two sets of projections.<br>
+     * (ii) the where part of Q is an OR of the 2 Where parts: OR(Q1.where, Q2.where).
+     * But when there are more than one condition in each Where, we get 
+     * OR(AND(Q1.where conditions), AND(Q2.where conditions)).
+     * 
      * @param q the right query of the union
-     * @return an MorphAbstractAtomicQuery if the merge is possible, None otherwise
+     * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
     def mergeForUnion(q: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
 
@@ -355,8 +358,11 @@ class AbstractAtomicQuery(
         if (left.from == right.from) {
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val mergedWhere = left.where ++ right.where // @todo replace with a new OR condition
-            result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
+            val mergedWhere: AbstractQueryCondition = new AbstractQueryConditionOr(List(
+                { if (left.where.size > 1) new AbstractQueryConditionAnd(left.where.toList) else left.where.head },
+                { if (right.where.size > 1) new AbstractQueryConditionAnd(right.where.toList) else right.where.head }
+            ))
+            result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, Set(mergedWhere)))
         }
         result
     }
