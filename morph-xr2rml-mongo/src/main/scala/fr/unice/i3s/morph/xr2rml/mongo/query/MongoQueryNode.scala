@@ -122,8 +122,8 @@ abstract class MongoQueryNode {
         val optd = this match {
             case a: MongoQueryNodeCond => a
             case a: MongoQueryNodeCompare => a
-            case a: MongoQueryNodeExists => a
-            case a: MongoQueryNodeNotExists => a
+            case a: MongoQueryNodeCondExists => a
+            case a: MongoQueryNodeCondNotExists => a
             case a: MongoQueryNodeNotSupported => a
             case a: MongoQueryNodeWhere => a
 
@@ -202,8 +202,8 @@ abstract class MongoQueryNode {
         val optd = this match {
             case a: MongoQueryNodeCond => a
             case a: MongoQueryNodeCompare => a
-            case a: MongoQueryNodeExists => a
-            case a: MongoQueryNodeNotExists => a
+            case a: MongoQueryNodeCondExists => a
+            case a: MongoQueryNodeCondNotExists => a
             case a: MongoQueryNodeNotSupported => a
             case a: MongoQueryNodeField => a
             case a: MongoQueryNodeElemMatch => a

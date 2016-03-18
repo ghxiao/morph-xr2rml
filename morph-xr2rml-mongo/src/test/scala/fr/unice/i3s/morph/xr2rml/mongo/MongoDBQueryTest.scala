@@ -4,10 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
+
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 
 class MongoDBQueryTest {

@@ -1,19 +1,20 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjection
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 
 /**
  * This object implements the algorithm that translates a condition on a JSONPath expression
@@ -349,7 +350,7 @@ object JsonPathToMongoTranslator {
                         // Rule R6b - Build the AND query operator
                         if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule R6b")
                         val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + condJS(cond))
-                        val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeExists), wherePart)
+                        val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeCondExists), wherePart)
                         if (logger.isTraceEnabled()) logger.trace("Rule R6b, AND members: " + andMembers.map(m => m.toString))
                         return new MongoQueryNodeAnd(andMembers)
                     } else {
@@ -366,7 +367,7 @@ object JsonPathToMongoTranslator {
                             // Rule R6c - Build the AND query operator
                             if (logger.isTraceEnabled()) logger.trace("JSONPath expression [" + path + "] matches rule r6b")
                             val wherePart = new MongoQueryNodeWhere("this" + match0 + "[" + replaceAt("this" + match0, match1) + "]" + after_match1 + condJS(cond))
-                            val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeExists), wherePart)
+                            val andMembers = List(new MongoQueryNodeField(match0, new MongoQueryNodeCondExists), wherePart)
                             if (logger.isTraceEnabled()) logger.trace("Rule R6c, AND members: " + andMembers.map(m => m.toString))
                             return new MongoQueryNodeAnd(andMembers)
                         }

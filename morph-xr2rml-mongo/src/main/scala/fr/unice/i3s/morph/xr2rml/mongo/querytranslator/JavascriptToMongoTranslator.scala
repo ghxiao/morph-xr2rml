@@ -3,16 +3,14 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 import org.apache.log4j.Logger
 import org.mozilla.javascript.Token
 
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondExists
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondNotExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExpr
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExprFactory
 
@@ -111,7 +109,7 @@ object JavascriptToMongoTranslator {
             val source = jsExpr.astNode.toSource
             if (source.startsWith("this")) {
                 if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j3")
-                return new MongoQueryNodeField(source.substring(4), new MongoQueryNodeExists) // skip the "this"
+                return new MongoQueryNodeField(source.substring(4), new MongoQueryNodeCondExists) // skip the "this"
             }
         }
 
@@ -122,7 +120,7 @@ object JavascriptToMongoTranslator {
                 val source = jsExpr.astNode.toSource
                 if (source.startsWith("!this")) {
                     if (logger.isDebugEnabled()) logger.debug("JS expression [" + jsExpr.astNode.toSource + "] matches rule j4")
-                    return new MongoQueryNodeField(source.substring(5), new MongoQueryNodeNotExists) // skip the "!this"
+                    return new MongoQueryNodeField(source.substring(5), new MongoQueryNodeCondNotExists) // skip the "!this"
                 }
             }
         }

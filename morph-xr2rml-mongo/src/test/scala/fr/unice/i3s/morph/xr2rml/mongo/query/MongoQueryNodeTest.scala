@@ -54,7 +54,7 @@ class MongoQueryNodeTest {
                     new MongoQueryNodeElemMatch(
                         new MongoQueryNodeCond(ConditionType.Equals, new Integer(1)))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("p.0", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("p.0", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("this.p[0] == 0"),
                     new MongoQueryNodeField("p", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.SIZE, "10"))
                 ))
@@ -69,7 +69,7 @@ class MongoQueryNodeTest {
         println("------------------------------------------------- test4")
         val node: MongoQueryNode =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("p.q", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p.q", new MongoQueryNodeCondExists),
                 new MongoQueryNodeWhere("""this.p.q[this.p.q.length - 1] == "val"""")))
         println(node.toString)
         assertEquals(
@@ -82,34 +82,34 @@ class MongoQueryNodeTest {
         var node1: MongoQueryNode = null
         var node2: MongoQueryNode = null
 
-        node1 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
-        node2 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
+        node1 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
+        node2 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
         assertTrue(node1 == node2)
 
-        node1 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
-        node2 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("q", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
+        node1 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
+        node2 = new MongoQueryNodeAnd(List(new MongoQueryNodeField("q", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
         assertFalse(node1 == node2)
 
-        node1 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
-        node2 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == c")))
+        node1 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
+        node2 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == c")))
         assertFalse(node1 == node2)
 
-        node1 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
-        node2 = new MongoQueryNodeOr(List(new MongoQueryNodeField("q", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
+        node1 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
+        node2 = new MongoQueryNodeOr(List(new MongoQueryNodeField("q", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
         assertFalse(node1 == node2)
 
-        node1 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == b")))
-        node2 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeExists), new MongoQueryNodeWhere("a == c")))
+        node1 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == b")))
+        node2 = new MongoQueryNodeOr(List(new MongoQueryNodeField("p", new MongoQueryNodeCondExists), new MongoQueryNodeWhere("a == c")))
         assertFalse(node1 == node2)
 
-        assertTrue(new MongoQueryNodeField("p", new MongoQueryNodeExists) == new MongoQueryNodeField("p", new MongoQueryNodeExists))
-        assertFalse(new MongoQueryNodeField("p", new MongoQueryNodeExists) == new MongoQueryNodeField("q", new MongoQueryNodeExists))
+        assertTrue(new MongoQueryNodeField("p", new MongoQueryNodeCondExists) == new MongoQueryNodeField("p", new MongoQueryNodeCondExists))
+        assertFalse(new MongoQueryNodeField("p", new MongoQueryNodeCondExists) == new MongoQueryNodeField("q", new MongoQueryNodeCondExists))
 
-        assertTrue(new MongoQueryNodeField("p", new MongoQueryNodeNotExists) == new MongoQueryNodeField("p", new MongoQueryNodeNotExists))
-        assertFalse(new MongoQueryNodeField("p", new MongoQueryNodeNotExists) == new MongoQueryNodeField("q", new MongoQueryNodeNotExists))
+        assertTrue(new MongoQueryNodeField("p", new MongoQueryNodeCondNotExists) == new MongoQueryNodeField("p", new MongoQueryNodeCondNotExists))
+        assertFalse(new MongoQueryNodeField("p", new MongoQueryNodeCondNotExists) == new MongoQueryNodeField("q", new MongoQueryNodeCondNotExists))
 
-        assertTrue(new MongoQueryNodeElemMatch(new MongoQueryNodeField("p", new MongoQueryNodeExists)) == new MongoQueryNodeElemMatch(new MongoQueryNodeField("p", new MongoQueryNodeExists)))
-        assertFalse(new MongoQueryNodeElemMatch(new MongoQueryNodeField("p", new MongoQueryNodeExists)) == new MongoQueryNodeElemMatch(new MongoQueryNodeField("q", new MongoQueryNodeExists)))
+        assertTrue(new MongoQueryNodeElemMatch(new MongoQueryNodeField("p", new MongoQueryNodeCondExists)) == new MongoQueryNodeElemMatch(new MongoQueryNodeField("p", new MongoQueryNodeCondExists)))
+        assertFalse(new MongoQueryNodeElemMatch(new MongoQueryNodeField("p", new MongoQueryNodeCondExists)) == new MongoQueryNodeElemMatch(new MongoQueryNodeField("q", new MongoQueryNodeCondExists)))
 
         assertTrue(new MongoQueryNodeNotSupported("p") == new MongoQueryNodeNotSupported("p"))
         assertFalse(new MongoQueryNodeNotSupported("p") == new MongoQueryNodeNotSupported("q"))

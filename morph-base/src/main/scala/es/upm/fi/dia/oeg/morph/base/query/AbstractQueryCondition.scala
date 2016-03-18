@@ -3,7 +3,7 @@ package es.upm.fi.dia.oeg.morph.base.query
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 /**
- * Condition of the <i>Where</i> part an atomic abstract query, created during the rewriting 
+ * Condition of the <i>Where</i> part an atomic abstract query, created during the rewriting
  * process by matching terms of a triple pattern with references from a term map.
  *
  * @param condType The type of condition
@@ -11,7 +11,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  */
 abstract class AbstractQueryCondition(
         val condType: ConditionType.Value) {
-    
+
     def hasReference = false
 }
 

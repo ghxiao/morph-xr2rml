@@ -1,8 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MongoQueryNodeOptimizeTest {
@@ -13,10 +11,10 @@ class MongoQueryNodeOptimizeTest {
         println("------------------------------------------------- testOptimizeFlattenAnds")
         val node: MongoQueryNode =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists)))))
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists)))))
         println(node.toString)
         // Raw
         assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$and: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
@@ -28,10 +26,10 @@ class MongoQueryNodeOptimizeTest {
         println("------------------------------------------------- testOptimizeFlattenOrs")
         val node: MongoQueryNode =
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists)))))
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists)))))
         println(node.toString)
         // Raw
         assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$or: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
@@ -43,10 +41,10 @@ class MongoQueryNodeOptimizeTest {
         println("------------------------------------------------- testOptimizeFlattenUnions")
         val node: MongoQueryNode =
             new MongoQueryNodeUnion(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
                 new MongoQueryNodeUnion(
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists)))
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists)))
         println(node.toString)
         // Raw
         assertEquals(cleanString("""UNION: [{'p': {$exists: true}}, {UNION: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
@@ -58,7 +56,7 @@ class MongoQueryNodeOptimizeTest {
         println("------------------------------------------------- testOptimizeGroupWheres")
         var node: MongoQueryNode =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
                 new MongoQueryNodeWhere("a == b"),
                 new MongoQueryNodeWhere("@.q < @.p")))
         println(node.toString)
@@ -69,7 +67,7 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
                 new MongoQueryNodeWhere("a == b"),
                 new MongoQueryNodeWhere("@.q < @.p")))
         println(node.toString)
@@ -86,26 +84,26 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                 new MongoQueryNodeWhere("@.p == 1")))
         optimizedNode =
             new MongoQueryNodeUnion(
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists))),
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists))),
                 new MongoQueryNodeWhere("@.p == 1"))
         assertEquals(optimizedNode, node.optimize)
 
         node = new MongoQueryNodeOr(List(
-            new MongoQueryNodeField("p", new MongoQueryNodeExists),
-            new MongoQueryNodeField("q", new MongoQueryNodeExists),
+            new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+            new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
             new MongoQueryNodeWhere("@.p == 1"),
             new MongoQueryNodeWhere("@.q > 2")))
         optimizedNode = new MongoQueryNodeUnion(
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                new MongoQueryNodeField("q", new MongoQueryNodeExists))),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("q", new MongoQueryNodeCondExists))),
             new MongoQueryNodeWhere("(@.p == 1) || (@.q > 2)"))
         assertEquals(optimizedNode, node.optimize)
     }
@@ -117,21 +115,21 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("s", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("s", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("@.p == 1")))))
 
         optimizedNode =
             new MongoQueryNodeUnion(
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists))),
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("s", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("s", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("@.p == 1"))))
         assertEquals(optimizedNode, node.optimize)
     }
@@ -143,24 +141,24 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("s", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("s", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("@.p == 1")))))
 
         optimizedNode =
             new MongoQueryNodeUnion(
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                     new MongoQueryNodeOr(List(
-                        new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("s", new MongoQueryNodeExists))))),
+                        new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("s", new MongoQueryNodeCondExists))))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("@.p == 1"))))
         assertEquals(optimizedNode, node.optimize)
     }
@@ -172,27 +170,27 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                 new MongoQueryNodeUnion(List(
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("s", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("t", new MongoQueryNodeExists)))))
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("s", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("t", new MongoQueryNodeCondExists)))))
 
         optimizedNode =
             new MongoQueryNodeUnion(List(
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists))),
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("s", new MongoQueryNodeExists))),
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("s", new MongoQueryNodeCondExists))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("t", new MongoQueryNodeExists)))
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("t", new MongoQueryNodeCondExists)))
             ))
         assertEquals(optimizedNode, node.optimize)
     }
@@ -204,21 +202,21 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                new MongoQueryNodeField("q", new MongoQueryNodeExists),
+                new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("q", new MongoQueryNodeCondExists),
                 new MongoQueryNodeUnion(List(
-                    new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("s", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("t", new MongoQueryNodeExists)))))
+                    new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("s", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("t", new MongoQueryNodeCondExists)))))
 
         optimizedNode =
             new MongoQueryNodeUnion(List(
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("p", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("q", new MongoQueryNodeExists))),
-                new MongoQueryNodeField("r", new MongoQueryNodeExists),
-                new MongoQueryNodeField("s", new MongoQueryNodeExists),
-                new MongoQueryNodeField("t", new MongoQueryNodeExists)))
+                    new MongoQueryNodeField("p", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("q", new MongoQueryNodeCondExists))),
+                new MongoQueryNodeField("r", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("s", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("t", new MongoQueryNodeCondExists)))
         assertEquals(optimizedNode, node.optimize)
     }
 
@@ -229,30 +227,30 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeOr(List(
-                new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                new MongoQueryNodeField("a2", new MongoQueryNodeExists),
+                new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a4", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a4", new MongoQueryNodeCondExists),
                     new MongoQueryNodeOr(List(
-                        new MongoQueryNodeField("b1", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("b2", new MongoQueryNodeExists),
+                        new MongoQueryNodeField("b1", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("b2", new MongoQueryNodeCondExists),
                         new MongoQueryNodeWhere("W")))))))
 
         optimizedNode =
             new MongoQueryNodeUnion(List(
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a2", new MongoQueryNodeExists))),
+                    new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a2", new MongoQueryNodeCondExists))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a4", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a4", new MongoQueryNodeCondExists),
                     new MongoQueryNodeOr(List(
-                        new MongoQueryNodeField("b1", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("b2", new MongoQueryNodeExists))))),
+                        new MongoQueryNodeField("b1", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("b2", new MongoQueryNodeCondExists))))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a4", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a4", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("W")))))
 
         assertEquals(optimizedNode, node.optimize)
@@ -265,29 +263,29 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                new MongoQueryNodeField("a2", new MongoQueryNodeExists),
+                new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a4", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a4", new MongoQueryNodeCondExists),
                     new MongoQueryNodeAnd(List(
-                        new MongoQueryNodeField("b1", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("b2", new MongoQueryNodeExists),
+                        new MongoQueryNodeField("b1", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("b2", new MongoQueryNodeCondExists),
                         new MongoQueryNodeWhere("W")))))))
 
         optimizedNode =
             new MongoQueryNodeUnion(List(
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a2", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
                     new MongoQueryNodeOr(List(
-                        new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("a4", new MongoQueryNodeExists))))),
+                        new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("a4", new MongoQueryNodeCondExists))))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a2", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("b1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("b2", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("b1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("b2", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("W")))))
 
         assertEquals(optimizedNode, node.optimize)
@@ -300,34 +298,34 @@ class MongoQueryNodeOptimizeTest {
 
         node =
             new MongoQueryNodeAnd(List(
-                new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                new MongoQueryNodeField("a2", new MongoQueryNodeExists),
+                new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
                 new MongoQueryNodeOr(List(
-                    new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a4", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a4", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("W1"),
                     new MongoQueryNodeAnd(List(
-                        new MongoQueryNodeField("b1", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("b2", new MongoQueryNodeExists),
+                        new MongoQueryNodeField("b1", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("b2", new MongoQueryNodeCondExists),
                         new MongoQueryNodeWhere("W2")))))))
 
         optimizedNode =
             new MongoQueryNodeUnion(List(
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a2", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
                     new MongoQueryNodeOr(List(
-                        new MongoQueryNodeField("a3", new MongoQueryNodeExists),
-                        new MongoQueryNodeField("a4", new MongoQueryNodeExists))))),
+                        new MongoQueryNodeField("a3", new MongoQueryNodeCondExists),
+                        new MongoQueryNodeField("a4", new MongoQueryNodeCondExists))))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a2", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("b1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("b2", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("b1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("b2", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("W2"))),
                 new MongoQueryNodeAnd(List(
-                    new MongoQueryNodeField("a1", new MongoQueryNodeExists),
-                    new MongoQueryNodeField("a2", new MongoQueryNodeExists),
+                    new MongoQueryNodeField("a1", new MongoQueryNodeCondExists),
+                    new MongoQueryNodeField("a2", new MongoQueryNodeCondExists),
                     new MongoQueryNodeWhere("W1")))))
 
         assertEquals(optimizedNode, node.optimize)

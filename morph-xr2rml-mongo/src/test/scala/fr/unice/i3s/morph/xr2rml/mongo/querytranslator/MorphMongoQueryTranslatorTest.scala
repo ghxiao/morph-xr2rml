@@ -25,8 +25,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCond
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeElemMatch
-import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeExists
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
@@ -79,8 +79,8 @@ class MorphMongoQueryTranslatorTest {
 
         val compare = new MongoQueryNodeField("a", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))
         val field2 = new MongoQueryNodeField("b.0.b", List(new MongoQueryNodeCond(ConditionType.Equals, "b0b")))
-        val exists1 = new MongoQueryNodeField("c", new MongoQueryNodeExists)
-        val exists2 = new MongoQueryNodeField("d", new MongoQueryNodeExists)
+        val exists1 = new MongoQueryNodeField("c", new MongoQueryNodeCondExists)
+        val exists2 = new MongoQueryNodeField("d", new MongoQueryNodeCondExists)
         val or = new MongoQueryNodeOr(List(exists1, exists2))
         val and2 = new MongoQueryNodeAnd(List(compare, field2))
         val union = new MongoQueryNodeUnion(List(compare, or))
@@ -128,7 +128,7 @@ class MorphMongoQueryTranslatorTest {
         var fromPart = new MongoDBQuery("collection", "")
 
         val compare = new MongoQueryNodeField("a.b", new MongoQueryNodeCompare(MongoQueryNodeCompare.Operator.GT, "10"))
-        val exists = new MongoQueryNodeField("a.b", new MongoQueryNodeExists)
+        val exists = new MongoQueryNodeField("a.b", new MongoQueryNodeCondExists)
         val field = new MongoQueryNodeField("c", List(new MongoQueryNodeCond(ConditionType.Equals, "ccc")))
 
         println("---------------------------------")
