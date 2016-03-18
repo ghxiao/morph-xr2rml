@@ -11,6 +11,9 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
+import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
 
 class JsonPathToMongoTranslatorTest {
 
@@ -275,5 +278,47 @@ class JsonPathToMongoTranslatorTest {
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(2)))
         println(query.toString)
         assertTrue(query.isInstanceOf[MongoQueryNodeNotSupported])
+    }
+
+    @Test def test_IsNullCondition() {
+        println("------ test_IsNullCondition")
+
+        var jpExpr = """$.p"""
+        var query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionIsNull(jpExpr))
+        println(query.toString)
+        assertTrue(query.isInstanceOf[MongoQueryNodeOr])
+        assertEquals(cleanString("$or: [{'p':{$exists: false}}, {'p':{$eq: null}}]"), cleanString(query.toString))
+
+        jpExpr = """$.p[5].q"""
+        query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionIsNull(jpExpr))
+        println(query.toString)
+        assertTrue(query.isInstanceOf[MongoQueryNodeOr])
+        assertEquals(cleanString("$or: [{'p.5.q':{$exists: false}}, {'p.5.q':{$eq: null}}]"), cleanString(query.toString))
+
+        jpExpr = """$.p.*.q"""
+        query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionIsNull(jpExpr))
+        println(query.toString)
+        assertTrue(query.isInstanceOf[MongoQueryNodeOr])
+        assertEquals(cleanString("$or: [{'p':{$elemMatch: {'q': {$exists: false}}}}, {'p':{$elemMatch: {'q': {$eq: null}}}}]"), cleanString(query.toString))
+    }
+
+    @Test def test_OrEqualsIsNullCondition() {
+        println("------ test_OrEqualsIsNullCondition")
+
+        var jpExpr = """$.p"""
+
+        val cond = new AbstractQueryConditionOr(List(
+            new AbstractQueryConditionEquals(jpExpr, new Integer(2)),
+            new AbstractQueryConditionIsNull(jpExpr)
+        ))
+
+        var query = JsonPathToMongoTranslator.trans(cond)
+        println(query.toString)
+        assertTrue(query.isInstanceOf[MongoQueryNodeOr])
+        assertEquals(cleanString("$or: [{'p':{$eq: 2}}, {$or: [{'p':{$exists: false}}, {'p':{$eq: null}}]}]"), cleanString(query.toString))
+
+        val optQ = query.optimize
+        println(optQ.toString)
+        assertEquals(cleanString("$or: [{'p':{$eq: 2}}, {'p':{$exists: false}}, {'p':{$eq: null}}]"), cleanString(optQ.toString))
     }
 }

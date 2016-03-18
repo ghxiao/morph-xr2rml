@@ -154,7 +154,7 @@ object JsonPathToMongoTranslator {
      * Entry point of the translation of a JSONPath expression with a top-level condition into a MongoDB query.
      * The resulting query is not optimized.
      *
-     * @param cond and condition on a JSONPath expression to translate, must NOT be empty or null
+     * @param cond and condition on a JSONPath expression to translate, must  be empty or null
      * @param projection set of projections to push in the MongoDB query (@todo not implemented)
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
      * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
@@ -179,9 +179,7 @@ object JsonPathToMongoTranslator {
 
             case ConditionType.Or => {
                 val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
-                new MongoQueryNodeOr(condOr.members.map(c =>
-                    transJsonPathToMongo(path, MongoQueryNodeCondFactory(c), projection)
-                ))
+                new MongoQueryNodeOr(condOr.members.map(c => trans(c, projection)))
             }
 
             case _ =>

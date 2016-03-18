@@ -92,8 +92,8 @@ class AbstractAtomicQuery(
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
 
-        // Select isNotNull and Equality conditions
-        val whereConds = this.where.filter(c => c.condType == ConditionType.IsNotNull || c.condType == ConditionType.Equals)
+        // Select Equals, IsNotNull, IsNull and Or conditions
+        val whereConds = this.where.filter(c => c.condType != ConditionType.SparqlFilter)
         if (logger.isDebugEnabled()) logger.debug("Translating conditions:" + whereConds)
 
         // Generate one abstract MongoDB query for each isNotNull and Equality condition

@@ -10,23 +10,24 @@ abstract class MongoQueryNodeCond extends MongoQueryNode {
 
 object MongoQueryNodeCondFactory {
     /**
-     *  Create a condition node from a generic AbstractQueryCondition.
+     * Create a MongoDB query condition node from a generic AbstractQueryCondition.
+     * 
+     * Equals and IsNotNull are terminal conditions, i.e. they can be translated
+     * straight into a MongoDB condition appended after a field name.<br>
+     * Example: Equals(10) is translated into the string "{$eq: 10}" that is appended
+     * after the field name.
      *  
-     *  Equals and IsNotNull are terminal conditions, i.e. they can be translated
-     *  straight into a MongoDB condition appended after a field name, example:
-     *  " 'field': {$eq: 10} "
-     *   
-     *  Conversely, IsNull and Or conditions are non terminal for MongoDB.
-     *  Example: "IsNull($.field)" means that the field is either null or it does not exists. 
-     *  MongoDB does not allow the following expression that could be produced straight away:
-     *  
-     *  "  'field': $or: [{$eq: null}, {$exists: false}] "
-     *  
-     *  Instead we have to produce:
-     *   
-     *  "  $or: [{'field': {$eq: null}}, {'field': {$exists: false}}] "
-     *  
-     *  This factory only deals with the first two cases. The next two will be handled in JsonPathToMongoTranslator.
+     * Conversely, IsNull and Or conditions are non terminal for MongoDB.<br> 
+     * Example: "IsNull($.field)" means that the field either does not exist or is null.
+     * MongoDB does not allow the following expression:<br>
+     * "  'field': $or: [{$eq: null}, {$exists: false}] "<br>
+     * Instead we have to produce:<br>
+     * "  $or: [{'field': {$eq: null}}, {'field': {$exists: false}}] "
+     * 
+     * This factory only deals with the first two cases.
+     * The two latter will be handled in JsonPathToMongoTranslator.trans()
+     * 
+     * @todo Condition type SparqlFilter is not managed.
      */
     def apply(cond: AbstractQueryCondition): MongoQueryNodeCond = {
         cond.condType match {
