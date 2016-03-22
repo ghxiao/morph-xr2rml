@@ -8,6 +8,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 
 /**
  * Representation of the UNION abstract query of several abstract queries
@@ -87,9 +88,9 @@ class AbstractQueryUnion(
     /**
      * Optimize the members of the union
      */
-    override def optimizeQuery: AbstractQuery = {
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
-        val membersOpt = members.map(_.optimizeQuery)
+        val membersOpt = members.map(_.optimizeQuery(optimizer))
         new AbstractQueryUnion(membersOpt)
     }
 

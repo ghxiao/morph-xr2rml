@@ -6,6 +6,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 
 /**
  * This class is used as a simple encapsulation of an SQL query in the RDB case, because the original SPARQL-to-SQL query
@@ -56,7 +57,7 @@ class AbstractQuerySql extends AbstractQuery(Set.empty) {
         throw new MorphException("Not supported")
     }
 
-    override def optimizeQuery: AbstractQuery = {
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
         throw new MorphException("Not umplemented")
     }
 }

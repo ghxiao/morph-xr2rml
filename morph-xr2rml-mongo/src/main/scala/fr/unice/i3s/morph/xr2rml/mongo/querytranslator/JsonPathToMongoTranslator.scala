@@ -151,8 +151,8 @@ object JsonPathToMongoTranslator {
     }
 
     /**
-     * Entry point of the translation of a JSONPath expression with a top-level condition into a MongoDB query.
-     * The resulting query is not optimized.
+     * Entry point of the translation of abstract query condition on a JSONPath expression 
+     * into an abstract MongoDB query. The resulting query is not optimized.
      *
      * @param cond and condition on a JSONPath expression to translate, must  be empty or null
      * @param projection set of projections to push in the MongoDB query (@todo not implemented)
@@ -169,8 +169,8 @@ object JsonPathToMongoTranslator {
 
         cond.condType match {
             case ConditionType.IsNull => {
+                // ref is null <=> ref == null OR ref does not exist, i.e.:
                 // isNull(ref) => OR(FIELD(ref) NOTEXISTS, FIELD(ref) ISNULL)
-                val condIsNull = cond.asInstanceOf[AbstractQueryConditionIsNull]
                 new MongoQueryNodeOr(List(
                     transJsonPathToMongo(path, new MongoQueryNodeCondNotExists, projection),
                     transJsonPathToMongo(path, new MongoQueryNodeCondIsNull, projection)
@@ -178,6 +178,7 @@ object JsonPathToMongoTranslator {
             }
 
             case ConditionType.Or => {
+                // AbstractQueryConditionOr => MongoQueryNodeOr
                 val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
                 new MongoQueryNodeOr(condOr.members.map(c => trans(c, projection)))
             }

@@ -8,6 +8,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 
 /**
  * Representation of an abstract query as defined in https://hal.archives-ouvertes.fr/hal-01245883.
@@ -25,7 +26,7 @@ abstract class AbstractQuery(
      * Result of translating this abstract query into a target database query.
      * This should contain a single query for an RDB.
      * For MongoDB this field is used only for atomic abstract queries, and may
-     * contain several queries whose results must be UNIONed.
+     * contain several queries whose results must be UNIONed, that's why this is a list of queries
      */
     var targetQuery: List[GenericQuery] = List.empty
 
@@ -38,9 +39,9 @@ abstract class AbstractQuery(
         this
     }
 
-    def toStringConcrete: String
-
     //---- Abstract methods ----
+
+    def toStringConcrete: String
 
     /**
      * Check if atomic abstract queries within this query have a target query properly initialized
@@ -73,13 +74,16 @@ abstract class AbstractQuery(
         dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms]
 
     /**
-     * Misc optimizations of the abstract query, notation self-join eliminations
+     * Misc optimizations of the abstract query: self-join and self-union eliminations etc. 
      */
-    def optimizeQuery: AbstractQuery
+    def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery
 }
 
 object AbstractQuery {
 
+    /**
+     * Find the list of SPARQL variables shared by two abstract queries
+     */
     def getSharedVariables(left: AbstractQuery, right: AbstractQuery) = {
         left.getVariables.intersect(right.getVariables)
     }

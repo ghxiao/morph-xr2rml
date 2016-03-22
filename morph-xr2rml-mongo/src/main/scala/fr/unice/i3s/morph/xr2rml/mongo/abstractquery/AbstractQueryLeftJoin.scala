@@ -10,6 +10,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 
 /**
  * Representation of the LEFT JOIN abstract query generated from two basic graph patterns.
@@ -152,10 +153,10 @@ class AbstractQueryLeftJoin(
     /**
      * Optimize left and right members and try to merge them if they are atomic queries
      */
-    override def optimizeQuery: AbstractQuery = {
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
-        val leftOpt = left.optimizeQuery
-        val rightOpt = right.optimizeQuery
+        val leftOpt = left.optimizeQuery(optimizer)
+        val rightOpt = right.optimizeQuery(optimizer)
         if (leftOpt.isInstanceOf[AbstractAtomicQuery] && rightOpt.isInstanceOf[AbstractAtomicQuery]) {
             val opt = leftOpt.asInstanceOf[AbstractAtomicQuery].mergeForLeftJoin(rightOpt.asInstanceOf[AbstractAtomicQuery])
             if (opt.isDefined) return opt.get

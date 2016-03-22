@@ -26,6 +26,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -35,11 +36,22 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
  * in the instance of AbstractQueryInnerJoinRef.
  * tpBindings may contain several bindings after query optimization e.g. self-join elimination i.e. 2 atomic queries are merged
  * into a single one that will be used to generate triples for by 2 triples maps i.e. 2 bindings
+ *
  * @param from the logical source, which must be the same as in the triples map of tpBindings
+ *
  * @param project set of xR2RML references that shall be projected in the target query, i.e. the references
- * needed to generate the RDF terms of the result triples
+ * needed to generate the RDF terms of the result triples.<br>
+ * Note that the same variable can be projected several times, e.g. when the same variable is used
+ * several times in a triple pattern e.g.: "?x ns:predicate ?x ."<br>
+ * Besides a projection can contain several references in case the variable is matched with a template
+ * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
+ * "Set($.ref1, $.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
+ * for the merge to be possible.<br>
+ * Therefore projection is a set of sets, in the most complex case we may have something like:
+ * Set(Set($.ref1, $.ref2.*) AS ?x, Set($.ref3, $.ref4) AS ?x), Set($.ref5, $.ref6) AS ?x))
+ *
  * @param where set of conditions applied to xR2RML references, entailed by matching the triples map
- * with the triple pattern.
+ * with the triple pattern. If there are more than one condition the semantics is a logical AND of all.
  */
 class AbstractAtomicQuery(
 
@@ -83,21 +95,22 @@ class AbstractAtomicQuery(
      * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
      *
      * First, the atomic abstract query is translated into an abstract MongoDB query using the
-     * JsonPathToMongoTranslator.trans() function.
+     * JsonPathToMongoTranslator.trans() function.<br>
      * Then, the abstract MongoDB query is translated into a set of concrete MongoDB queries
      * by function mongoAbstractQuerytoConcrete().
      *
      * The result is stored in attribute this.targetQuery.
      *
      * @param translator the query translator
+     * @return none, the result is stored in attribute this.targetQuery.
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+        val mongQTranslator = translator.asInstanceOf[MorphMongoQueryTranslator]
 
-        // Select Equals, IsNotNull, IsNull and Or conditions
         val whereConds = this.where.filter(c => c.condType != ConditionType.SparqlFilter)
         if (logger.isDebugEnabled()) logger.debug("Translating conditions:" + whereConds)
 
-        // Generate one abstract MongoDB query for each isNotNull and Equality condition
+        // Generate one abstract MongoDB query (MongoQueryNode) for each selected condition
         val mongAbsQs: Set[MongoQueryNode] = whereConds.map(cond => {
             val condIRef = cond.asInstanceOf[IReference]
             // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
@@ -105,11 +118,11 @@ class AbstractAtomicQuery(
             if (iter.isDefined)
                 condIRef.reference = condIRef.reference.replace("$", iter.get)
 
-            // Translate the condition on a JSONPath reference into an abstract MongoDB query (a MongoQueryNode)
+            //--- Translate the condition on a JSONPath reference into an abstract MongoDB query
             JsonPathToMongoTranslator.trans(cond)
         })
 
-        // If there are several queries (more than 1), encapsulate them under a top-level AND
+        // If there are more than one query, encapsulate them under a top-level AND
         val mongAbsQ =
             if (mongAbsQs.size > 1) new MongoQueryNodeAnd(mongAbsQs.toList)
             else mongAbsQs.head
@@ -117,8 +130,8 @@ class AbstractAtomicQuery(
             logger.debug("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
 
         // Create the concrete query/queries from the set of abstract MongoDB queries
-        val from = MongoDBQuery.parseQueryString(this.from.getValue, this.from.docIterator, true)
-        val queries = translator.asInstanceOf[MorphMongoQueryTranslator].mongoAbstractQuerytoConcrete(from, this.project, mongAbsQ)
+        val from: MongoDBQuery = MongoDBQuery.parseQueryString(this.from.getValue, this.from.docIterator, true)
+        val queries: List[MongoDBQuery] = mongQTranslator.mongoAbstractQuerytoConcrete(from, this.project, mongAbsQ)
 
         // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
         this.targetQuery = queries.map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, this.from.docIterator))
@@ -263,13 +276,13 @@ class AbstractAtomicQuery(
     /**
      * An atomic query cannot be optimized. Return self
      */
-    override def optimizeQuery: AbstractQuery = { this }
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = { this }
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
      * The merge is allowed if and only if 3 conditions are met:<br>
      * (i) both queries have the same From part (the logical source), or one is more specific than
-     * the other (in that case we take the most specific one).<br>
+     * the other (in that case we keep the most specific one).<br>
      * (ii) they have at least one shared variable (on which the join is to be done),<br>
      * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
      *
@@ -286,10 +299,14 @@ class AbstractAtomicQuery(
      *
      * Note that the same variable can be projected several times, e.g. when the same variable is used
      * several times in a triple pattern e.g.: "?x ns:predicate ?x ."
+     *
      * Besides a projection can contain several references in case the variable is matched with a template
      * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
      * "Set($.ref1, $.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
      * for the merge to be possible.
+     *
+     * Therefore projection is a set of sets, in the most complex case we may have something like:
+     * Set(Set($.ref1, $.ref2.*) AS ?x, Set($.ref3, $.ref4) AS ?x), Set($.ref5, $.ref6) AS ?x))
      *
      * @param q the right query of the join
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
@@ -307,30 +324,73 @@ class AbstractAtomicQuery(
         if (mostSpec.isDefined) {
             val sharedVars = left.getVariables.intersect(right.getVariables)
             if (sharedVars.nonEmpty) {
-                var canMerge: Boolean = true
                 sharedVars.foreach(x => {
                     // Get the references corresponding to variable ?x in each query.
                     val leftRefs = left.project.filter(_.as.get == x).map(_.references)
                     val rightRefs = right.project.filter(_.as.get == x).map(_.references)
-                    // Check if at least one projection of ?x is the same in the left and right queries
-                    canMerge = canMerge && leftRefs.intersect(rightRefs).nonEmpty
-                    if (!canMerge) return None
+
+                    // Verify that at least one projection of ?x is the same in the left and right queries
+                    if (leftRefs.intersect(rightRefs).isEmpty)
+                        return None
                 })
 
-                if (canMerge) {
-                    val mergedWhere = left.where ++ right.where
-                    val mergedProj = left.project ++ right.project
-                    val mergedBindings = left.tpBindings ++ right.tpBindings
-                    result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
-                }
+                val mergedBindings = left.tpBindings ++ right.tpBindings
+                val mergedProj = left.project ++ right.project
+                val mergedWhere = left.where ++ right.where
+                result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
             }
         }
         result
     }
 
-    def mergeForLeftJoin(right: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
-        logger.error("Optional-Self-Join Elimination: Operation not supported")
-        None
+    /**
+     * Merge this atomic abstract query with another one in order to perform an left self-join elimination.
+     * The merge is allowed if and only if 3 conditions are met:<br>
+     * (i) both queries have the same From part (the logical source), or the left query is more specific than
+     * the right query (in that case we keep the most left query).<br>
+     * (ii) they have at least one shared variable (on which the join is to be done),<br>
+     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
+     *
+     * @param q the right query of the left-join
+     * @return an AbstractAtomicQuery if the merge is possible, None otherwise
+     */
+    def mergeForLeftJoin(q: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
+
+        if (!q.isInstanceOf[AbstractAtomicQuery])
+            return None
+
+        val right = q.asInstanceOf[AbstractAtomicQuery]
+        var result: Option[AbstractAtomicQuery] = None
+        val left = this
+
+        if (MongoDBQuery.isLeftMoreSpecific(left.from, right.from)) {
+            val sharedVars = left.getVariables.intersect(right.getVariables)
+            var rightConditions: Set[AbstractQueryCondition] = Set.empty
+
+            if (sharedVars.nonEmpty) {
+                sharedVars.foreach(x => {
+                    // Get the references corresponding to variable ?x in each query.
+                    val leftRefs = left.project.filter(_.as.get == x).map(_.references)
+                    val rightRefs = right.project.filter(_.as.get == x).map(_.references)
+
+                    // Verify that at least one projection of ?x is the same in the left and right queries
+                    val commonRefs = leftRefs.intersect(rightRefs)
+                    if (commonRefs.isEmpty)
+                        return None
+
+                    // Remove IsNotNull condition on the shared variable from the right conditions
+                    right.where
+                })
+
+                val mergedBindings = left.tpBindings ++ right.tpBindings
+                val mergedProj = left.project ++ right.project
+
+                val mergedWhere = left.where ++ right.where
+
+                result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
+            }
+        }
+        result
     }
 
     /**
@@ -338,11 +398,12 @@ class AbstractAtomicQuery(
      * The merge is allowed if and only if both queries have the same From part (the logical source).
      *
      * The resulting query Q merges queries Q1 and Q2 this way:<br>
-     * (i) the project part of Q is simply the merge of the two sets of projections.<br>
-     * (ii) the where part of Q is an OR of the 2 Where parts: OR(Q1.where, Q2.where).
-     * But when there are more than one condition in each Where, we get 
-     * OR(AND(Q1.where conditions), AND(Q2.where conditions)).
-     * 
+     * (i) the Project part of Q is simply the merge of the two sets of projections.<br>
+     * (ii) the Where part of Q is an OR of the 2 Where parts: OR(Q1.where, Q2.where).
+     * When there are more than one condition in a Where, the semantics is an logical AND.
+     * Thus we have to encapsulate them in an AND condition, we obtain:
+     * OR(AND(Q1.where), AND(Q2.where)).
+     *
      * @param q the right query of the union
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
@@ -358,10 +419,9 @@ class AbstractAtomicQuery(
         if (left.from == right.from) {
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val mergedWhere: AbstractQueryCondition = new AbstractQueryConditionOr(List(
-                { if (left.where.size > 1) new AbstractQueryConditionAnd(left.where.toList) else left.where.head },
-                { if (right.where.size > 1) new AbstractQueryConditionAnd(right.where.toList) else right.where.head }
-            ))
+            val leftOr = if (left.where.size > 1) new AbstractQueryConditionAnd(left.where.toList) else left.where.head
+            val rightOr = if (right.where.size > 1) new AbstractQueryConditionAnd(right.where.toList) else right.where.head
+            val mergedWhere = new AbstractQueryConditionOr(List(leftOr, rightOr))
             result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, Set(mergedWhere)))
         }
         result

@@ -10,6 +10,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 
 /**
  * Representation of the INNER JOIN abstract query generated from the join of several basic graph patterns.
@@ -165,7 +166,7 @@ class AbstractQueryInnerJoin(
     /**
      * Try to merge atomic queries among the members of the inner join
      */
-    override def optimizeQuery: AbstractQuery = {
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
         if (members.size == 1) { // security test but abnormal case, should never happen
             logger.warn("Unexpected case: inner join with only one member: " + this.toString)
@@ -183,8 +184,8 @@ class AbstractQueryInnerJoin(
             for (i: Int <- 0 to (membersV.size - 2) if continue) {
                 for (j: Int <- (i + 1) to (membersV.size - 1) if continue) {
 
-                    val left = membersV(i).optimizeQuery
-                    val right = membersV(j).optimizeQuery
+                    val left = membersV(i).optimizeQuery(optimizer)
+                    val right = membersV(j).optimizeQuery(optimizer)
 
                     // Inner join of 2 atomic queries
                     if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {

@@ -57,12 +57,12 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     /**
      * High level entry point to the query translation process.
      *
-     * @todo Several features are not implemented:
+     * @todo Several features are not implemented:<br>
      * - The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
      * Besides, only the references are listed, but they must be bound to the variable they represent
      * (the AS of the project part) so that the INNER JOIN can be computed, and from the reference
      * we must figure out which field exactly is to be projected and translate this into a MongoDB
-     * collection.find() projection parameter. E.g.: $.field.* =&gt; {'field':true}
+     * collection.find() projection parameter. E.g.: $.field.* =&gt; {'field':true}<br>
      * - The iterator of the logical source is not taken into account when computing the WHERE part, i.e.
      * the conditions on the JSONPath references from the mapping.
      *
@@ -72,33 +72,29 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     override def translate(op: Op): Option[AbstractQuery] = {
         if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
 
-        // Calculate the triple pattern bindings
+        //--- Calculate the Triple Pattern Bindings
         val start = System.currentTimeMillis()
         val bindings = triplePatternBinder.bindm(op)
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
         logger.info("Triple pattern bindings:\n" + bindings.values.mkString("\n"))
 
-        // Translate the SPARQL query into an abstract query
+        //--- Translate the SPARQL query into an abstract query
         val emptyBindings = bindings.filter(b => b._2.bound.isEmpty)
         if (bindings.isEmpty || !emptyBindings.isEmpty) {
             logger.warn("Could not find bindings for all triple patterns of the query:\n" + bindings)
             None
         } else {
             var res = translateSparqlQuery(bindings, op)
-
             if (res.isDefined) {
                 // Optimize the abstract query
-                var absq = res.get
-                if (properties.selfJoinElimination)
-                    absq = absq.optimizeQuery
-
+                val absq = res.get.optimizeQuery(optimizer )
                 if (absq != res.get) {
                     logger.info("\n-------------------------------------------------------------------------\n" +
                         "------------------ Abstract query BEFORE optimization: ------------------\n" + res.get)
                     logger.info("\n------------------ Abstract query AFTER optimization: -------------------\n" + absq +
                         "\n-------------------------------------------------------------------------")
                 }
-                // Translate the atomic abstract queries into concrete MongoDB queries
+                //--- Translate the atomic abstract queries into concrete MongoDB queries
                 absq.translateAtomicAbstactQueriesToConcrete(this)
                 Some(absq)
             } else
@@ -308,7 +304,6 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         project: Set[AbstractQueryProjection],
         absQuery: MongoQueryNode): List[MongoDBQuery] = {
 
-        // If there are more than 1 query, encapsulate them under a top-level AND and optimize the resulting query
         var Q = absQuery.optimize
         if (logger.isTraceEnabled())
             logger.trace("Condtions optimized to: " + Q)

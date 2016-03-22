@@ -4,8 +4,11 @@ package es.upm.fi.dia.oeg.morph.base.query
  * Representation of one or several xR2RML references to be projected out of a target database query.
  * In the Project part of the abstract query representation this stands for: <reference> AS ?variable
  *
- * @param references The references on which this projection applies, typically a column name (RDBB)
- * or JSONPath expression (MongoDB) from a xrr:reference. Possibly multiple expressions in case of a rr:template property
+ * @param references The references on which this projection applies, typically a column name (RDB)
+ * or JSONPath expression (MongoDB) from a xrr:reference. 
+ * Possibly multiple expressions in case of a rr:template property, e.g. : for template http://foo.com/{ref1}/{ref2}
+ * we shall have the projection: Set(ref1,ref2) AS ?x
+ * 
  * @param as name of the SPARQL variable this reference stands for. Optional since a projection for a joined reference
  * does not stand for any variable
  *
