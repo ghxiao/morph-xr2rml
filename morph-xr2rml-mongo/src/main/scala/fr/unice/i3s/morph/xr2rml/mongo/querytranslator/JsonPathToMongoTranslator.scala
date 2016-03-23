@@ -1,7 +1,6 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
-
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
@@ -24,6 +23,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjection
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
 
 /**
  * This object implements the algorithm that translates a condition on a JSONPath expression
@@ -181,6 +181,12 @@ object JsonPathToMongoTranslator {
                 // AbstractQueryConditionOr => MongoQueryNodeOr
                 val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
                 new MongoQueryNodeOr(condOr.members.map(c => trans(c, projection)))
+            }
+
+            case ConditionType.And => {
+                // AbstractQueryConditionAnd => MongoQueryNodeAnd
+                val condAnd = cond.asInstanceOf[AbstractQueryConditionAnd]
+                new MongoQueryNodeAnd(condAnd.members.map(c => trans(c, projection)))
             }
 
             case _ =>

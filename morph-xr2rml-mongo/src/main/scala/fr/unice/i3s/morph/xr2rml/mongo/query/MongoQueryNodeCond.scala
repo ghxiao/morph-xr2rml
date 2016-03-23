@@ -14,7 +14,7 @@ object MongoQueryNodeCondFactory {
      * 
      * Equals and IsNotNull are terminal conditions, i.e. they can be translated
      * straight into a MongoDB condition appended after a field name.<br>
-     * Example: Equals(10) is translated into the string "{$eq: 10}" that is appended
+     * @example Equals(10) is translated into the string "{$eq: 10}" that is appended
      * after the field name.
      *  
      * Conversely, IsNull and Or conditions are non terminal for MongoDB.<br> 

@@ -84,7 +84,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             logger.warn("Could not find bindings for all triple patterns of the query:\n" + bindings)
             None
         } else {
-            var res = translateSparqlQuery(bindings, op)
+            val res = translateSparqlQuery(bindings, op)
             if (res.isDefined) {
                 // Optimize the abstract query
                 val absq = res.get.optimizeQuery(optimizer )
@@ -108,12 +108,12 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      * @param bindings bindings of the the SPARQL query triple patterns
      * @param op SPARQL query or SPARQL query element
      * @return a AbstractQuery instance or None if the query element is not supported in the translation
+     * @todo manage SPARQL filters
      */
     private def translateSparqlQuery(bindings: Map[String, TPBindings], op: Op): Option[AbstractQuery] = {
         op match {
             case opProject: OpProject => { // SELECT clause
-                val subOp = opProject.getSubOp();
-                this.translateSparqlQuery(bindings, subOp)
+                this.translateSparqlQuery(bindings, opProject.getSubOp)
             }
             case bgp: OpBGP => { // Basic Graph Pattern
                 val triples: List[Triple] = bgp.getPattern.getList.toList
@@ -180,8 +180,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 else None
             }
             case opFilter: OpFilter => { //FILTER pattern
-                logger.warn("SPARQL Filter no supported in query translation.")
-                None
+                logger.warn("SPARQL Filter no supported. Ignoring it.")
+                this.translateSparqlQuery(bindings, opFilter.getSubOp)
             }
             case opSlice: OpSlice => {
                 logger.warn("SPARQL Slice no supported in query translation.")
