@@ -90,6 +90,8 @@ class AbstractQueryUnion(
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
+        if (!optimizer.selfUnionElimination) return this
+
         if (members.size == 1) { // security test but abnormal case, should never happen
             logger.warn("Unexpected case: inner join with only one member: " + this.toString)
             return members.head

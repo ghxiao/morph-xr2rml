@@ -33,6 +33,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     val optimizer = new MorphBaseQueryOptimizer()
 
     optimizer.selfJoinElimination = properties.selfJoinElimination;
+    optimizer.selfUnionElimination = properties.selfUnionElimination;
     optimizer.subQueryElimination = properties.subQueryElimination;
     optimizer.transJoinSubQueryElimination = properties.transJoinSubQueryElimination;
     optimizer.transSTGSubQueryElimination = properties.transSTGSubQueryElimination;

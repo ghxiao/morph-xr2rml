@@ -199,7 +199,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
     /**
      * Generate triples in the context of the query rewriting: run the child and optional parent queries,
-     * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
+     * and apply the triples map bound to the child query to create RDF triples.
      *
      * This assumes that triples maps are normalized, i.e. (1) exactly one predicate-object map with exactly one
      * predicate map and one object map, (2) each rr:class property of the subject map was translated into an
@@ -213,9 +213,11 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
             throw new MorphException("Target queries not set in " + query)
 
         val listTerms = query.generateRdfTerms(factory.getDataSourceReader, this)
+        var nbTriples = 0
         for (terms <- listTerms) {
-            factory.getMaterializer.materializeQuads(terms.subjects, terms.predicates, terms.objects, List.empty, terms.graphs)
+            nbTriples += factory.getMaterializer.materializeQuads(terms.subjects, terms.predicates, terms.objects, List.empty, terms.graphs)
         }
+        if (logger.isDebugEnabled) logger.debug("Materialized " + nbTriples + " triples.")
     }
 
     /**

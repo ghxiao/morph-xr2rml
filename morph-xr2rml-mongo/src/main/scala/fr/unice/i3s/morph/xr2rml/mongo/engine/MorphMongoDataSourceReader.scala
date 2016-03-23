@@ -88,7 +88,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
                 queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
             } else queryResult
 
-        if (logger.isDebugEnabled()) logger.debug("Query \n" + query + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
+        if (logger.isDebugEnabled()) logger.debug("Query \n" + query.concreteQuery  + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
         new MorphMongoResultSet(queryResultIter.toList)
     }
 

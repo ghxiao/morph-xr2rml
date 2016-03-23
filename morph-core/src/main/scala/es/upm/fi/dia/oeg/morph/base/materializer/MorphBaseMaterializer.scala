@@ -17,14 +17,22 @@ abstract class MorphBaseMaterializer(val model: Model, var outputStream: Writer)
 
     def materialize()
 
+    /**
+     * Materialize one triple in a target graph
+     */
     def materializeQuad(subject: RDFNode, predicate: RDFNode, obj: RDFNode, graph: RDFNode)
     
+    /**
+     * Materialize multiple triples in a target graph
+     * 
+     * @return number of triples generated
+     */
     def materializeQuads(
         subjects: List[RDFNode],
         predicates: List[RDFNode],
         objects: List[RDFNode],
         refObjects: List[RDFNode],
-        graphs: List[RDFNode])
+        graphs: List[RDFNode]): Integer
 
     def setModelPrefixMap(prefixMap: Map[String, String]) = {
         this.model.setNsPrefixes(prefixMap);

@@ -104,23 +104,29 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
 
     /**
      * Materialize RDF triple in target graphs
+     * 
+     * @return number of triples generated
      */
     override def materializeQuads(
         subjects: List[RDFNode],
         predicates: List[RDFNode],
         objects: List[RDFNode],
         refObjects: List[RDFNode],
-        graphs: List[RDFNode]): Unit = {
+        graphs: List[RDFNode]): Integer = {
 
+        var nbTriples = 0
         predicates.foreach(pred => {
             subjects.foreach(sub => {
                 objects.foreach(obj => {
                     if (graphs.isEmpty) {
                         this.materializeQuad(sub, pred, obj, null)
-                        if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
+                        nbTriples += 1
+                        //if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
+println("[" + sub + "] [" + pred + "] [" + obj + "]")                        
                     } else {
                         graphs.foreach(graph => {
                             this.materializeQuad(sub, pred, obj, graph)
+                            nbTriples += 1
                             if (logger.isDebugEnabled()) logger.debug("Materialized triple: graph[" + graph + "], [" + sub + "] [" + pred + "] [" + obj + "]")
                         })
                     }
@@ -129,10 +135,12 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
                     if (obj != null) {
                         if (graphs.isEmpty) {
                             this.materializeQuad(sub, pred, obj, null)
+                            nbTriples += 1
                             if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
                         } else {
                             graphs.foreach(graph => {
                                 this.materializeQuad(sub, pred, obj, graph)
+                                nbTriples += 1
                                 if (logger.isDebugEnabled()) logger.debug("Materialized triple: graph[" + graph + "], [" + sub + "] [" + pred + "] [" + obj + "]")
                             })
                         }
@@ -140,6 +148,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
                 })
             })
         })
+        nbTriples
     }
 
 }
