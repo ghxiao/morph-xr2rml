@@ -90,8 +90,55 @@ class AbstractQueryUnion(
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
-        val membersOpt = members.map(_.optimizeQuery(optimizer))
-        new AbstractQueryUnion(membersOpt)
+        if (members.size == 1) { // security test but abnormal case, should never happen
+            logger.warn("Unexpected case: inner join with only one member: " + this.toString)
+            return members.head
+        }
+
+        if (logger.isDebugEnabled)
+            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
+
+        var membersV = members
+        var continue = true
+
+        while (continue) {
+
+            for (i: Int <- 0 to (membersV.size - 2) if continue) {	// from first until second to last (avant-dernier)
+                for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
+
+                    val left = membersV(i).optimizeQuery(optimizer)
+                    val right = membersV(j).optimizeQuery(optimizer)
+
+                    // Union of 2 atomic queries
+                    if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {
+                        val opt = left.asInstanceOf[AbstractAtomicQuery].mergeForUnion(right)
+                        if (opt.isDefined) {
+                            //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
+                            // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
+                            membersV = membersV.slice(0, i) ++ List(opt.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
+                            continue = false
+                        }
+                    }
+                } // end for j
+            } // end for i
+
+            if (continue) {
+                // There was no change in the last run, we cannot do anymore optimization
+                if (membersV.size == 1)
+                    return membersV.head
+                else
+                    return new AbstractQueryUnion(membersV)
+            } else {
+                // There was a change in this run, let's rerun the optimization with the new list of members
+                continue = true
+                if (logger.isDebugEnabled) {
+                    val res = if (membersV.size == 1) membersV.head else new AbstractQueryUnion(membersV)
+                    logger.debug("\n------------------ Query optimized into ------------------\n" + res)
+                }
+            }
+        }
+
+        throw new MorphException("We should not quit the function this way.")        
     }
 
 }

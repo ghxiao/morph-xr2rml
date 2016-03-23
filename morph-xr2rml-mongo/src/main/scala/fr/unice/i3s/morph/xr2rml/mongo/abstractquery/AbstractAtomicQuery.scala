@@ -88,7 +88,7 @@ class AbstractAtomicQuery(
     override def toStringConcrete = {
         val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n " else ""
         "{ " + bdgs +
-            targetQuery.mkString("\nUNION\n") + " }"
+            targetQuery.map(_.concreteQuery).mkString("\nUNION\n") + " }"
     }
 
     /**
@@ -112,14 +112,20 @@ class AbstractAtomicQuery(
 
         // Generate one abstract MongoDB query (MongoQueryNode) for each selected condition
         val mongAbsQs: Set[MongoQueryNode] = whereConds.map(cond => {
-            val condIRef = cond.asInstanceOf[IReference]
-            // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
-            val iter = this.from.docIterator
-            if (iter.isDefined)
-                condIRef.reference = condIRef.reference.replace("$", iter.get)
+            if (cond.hasReference) {
+                val condIRef = cond.asInstanceOf[IReference]
+                // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
+                val iter = this.from.docIterator
+                if (iter.isDefined)
+                    condIRef.reference = condIRef.reference.replace("$", iter.get)
 
-            //--- Translate the condition on a JSONPath reference into an abstract MongoDB query
-            JsonPathToMongoTranslator.trans(cond)
+                //--- Translate the condition on a JSONPath reference into an abstract MongoDB query
+                JsonPathToMongoTranslator.trans(condIRef.asInstanceOf[AbstractQueryCondition])
+            } else {
+                //--- The condition type is IsNull or Or
+                // @todo if the iterator is defined, add it to references of inner conditions
+                JsonPathToMongoTranslator.trans(cond)
+            }
         })
 
         // If there are more than one query, encapsulate them under a top-level AND
@@ -354,7 +360,7 @@ class AbstractAtomicQuery(
      * @param q the right query of the left-join
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForLeftJoin(q: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
+    def mergeForLeftJoin(q: AbstractQuery): Option[AbstractAtomicQuery] = {
 
         if (!q.isInstanceOf[AbstractAtomicQuery])
             return None
@@ -398,16 +404,15 @@ class AbstractAtomicQuery(
      * The merge is allowed if and only if both queries have the same From part (the logical source).
      *
      * The resulting query Q merges queries Q1 and Q2 this way:<br>
-     * (i) the Project part of Q is simply the merge of the two sets of projections.<br>
+     * (i) the Project part of Q is simply the union of the two sets of projections.<br>
      * (ii) the Where part of Q is an OR of the 2 Where parts: OR(Q1.where, Q2.where).
-     * When there are more than one condition in a Where, the semantics is an logical AND.
-     * Thus we have to encapsulate them in an AND condition, we obtain:
+     * When there are more than one condition in a Where, we embed them in an AND condition, we obtain:
      * OR(AND(Q1.where), AND(Q2.where)).
      *
      * @param q the right query of the union
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForUnion(q: AbstractAtomicQuery): Option[AbstractAtomicQuery] = {
+    def mergeForUnion(q: AbstractQuery): Option[AbstractAtomicQuery] = {
 
         if (!q.isInstanceOf[AbstractAtomicQuery])
             return None

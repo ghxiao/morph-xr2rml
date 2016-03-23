@@ -274,6 +274,9 @@ class AbstractQueryInnerJoinRef(
      * Try to merge the the child and parent queries
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
+
+        if (!optimizer.selfJoinElimination) return this
+
         val opt = child.mergeForInnerJoin(this.parent)
         opt.getOrElse(this)
     }

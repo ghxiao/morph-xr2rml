@@ -165,8 +165,13 @@ class AbstractQueryInnerJoin(
 
     /**
      * Try to merge atomic queries among the members of the inner join
+     *
+     * @note in this function we use the slice method:
+     * list.slice(start, end) : from start (included) until end (excluded), i.e. slice(n,n) returns an empty list
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
+
+        if (!optimizer.selfJoinElimination) return this
 
         if (members.size == 1) { // security test but abnormal case, should never happen
             logger.warn("Unexpected case: inner join with only one member: " + this.toString)
@@ -181,18 +186,16 @@ class AbstractQueryInnerJoin(
 
         while (continue) {
 
-            for (i: Int <- 0 to (membersV.size - 2) if continue) {
-                for (j: Int <- (i + 1) to (membersV.size - 1) if continue) {
+            for (i: Int <- 0 to (membersV.size - 2) if continue) { // from first until second to last (avant-dernier)
+                for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
 
                     val left = membersV(i).optimizeQuery(optimizer)
                     val right = membersV(j).optimizeQuery(optimizer)
 
-                    // Inner join of 2 atomic queries
+                    // Inner-join of 2 atomic queries
                     if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {
                         val opt = left.asInstanceOf[AbstractAtomicQuery].mergeForInnerJoin(right)
                         if (opt.isDefined) {
-                            // Note: list.slice(start, end) : from start (included) until end (excluded). slice(n,n) => empty list
-                            //
                             //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
                             // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
                             membersV = membersV.slice(0, i) ++ List(opt.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
