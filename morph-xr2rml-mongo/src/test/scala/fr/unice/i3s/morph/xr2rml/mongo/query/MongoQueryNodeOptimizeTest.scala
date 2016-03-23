@@ -2,10 +2,9 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
 class MongoQueryNodeOptimizeTest {
-
-    private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
     @Test def testOptimizeFlattenAnds() {
         println("------------------------------------------------- testOptimizeFlattenAnds")
@@ -17,9 +16,9 @@ class MongoQueryNodeOptimizeTest {
                     new MongoQueryNodeField("r", new MongoQueryNodeCondExists)))))
         println(node.toString)
         // Raw
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$and: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
+        assertEquals(GeneralUtility.cleanString("""$and: [{'p': {$exists: true}}, {$and: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), GeneralUtility.cleanString(node.toString))
         // Optimized
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), cleanString(node.optimizeQuery.toString))
+        assertEquals(GeneralUtility.cleanString("""$and: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), GeneralUtility.cleanString(node.optimizeQuery.toString))
     }
 
     @Test def testOptimizeFlattenOrs() {
@@ -32,9 +31,9 @@ class MongoQueryNodeOptimizeTest {
                     new MongoQueryNodeField("r", new MongoQueryNodeCondExists)))))
         println(node.toString)
         // Raw
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$or: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
+        assertEquals(GeneralUtility.cleanString("""$or: [{'p': {$exists: true}}, {$or: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), GeneralUtility.cleanString(node.toString))
         // Optimized
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), cleanString(node.optimizeQuery.toString))
+        assertEquals(GeneralUtility.cleanString("""$or: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), GeneralUtility.cleanString(node.optimizeQuery.toString))
     }
 
     @Test def testOptimizeFlattenUnions() {
@@ -47,9 +46,9 @@ class MongoQueryNodeOptimizeTest {
                     new MongoQueryNodeField("r", new MongoQueryNodeCondExists)))
         println(node.toString)
         // Raw
-        assertEquals(cleanString("""UNION: [{'p': {$exists: true}}, {UNION: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), cleanString(node.toString))
+        assertEquals(GeneralUtility.cleanString("""UNION: [{'p': {$exists: true}}, {UNION: [{'q': {$exists: true}}, {'r': {$exists: true}}]}]"""), GeneralUtility.cleanString(node.toString))
         // Optimized
-        assertEquals(cleanString("""UNION: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), cleanString(node.optimizeQuery.toString))
+        assertEquals(GeneralUtility.cleanString("""UNION: [{'p': {$exists: true}}, {'q': {$exists: true}}, {'r': {$exists: true}}]"""), GeneralUtility.cleanString(node.optimizeQuery.toString))
     }
 
     @Test def testOptimizeGroupWheres() {
@@ -61,9 +60,9 @@ class MongoQueryNodeOptimizeTest {
                 new MongoQueryNodeWhere("@.q < @.p")))
         println(node.toString)
         // Raw
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$where: 'a == b'}, {$where: '@.q < @.p'}]"""), cleanString(node.toString))
+        assertEquals(GeneralUtility.cleanString("""$and: [{'p': {$exists: true}}, {$where: 'a == b'}, {$where: '@.q < @.p'}]"""), GeneralUtility.cleanString(node.toString))
         // Optimized
-        assertEquals(cleanString("""$and: [{'p': {$exists: true}}, {$where: '(a == b) && (@.q < @.p)'}]"""), cleanString(node.optimizeQuery.toString))
+        assertEquals(GeneralUtility.cleanString("""$and: [{'p': {$exists: true}}, {$where: '(a == b) && (@.q < @.p)'}]"""), GeneralUtility.cleanString(node.optimizeQuery.toString))
 
         node =
             new MongoQueryNodeOr(List(
@@ -72,9 +71,9 @@ class MongoQueryNodeOptimizeTest {
                 new MongoQueryNodeWhere("@.q < @.p")))
         println(node.toString)
         // Raw
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$where: 'a == b'}, {$where: '@.q < @.p'}]"""), cleanString(node.toString))
+        assertEquals(GeneralUtility.cleanString("""$or: [{'p': {$exists: true}}, {$where: 'a == b'}, {$where: '@.q < @.p'}]"""), GeneralUtility.cleanString(node.toString))
         // Optimized
-        assertEquals(cleanString("""$or: [{'p': {$exists: true}}, {$where: '(a == b) || (@.q < @.p)'}]"""), cleanString(node.optimizeQuery.toString))
+        assertEquals(GeneralUtility.cleanString("""$or: [{'p': {$exists: true}}, {$where: '(a == b) || (@.q < @.p)'}]"""), GeneralUtility.cleanString(node.optimizeQuery.toString))
     }
 
     @Test def testOptimizePullupWheresW1() {

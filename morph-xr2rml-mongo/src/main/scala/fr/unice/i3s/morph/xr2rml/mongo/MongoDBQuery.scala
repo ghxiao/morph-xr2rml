@@ -1,8 +1,10 @@
 package fr.unice.i3s.morph.xr2rml.mongo
 
 import org.apache.log4j.Logger
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
+
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 
 /**
  * Simple representation of a MongoDB shell query:
@@ -38,11 +40,11 @@ class MongoDBQuery(
 
     override def equals(a: Any): Boolean = {
         val m = a.asInstanceOf[MongoDBQuery]
-        this.collection == m.collection && MongoDBQuery.cleanString(this.query) == MongoDBQuery.cleanString(m.query) && {
+        this.collection == m.collection && GeneralUtility.cleanString(this.query) == GeneralUtility.cleanString(m.query) && {
             if (!this.iterator.isDefined || !m.iterator.isDefined)
                 this.iterator == m.iterator
             else
-                MongoDBQuery.cleanString(this.iterator.get) == MongoDBQuery.cleanString(m.iterator.get)
+                GeneralUtility.cleanString(this.iterator.get) == GeneralUtility.cleanString(m.iterator.get)
         }
     }
 }
@@ -50,8 +52,6 @@ class MongoDBQuery(
 object MongoDBQuery {
 
     val logger = Logger.getLogger(this.getClass().getName());
-
-    private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
     /**
      * Create a MongoDBQuery with no iterator.
@@ -95,7 +95,7 @@ object MongoDBQuery {
      * @example
      * q1 = db.collection.find({field1: 10}) and
      * q2 = db.collection.find({field1: 10, field2: 20}).
-     * q2 is more specific than q1 =&gt;return an xR2RMLQuet with query string q2
+     * q2 is more specific than q1 =&gt; return an xR2RMLQuet with query string q2
      *
      * @param q1 an xR2RMLQuery with a MongoDB query string
      * @param q2 an xR2RMLQuery with a MongoDB query string
@@ -132,8 +132,8 @@ object MongoDBQuery {
      */
     private def mostSpecificQuery(q1: String, q2: String): Option[String] = {
 
-        val mq1 = parseQueryString(cleanString(q1), true)
-        val mq2 = parseQueryString(cleanString(q2), true)
+        val mq1 = parseQueryString(GeneralUtility.cleanString(q1), true)
+        val mq2 = parseQueryString(GeneralUtility.cleanString(q2), true)
 
         if (mq1.collection != mq2.collection)
             return None
@@ -144,6 +144,33 @@ object MongoDBQuery {
             return Some("db." + mq2.collection + ".find({" + mq2.query + "})")
         else
             None
+    }
+
+    /**
+     * Check if the left query is equal or more specific than the query,
+     * i.e. they that they have the same type, reference formulation and iterator,
+     * and the left query string starts like the right query string.
+     *
+     * @example
+     * left  = db.collection.find({field1: 10, field2: 20}), and 
+     * right = db.collection.find({field1: 10}).
+     * left is more specific than right =&gt; return true
+     *
+     * @param left  an xR2RMLQuery with a MongoDB query string
+     * @param right an xR2RMLQuery with a MongoDB query string
+     * @return true if left is more specific than right
+     */
+    def isLeftMoreSpecific(left: xR2RMLLogicalSource, right: xR2RMLLogicalSource): Boolean = {
+
+        if (left.logicalTableType != right.logicalTableType || left.refFormulation != right.refFormulation || left.docIterator != right.docIterator)
+            return false
+        if (!left.isInstanceOf[xR2RMLQuery] || !right.isInstanceOf[xR2RMLQuery])
+            return false
+
+        val mqLeft = parseQueryString(GeneralUtility.cleanString(left.asInstanceOf[xR2RMLQuery].query), true)
+        val mqRight = parseQueryString(GeneralUtility.cleanString(right.asInstanceOf[xR2RMLQuery].query), true)
+
+        (mqLeft.collection == mqRight.collection) && (mqLeft.query.startsWith(mqRight.query))
     }
 
 }

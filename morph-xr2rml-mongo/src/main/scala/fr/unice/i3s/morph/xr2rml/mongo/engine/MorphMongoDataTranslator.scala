@@ -65,7 +65,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
             pom.refObjectMaps.foreach(rom => {
                 val parentTM = factory.getMappingDocument.getParentTriplesMap(rom)
                 val parentQuery = factory.getUnfolder.unfoldTriplesMap(parentTM)
-                val queryMapId = makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator)
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator)
                 if (!parentResultSets.contains(queryMapId)) {
                     val resultSet = factory.getDataSourceReader.executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
                     parentResultSets += (queryMapId -> resultSet.toList)
@@ -137,7 +137,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                             val parentMsp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
 
                             // Get the results of the parent query
-                            val queryMapId = makeQueryMapId(factory.getUnfolder.unfoldTriplesMap(parentTM), parentTM.logicalSource.docIterator)
+                            val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(factory.getUnfolder.unfoldTriplesMap(parentTM), parentTM.logicalSource.docIterator)
                             val parentRes = parentResultSets.get(queryMapId).get
 
                             // Evaluate the mixed syntax path on each parent query result. The result is stored as pairs:
@@ -380,12 +380,5 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
             case _ => null
         }
-    }
-
-    private def makeQueryMapId(query: GenericQuery, iter: Option[String]): String = {
-        if (iter.isDefined)
-            query.concreteQuery.toString + ", Iterator: " + iter.get
-        else
-            query.concreteQuery.toString
     }
 }

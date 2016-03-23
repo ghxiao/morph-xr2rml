@@ -251,7 +251,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
             }
 
             case opFilter: OpFilter => { //FILTER pattern
-                Map.empty
+                bindm(opFilter.getSubOp())                
             }
             case opSlice: OpSlice => {
                 Map.empty

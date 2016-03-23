@@ -61,7 +61,6 @@ object GeneralUtility {
         result;
     }
 
-
     /**
      * URL-encode special characters in a template string (this is different from the special chars read from the database).
      * URL special chars '#', '?', "/", ":" and '&' are unchanged: if they are in a template string this must be intentional.
@@ -103,7 +102,7 @@ object GeneralUtility {
     def encodeReservedChars(originalValue: String): String = {
         var result = originalValue;
         if (result != null) {
-            result = result.replaceAll("%", "%25");	// keep in first place!
+            result = result.replaceAll("%", "%25"); // keep in first place!
             result = result.replaceAll(" ", "%20");
             result = result.replaceAll("!", "%21");
             result = result.replaceAll("\"", "%22");
@@ -258,5 +257,7 @@ object GeneralUtility {
             (stmtType.getObject == RDF.Alt) ||
             (stmtType.getObject == RDF.Seq))
     }
+
+    def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 }
 

@@ -1,20 +1,16 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import java.net.URI
-
 import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.JavaConversions.seqAsJavaList
-
 import org.apache.log4j.Logger
 import org.jongo.Jongo
 import org.jongo.MongoCollection
 import org.jongo.MongoCursor
-
 import com.mongodb.DB
 import com.mongodb.MongoClient
 import com.mongodb.MongoCredential
 import com.mongodb.ServerAddress
-
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
@@ -26,6 +22,7 @@ import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
 class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSourceReader(factory) {
 
@@ -146,8 +143,8 @@ object MorphMongoDataSourceReader {
 
     def makeQueryMapId(query: GenericQuery, iter: Option[String]): String = {
         if (iter.isDefined)
-            query.concreteQuery.toString + ", Iterator: " + iter.get
+            GeneralUtility.cleanString(query.concreteQuery.toString) + ", Iterator: " + GeneralUtility.cleanString(iter.get)
         else
-            query.concreteQuery.toString
+            GeneralUtility.cleanString(query.concreteQuery.toString)
     }
 }
