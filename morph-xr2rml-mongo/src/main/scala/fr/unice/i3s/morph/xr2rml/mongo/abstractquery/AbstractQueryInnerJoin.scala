@@ -157,7 +157,7 @@ class AbstractQueryInnerJoin(
             }
 
             val res = joinResult.values.toList
-            val resNonJoined = nonJoinedLeft ++ nonJoinedLeft
+            val resNonJoined = nonJoinedLeft ++ nonJoinedRight
             logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
             res ++ resNonJoined
         }
