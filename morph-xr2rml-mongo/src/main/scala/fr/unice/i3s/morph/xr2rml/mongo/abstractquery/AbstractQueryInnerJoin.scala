@@ -103,10 +103,11 @@ class AbstractQueryInnerJoin(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
         logger.info("Generating RDF triples from the inner join query:\n" + this.toStringConcrete)
-        val joinResult: scala.collection.mutable.Map[String, MorphBaseResultRdfTerms] = new scala.collection.mutable.HashMap
+
+        var joinResult = Map[String, MorphBaseResultRdfTerms]()
 
         // First, generate the triples for both left and right graph patterns of the join
         val subq =
@@ -151,12 +152,12 @@ class AbstractQueryInnerJoin(
                     }
                 }
 
-                // All left and right triples that do not contain any of the shared variables are kept
+                // All left and right triples that do not contain any of the shared variables are kept separatly
                 nonJoinedLeft = nonJoinedLeft.filter(!_.hasVariable(x))
                 nonJoinedRight = nonJoinedRight.filter(!_.hasVariable(x))
             }
 
-            val res = joinResult.values.toList
+            val res = joinResult.values.toSet
             val resNonJoined = nonJoinedLeft ++ nonJoinedRight
             logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
             res ++ resNonJoined

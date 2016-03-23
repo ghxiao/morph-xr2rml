@@ -53,7 +53,7 @@ class AbstractQuerySql extends AbstractQuery(Set.empty) {
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
         throw new MorphException("Not supported")
     }
 

@@ -71,7 +71,7 @@ abstract class AbstractQuery(
      */
     def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms]
+        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms]
 
     /**
      * Misc optimizations of the abstract query: self-join and self-union eliminations etc. 

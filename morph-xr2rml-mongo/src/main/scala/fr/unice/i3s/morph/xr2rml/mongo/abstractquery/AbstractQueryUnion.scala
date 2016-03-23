@@ -15,7 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
  *
  * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
  * from which we have derived this query
- * 
+ *
  * @param members the abstract query members of the union
  */
 class AbstractQueryUnion(
@@ -77,12 +77,14 @@ class AbstractQueryUnion(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
         logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
-        val result = members.flatMap(m => m.generateRdfTerms(dataSourceReader, dataTranslator))
-        logger.info("Union computed " + result.size + " triples.")
-        result
+
+        var res = Set[MorphBaseResultRdfTerms]()
+        members.foreach(m => { res = res ++ m.generateRdfTerms(dataSourceReader, dataTranslator) })
+        logger.info("Union computed " + res.size + " triples.")
+        res
     }
 
     /**
@@ -105,7 +107,7 @@ class AbstractQueryUnion(
 
         while (continue) {
 
-            for (i: Int <- 0 to (membersV.size - 2) if continue) {	// from first until second to last (avant-dernier)
+            for (i: Int <- 0 to (membersV.size - 2) if continue) { // from first until second to last (avant-dernier)
                 for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
 
                     val left = membersV(i).optimizeQuery(optimizer)
@@ -140,7 +142,7 @@ class AbstractQueryUnion(
             }
         }
 
-        throw new MorphException("We should not quit the function this way.")        
+        throw new MorphException("We should not quit the function this way.")
     }
 
 }

@@ -84,7 +84,7 @@ class AbstractQueryLeftJoin(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
         logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
         val joinResult: scala.collection.mutable.Map[String, MorphBaseResultRdfTerms] = new scala.collection.mutable.HashMap
@@ -142,7 +142,7 @@ class AbstractQueryLeftJoin(
             val res = joinResult.values.toList
             val resNonJoined = nonJoinedLeft ++ nonJoinedLeft
             logger.info("Left join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
-            res ++ resNonJoined
+            res.toSet ++ resNonJoined
         }
     }
 

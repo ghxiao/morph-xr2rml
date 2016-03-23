@@ -104,12 +104,12 @@ class AbstractQueryInnerJoinRef(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+        dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
         // Cache queries in case we have several bindings for this query
-        val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+        var executedQueries = Map[String, Set[String]]()
 
-        val total = this.tpBindings.toList.flatMap(tpb => {
+        val total = this.tpBindings.flatMap(tpb => {
             val triple = tpb.tp
             val tm = tpb.bound
 
@@ -140,7 +140,7 @@ class AbstractQueryInnerJoinRef(
                     executedQueries(queryMapId)
                 } else {
                     val resultSet = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
-                    executedQueries += (queryMapId -> resultSet)
+                    executedQueries += (queryMapId -> resultSet.toSet)
                     resultSet
                 }
             })
@@ -162,7 +162,7 @@ class AbstractQueryInnerJoinRef(
                             executedQueries(queryMapId)
                         } else {
                             val resultSet = dataSourceReader.executeQueryAndIterator(query, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
-                            executedQueries += (queryMapId -> resultSet)
+                            executedQueries += (queryMapId -> resultSet.toSet)
                             resultSet
                         }
                     })

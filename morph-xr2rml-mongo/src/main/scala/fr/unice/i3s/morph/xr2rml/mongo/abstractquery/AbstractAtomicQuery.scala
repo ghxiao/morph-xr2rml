@@ -163,15 +163,15 @@ class AbstractAtomicQuery(
      *
      * @param dataSourceReader the data source reader to query the database
      * @param dataTrans the data translator to create RDF terms
-     * @return a list of MorphBaseResultRdfTerms instances, one for each result document
+     * @return a set of MorphBaseResultRdfTerms instances, one for each result document
      * May return an empty result but NOT null.
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
+        dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
         // Cache queries in case we have several bindings for this query
-        val executedQueries: scala.collection.mutable.Map[String, List[String]] = new scala.collection.mutable.HashMap
+        var executedQueries = Map[String, List[String]]()
 
         if (tpBindings.isEmpty) {
             val errMsg = "Atomic abstract query with no triple pattern binding " +
@@ -181,7 +181,7 @@ class AbstractAtomicQuery(
             throw new MorphException(errMsg)
         }
 
-        tpBindings.toList.flatMap(tpb => {
+        val resultSetAll: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
             val tp = tpb.tp
             val subjectAsVariable =
                 if (tp.getSubject.isVariable)
@@ -204,24 +204,24 @@ class AbstractAtomicQuery(
             logger.info("Generating RDF terms under triples map " + tm.toString + " for atomic query: \n" + this.toStringConcrete);
 
             // Execute the queries of tagetQuery
-            val resSets = this.targetQuery.map(query => {
+            var resultSet = List[String]()
+            this.targetQuery.foreach(query => {
                 val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter)
                 if (executedQueries.contains(queryMapId)) {
                     logger.info("Returning query results from cache.")
-                    executedQueries(queryMapId)
+                    resultSet ++= executedQueries(queryMapId)
                 } else {
-                    val resultSet = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
-                    executedQueries += (queryMapId -> resultSet)
-                    resultSet
+                    val res = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
+                    executedQueries = executedQueries + (queryMapId -> res)
+                    // Make a UNION of all the results
+                    resultSet ++= res
                 }
             })
-            // Make a UNION (flatten) of all the results
-            val resultSet = resSets.flatten
             logger.info("Query returned " + resultSet.size + " results.")
 
             // Main loop: iterate and process each result document of the result set
             var i = 0;
-            val terms = for (document <- resultSet) yield {
+            val terms = for (document: String <- resultSet) yield {
                 try {
                     i = i + 1;
                     if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + resultSet.size + ": " + document)
@@ -275,8 +275,9 @@ class AbstractAtomicQuery(
             }
             val result = terms.flatten // get rid of the None's (in case there was an exception)
             logger.info("Atomic query computed " + result.size + " triples for binding " + tpb)
-            result
+            result.toSet
         })
+        resultSetAll
     }
 
     /**

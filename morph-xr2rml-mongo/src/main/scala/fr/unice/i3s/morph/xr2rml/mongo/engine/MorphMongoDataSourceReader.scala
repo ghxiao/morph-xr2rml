@@ -89,7 +89,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
             } else queryResult
 
         if (logger.isDebugEnabled()) logger.debug("Query \n" + query.concreteQuery  + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
-        new MorphMongoResultSet(queryResultIter.toList)
+        new MorphMongoResultSet(queryResultIter)
     }
 
     override def setTimeout(timeout: Int) {

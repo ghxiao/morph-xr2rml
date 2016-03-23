@@ -121,8 +121,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
                     if (graphs.isEmpty) {
                         this.materializeQuad(sub, pred, obj, null)
                         nbTriples += 1
-                        //if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
-println("[" + sub + "] [" + pred + "] [" + obj + "]")                        
+                        if (logger.isDebugEnabled()) logger.debug("Materialized triple: [" + sub + "] [" + pred + "] [" + obj + "]")
                     } else {
                         graphs.foreach(graph => {
                             this.materializeQuad(sub, pred, obj, graph)
