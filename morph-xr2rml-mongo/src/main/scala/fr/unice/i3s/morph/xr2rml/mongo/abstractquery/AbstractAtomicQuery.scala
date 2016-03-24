@@ -340,6 +340,11 @@ class AbstractAtomicQuery(
         val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
         if (mostSpec.isDefined) {
 
+            val leftVarsNonShared = left.getVariables diff right.getVariables
+            val rightVarsNonShared = right.getVariables diff left.getVariables
+            if (leftVarsNonShared.nonEmpty || rightVarsNonShared.nonEmpty)
+                return None
+            
             val sharedVars = left.getVariables intersect right.getVariables
             if (sharedVars.nonEmpty) {
                 // Check if shared variables are projected from the same reference
@@ -359,6 +364,7 @@ class AbstractAtomicQuery(
                     }
                 })
 
+                /*
                 // Check if the same reference is projected as different non-shared variables in both queries
                 val leftVarsNonShared = left.getVariables diff right.getVariables
                 leftVarsNonShared.foreach(x => {
@@ -400,7 +406,7 @@ class AbstractAtomicQuery(
                         }
                     })
                 })
-
+             	*/
                 val mergedBindings = left.tpBindings ++ right.tpBindings
                 val mergedProj = left.project ++ right.project
                 val mergedWhere = left.where ++ right.where
