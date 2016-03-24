@@ -27,6 +27,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -411,53 +413,85 @@ class AbstractAtomicQuery(
     }
 
     /**
-     * Merge this atomic abstract query with another one in order to perform an left self-join elimination.
-     * The merge is allowed if and only if 3 conditions are met:<br>
-     * (i) both queries have the same From part (the logical source), or the left query is more specific than
-     * the right query (in that case we keep the most left query).<br>
-     * (ii) they have at least one shared variable (on which the join is to be done),<br>
-     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
+     * Try to narrow down this atomic query by propagating conditions of the another atomic query
+     * that is joined with it (either inner join or a left join).
+     * Below we denote by left query 'this' query, and the other query by right query.
      *
-     * @param q the right query of the left-join
-     * @return an AbstractAtomicQuery if the merge is possible, None otherwise
+     * Two possibilities are evaluated:<br>
+     * (i) Check if the From part of the right query is more specific than From part of the left query.
+     * In case of an inner join of left outer join of left and right, the results will be produced from the common
+     * documents from left and right, thus we can simply replace the From of the left query with that of the right query.<br>
+     * @example
+     * <code>left.from = db.collection.find({query1})</code>
+     * <code>right.from = db.collection.find({query1, query2})</code>
+     * In that case, since we join the two queries, we can replace left.from with right.from that is the most specific.
+     *
+     * (ii) If the two queries have some shared variables, then Equality and IsNotNull conditions of the right query
+     * on those shared variables can be merged with the conditions of the left query.<br>
+     * @example
+     * Assume we have "$.field1 AS ?x" in left and "$.field2 AS ?x" in right.
+     * If the right query has a Where condition <code>Equals($.field2, "value")</code>, then we can add a new condition
+     * to the Where conditions of the left query: <code>Equals($.field1, "value")</code>
+     *
+     * @return an optimized version of 'this', based on the query in parameter, or 'this' is no optimization was possible.
      */
-    def mergeForLeftJoin(q: AbstractQuery): Option[AbstractAtomicQuery] = {
+    def propagateConditionFromJoinedQuery(q: AbstractQuery): AbstractAtomicQuery = {
 
         if (!q.isInstanceOf[AbstractAtomicQuery])
-            return None
+            return this
 
+        val left = this
         val right = q.asInstanceOf[AbstractAtomicQuery]
         var result: Option[AbstractAtomicQuery] = None
-        val left = this
 
-        if (MongoDBQuery.isLeftMoreSpecific(left.from, right.from)) {
-            val sharedVars = left.getVariables.intersect(right.getVariables)
-            var rightConditions: Set[AbstractQueryCondition] = Set.empty
+        // Check if right From part is more specific than left From part
+        var newLeft =
+            if (MongoDBQuery.isLeftMoreSpecific(right.from, left.from)) {
+                // Narrow down left query by replacing its From part with that of the right query
+                new AbstractAtomicQuery(left.tpBindings, right.from, left.project, left.where)
+            } else left
 
-            if (sharedVars.nonEmpty) {
-                sharedVars.foreach(x => {
-                    // Get the references corresponding to variable ?x in each query.
-                    val leftRefs = left.project.filter(_.as.get == x).map(_.references)
-                    val rightRefs = right.project.filter(_.as.get == x).map(_.references)
+        // Check if some Where conditions of the right query can be added to the Where conditions of the left query to narrow it down
+        var condsToReport = Set[AbstractQueryCondition]()
+        val sharedVars = left.getVariables intersect right.getVariables
+        if (sharedVars.nonEmpty) {
+            sharedVars.foreach(x => {
+                // Get all the references associated with variable ?x in the left and right queries.
+                // Note: ?x may be in several projections, e.g. Set($.field1 AS ?x, $.field2 AS ?x),
+                // and each projection may contain several references e.g. "($.field11, $.field2) as ?x" for template term maps.
+                // Restriction: we deal only with single reference i.e. "ref AS ?x", but not references such as "(ref1, ref2) AS ?x"
+                val leftRefs = left.project.filter(p => p.as.isDefined && p.as.get == x && p.references.size == 1).map(_.references.head)
+                val rightRefs = right.project.filter(p => p.as.isDefined && p.as.get == x && p.references.size == 1).map(_.references.head)
 
-                    // Verify that at least one projection of ?x is the same in the left and right queries
-                    val commonRefs = leftRefs.intersect(rightRefs)
-                    if (commonRefs.isEmpty)
-                        return None
-
-                    // Remove IsNotNull condition on the shared variable from the right conditions
-                    right.where
+                rightRefs.foreach(ref => {
+                    // Select the Where conditions in the right query, of type isNotNull or Equals, 
+                    // that refer to the right reference ref associated with ?x
+                    val rightConds = right.where.filter(w => w.hasReference && w.asInstanceOf[IReference].reference == ref)
+                    rightConds.foreach(rightCond => {
+                        rightCond match {
+                            case eq: AbstractQueryConditionEquals => {
+                                leftRefs.foreach(leftRef => {
+                                    condsToReport += new AbstractQueryConditionEquals(leftRef, eq.eqValue)
+                                })
+                            }
+                            case nn: AbstractQueryConditionNotNull => {
+                                leftRefs.foreach(leftRef => {
+                                    condsToReport += new AbstractQueryConditionNotNull(leftRef)
+                                })
+                            }
+                        }
+                    })
                 })
-
-                val mergedBindings = left.tpBindings ++ right.tpBindings
-                val mergedProj = left.project ++ right.project
-
-                val mergedWhere = left.where ++ right.where
-
-                result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
-            }
+            })
         }
-        result
+
+        if (condsToReport.nonEmpty)
+            newLeft = new AbstractAtomicQuery(newLeft.tpBindings, newLeft.from, newLeft.project, newLeft.where ++ condsToReport)
+
+        if (logger.isTraceEnabled)
+            if (newLeft != this)
+                logger.trace("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
+        newLeft
     }
 
     /**

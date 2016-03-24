@@ -16,8 +16,10 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
  * Also used to store the concrete query (attribute targetQuery) that results from
  * the translation of this abstract query into the target database language.
  *
- * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
- * May contain several bindings after query optimization e.g. self-join elimination i.e. 2 merged atomic queries
+ * @param tpBindings a set of couples (triple pattern, List(triples map)) for which we create this atomic query.
+ * This is not empty only for atomic queries. Initially each atomic query should have exactly a binding
+ * for exactly one triple pattern.
+ * After the abstract query optimization (e.g. self-join elimination) there may be more than one binding.
  */
 abstract class AbstractQuery(
         val tpBindings: Set[TPBinding]) {
@@ -41,11 +43,15 @@ abstract class AbstractQuery(
 
     //---- Abstract methods ----
 
+    /** 
+     *  Produce a string representation of this abstract query using the concrete query string
+     *  associated to each atomic query.
+     */
     def toStringConcrete: String
 
     /**
-     * Check if atomic abstract queries within this query have a target query properly initialized
-     * i.e. targetQuery is not empty
+     * Check if atomic abstract queries within this abstract query have a target query 
+     * properly initialized, i.e. targetQuery is not empty
      */
     def isTargetQuerySet: Boolean
 
@@ -56,12 +62,13 @@ abstract class AbstractQuery(
     def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit
 
     /**
-     * Return the set of SPARQL variables projected in this abstract query
+     * Return the set of SPARQL variables projected by this abstract query.
+     * This is a union of the variables projected in each atomic queries within this query. 
      */
     def getVariables: Set[String]
 
     /**
-     * Execute the query and produce the RDF terms for each of the result documents
+     * Execute this query and produce the RDF terms for each of the result documents,
      * by applying the triples map bound to this query.
      *
      * @param dataSourceReader the data source reader to query the database
@@ -74,13 +81,12 @@ abstract class AbstractQuery(
         dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms]
 
     /**
-     * Misc optimizations of the abstract query: self-join and self-union eliminations etc. 
+     * Misc optimizations of the abstract query: self-join and self-union eliminations, propagate filters etc. 
      */
     def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery
 }
 
 object AbstractQuery {
-
     /**
      * Find the list of SPARQL variables shared by two abstract queries
      */

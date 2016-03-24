@@ -112,6 +112,7 @@ object Constants {
 
     val OPTIMIZE_TB = "querytranslator.selfjoinelimination";
     val OPTIMIZE_SU = "querytranslator.selfunionelimination";
+    val OPTIMIZE_PROPCONDJOIN = "querytranslator.propagateconditionfromjoin";
     val REORDER_STG = "querytranslator.reorderstg";
     val SUBQUERY_ELIMINATION = "querytranslator.subqueryelimination";
     val TRANSJOIN_SUBQUERY_ELIMINATION = "querytranslator.transjoin.subqueryelimination";

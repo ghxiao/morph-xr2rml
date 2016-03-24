@@ -26,6 +26,7 @@ class MorphProperties extends java.util.Properties {
     var reorderSTG = true;
     var selfJoinElimination = true;
     var selfUnionElimination = true;
+    var propagateConditionFromJoin = true;
     var subQueryElimination = true;
     var transJoinSubQueryElimination = true;
     var transSTGSubQueryElimination = true;
@@ -133,12 +134,15 @@ class MorphProperties extends java.util.Properties {
         this.jenaMode = this.readString(Constants.JENA_MODE_TYPE, Constants.JENA_MODE_TYPE_MEMORY);
         logger.info("Jena mode = " + jenaMode);
 
-        this.selfUnionElimination = this.readBoolean(Constants.OPTIMIZE_SU, true);
-        logger.info("Self union elimination = " + this.selfUnionElimination);
-
         this.selfJoinElimination = this.readBoolean(Constants.OPTIMIZE_TB, true);
         logger.info("Self join elimination = " + this.selfJoinElimination);
 
+        this.selfUnionElimination = this.readBoolean(Constants.OPTIMIZE_SU, true);
+        logger.info("Self union elimination = " + this.selfUnionElimination);
+
+        this.propagateConditionFromJoin = this.readBoolean(Constants.OPTIMIZE_PROPCONDJOIN, true);
+        logger.info("Propagate conditions from a joined query = " + this.propagateConditionFromJoin);
+        
         this.reorderSTG = this.readBoolean(Constants.REORDER_STG, true);
         logger.info("Reorder STG = " + this.reorderSTG);
 
