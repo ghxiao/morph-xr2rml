@@ -2,7 +2,7 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 
 /**
  * MongoDB query element representing a MongoDB path, i.e. a concatenation of field names or array indexes,
- * and a condition set on conditions on that path. Example: "'p': {$gt: 13, $ne: null}"
+ * and a condition set on conditions on that path. Example: <code>'p': {\$gt: 13, \$ne: null}</code>.
  *
  * The MongoDB path (field) is the result of translating a JSONPath containing a sequence of field names
  * (with tailing-dot or in array notation) and array indexes, i.e. one of: .p, ["p"] or [i].
@@ -10,9 +10,9 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
  *
  * Element "members" is a set of MongoQueryNodes that represent the conditions on that path: MongoQueryNodeCond,
  * MongoQueryNodeElemMatch or MongoQueryNodeCompare.
- * But "members" must not contain another MongoQueryNodeField: "{'p': {'q': {$eq: 1}}}" is invalid in MongoDB.
+ * But "members" must not contain another MongoQueryNodeField: <code>{'p': {'q': {\$eq: 1}}}</code> is invalid in MongoDB.
  *
- * If field is "p" and the next node is an equality condition node, the toString() will result in: "'p': {$eq: 'value'}"
+ * If field is "p" and the next node is an equality condition node, the toString() will result in: <code>'p': {\$eq: 'value'}</code>.
  */
 class MongoQueryNodeField(jsPath: String, val members: List[MongoQueryNode], arraySlice: List[MongoQueryProjection]) extends MongoQueryNode {
 

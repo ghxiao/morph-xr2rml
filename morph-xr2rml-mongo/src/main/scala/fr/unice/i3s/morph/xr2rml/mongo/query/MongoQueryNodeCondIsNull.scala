@@ -2,7 +2,7 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 
 /**
  * MongoDB query element representing a not null condition on a field:
- * "$exists: true, $ne: null"
+ * <code>\$exists: true, \$ne: null<code>
  */
 class MongoQueryNodeCondIsNull() extends MongoQueryNodeCond {
 

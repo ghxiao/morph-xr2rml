@@ -13,16 +13,16 @@ object MongoQueryNodeCondFactory {
      * Create a MongoDB query condition node from a generic AbstractQueryCondition.
      * 
      * straight into a MongoDB condition appended after a field name.<br>
-     * Example: Equals(10) is translated into the string "{$eq: 10}" that is appended
+     * Example: Equals(10) is translated into the string <code>{\$eq: 10}</code> that is appended
      * Equals and IsNotNull are terminal conditions, i.e. they can be translated
      * after the field name.
      *  
      * Conversely, <i>IsNull</i>, <i>Or</i> and <i>And</i> conditions are non terminal for MongoDB.<br> 
      * Example: "IsNull($.field)" means that the field either does not exist or is null.
      * MongoDB does not allow the following expression:<br>
-     * <code>'field': $or: [{$eq: null}, {$exists: false}]</code><br>
+     * <code>'field': \$or: [{\$eq: null}, {\$exists: false}]</code><br>
      * Instead we have to produce:<br>
-     * <code>$or: [{'field': {$eq: null}}, {'field': {$exists: false}}]</code>
+     * <code>\$or: [{'field': {\$eq: null}}, {'field': {\$exists: false}}]</code>
      * 
      * This factory only deals with the first two cases.
      * The two latter are handled in JsonPathToMongoTranslator.trans()

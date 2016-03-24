@@ -3,8 +3,8 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 /**
  * MongoDB query element representing an equality condition on a field:
  *
- * "$eq: value" (non string value) or
- * "$eq: 'value'" (string value)
+ * <code>\$eq: value"</code> (non string value) or
+ * <code>\$eq: 'value'</code> (string value)
  */
 class MongoQueryNodeCondEquals(val value: Object) extends MongoQueryNodeCond {
 

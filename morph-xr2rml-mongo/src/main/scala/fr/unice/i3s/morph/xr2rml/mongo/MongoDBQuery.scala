@@ -9,8 +9,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 /**
  * Simple representation of a MongoDB shell query:
  *
- * In query: db.collection.find({ 'a': { $exists: true} })
- * 'collection' is the collection name while "{ 'a': { $exists: true} }" is the query string
+ * In query: <code>db.collection.find({ 'a': { \$exists: true} })</code>
+ * 'collection' is the collection name while <code>{ 'a': { \$exists: true} }</code> is the query string
  *
  * Optionally, an iterator of the logical source can be set after object creation.
  */
@@ -56,9 +56,9 @@ object MongoDBQuery {
     /**
      * Create a MongoDBQuery with no iterator.
      *
-     * A query string looks like this: "db.myCollection.find({ 'a': { $exists: true} })".
+     * A query string looks like this: <code>db.myCollection.find({ 'a': { \$exists: true} })</code>.
      * This method return a MongoDBQuery instance where collection = myCollection
-     * and query string = "{ 'a': { $exists: true} }"
+     * and query string = <code>{ 'a': { \$exists: true} }</code>
      */
     def parseQueryString(query: String, stripCurlyBracket: Boolean): MongoDBQuery = {
 
@@ -93,8 +93,8 @@ object MongoDBQuery {
      * and the query string of the one starts like the query string of the other.
      *
      * @example
-     * q1 = db.collection.find({field1: 10}) and
-     * q2 = db.collection.find({field1: 10, field2: 20}).
+     * <code>q1 = db.collection.find({field1: 10})</code> and
+     * <code>q2 = db.collection.find({field1: 10, field2: 20})</code>.<br>
      * q2 is more specific than q1 =&gt; return an xR2RMLQuet with query string q2
      *
      * @param q1 an xR2RMLQuery with a MongoDB query string
@@ -122,8 +122,8 @@ object MongoDBQuery {
      * Sub-query meaning that they the query string of the one starts like the query string of the other.
      *
      * @example
-     * q1 = db.collection.find({field1: 10}) and
-     * q2 = db.collection.find({field1: 10, field2: 20}).
+     * <code>q1 = db.collection.find({field1: 10})</code> and
+     * <code>q2 = db.collection.find({field1: 10, field2: 20})</code>.<br>
      * q2 is more specific than q1 =&gt; return Some(q2)
      *
      * @param q1 an MongoDB query string
@@ -152,8 +152,8 @@ object MongoDBQuery {
      * and the left query string starts like the right query string but they are not equal.
      *
      * @example
-     * left  = db.collection.find({field1: 10, field2: 20}), and
-     * right = db.collection.find({field1: 10}).
+     * left  = <code>db.collection.find({field1: 10, field2: 20})</code>, and
+     * right = <code>db.collection.find({field1: 10})</code>.
      * left is more specific than right =&gt; return true
      *
      * @param left  an xR2RMLQuery with a MongoDB query string
@@ -172,5 +172,4 @@ object MongoDBQuery {
 
         (mqLeft.collection == mqRight.collection) && (mqLeft.query.startsWith(mqRight.query) && !(mqRight.query.startsWith(mqLeft.query)))
     }
-
 }
