@@ -11,6 +11,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 
 /**
  * Representation of the INNER JOIN abstract query generated from the join of several basic graph patterns.
@@ -182,25 +183,52 @@ class AbstractQueryInnerJoin(
         if (logger.isDebugEnabled)
             logger.debug("\n------------------ Optimizing query ------------------\n" + this)
 
-        var membersV = members
-        var continue = true
+        // First, optimize all members individually
+        var membersV = members.map(_.optimizeQuery(optimizer))
+        if (logger.isDebugEnabled) {
+            val res = if (membersV.size == 1) membersV.head else new AbstractQueryInnerJoin(membersV)
+            if (this != res)
+                logger.debug("\n------------------ Members optimized individually giving new query ------------------\n" + res)
+        }
 
+        var continue = true
         while (continue) {
 
             for (i: Int <- 0 to (membersV.size - 2) if continue) { // from first until second to last (avant-dernier)
                 for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
 
-                    val left = membersV(i).optimizeQuery(optimizer)
-                    val right = membersV(j).optimizeQuery(optimizer)
+                    val left = membersV(i)
+                    val right = membersV(j)
 
                     // Inner-join of 2 atomic queries
                     if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {
-                        val opt = left.asInstanceOf[AbstractAtomicQuery].mergeForInnerJoin(right)
-                        if (opt.isDefined) {
+
+                        val leftAtom = left.asInstanceOf[AbstractAtomicQuery]
+                        val rightAtom = right.asInstanceOf[AbstractAtomicQuery]
+
+                        val merged = leftAtom.mergeForInnerJoin(right)
+                        if (merged.isDefined) {
+                            // ---- Merging the 2 atomic queries
                             //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
                             // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
-                            membersV = membersV.slice(0, i) ++ List(opt.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
+                            membersV = membersV.slice(0, i) ++ List(merged.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
                             continue = false
+                            if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
+                        } else {
+                            if (logger.isDebugEnabled) logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
+
+                            // ---- Narrowing down one of the 2 atomic queries
+                            // We cannot merge the queries, but maybe at least we could narrow down one of them
+                            if (MongoDBQuery.isLeftMoreSpecific(leftAtom.from, rightAtom.from)) {
+                                val newRight = new AbstractAtomicQuery(rightAtom.tpBindings, leftAtom.from, rightAtom.project, rightAtom.where)
+                                membersV = membersV.slice(0, j) ++ List(newRight) ++ membersV.slice(j + 1, membersV.size)
+                                if (logger.isDebugEnabled) logger.debug("Narrowing down From part of query " + j + " with From part of query " + i)
+                            }
+                            if (MongoDBQuery.isLeftMoreSpecific(rightAtom.from, leftAtom.from)) {
+                                val newLeft = new AbstractAtomicQuery(leftAtom.tpBindings, rightAtom.from, leftAtom.project, leftAtom.where)
+                                membersV = membersV.slice(0, i) ++ List(newLeft) ++ membersV.slice(i + 1, membersV.size)
+                                if (logger.isDebugEnabled) logger.debug("Narrowing down From part of query " + i + " with From part of query " + j)
+                            }
                         }
                     }
                 } // end for j

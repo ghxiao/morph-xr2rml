@@ -290,19 +290,27 @@ class AbstractAtomicQuery(
      * The merge is allowed if and only if 3 conditions are met:<br>
      * (i) both queries have the same From part (the logical source), or one is more specific than
      * the other (in that case we keep the most specific one).<br>
-     * (ii) they have at least one shared variable (on which the join is to be done),<br>
-     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries.
+     * (ii) they have at least one shared variable (on which the join is to be done) (see 1st and 2nd example);<br>
+     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries (see 1st and 2nd example);<br>
+     * (iv) two non-shared variables must not be projected from the same xR2RML reference(s) (see 3rd example);
      *
      * @example if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
      * then they need to project the same reference as ?x: "$.fieldName AS ?x".
      * If we have "$.field1 AS ?x" in Q1 "$.field2 AS ?x" is Q2, then this is not a self-join,
-     * on the contrary this is a legitimate join.
+     * on the contrary this is a regular join.
      *
-     * @example If Q1 and Q2 have the same logical source, and
-     * Q1 has projections "$.a AS ?x", "$.b AS ?x",
-     * Q2 has projections "$.a AS ?x", "$.c AS ?x"
-     * then this is a proper self join because the same reference "$.a" is project as ?x in both queries.
+     * @example If Q1 and Q2 have the same logical source, and<br>
+     * Q1 has projections "$.a AS ?x", "$.b AS ?x",<br>
+     * Q2 has projections "$.a AS ?x", "$.c AS ?x"<br>
+     * then this is a proper self-join because the same reference "$.a" is projected as ?x in both queries.
      * i.e. In general, for each shared variable ?x, there should be at least one common projection of ?x.
+     *
+     * @example In a graph pattern like this:<br>
+     * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z) </code><br>,
+     * we may obtain Q1 and Q2 with the same logical source,<br>
+     * Q1 has projections "$.x AS ?x", "$.a AS ?y",<br>
+     * Q2 has projections "$.x AS ?x", "$.a AS ?z".<br>
+     * then this is not a self-join because the same reference "$.a" is projected as two different variables.
      *
      * Note that the same variable can be projected several times, e.g. when the same variable is used
      * several times in a triple pattern e.g.: "?x ns:predicate ?x ."
@@ -329,24 +337,76 @@ class AbstractAtomicQuery(
 
         val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
         if (mostSpec.isDefined) {
-            val sharedVars = left.getVariables.intersect(right.getVariables)
+
+            val sharedVars = left.getVariables intersect right.getVariables
             if (sharedVars.nonEmpty) {
+                // Check if shared variables are projected from the same reference
                 sharedVars.foreach(x => {
                     // Get the references corresponding to variable ?x in each query.
                     val leftRefs = left.project.filter(_.as.get == x).map(_.references)
                     val rightRefs = right.project.filter(_.as.get == x).map(_.references)
 
                     // Verify that at least one projection of ?x is the same in the left and right queries
-                    if (leftRefs.intersect(rightRefs).isEmpty)
+                    val inter = leftRefs.intersect(rightRefs)
+                    if (inter.isEmpty) {
+                        if (logger.isTraceEnabled)
+                            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
+                                "\nbecause of variable " + x + ": left reference " + leftRefs +
+                                " do not match right references " + rightRefs)
                         return None
+                    }
+                })
+
+                // Check if the same reference is projected as different non-shared variables in both queries
+                val leftVarsNonShared = left.getVariables diff right.getVariables
+                leftVarsNonShared.foreach(x => {
+                    // Get the references corresponding to non-shared variable ?x in the left query
+                    val leftRefs = left.project.filter(_.as.get == x).map(_.references)
+
+                    leftRefs.foreach(leftRef => {
+                        // Check if there exists the same reference in the right query that is is necessarily with a variable;
+                        // this is necessarily a different variable since we check only non-shared variables here.
+                        val rightRef = right.project.filter(p => p.references == leftRef && p.as.isDefined && !sharedVars.contains(p.as.get))
+                        // If yes, then we have a shared-reference associated to two different variables on the left and right 
+                        if (rightRef.nonEmpty) {
+                            if (logger.isTraceEnabled)
+                                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
+                                    "\nbecause reference " + leftRef + " is associated to two different variables " +
+                                    x + " and " + rightRef.map(_.as.get))
+                            return None
+                        }
+                    })
+                })
+
+                // Check if the same reference is projected as different non-shared variables in both queries
+                val rightVarsNonShared = right.getVariables diff left.getVariables
+                rightVarsNonShared.foreach(x => {
+                    // Get the references corresponding to non-shared variable ?x in the right query
+                    val rightRefs = right.project.filter(_.as.get == x).map(_.references)
+
+                    rightRefs.foreach(rightRef => {
+                        // Check if there exists the same reference in the left query that is is necessarily with a variable;
+                        // this is necessarily a different variable since we check only non-shared variables here.
+                        val leftRef = left.project.filter(p => p.references == rightRef && p.as.isDefined && !sharedVars.contains(p.as.get))
+                        // If yes, then we have a shared-reference associated to two different variables on the left and right 
+                        if (leftRef.nonEmpty) {
+                            if (logger.isTraceEnabled)
+                                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
+                                    "\nbecause reference " + leftRef + " is associated to two different variables " +
+                                    x + " and " + leftRef.map(_.as.get))
+                            return None
+                        }
+                    })
                 })
 
                 val mergedBindings = left.tpBindings ++ right.tpBindings
                 val mergedProj = left.project ++ right.project
                 val mergedWhere = left.where ++ right.where
                 result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
-            }
-        }
+            } else if (logger.isTraceEnabled)
+                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have no shared variable.")
+        } else if (logger.isTraceEnabled)
+            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different From parts.")
         result
     }
 

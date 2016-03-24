@@ -147,12 +147,12 @@ object MongoDBQuery {
     }
 
     /**
-     * Check if the left query is equal or more specific than the query,
+     * Check if the left query is more specific than the query,
      * i.e. they that they have the same type, reference formulation and iterator,
-     * and the left query string starts like the right query string.
+     * and the left query string starts like the right query string but they are not equal.
      *
      * @example
-     * left  = db.collection.find({field1: 10, field2: 20}), and 
+     * left  = db.collection.find({field1: 10, field2: 20}), and
      * right = db.collection.find({field1: 10}).
      * left is more specific than right =&gt; return true
      *
@@ -170,7 +170,7 @@ object MongoDBQuery {
         val mqLeft = parseQueryString(GeneralUtility.cleanString(left.asInstanceOf[xR2RMLQuery].query), true)
         val mqRight = parseQueryString(GeneralUtility.cleanString(right.asInstanceOf[xR2RMLQuery].query), true)
 
-        (mqLeft.collection == mqRight.collection) && (mqLeft.query.startsWith(mqRight.query))
+        (mqLeft.collection == mqRight.collection) && (mqLeft.query.startsWith(mqRight.query) && !(mqRight.query.startsWith(mqLeft.query)))
     }
 
 }

@@ -102,16 +102,22 @@ class AbstractQueryUnion(
         if (logger.isDebugEnabled)
             logger.debug("\n------------------ Optimizing query ------------------\n" + this)
 
-        var membersV = members
-        var continue = true
+        // First, optimize all members individually
+        var membersV = members.map(_.optimizeQuery(optimizer))
+        if (logger.isDebugEnabled) {
+            val res = if (membersV.size == 1) membersV.head else new AbstractQueryUnion(membersV)
+            if (this != res)
+                logger.debug("\n------------------ Members optimized individually giving new query ------------------\n" + res)
+        }
 
+        var continue = true
         while (continue) {
 
             for (i: Int <- 0 to (membersV.size - 2) if continue) { // from first until second to last (avant-dernier)
                 for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
 
-                    val left = membersV(i).optimizeQuery(optimizer)
-                    val right = membersV(j).optimizeQuery(optimizer)
+                    val left = membersV(i)
+                    val right = membersV(j)
 
                     // Union of 2 atomic queries
                     if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {

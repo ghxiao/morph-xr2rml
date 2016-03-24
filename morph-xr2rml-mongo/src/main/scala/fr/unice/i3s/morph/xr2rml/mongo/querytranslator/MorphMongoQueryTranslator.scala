@@ -256,7 +256,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         logger.warn("Multiple join conditions not supported in a ReferencingObjectMap. Considering only the first one.")
                     val jc = rom.joinConditions.toIterable.head // assume only one join condition. @TODO
 
-                    // If there is an equality condition, in the child query, about the child reference of the join condition, 
+                    // Optimization: If there is an equality condition, in the child query, about the child reference of the join condition, 
                     // then we can set the same equality condition on the parent reference in the parent query since child/childRef == parent/parentRef
                     val eqChild = where.filter(w => (w.condType == ConditionType.Equals) && (w.asInstanceOf[IReference].reference == jc.childRef))
                     if (!eqChild.isEmpty) {
