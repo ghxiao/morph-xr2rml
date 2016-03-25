@@ -155,10 +155,10 @@ class AbstractQueryInnerJoin(
                         val rightTerm = rightTriple.getTermsForVariable(x)
                         if (!leftTerm.intersect(rightTerm).isEmpty) {
                             // If there is a match, keep the two MorphBaseResultRdfTerms instances 
-                            if (!joinResult.contains(leftTriple.getId))
-                                joinResult += (leftTriple.getId -> leftTriple)
-                            if (!joinResult.contains(rightTriple.getId))
-                                joinResult += (rightTriple.getId -> rightTriple)
+                            if (!joinResult.contains(leftTriple.id))
+                                joinResult += (leftTriple.id -> leftTriple)
+                            if (!joinResult.contains(rightTriple.id))
+                                joinResult += (rightTriple.id -> rightTriple)
                         }
                     }
                 }

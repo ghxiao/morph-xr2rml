@@ -45,8 +45,8 @@ class MorphBaseRunner(
             val rewrittenQuery = factory.getQueryTranslator.translate(sparqlQuery.get);
             if (rewrittenQuery.isDefined) {
                 logger.info("SPARQL Query = \n" + sparqlQuery);
-                logger.info("Rewrtitten Abstract Query = \n" + rewrittenQuery.get.toString);
-                logger.info("Rewrtitten Concrete Query = \n" + rewrittenQuery.get.toStringConcrete);
+                logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
+                logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
 
                 val mapSparqlRewritten = Map((sparqlQuery.get -> rewrittenQuery.get))
                 factory.getQueryResultProcessor.translateResult(mapSparqlRewritten);

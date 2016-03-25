@@ -66,6 +66,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
         val queryResult =
             if (executedQueries.contains(queryMapId)) {
                 if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache: " + query)
+                logger.info("Returning query results from cache.")
                 executedQueries(queryMapId)
             } else {
                 // Execute the query against the database, choose the execution method depending on the db type
@@ -88,7 +89,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
                 queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
             } else queryResult
 
-        if (logger.isDebugEnabled()) logger.debug("Query \n" + query.concreteQuery  + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
+        if (logger.isDebugEnabled()) logger.debug("Query \n" + query.concreteQuery + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
         new MorphMongoResultSet(queryResultIter)
     }
 

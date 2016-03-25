@@ -119,14 +119,14 @@ class AbstractQueryLeftJoin(
                         val rightTerm = rightTriple.getTermsForVariable(x)
                         if (leftTerm.intersect(rightTerm).isEmpty) {
                             // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
-                            if (!joinResult.contains(leftTriple.getId))
-                                joinResult += (leftTriple.getId -> leftTriple)
+                            if (!joinResult.contains(leftTriple.id))
+                                joinResult += (leftTriple.id -> leftTriple)
                         } else {
                             // If there is a match, keep the left and right MorphBaseResultRdfTerms instances 
-                            if (!joinResult.contains(leftTriple.getId))
-                                joinResult += (leftTriple.getId -> leftTriple)
-                            if (!joinResult.contains(rightTriple.getId))
-                                joinResult += (rightTriple.getId -> rightTriple)
+                            if (!joinResult.contains(leftTriple.id))
+                                joinResult += (leftTriple.id -> leftTriple)
+                            if (!joinResult.contains(rightTriple.id))
+                                joinResult += (rightTriple.id -> rightTriple)
                         }
                     }
                 }
