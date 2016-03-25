@@ -153,6 +153,9 @@ class AbstractQueryLeftJoin(
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
+        if (logger.isDebugEnabled)
+            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
+
         val leftOpt = left.optimizeQuery(optimizer)
         val rightOpt = right.optimizeQuery(optimizer)
         if (leftOpt.isInstanceOf[AbstractAtomicQuery] && rightOpt.isInstanceOf[AbstractAtomicQuery]) {
@@ -164,7 +167,10 @@ class AbstractQueryLeftJoin(
                 if (logger.isDebugEnabled)
                     if (rightAtom != right)
                         logger.debug("Propagated condition of from left to right query")
-                return new AbstractQueryLeftJoin(leftOpt, rightAtom)
+                        
+                val res = new AbstractQueryLeftJoin(leftOpt, rightAtom)
+                if (logger.isDebugEnabled) logger.debug("\n------------------ Query optimized into ------------------\n" + res)
+                res
             }
         }
         this

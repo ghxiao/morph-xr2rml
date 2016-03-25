@@ -46,11 +46,11 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
  * Note that the same variable can be projected several times, e.g. when the same variable is used
  * several times in a triple pattern e.g.: "?x ns:predicate ?x ."<br>
  * Besides a projection can contain several references in case the variable is matched with a template
- * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
- * "Set($.ref1, $.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
+ * term map, e.g. if ?x is matched with "http://domain/{\$.ref1}/{\$.ref2.*}", then the projection is:
+ * "Set(\$.ref1, \$.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
  * for the merge to be possible.<br>
  * Therefore projection is a set of sets, in the most complex case we may have something like:
- * Set(Set($.ref1, $.ref2.*) AS ?x, Set($.ref3, $.ref4) AS ?x), Set($.ref5, $.ref6) AS ?x))
+ * Set(Set(\$.ref1, \$.ref2.*) AS ?x, Set(\$.ref3, \$.ref4) AS ?x), Set(\$.ref5, \$.ref6) AS ?x))
  *
  * @param where set of conditions applied to xR2RML references, entailed by matching the triples map
  * with the triple pattern. If there are more than one condition the semantics is a logical AND of all.
@@ -159,6 +159,34 @@ class AbstractAtomicQuery(
     }
 
     /**
+     * Get the xR2RML projection of variable ?x in this query.
+     *
+     * @note When a variable ?x is matched with a term map with template string
+     * "http://domain/{\$.ref1}/{\$.ref2.*}", then we say that
+     * Set($.ref1, $.ref2) is projected as ?x.<br>
+     * In addition a variable can be projected several times in the same query, when
+     * it appears several times in a triple pattern like "?x :prop ?x".<br>
+     * Therefore the result is a Set of projections of x, each containing a Set of references
+     *
+     * @param varName the variable name
+     * @return a set of projections in which the 'as' field is defined and equals 'varName'
+     */
+    private def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection] = {
+        this.project.filter(p => { p.as.isDefined && p.as.get == varName })
+    }
+
+    /**
+     * Get the variables projected in this query with a given projection
+     *
+     * @param proj the projection given as a set of xR2RML references (this is the 'references'
+     * field of an instance of AbstractQueryProjection)
+     * @return a set of variable names projected as 'proj'
+     */
+    private def getVariablesForProjection(proj: Set[String]): Set[String] = {
+        this.project.filter(p => { p.references == proj && p.as.isDefined }).map(_.as.get)
+    }
+
+    /**
      * Execute the query and produce the RDF terms for each of the result documents
      * by applying the triples map bound to this query.
      * If targetQuery contains several queries their result is UNIONed.
@@ -203,9 +231,10 @@ class AbstractAtomicQuery(
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
             val iter: Option[String] = tm.logicalSource.docIterator
-            logger.info("Generating RDF terms under triples map " + tm.toString + " for atomic query: \n" + this.toStringConcrete);
+            logger.info("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
 
             // Execute the queries of tagetQuery
+            var start = System.currentTimeMillis()
             var resultSet = List[String]()
             this.targetQuery.foreach(query => {
                 val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter)
@@ -219,9 +248,11 @@ class AbstractAtomicQuery(
                     resultSet ++= res
                 }
             })
-            logger.info("Query returned " + resultSet.size + " results.")
+            var end = System.currentTimeMillis()
+            logger.info("Atomic query returned " + resultSet.size + " results in " + (end - start) + "ms.")
 
             // Main loop: iterate and process each result document of the result set
+            start = System.currentTimeMillis()
             var i = 0;
             val terms = for (document: String <- resultSet) yield {
                 try {
@@ -276,7 +307,8 @@ class AbstractAtomicQuery(
                 }
             }
             val result = terms.flatten // get rid of the None's (in case there was an exception)
-            logger.info("Atomic query computed " + result.size + " triples for binding " + tpb)
+            end = System.currentTimeMillis()
+            logger.info("Atomic query generated " + result.size + " RDF triples in " + (end - start) + "ms.")
             result.toSet
         })
         resultSetAll
@@ -289,39 +321,47 @@ class AbstractAtomicQuery(
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
-     * The merge is allowed if and only if 3 conditions are met:<br>
+     * The merge is allowed if and only if the following conditions are met:<br>
      * (i) both queries have the same From part (the logical source), or one is more specific than
      * the other (in that case we keep the most specific one).<br>
-     * (ii) they have at least one shared variable (on which the join is to be done) (see 1st and 2nd example);<br>
-     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries (see 1st and 2nd example);<br>
-     * (iv) two non-shared variables must not be projected from the same xR2RML reference(s) (see 3rd example);
+     * (ii) they have at least one shared variable (on which the join is to be done) (see 1st example);<br>
+     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries (see 1st example);<br>
+     * (iv) if there are non-shared variables then this is not a self-join (see 2nd example).
+     * However, if each non-shared variable is projected from an xR2RML reference that is also projected
+     * as a shared variable (4th example), then this is a proper self-join.<br>
+     * Note: even if all non-shared variable belong to the same query then there are cases of
+     * query that are not a self-join (3rd example).
      *
      * @example if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
-     * then they need to project the same reference as ?x: "$.fieldName AS ?x".
-     * If we have "$.field1 AS ?x" in Q1 "$.field2 AS ?x" is Q2, then this is not a self-join,
-     * on the contrary this is a regular join.
+     * If both queries project the same reference as ?x: "$.field AS ?x", then this is a self-join.<br>
+     * On the contrary, if projections are different: "$.field1 AS ?x" in Q1 and "$.field2 AS ?x" is Q2,
+     * then this is not a self-join, on the contrary this is a regular join.
      *
-     * @example If Q1 and Q2 have the same logical source, and<br>
-     * Q1 has projections "$.a AS ?x", "$.b AS ?x",<br>
-     * Q2 has projections "$.a AS ?x", "$.c AS ?x"<br>
-     * then this is a proper self-join because the same reference "$.a" is projected as ?x in both queries.
-     * i.e. In general, for each shared variable ?x, there should be at least one common projection of ?x.
-     *
-     * @example In a graph pattern like this:<br>
+     * @example In a graph pattern like:<br>
      * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z) </code><br>,
      * we may obtain Q1 and Q2 with the same logical source,<br>
      * Q1 has projections "$.x AS ?x", "$.a AS ?y",<br>
-     * Q2 has projections "$.x AS ?x", "$.a AS ?z".<br>
-     * then this is not a self-join because the same reference "$.a" is projected as two different variables.
+     * Q2 has projections "$.x AS ?x", "$.b AS ?z".<br>
+     * then this is not a self-join because there are non-shared variables that do not match the 4th example.
      *
-     * Note that the same variable can be projected several times, e.g. when the same variable is used
-     * several times in a triple pattern e.g.: "?x ns:predicate ?x ."
+     * @example In a graph pattern like:<br>
+     * <code>?x prop <blabla>. ?x prop ?z. FILTER (?z != <blabla>) </code><br>,<br>
+     * Q1 has projections "$.a AS ?x"<br>
+     * Q2 has projections "$.a AS ?x", "$.b AS ?z"<br>
+     * the filter shows that this is not a self-join.
      *
-     * Besides a projection can contain several references in case the variable is matched with a template
+     * @example If Q1 and Q2 have the same logical source, and<br>
+     * Q1 has projections "$.a AS ?x", "$.a AS ?y",<br>
+     * Q2 has projections "$.a AS ?x", "$.a AS ?z"<br>
+     * then this is a proper self-join because non-shared variables ?y and ?z are projected from
+     * reference "$.a" that happens to be projected as the shared variable ?x.
+     *
+     * @note The same variable can be projected several times in an atomic query,
+     * e.g. when the same variable is used several times in a triple pattern e.g.: "?x ns:predicate ?x .".<br>
+     * In addition, a projection can contain several references in case the variable is matched with a template
      * term map, e.g. if ?x is matched with "http://domain/{$.ref1}/{$.ref2.*}", then the projection is:
      * "Set($.ref1, $.ref2.*) AS ?x" => in that case, we must have the same projection in the second query
-     * for the merge to be possible.
-     *
+     * for the merge to be possible.<br>
      * Therefore projection is a set of sets, in the most complex case we may have something like:
      * Set(Set($.ref1, $.ref2.*) AS ?x, Set($.ref3, $.ref4) AS ?x), Set($.ref5, $.ref6) AS ?x))
      *
@@ -340,12 +380,37 @@ class AbstractAtomicQuery(
         val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
         if (mostSpec.isDefined) {
 
-            val leftVarsNonShared = left.getVariables diff right.getVariables
-            val rightVarsNonShared = right.getVariables diff left.getVariables
-            if (leftVarsNonShared.nonEmpty || rightVarsNonShared.nonEmpty)
-                return None
-            
             val sharedVars = left.getVariables intersect right.getVariables
+            val sharedVarsLeftProjections = sharedVars.flatMap(v => left.getProjectionsForVariable(v)).map(_.references)
+            val sharedVarsRightProjections = sharedVars.flatMap(v => right.getProjectionsForVariable(v)).map(_.references)
+
+            val nonSharedVarsLeft = left.getVariables diff right.getVariables
+            val nonSharedVarsRight = right.getVariables diff left.getVariables
+
+            // If there are non-shared variables then this is not a self-join (see 2nd and 3rd examples),
+            // except if each non-shared variable is projected from an xR2RML reference that is also projected
+            // as a shared variable (4th example), then this is a proper self-join.
+
+            nonSharedVarsLeft.foreach(x => {
+                // Get the projections associated with the non-shared variable x in the left query
+                val projs = left.getProjectionsForVariable(x)
+
+                // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
+                projs.foreach(proj => {
+                    if (!sharedVarsLeftProjections.contains(proj.references)) return None
+                })
+            })
+
+            nonSharedVarsRight.foreach(x => {
+                // Get the projections associated with the non-shared variable x in the right query
+                val projs = right.getProjectionsForVariable(x)
+
+                // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
+                projs.foreach(proj => {
+                    if (!sharedVarsRightProjections.contains(proj.references)) return None
+                })
+            })
+
             if (sharedVars.nonEmpty) {
                 // Check if shared variables are projected from the same reference
                 sharedVars.foreach(x => {
@@ -364,49 +429,6 @@ class AbstractAtomicQuery(
                     }
                 })
 
-                /*
-                // Check if the same reference is projected as different non-shared variables in both queries
-                val leftVarsNonShared = left.getVariables diff right.getVariables
-                leftVarsNonShared.foreach(x => {
-                    // Get the references corresponding to non-shared variable ?x in the left query
-                    val leftRefs = left.project.filter(_.as.get == x).map(_.references)
-
-                    leftRefs.foreach(leftRef => {
-                        // Check if there exists the same reference in the right query that is is necessarily with a variable;
-                        // this is necessarily a different variable since we check only non-shared variables here.
-                        val rightRef = right.project.filter(p => p.references == leftRef && p.as.isDefined && !sharedVars.contains(p.as.get))
-                        // If yes, then we have a shared-reference associated to two different variables on the left and right 
-                        if (rightRef.nonEmpty) {
-                            if (logger.isTraceEnabled)
-                                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
-                                    "\nbecause reference " + leftRef + " is associated to two different variables " +
-                                    x + " and " + rightRef.map(_.as.get))
-                            return None
-                        }
-                    })
-                })
-
-                // Check if the same reference is projected as different non-shared variables in both queries
-                val rightVarsNonShared = right.getVariables diff left.getVariables
-                rightVarsNonShared.foreach(x => {
-                    // Get the references corresponding to non-shared variable ?x in the right query
-                    val rightRefs = right.project.filter(_.as.get == x).map(_.references)
-
-                    rightRefs.foreach(rightRef => {
-                        // Check if there exists the same reference in the left query that is is necessarily with a variable;
-                        // this is necessarily a different variable since we check only non-shared variables here.
-                        val leftRef = left.project.filter(p => p.references == rightRef && p.as.isDefined && !sharedVars.contains(p.as.get))
-                        // If yes, then we have a shared-reference associated to two different variables on the left and right 
-                        if (leftRef.nonEmpty) {
-                            if (logger.isTraceEnabled)
-                                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
-                                    "\nbecause reference " + leftRef + " is associated to two different variables " +
-                                    x + " and " + leftRef.map(_.as.get))
-                            return None
-                        }
-                    })
-                })
-             	*/
                 val mergedBindings = left.tpBindings ++ right.tpBindings
                 val mergedProj = left.project ++ right.project
                 val mergedWhere = left.where ++ right.where
@@ -426,14 +448,14 @@ class AbstractAtomicQuery(
      * Two possibilities are evaluated:<br>
      * (i) Check if the From part of the right query is more specific than From part of the left query.
      * In case of an inner join of left outer join of left and right, the results will be produced from the common
-     * documents from left and right, thus we can simply replace the From of the left query with that of the right query.<br>
+     * documents from left and right, thus we can simply replace the From of the left query with that of the right query.
      * @example
      * <code>left.from = db.collection.find({query1})</code>
      * <code>right.from = db.collection.find({query1, query2})</code>
      * In that case, since we join the two queries, we can replace left.from with right.from that is the most specific.
      *
      * (ii) If the two queries have some shared variables, then Equality and IsNotNull conditions of the right query
-     * on those shared variables can be merged with the conditions of the left query.<br>
+     * on those shared variables can be added with the conditions of the left query.
      * @example
      * Assume we have "$.field1 AS ?x" in left and "$.field2 AS ?x" in right.
      * If the right query has a Where condition <code>Equals($.field2, "value")</code>, then we can add a new condition
@@ -463,11 +485,9 @@ class AbstractAtomicQuery(
         if (sharedVars.nonEmpty) {
             sharedVars.foreach(x => {
                 // Get all the references associated with variable ?x in the left and right queries.
-                // Note: ?x may be in several projections, e.g. Set($.field1 AS ?x, $.field2 AS ?x),
-                // and each projection may contain several references e.g. "($.field11, $.field2) as ?x" for template term maps.
                 // Restriction: we deal only with single reference i.e. "ref AS ?x", but not references such as "(ref1, ref2) AS ?x"
-                val leftRefs = left.project.filter(p => p.as.isDefined && p.as.get == x && p.references.size == 1).map(_.references.head)
-                val rightRefs = right.project.filter(p => p.as.isDefined && p.as.get == x && p.references.size == 1).map(_.references.head)
+                val leftRefs = left.getProjectionsForVariable(x).filter(p => p.references.size == 1).map(_.references.head)
+                val rightRefs = right.getProjectionsForVariable(x).filter(p => p.references.size == 1).map(_.references.head)
 
                 rightRefs.foreach(ref => {
                     // Select the Where conditions in the right query, of type isNotNull or Equals, 
