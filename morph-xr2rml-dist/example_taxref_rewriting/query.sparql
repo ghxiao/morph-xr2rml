@@ -19,16 +19,32 @@ prefix taxrefprop: <http://inpn.mnhn.fr/taxref/properties/>
 SELECT *
 WHERE {
     #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ?p ?x .
+    
     #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skos:broader ?u .
 
     #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:prefLabel ?p .
     #OPTIONAL { <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:altLabel ?a . }
+
+	## Very big inner join
+    #?t skosxl:altLabel ?a .
+ 	#?t skosxl:altLabel ?b . 
+    #FILTER (?a != ?b)
     
-    ?t taxrefprop:bioGeoStatusIn ?bgs . 
+	## Inner join with impossible self-join elimination
+    #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
+ 	#?t skosxl:altLabel ?b . 
+    #FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
+
+	## Optional Self-Join elimination
+    #?t skosxl:altLabel ?a .
+    #OPTIONAL { ?t skosxl:altLabel ?b . }
+    #FILTER (?a != ?b)
+    
+	## Self-Join and Self-Union elimination
     ?t skosxl:prefLabel ?p .
+    ?t taxrefprop:bioGeoStatusIn ?bgs . 
     ?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
-    ###?bgs dwc:occurrenceStatus ?occ .
-    { ?bgs dwc:occurrenceStatus taxrefbgs:C . } # Cryptogene
+    { ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
     UNION
     { ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
 }
