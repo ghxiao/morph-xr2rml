@@ -1,5 +1,7 @@
 package es.upm.fi.dia.oeg.morph.base.query
 
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+
 /**
  * Condition of the <i>Where</i> part of an atomic abstract query, created during the
  * query rewriting process.
@@ -25,6 +27,10 @@ abstract class AbstractQueryCondition(val condType: ConditionType.Value) {
      * Return true for a condition that has a reference, that is Equals, IsNotNull and IsNull
      */
     def hasReference: Boolean
+
+    override def equals(c: Any): Boolean = {
+        throw new MorphException("Method not implemented.")
+    }
 }
 
 /**

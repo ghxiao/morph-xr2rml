@@ -322,8 +322,7 @@ class AbstractAtomicQuery(
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
      * The merge is allowed if and only if the following conditions are met:<br>
-     * (i) both queries have the same From part (the logical source), or one is more specific than
-     * the other (in that case we keep the most specific one).<br>
+     * (i) both queries have the same From part (the logical source) and Where part;<br>
      * (ii) they have at least one shared variable (on which the join is to be done) (see 1st example);<br>
      * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries (see 1st example);<br>
      * (iv) if there are non-shared variables then this is not a self-join (see 2nd example).
@@ -332,23 +331,24 @@ class AbstractAtomicQuery(
      * Note: even if all non-shared variable belong to the same query then there are cases of
      * query that are not a self-join (3rd example).
      *
-     * @example if Q1 and Q2 have the same logical source, and they have a shared variable ?x,
+     * @example if Q1 and Q2 have the same logical source and Where conditions, and they have a shared variable ?x,
      * If both queries project the same reference as ?x: "$.field AS ?x", then this is a self-join.<br>
      * On the contrary, if projections are different: "$.field1 AS ?x" in Q1 and "$.field2 AS ?x" is Q2,
      * then this is not a self-join, on the contrary this is a regular join.
      *
      * @example In a graph pattern like:<br>
      * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z) </code><br>,
-     * we may obtain Q1 and Q2 with the same logical source,<br>
+     * we may obtain Q1 and Q2 with the same logical source and Where part,<br>
      * Q1 has projections "$.x AS ?x", "$.a AS ?y",<br>
      * Q2 has projections "$.x AS ?x", "$.b AS ?z".<br>
-     * then this is not a self-join because there are non-shared variables that do not match the 4th example.
+     * then this is not a self-join because there are non-shared variables whose reference
+     * is not the reference of a shared variable (as in 4th example).
      *
      * @example In a graph pattern like:<br>
      * <code>?x prop <blabla>. ?x prop ?z. FILTER (?z != <blabla>) </code><br>,<br>
      * Q1 has projections "$.a AS ?x"<br>
      * Q2 has projections "$.a AS ?x", "$.b AS ?z"<br>
-     * the filter shows that this is not a self-join.
+     * the filter illustrates why this cannot be a self-join.
      *
      * @example If Q1 and Q2 have the same logical source, and<br>
      * Q1 has projections "$.a AS ?x", "$.a AS ?y",<br>
@@ -375,68 +375,76 @@ class AbstractAtomicQuery(
 
         val left = this
         val right = q.asInstanceOf[AbstractAtomicQuery]
+
+        if (left.from != right.from) {
+            if (logger.isTraceEnabled)
+                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different From parts.")
+            return None
+        }
+
+        if (left.where != right.where) {
+            if (logger.isTraceEnabled)
+                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different Where parts.")
+            return None
+        }
+
+        val sharedVars = left.getVariables intersect right.getVariables
+        val sharedVarsLeftProjections = sharedVars.flatMap(v => left.getProjectionsForVariable(v)).map(_.references)
+        val sharedVarsRightProjections = sharedVars.flatMap(v => right.getProjectionsForVariable(v)).map(_.references)
+
+        val nonSharedVarsLeft = left.getVariables diff right.getVariables
+        val nonSharedVarsRight = right.getVariables diff left.getVariables
+
+        // If there are non-shared variables then this is not a self-join (see 2nd and 3rd examples),
+        // except if each non-shared variable is projected from an xR2RML reference that is also projected
+        // as a shared variable (4th example), then this is a proper self-join.
+
+        nonSharedVarsLeft.foreach(x => {
+            // Get the projections associated with the non-shared variable x in the left query
+            val projs = left.getProjectionsForVariable(x)
+
+            // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
+            projs.foreach(proj => {
+                if (!sharedVarsLeftProjections.contains(proj.references)) return None
+            })
+        })
+
+        nonSharedVarsRight.foreach(x => {
+            // Get the projections associated with the non-shared variable x in the right query
+            val projs = right.getProjectionsForVariable(x)
+
+            // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
+            projs.foreach(proj => {
+                if (!sharedVarsRightProjections.contains(proj.references)) return None
+            })
+        })
+
         var result: Option[AbstractAtomicQuery] = None
+        if (sharedVars.nonEmpty) {
+            // Check if shared variables are projected from the same reference
+            sharedVars.foreach(x => {
+                // Get the references corresponding to variable ?x in each query.
+                val leftRefs = left.getProjectionsForVariable(x).map(_.references)
+                val rightRefs = right.getProjectionsForVariable(x).map(_.references)
 
-        val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
-        if (mostSpec.isDefined) {
-
-            val sharedVars = left.getVariables intersect right.getVariables
-            val sharedVarsLeftProjections = sharedVars.flatMap(v => left.getProjectionsForVariable(v)).map(_.references)
-            val sharedVarsRightProjections = sharedVars.flatMap(v => right.getProjectionsForVariable(v)).map(_.references)
-
-            val nonSharedVarsLeft = left.getVariables diff right.getVariables
-            val nonSharedVarsRight = right.getVariables diff left.getVariables
-
-            // If there are non-shared variables then this is not a self-join (see 2nd and 3rd examples),
-            // except if each non-shared variable is projected from an xR2RML reference that is also projected
-            // as a shared variable (4th example), then this is a proper self-join.
-
-            nonSharedVarsLeft.foreach(x => {
-                // Get the projections associated with the non-shared variable x in the left query
-                val projs = left.getProjectionsForVariable(x)
-
-                // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
-                projs.foreach(proj => {
-                    if (!sharedVarsLeftProjections.contains(proj.references)) return None
-                })
+                // Verify that at least one projection of ?x is the same in the left and right queries
+                val inter = leftRefs intersect rightRefs
+                if (inter.isEmpty) {
+                    if (logger.isTraceEnabled)
+                        logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
+                            "\nbecause of variable " + x + ": left references " + leftRefs +
+                            " do not match right references " + rightRefs)
+                    return None
+                }
             })
 
-            nonSharedVarsRight.foreach(x => {
-                // Get the projections associated with the non-shared variable x in the right query
-                val projs = right.getProjectionsForVariable(x)
-
-                // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
-                projs.foreach(proj => {
-                    if (!sharedVarsRightProjections.contains(proj.references)) return None
-                })
-            })
-
-            if (sharedVars.nonEmpty) {
-                // Check if shared variables are projected from the same reference
-                sharedVars.foreach(x => {
-                    // Get the references corresponding to variable ?x in each query.
-                    val leftRefs = left.project.filter(_.as.get == x).map(_.references)
-                    val rightRefs = right.project.filter(_.as.get == x).map(_.references)
-
-                    // Verify that at least one projection of ?x is the same in the left and right queries
-                    val inter = leftRefs.intersect(rightRefs)
-                    if (inter.isEmpty) {
-                        if (logger.isTraceEnabled)
-                            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
-                                "\nbecause of variable " + x + ": left reference " + leftRefs +
-                                " do not match right references " + rightRefs)
-                        return None
-                    }
-                })
-
-                val mergedBindings = left.tpBindings ++ right.tpBindings
-                val mergedProj = left.project ++ right.project
-                val mergedWhere = left.where ++ right.where
-                result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
-            } else if (logger.isTraceEnabled)
-                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have no shared variable.")
+            val mergedBindings = left.tpBindings ++ right.tpBindings
+            val mergedProj = left.project ++ right.project
+            val mergedWhere = left.where ++ right.where
+            result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
         } else if (logger.isTraceEnabled)
-            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different From parts.")
+            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have no shared variable.")
+
         result
     }
 
@@ -445,17 +453,8 @@ class AbstractAtomicQuery(
      * that is joined with it (either inner join or a left join).
      * Below we denote by left query 'this' query, and the other query by right query.
      *
-     * Two possibilities are evaluated:<br>
-     * (i) Check if the From part of the right query is more specific than From part of the left query.
-     * In case of an inner join of left outer join of left and right, the results will be produced from the common
-     * documents from left and right, thus we can simply replace the From of the left query with that of the right query.
-     * @example
-     * <code>left.from = db.collection.find({query1})</code>
-     * <code>right.from = db.collection.find({query1, query2})</code>
-     * In that case, since we join the two queries, we can replace left.from with right.from that is the most specific.
-     *
-     * (ii) If the two queries have some shared variables, then Equality and IsNotNull conditions of the right query
-     * on those shared variables can be added with the conditions of the left query.
+     * If the two queries have some shared variables, then Equality and IsNotNull conditions of the right query
+     * on those shared variables can be added to the conditions of the left query.
      * @example
      * Assume we have "$.field1 AS ?x" in left and "$.field2 AS ?x" in right.
      * If the right query has a Where condition <code>Equals($.field2, "value")</code>, then we can add a new condition
@@ -470,18 +469,10 @@ class AbstractAtomicQuery(
 
         val left = this
         val right = q.asInstanceOf[AbstractAtomicQuery]
-        var result: Option[AbstractAtomicQuery] = None
-
-        // Check if right From part is more specific than left From part
-        var newLeft =
-            if (MongoDBQuery.isLeftMoreSpecific(right.from, left.from)) {
-                // Narrow down left query by replacing its From part with that of the right query
-                new AbstractAtomicQuery(left.tpBindings, right.from, left.project, left.where)
-            } else left
+        val sharedVars = left.getVariables intersect right.getVariables
 
         // Check if some Where conditions of the right query can be added to the Where conditions of the left query to narrow it down
         var condsToReport = Set[AbstractQueryCondition]()
-        val sharedVars = left.getVariables intersect right.getVariables
         if (sharedVars.nonEmpty) {
             sharedVars.foreach(x => {
                 // Get all the references associated with variable ?x in the left and right queries.
@@ -511,13 +502,13 @@ class AbstractAtomicQuery(
             })
         }
 
-        if (condsToReport.nonEmpty)
-            newLeft = new AbstractAtomicQuery(newLeft.tpBindings, newLeft.from, newLeft.project, newLeft.where ++ condsToReport)
-
-        if (logger.isTraceEnabled)
-            if (newLeft != this)
-                logger.trace("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
-        newLeft
+        if (condsToReport.nonEmpty) {
+            val newLeft = new AbstractAtomicQuery(left.tpBindings, left.from, left.project, left.where ++ condsToReport)
+            if (logger.isDebugEnabled)
+                logger.debug("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
+            newLeft
+        } else
+            left
     }
 
     /**
