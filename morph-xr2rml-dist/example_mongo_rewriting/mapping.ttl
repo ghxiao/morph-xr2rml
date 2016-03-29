@@ -8,9 +8,7 @@
    xrr:logicalSource [ 
       xrr:query "db.movies2.find({'name':{$exists:true}})";
    ];
-   
    rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
-   
    rr:predicateObjectMap [
       rr:predicate ex:starring;
       rr:objectMap [ xrr:reference "$.actors.*" ];
@@ -18,9 +16,7 @@
 
 <#Directors>
    xrr:logicalSource [ xrr:query "db.directors2.find({})" ];
-   
    rr:subjectMap [ rr:template "http://example.org/dir/{$.name}" ];
-   
    rr:predicateObjectMap [
       rr:predicate ex:directed;
       rr:objectMap [
@@ -31,3 +27,17 @@
          ]
       ]
    ].
+
+# There is no data in the DB that matches this triples map, but this helps test 
+# the management of iterators in the query translation
+<#MoviesIter>
+   xrr:logicalSource [ 
+      xrr:query "db.movies2.find({'name':{$exists:true}})";
+      rml:iterator "$.movies.*"
+   ];
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:starringIter;
+      rr:objectMap [ xrr:reference "$.actors.*" ];
+   ].
+

@@ -7,8 +7,13 @@ WHERE {
 
     ?x ex:directed ?y .
     ?y ex:starring ?z .
+
+    #-- Test of rewriting with an iterator
+    #?y ex:starringIter ?z .
     
 	#<http://example.org/dir/Wong%20Kar-wai> ex:directed ?x .
 	
     #?x ex:directed <http://example.org/movie/Manh> .
+    
+    
 }

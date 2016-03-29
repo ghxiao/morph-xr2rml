@@ -53,7 +53,6 @@ class MorphMongoQueryTranslatorTest {
 
     val tmMovies = mappingDocument.getClassMappingsByName("Movies")
     val tmDirectors = mappingDocument.getClassMappingsByName("Directors")
-    val tmOther = mappingDocument.getClassMappingsByName("Other")
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 

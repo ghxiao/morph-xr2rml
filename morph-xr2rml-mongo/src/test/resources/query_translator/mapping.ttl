@@ -9,9 +9,7 @@
       xrr:query "db.movies.find({decade:{$exists:true}})";
       rml:iterator "$.movies.*"
    ];
-   
    rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
-   
    rr:predicateObjectMap [
       rr:predicate ex:starring;
       rr:objectMap [ xrr:reference "$.actors.*" ];
@@ -19,9 +17,7 @@
 
 <#Directors>
    xrr:logicalSource [ xrr:query "db.directors.find({})" ];
-   
    rr:subjectMap [ rr:template "http://example.org/dir/{$.name}" ];
-   
    rr:predicateObjectMap [
       rr:predicate ex:directed;
       rr:objectMap [
@@ -32,19 +28,19 @@
          ]
       ]
    ].
+
    
-   
-   
-<#Other>
-   xrr:logicalSource [ xrr:query "db.othercollection.find({any_query})" ];
-   
+<#WithIter>
+   xrr:logicalSource [ 
+        xrr:query "db.othercollection.find({any_query})";
+        rml:iterator "$.field.*" ];
    rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
-   
    rr:predicateObjectMap [
-      rr:predicateMap [ rr:template "http://example.org/property/{$.relation.prop}" ];
+      rr:predicate ex:predicate;
       rr:objectMap [ xrr:reference "$.relation.actors.*" ];
    ].
 
+   
 <#TM_NoPOM>
    xrr:logicalSource [ xrr:query "db.othercollection.find({any_query})" ];
    rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ].

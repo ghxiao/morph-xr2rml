@@ -28,10 +28,12 @@ import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 /**
  * Representation of the bindings of several triples map to a triple pattern
  */
-class TPBindings(val tp: Triple, val bound: List[R2RMLTriplesMap]) {
-    
+class TPBindings(
+        val tp: Triple,
+        val bound: List[R2RMLTriplesMap]) {
+
     override def toString = { "Binding(" + tp + " -> " + bound.mkString(", ") + ")" }
-    
+
 }
 
 object TPBindings {
@@ -67,7 +69,8 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
      * Compute the triple pattern bindings for all triple patterns in a graph pattern
      *
      * @param op SPARQL query or SPARQL query element
-     * @return bindings as a map of triples and associated triples maps
+     * @return bindings as a map of triples and associated triples maps.
+     * The map key is the string representation of the triple.
      */
     def bindm(op: Op): Map[String, TPBindings] = {
 
@@ -251,7 +254,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
             }
 
             case opFilter: OpFilter => { //FILTER pattern
-                bindm(opFilter.getSubOp())                
+                bindm(opFilter.getSubOp())
             }
             case opSlice: OpSlice => {
                 Map.empty

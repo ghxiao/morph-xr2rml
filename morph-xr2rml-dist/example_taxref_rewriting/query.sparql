@@ -25,22 +25,32 @@ WHERE {
     #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:prefLabel ?p .
     #OPTIONAL { <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:altLabel ?a . }
 
-	## Very big inner join
+	## Very big inner join but with propagation of conditions
+    #?t skosxl:prefLabel <http://inpn.mnhn.fr/taxref/label/60585> .
     #?t skosxl:altLabel ?a .
  	#?t skosxl:altLabel ?b . 
     #FILTER (?a != ?b)
     
-	## Inner join with impossible self-join elimination
+	## Big inner join: no self-join elimination nor condition propagation
     #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
  	#?t skosxl:altLabel ?b . 
     #FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
 
-	## Optional Self-Join elimination
+	## Optional join
+    #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
+    #OPTIONAL { 
+    #  ?t skosxl:altLabel ?b .
+    #  FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
+    #}
+
+	## Big optional Join - no optimization possible
     #?t skosxl:altLabel ?a .
-    #OPTIONAL { ?t skosxl:altLabel ?b . }
-    #FILTER (?a != ?b)
+    #OPTIONAL { 
+    #  ?t skosxl:altLabel ?b .
+    #  FILTER (?a != ?b)
+    #}
     
-	## Self-Join and Self-Union elimination
+	## Self-Join and Self-Union elimination, ~ 66s
     ?t skosxl:prefLabel ?p .
     ?t taxrefprop:bioGeoStatusIn ?bgs . 
     ?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon

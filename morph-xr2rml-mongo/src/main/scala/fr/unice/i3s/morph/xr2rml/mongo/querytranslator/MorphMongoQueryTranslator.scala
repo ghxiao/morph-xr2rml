@@ -57,14 +57,11 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     /**
      * High level entry point to the query translation process.
      *
-     * @todo Several features are not implemented:<br>
-     * - The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
+     * @todo The project part is calculated but not managed: all fields of MongoDB documents are retrieved.
      * Besides, only the references are listed, but they must be bound to the variable they represent
      * (the AS of the project part) so that the INNER JOIN can be computed, and from the reference
      * we must figure out which field exactly is to be projected and translate this into a MongoDB
-     * collection.find() projection parameter. E.g.: $.field.* =&gt; {'field':true}<br>
-     * - The iterator of the logical source is not taken into account when computing the WHERE part, i.e.
-     * the conditions on the JSONPath references from the mapping.
+     * collection.find() projection parameter. E.g.: \$.field.* =&gt; {'field':true}<br>
      *
      * @return a AbstractQuery instance in which the targetQuery parameter has been set with
      * a list containing a set of concrete queries. May return None if no bindings are found.
@@ -128,15 +125,12 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         Some(this.transTPm(tpBindings.get))
                 } else {
                     // Make an INER JOIN between the first triple pattern and the rest of the triple patterns
-
                     val tpBindingsLeft = this.getTpBindings(bindings, triples.head)
                     if (!tpBindingsLeft.isDefined) {
                         logger.warn("No binding defined for triple pattern " + triples.head.toString)
                         None
                     } else {
-
                         val left = this.transTPm(tpBindingsLeft.get)
-
                         val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
                         if (right.isDefined)
                             Some(AbstractQueryInnerJoin(left, right.get))
@@ -284,18 +278,19 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     }
 
     /**
-     * Translate a non-optimized MongoQueryNode instance into one or more optimized concrete MongoDB queries.
+     * Translate a non-optimized MongoQueryNode instance into one or more optimized concrete MongoDB queries
+     * whose results must be UNIONed.
      *
      * Firstly, the query is optimized, which may generate a top-level UNION.
      * Then, a query string is generated from the optimized MongoQueryNode, to which the initial query string
-     * from the logical source is appended.
+     * (from the logical source) is appended.
      * A UNION is translated into several concrete queries. For any other type of query only one query string is returned.
      *
      * @todo the project part is not managed: must transform JSONPath references into actually projectable
      * fields in a MongoDB query
      *
-     * @param from from part of the atomic abstract query (query from the logical source)
-     * @param project project part of the atomic abstract query (xR2RML references to project, NOT MANAGED FOR NOW).
+     * @param from From part of the atomic abstract query (query from the logical source)
+     * @param project Project part of the atomic abstract query (xR2RML references to project, NOT MANAGED FOR NOW).
      * @param absQuery the abstract MongoDB query to translate into concrete MongoDB queries.
      * @return list of MongoDBQuery instances. If there are several instances, their results must be UNIONed.
      */
@@ -308,7 +303,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         if (logger.isTraceEnabled())
             logger.trace("Condtions optimized to: " + Q)
 
-        // If the query is an AND, merge its FIELD nodes that have the same path
+        // If the query is an AND, merge its FIELD nodes that have the same root path
         // Example 1. AND('a':{$gt:10}, 'a':{$lt:20}) => 'a':{$gt:10, $lt:20}
         // Example 2. AND('a.b':{$elemMatch:{Q1}}, 'a.b':{$elemMatch:{Q2}}) => 'a.b': {$elemMatch:{$and:[{Q1},{Q2}]}}.
         if (Q.isAnd)

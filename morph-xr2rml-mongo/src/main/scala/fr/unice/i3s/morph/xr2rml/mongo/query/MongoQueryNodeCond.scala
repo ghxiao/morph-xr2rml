@@ -9,13 +9,14 @@ abstract class MongoQueryNodeCond extends MongoQueryNode {
 }
 
 object MongoQueryNodeCondFactory {
+    
     /**
-     * Create a MongoDB query condition node from a generic AbstractQueryCondition.
+     * Create a MongoDB query condition node from an abstract query condition.
      * 
-     * straight into a MongoDB condition appended after a field name.<br>
      * Example: Equals(10) is translated into the string <code>{\$eq: 10}</code> that is appended
-     * Equals and IsNotNull are terminal conditions, i.e. they can be translated
-     * after the field name.
+     * after a field name: <code>'field': {\$eq: 10}</code>.<br>
+     * <i>Equals</i> and <i>IsNotNull</i> are terminal conditions for MongoDB, i.e. they can be 
+     * translated straight after the field name.
      *  
      * Conversely, <i>IsNull</i>, <i>Or</i> and <i>And</i> conditions are non terminal for MongoDB.<br> 
      * Example: "IsNull($.field)" means that the field either does not exist or is null.
@@ -25,7 +26,10 @@ object MongoQueryNodeCondFactory {
      * <code>\$or: [{'field': {\$eq: null}}, {'field': {\$exists: false}}]</code>
      * 
      * This factory only deals with the first two cases.
-     * The two latter are handled in JsonPathToMongoTranslator.trans()
+     * The two latter are handled in JsonPathToMongoTranslator.trans().
+     * 
+     * @param cond an abstract query condition
+     * @return a MongoDB query condition node
      * 
      * @todo Condition type SparqlFilter is not managed.
      */

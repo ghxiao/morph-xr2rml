@@ -94,17 +94,14 @@ class AbstractAtomicQuery(
     }
 
     /**
-     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed.
-     *
-     * First, the atomic abstract query is translated into an abstract MongoDB query using the
-     * JsonPathToMongoTranslator.trans() function.<br>
-     * Then, the abstract MongoDB query is translated into a set of concrete MongoDB queries
-     * by function mongoAbstractQuerytoConcrete().
-     *
-     * The result is stored in attribute this.targetQuery.
+     * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed:<br>
+     * 1. the Where part of the atomic abstract query is translated into an abstract 
+     * MongoDB query using function JsonPathToMongoTranslator.trans().<br>
+     * 2. the abstract MongoDB query is optimized and translated into a set of concrete MongoDB queries.<br>
+     * 
+     * The result is stored in attribute 'this.targetQuery'.
      *
      * @param translator the query translator
-     * @return none, the result is stored in attribute this.targetQuery.
      */
     override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         val mongQTranslator = translator.asInstanceOf[MorphMongoQueryTranslator]
@@ -114,20 +111,7 @@ class AbstractAtomicQuery(
 
         // Generate one abstract MongoDB query (MongoQueryNode) for each selected condition
         val mongAbsQs: Set[MongoQueryNode] = whereConds.map(cond => {
-            if (cond.hasReference) {
-                val condIRef = cond.asInstanceOf[IReference]
-                // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
-                val iter = this.from.docIterator
-                if (iter.isDefined)
-                    condIRef.reference = condIRef.reference.replace("$", iter.get)
-
-                //--- Translate the condition on a JSONPath reference into an abstract MongoDB query
-                JsonPathToMongoTranslator.trans(condIRef.asInstanceOf[AbstractQueryCondition])
-            } else {
-                //--- The condition type is IsNull or Or
-                // @todo if the iterator is defined, add it to references of inner conditions
-                JsonPathToMongoTranslator.trans(cond)
-            }
+            JsonPathToMongoTranslator.trans(cond, this.from.docIterator)
         })
 
         // If there are more than one query, encapsulate them under a top-level AND
@@ -456,9 +440,9 @@ class AbstractAtomicQuery(
      * If the two queries have some shared variables, then Equality and IsNotNull conditions of the right query
      * on those shared variables can be added to the conditions of the left query.
      * @example
-     * Assume we have "$.field1 AS ?x" in left and "$.field2 AS ?x" in right.
-     * If the right query has a Where condition <code>Equals($.field2, "value")</code>, then we can add a new condition
-     * to the Where conditions of the left query: <code>Equals($.field1, "value")</code>
+     * Assume we have "\$.field1 AS ?x" in left and "\$.field2 AS ?x" in right.
+     * If the right query has a Where condition <code>Equals(\$.field2, "value")</code>, then we can add a new condition
+     * to the Where conditions of the left query: <code>Equals(\$.field1, "value")</code>
      *
      * @return an optimized version of 'this', based on the query in parameter, or 'this' is no optimization was possible.
      */

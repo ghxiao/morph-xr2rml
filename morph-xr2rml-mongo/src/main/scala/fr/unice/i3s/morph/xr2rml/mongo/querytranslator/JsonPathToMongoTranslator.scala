@@ -144,27 +144,35 @@ object JsonPathToMongoTranslator {
      * @param cond and condition on a JSONPath expression to translate, must NOT be empty or null
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
      * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
-     *
      */
-    def trans(cond: AbstractQueryCondition): MongoQueryNode = {
-        trans(cond, List.empty)
+    def trans(cond: AbstractQueryCondition, iter: Option[String]): MongoQueryNode = {
+        trans(cond, iter, List.empty)
     }
 
     /**
-     * Entry point of the translation of abstract query condition on a JSONPath expression 
-     * into an abstract MongoDB query. The resulting query is not optimized.
+     * Entry point of the translation of an abstract query condition on a JSONPath expression
+     * into an abstract MongoDB query. The resulting abstract MongoDB query is not optimized.
      *
      * @param cond and condition on a JSONPath expression to translate, must  be empty or null
-     * @param projection set of projections to push in the MongoDB query (@todo not implemented)
+     * @param iter the iterator from the logical source, i.e. the From part of the anstract atomic query
+     * @param projection set of projections to push in the MongoDB query
+     * 
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
      * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
      *
+     * @todo the translation of 'projection' into actual MongoDB projections is not managed.
      */
-    def trans(cond: AbstractQueryCondition, projection: List[MongoQueryProjection]): MongoQueryNode = {
-        var path =
+    def trans(cond: AbstractQueryCondition, iter: Option[String], projection: List[MongoQueryProjection]): MongoQueryNode = {
+
+        val path =
             if (cond.hasReference) {
                 val ref = cond.asInstanceOf[IReference].reference
-                if (ref == null) "" else ref
+                if (ref == null) "" else {
+                    // If there is an iterator, replace the heading "$" of the JSONPath reference with the iterator path
+                    if (iter.isDefined)
+                        ref.replace("$", iter.get)
+                    else ref
+                }
             } else ""
 
         cond.condType match {
@@ -180,13 +188,13 @@ object JsonPathToMongoTranslator {
             case ConditionType.Or => {
                 // AbstractQueryConditionOr => MongoQueryNodeOr
                 val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
-                new MongoQueryNodeOr(condOr.members.map(c => trans(c, projection)))
+                new MongoQueryNodeOr(condOr.members.map(c => trans(c, iter, projection)))
             }
 
             case ConditionType.And => {
                 // AbstractQueryConditionAnd => MongoQueryNodeAnd
                 val condAnd = cond.asInstanceOf[AbstractQueryConditionAnd]
-                new MongoQueryNodeAnd(condAnd.members.map(c => trans(c, projection)))
+                new MongoQueryNodeAnd(condAnd.members.map(c => trans(c, iter, projection)))
             }
 
             case _ =>

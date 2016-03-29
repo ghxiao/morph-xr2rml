@@ -22,7 +22,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Entry point of the materialization approach:
+     * Entry point of the materialization approach:<br>
      * Loop on all triples maps of the mapping graph and generate triples in the data materializer model,
      * based on the triples map: this consists in calculating the query, running it against the database,
      * translating results in RDF terms and making the triples.
