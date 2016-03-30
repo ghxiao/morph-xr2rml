@@ -41,3 +41,14 @@
       rr:objectMap [ xrr:reference "$.actors.*" ];
    ].
 
+<#MoviesList>
+   xrr:logicalSource [ 
+      xrr:query "db.movies2.find({'name':{$exists:true}})";
+   ];
+   rr:subjectMap [ rr:template "http://example.org/movie/{$.code}" ];
+   rr:predicateObjectMap [
+      rr:predicate ex:starringList;
+      rr:objectMap [ 
+        xrr:reference "$.actors.*";
+        rr:termType xrr:RdfSeq ];
+   ].

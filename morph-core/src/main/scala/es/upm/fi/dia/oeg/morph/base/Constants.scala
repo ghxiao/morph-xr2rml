@@ -33,6 +33,13 @@ object Constants {
         val Relational, MongoDB = Value
     }
 
+    // Namespaces
+    val R2RML_NS = "http://www.w3.org/ns/r2rml#";
+    val xR2RML_NS = "http://i3s.unice.fr/xr2rml#";
+    val RML_NS = "http://semweb.mmlab.be/ns/rml#";
+    val QL_NS = "http://semweb.mmlab.be/ns/ql#";
+    val RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+
     // SQL Vocabulary
     val JOINS_TYPE_INNER = "INNER";
     val JOINS_TYPE_LEFT = "LEFT";
@@ -155,11 +162,6 @@ object Constants {
     // ------------------------------------------------------
     // R2RML vocabulary 
     // ------------------------------------------------------
-
-    val R2RML_NS = "http://www.w3.org/ns/r2rml#";
-    val xR2RML_NS = "http://i3s.unice.fr/xr2rml#";
-    val RML_NS = "http://semweb.mmlab.be/ns/rml#";
-    val QL_NS = "http://semweb.mmlab.be/ns/ql#";
 
     //--- TriplesMap
 

@@ -1,13 +1,13 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
+import collection.JavaConversions._
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Assert.fail
 import org.junit.Test
-
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
-
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
@@ -30,6 +30,9 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
+import com.hp.hpl.jena.sparql.algebra.Algebra
+import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
@@ -227,5 +230,91 @@ class MorphMongoQueryTranslatorTest {
         val q = Q.asInstanceOf[AbstractQueryInnerJoinRef]
         assertEquals("$.directed.*", q.childRef)
         assertEquals("$.dirname", q.parentRef)
+    }
+
+    @Test def test_excludeTriplesAboutCollecOrContainer() {
+        println("------ test_excludeTriplesAboutCollecOrContainer")
+
+        val q = """ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX ex: <http://example.org/>
+
+                    SELECT *
+                    WHERE {
+                        ?x ex:directed ?y .
+                        ?y ex:starringBag ?z .
+                        ?z a rdf:Bag .
+                        ?z rdf:_1 ?actor1 .
+                    }"""
+
+        val query = QueryFactory.create(q)
+        val op = Algebra.compile(query)
+        val op2 = queryTranslator.excludeTriplesAboutCollecOrContainer(op).get
+        println(op2)
+        assertTrue(op2.isInstanceOf[OpBGP])
+        val triples = op2.asInstanceOf[OpBGP].getPattern.getList.toList.map(_.toString)
+        println(triples)
+
+        var tp = Triple.create(NodeFactory.createVariable("x"),
+            NodeFactory.createURI("http://example.org/directed"),
+            NodeFactory.createVariable("y"))
+        assertTrue(triples.contains(tp.toString))
+
+        tp = Triple.create(NodeFactory.createVariable("y"),
+            NodeFactory.createURI("http://example.org/starringBag"),
+            NodeFactory.createVariable("z"))
+        assertTrue(triples.contains(tp.toString))
+
+        tp = Triple.create(NodeFactory.createVariable("z"),
+            NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#_1"),
+            NodeFactory.createVariable("actor1"))
+        assertFalse(triples.contains(tp.toString))
+
+        tp = Triple.create(NodeFactory.createVariable("z"),
+            NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+            NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag"))
+        assertFalse(triples.contains(tp.toString))
+    }
+
+    @Test def test_excludeTriplesAboutCollecOrContainer2() {
+        println("------ test_excludeTriplesAboutCollecOrContainer2")
+
+        val q = """ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX ex: <http://example.org/>
+
+                    SELECT *
+                    WHERE {
+                        ?x ex:directed ?y .
+                        ?y ex:starringList ?z .
+                        ?z a rdf:List .
+                        ?z rdf:first ?actor1 .
+                    }"""
+
+        val query = QueryFactory.create(q)
+        val op = Algebra.compile(query)
+        val op2 = queryTranslator.excludeTriplesAboutCollecOrContainer(op).get
+        println(op2)
+        assertTrue(op2.isInstanceOf[OpBGP])
+        val triples = op2.asInstanceOf[OpBGP].getPattern.getList.toList.map(_.toString)
+        println(triples)
+
+        var tp = Triple.create(NodeFactory.createVariable("x"),
+            NodeFactory.createURI("http://example.org/directed"),
+            NodeFactory.createVariable("y"))
+        assertTrue(triples.contains(tp.toString))
+
+        tp = Triple.create(NodeFactory.createVariable("y"),
+            NodeFactory.createURI("http://example.org/starringList"),
+            NodeFactory.createVariable("z"))
+        assertTrue(triples.contains(tp.toString))
+
+        tp = Triple.create(NodeFactory.createVariable("z"),
+            NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#first"),
+            NodeFactory.createVariable("actor1"))
+        assertFalse(triples.contains(tp.toString))
+
+        tp = Triple.create(NodeFactory.createVariable("z"),
+            NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+            NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#List"))
+        assertFalse(triples.contains(tp.toString))
     }
 }

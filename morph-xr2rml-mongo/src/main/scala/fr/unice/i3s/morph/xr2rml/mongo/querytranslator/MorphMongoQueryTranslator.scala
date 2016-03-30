@@ -37,6 +37,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.IReference
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -67,11 +68,16 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      * a list containing a set of concrete queries. May return None if no bindings are found.
      */
     override def translate(op: Op): Option[AbstractQuery] = {
-        if (logger.isDebugEnabled()) logger.debug("opSparqlQuery = " + op)
+        if (logger.isDebugEnabled) logger.debug("opSparqlQuery = " + op)
+        val start = System.currentTimeMillis()
 
         //--- Calculate the Triple Pattern Bindings
-        val start = System.currentTimeMillis()
-        val bindings = triplePatternBinder.bindm(op)
+        val opFiltered = excludeTriplesAboutCollecOrContainer(op)
+        if (!opFiltered.isDefined) {
+            logger.warn("Query cannot be processed due to collection/container related triples")
+            return None
+        }
+        val bindings = triplePatternBinder.bindm(opFiltered.get)
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
         logger.info("Triple pattern bindings:\n" + bindings.values.mkString("\n"))
 
@@ -81,10 +87,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             logger.warn("Could not find bindings for all triple patterns of the query:\n" + bindings)
             None
         } else {
-            val res = translateSparqlQuery(bindings, op)
+            val res = translateSparqlQuery(bindings, opFiltered.get)
             if (res.isDefined) {
                 // Optimize the abstract query
-                val absq = res.get.optimizeQuery(optimizer )
+                val absq = res.get.optimizeQuery(optimizer)
                 if (absq != res.get) {
                     logger.info("\n-------------------------------------------------------------------------\n" +
                         "------------------ Abstract query BEFORE optimization: ------------------\n" + res.get)
@@ -194,6 +200,112 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 None
             }
         }
+    }
+
+    private final val REGEX_RDF_CONTAINER_PREDICATE = ("^" + Constants.RDF_NS + """_\p{Alnum}+""").r
+    private final val REGEX_RDF_LIST_PREDICATE = ("^" + Constants.RDF_NS + """[first|rest|nil]""").r
+    private final val REGEX_RDF_LIST_CONT_CLASSES = ("^" + Constants.RDF_NS + """[List|Bag|Seq|Alt]""").r
+
+    /**
+     * Check if a triple deals with collections or containers, i.e. either its predicate is one<br>
+     * - rdf:_1, rdf:_2, ... for containers, or<br>
+     * - rdf:first, rdf:rest or rdf:nil for collections,<br>
+     * or its predicate is rdf:type and the object is one of rdf:List, rdf:Bag, rdf:Seq, rdf:Alt.
+     */
+    private def isTripleAboutCollecOrContainer(tp: Triple): Boolean = {
+
+        // Is the predicate rdf:_1, ...,rdf:_n?
+        val pred = tp.getPredicate.toString
+        val obj = tp.getObject.toString
+
+        return REGEX_RDF_CONTAINER_PREDICATE.findFirstMatchIn(pred).isDefined ||
+            REGEX_RDF_LIST_PREDICATE.findFirstMatchIn(pred).isDefined ||
+            // rdf:type [rdf:List|rdf:Bag|rdf:Seq|rdf:Alt]
+            (pred == Constants.RDF_NS + "type" && REGEX_RDF_LIST_CONT_CLASSES.findFirstMatchIn(pred).isDefined)
+    }
+
+    /**
+     * Remove from a SPARQL query all triples that pertain to the management of RDF collections and containers:
+     * i.e. with a predicate rdf:first, rdf:rest, rdf:nil, rdf:_1, rdf:_2 etc.
+     * or rdf:type and the object is one of rdf:List, rdf:Bag, rdf:Seq, rdf:Alt.
+     *
+     * @param op a SPARQL query
+     * @return the same query minus triples involving predicates about RDF collections and containers,
+     * or None if there is no more triples after removal
+     */
+    def excludeTriplesAboutCollecOrContainer(op: Op): Option[Op] = {
+        val result = op match {
+            case opProject: OpProject => { // SELECT clause
+                val subOp = excludeTriplesAboutCollecOrContainer(opProject.getSubOp)
+                if (subOp.isDefined)
+                    Some(new OpProject(subOp.get, opProject.getVars))
+                else None
+            }
+            case bgp: OpBGP => { // Basic Graph Pattern
+                val triples: List[Triple] = bgp.getPattern.getList.toList
+
+                if (triples.size == 0)
+                    None
+                else if (triples.size == 1) {
+                    if (isTripleAboutCollecOrContainer(triples.head)) {
+                        if (logger.isDebugEnabled)
+                            logger.debug("Ignoring triple " + triples.head)
+                        None
+                    } else
+                        Some(bgp)
+                } else {
+                    // There are several triples in the basic graph pattern
+                    if (isTripleAboutCollecOrContainer(triples.head)) {
+                        if (logger.isDebugEnabled)
+                            logger.debug("Ignoring triple " + triples.head)
+                        // Forget the first triple and process the subsequent triples of the basic pattern
+                        excludeTriplesAboutCollecOrContainer(new OpBGP(BasicPattern.wrap(triples.tail)))
+
+                    } else {
+                        // Keep the first triple and process the subsequent triples of the basic pattern
+                        val newBgp = excludeTriplesAboutCollecOrContainer(new OpBGP(BasicPattern.wrap(triples.tail)))
+                        if (newBgp.isDefined) {
+                            // Create the new list of selected triples and make a basic pattern out of it
+                            val newTriplesList = List(triples.head) ++ newBgp.get.asInstanceOf[OpBGP].getPattern.getList.toList
+                            Some(new OpBGP(BasicPattern.wrap(newTriplesList)))
+                        } else
+                            Some(new OpBGP(BasicPattern.wrap(List(triples.head))))
+                    }
+                }
+            }
+            case opJoin: OpJoin => { // AND pattern
+                val left = excludeTriplesAboutCollecOrContainer(opJoin.getLeft)
+                val right = excludeTriplesAboutCollecOrContainer(opJoin.getRight)
+                if (left.isDefined && right.isDefined)
+                    Some(OpJoin.create(left.get, right.get))
+                else if (left.isDefined)
+                    left
+                else
+                    right
+            }
+            case opLeftJoin: OpLeftJoin => { //OPT pattern
+                val left = excludeTriplesAboutCollecOrContainer(opLeftJoin.getLeft)
+                val right = excludeTriplesAboutCollecOrContainer(opLeftJoin.getRight)
+                if (left.isDefined && right.isDefined)
+                    Some(OpLeftJoin.create(left.get, right.get, opLeftJoin.getExprs))
+                else if (left.isDefined)
+                    left
+                else
+                    right
+            }
+            case opUnion: OpUnion => { //UNION pattern
+                val left = excludeTriplesAboutCollecOrContainer(opUnion.getLeft)
+                val right = excludeTriplesAboutCollecOrContainer(opUnion.getRight)
+                if (left.isDefined && right.isDefined)
+                    Some(OpUnion.create(left.get, right.get))
+                else if (left.isDefined)
+                    left
+                else
+                    right
+            }
+            case _ => { Some(op) }
+        }
+        result
     }
 
     /**

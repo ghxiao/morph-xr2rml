@@ -15,6 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcesso
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import com.hp.hpl.jena.sparql.resultset.ResultSetMem
 
 /**
  * Execute the database query and produce the XML SPARQL result set
@@ -42,11 +43,24 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
             // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
             start = System.currentTimeMillis();
             val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
-            val resultSet: ResultSet = qexec.execSelect();
-            while (resultSet.hasNext()) {
-                val strResultSet = ResultSetFormatter.asXMLString(resultSet)
-                factory.getMaterializer.outputStream.write(strResultSet)
+            val resultSet: ResultSet = qexec.execSelect()
+
+            if (logger.isDebugEnabled) {
+                // In debug mode, store as an memory result set and display in XM as well as tabular formats
+                val rewind = new ResultSetMem(resultSet)
+                if (rewind.hasNext()) {
+                    val strResultSet = ResultSetFormatter.asXMLString(rewind)
+                    factory.getMaterializer.outputStream.write(strResultSet)
+                    rewind.reset
+                    logger.debug("\n" + ResultSetFormatter.asText(rewind))
+                }
+            } else {
+                while (resultSet.hasNext()) {
+                    val strResultSet = ResultSetFormatter.asXMLString(resultSet)
+                    factory.getMaterializer.outputStream.write(strResultSet)
+                }
             }
+
             end = System.currentTimeMillis();
             logger.info("Late SPARQL query evaluation time = " + (end - start) + "ms.");
 
