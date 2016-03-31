@@ -16,169 +16,172 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 
 class AbstractQueryTest {
 
-    @Test def test_mergeAbstractAtmoicQuery_mergeok_emptyq() {
-        println("------ test_mergeAbstractAtmoicQuery_mergeok_emptyq")
+    val tm = new R2RMLTriplesMap(null, null, null, null)
+    tm.name = "tm"
 
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
+    val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
+    val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
+    val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
 
-        // Two empty query either '' or '{}' 
-        val ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None, List.empty)
-        val ls1bis = new xR2RMLQuery("db.collection.find({})", "JSONPath", None, List.empty)
+    val tpb1 = Set(new TPBinding(tp1, tm))
+    val tpb1bis = Set(new TPBinding(tp1bis, tm))
+    val tpb2 = Set(new TPBinding(tp2, tm))
 
-        val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
+    val projx1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
+    val projx1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
+    val projx2 = new AbstractQueryProjection(Set("ref2"), Some("?x"))
+    val projy1_as_x1 = new AbstractQueryProjection(Set("ref1"), Some("?y"))
+    val projy2 = new AbstractQueryProjection(Set("ref3"), Some("?y"))
 
-        val cond1 = new AbstractQueryConditionEquals("ref_cond1", "value1")
-        val cond2 = new AbstractQueryConditionEquals("ref_cond2", "value2")
+    val cond1 = new AbstractQueryConditionEquals("ref1", "value1")
+    val cond1bis = new AbstractQueryConditionEquals("ref1", "value1")
+    val cond2 = new AbstractQueryConditionEquals("ref2", "value2")
+    val cond3 = new AbstractQueryConditionEquals("ref3", "value3")
 
-        val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
+    var q1: AbstractAtomicQuery = null
+    var q2: AbstractAtomicQuery = null
+    var q: Option[AbstractAtomicQuery] = None
 
-        var q1 = new AbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls1, Set(proj1), Set(cond1))
-        var q2 = new AbstractAtomicQuery(Set(new TPBinding(tp2, tm)), ls1bis, Set(proj1bis), Set(cond2))
+    @Test def test_mergeAbstractAtmoicQuery_noUniq1() {
+        println("------ test_mergeAbstractAtmoicQuery_noUniq1")
 
-        var q = q1.mergeForInnerJoin(q2)
-        println(q.get)
-        assertTrue(q.isDefined)
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond1", "value1")))
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond2", "value2")))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
-    }
+        val ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set.empty)
+        var ls1bis = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set.empty)
 
-    @Test def test_mergeAbstractAtmoicQuery_mergeok() {
-        println("------ test_mergeAbstractAtmoicQuery_mergeok")
+        // Same From, same projection of ?x, same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis), Set(cond1bis))
 
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
-
-        val ls1 = new xR2RMLQuery("db.collection.find({query})", "JSONPath", None, List.empty)
-        val ls1bis = new xR2RMLQuery("db.collection.find({query})", "JSONPath", None, List.empty)
-
-        val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        val proj2 = new AbstractQueryProjection(Set("ref2"), Some("?y"))
-
-        val cond1 = new AbstractQueryConditionEquals("ref_cond1", "value1")
-        val cond2 = new AbstractQueryConditionEquals("ref_cond2", "value2")
-
-        val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
-
-        var q1 = new AbstractAtomicQuery(Set(new TPBinding(tp1, tm), new TPBinding(tp2, tm)), ls1, Set(proj1), Set(cond1))
-        var q2 = new AbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls1bis, Set(proj1bis, proj2), Set(cond2))
-
-        var q = q1.mergeForInnerJoin(q2)
-        println(q.get)
-        assertTrue(q.isDefined)
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond1", "value1")))
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond2", "value2")))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
-    }
-
-    @Test def test_mergeAbstractAtmoicQuery_subquery() {
-        println("------ test_mergeAbstractAtmoicQuery_subquery")
-
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
-
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
-        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, List.empty)
-
-        val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-
-        val cond1 = new AbstractQueryConditionEquals("ref_cond1", "value1")
-        val cond2 = new AbstractQueryConditionEquals("ref_cond2", "value2")
-
-        val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
-
-        var q1 = new AbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls1, Set(proj1), Set(cond1))
-        var q2 = new AbstractAtomicQuery(Set(new TPBinding(tp2, tm)), ls2, Set(proj1bis), Set(cond2))
-
-        var q = q1.mergeForInnerJoin(q2)
-        println(q.get)
-        assertTrue(q.isDefined)
-        assertEquals(ls2, q.get.from)
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond1", "value1")))
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond2", "value2")))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
-    }
-
-    @Test def test_mergeAbstractAtmoicQuery_nomerge() {
-        println("------ test_mergeAbstractAtmoicQuery_nomerge")
-
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
-
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
-        val ls1bis = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, List.empty)
-        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, List.empty)
-
-        val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        val proj2 = new AbstractQueryProjection(Set("ref1", "ref2"), Some("?x"))
-
-        val cond1 = new AbstractQueryConditionEquals("ref_cond1", "value1")
-        val cond2 = new AbstractQueryConditionEquals("ref_cond2", "value2")
-
-        val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
-
-        // Not the same logical source
-        var q1 = new AbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls1, Set(proj1), Set(cond1))
-        var q2 = new AbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls2, Set(proj1bis), Set(cond2))
-        var q = q1.mergeForInnerJoin(q2)
-        println(q)
-        assertFalse(q.isDefined)
-
-        // Same triple but not the same projection
-        q1 = new AbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls1, Set(proj1), Set(cond1))
-        q2 = new AbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls1bis, Set(proj2), Set(cond2))
         q = q1.mergeForInnerJoin(q2)
-        println(q)
+        assertTrue(q.isDefined)
+        println(q.get)
+        assertEquals(Set(new AbstractQueryConditionEquals("ref1", "value1")), q.get.where)
+        assertEquals(2, q.get.tpBindings.size)
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
+
+        // Same From with '' and '{}', same projection of ?x, same Where
+        ls1bis = new xR2RMLQuery("db.collection.find({})", "JSONPath", None, Set.empty)
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis), Set(cond1bis))
+        q = q1.mergeForInnerJoin(q2)
+        assertTrue(q.isDefined)
+    }
+
+    @Test def test_mergeAbstractAtmoicQuery_noUniq2() {
+        println("------ test_mergeAbstractAtmoicQuery_noUniq2")
+
+        val ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, Set.empty)
+        val ls1bis = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set.empty)
+
+        // NOT same From, same projection of ?x, same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls2, Set(projx1bis), Set(cond1bis))
+        q = q1.mergeForInnerJoin(q2)
+        assertFalse(q.isDefined)
+
+        // Same From, NOT same projection of ?x, same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx2), Set(cond1bis))
+        q = q1.mergeForInnerJoin(q2)
+        assertFalse(q.isDefined)
+
+        // Same From, same projection of ?x, NOT same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis), Set(cond2))
+        q = q1.mergeForInnerJoin(q2)
         assertFalse(q.isDefined)
     }
 
-    @Test def test_mergeAbstractAtmoicQuery2() {
-        println("------ test_mergeAbstractAtmoicQuery2")
+    @Test def test_mergeAbstractAtmoicQuery_noUniq3() {
+        println("------ test_mergeAbstractAtmoicQuery_noUniq3")
 
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
+        val ls1bis = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
 
-        val ls = new xR2RMLQuery("db.collection.find({query}", "JSONPath", None, List.empty)
+        // Same From, same projection of ?x, same projection of ?y as ?x, same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis, projy1_as_x1), Set(cond1bis))
 
-        // One common projection on ?x with different order proj1=(ref1, ref2) vs. proj1bis=(ref2, ref1)
-        // One other non matching projection on ?x (proj2)
-        // One projection on ?y
-        val proj1 = new AbstractQueryProjection(Set("ref1", "ref2"), Some("?x"))
-        val proj1bis = new AbstractQueryProjection(Set("ref2", "ref1"), Some("?x"))
-        val proj2 = new AbstractQueryProjection(Set("ref3", "ref4"), Some("?x"))
-        val proj3 = new AbstractQueryProjection(Set("ref3", "ref4"), Some("?y"))
-
-        val cond1 = new AbstractQueryConditionEquals("ref_cond1", "value1")
-        val cond2 = new AbstractQueryConditionEquals("ref_cond2", "value2")
-
-        val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-        val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
-
-        var q1 = new AbstractAtomicQuery(Set(new TPBinding(tp1, tm)), ls, Set(proj1, proj3), Set(cond1))
-        var q2 = new AbstractAtomicQuery(Set(new TPBinding(tp1bis, tm)), ls, Set(proj2, proj1bis), Set(cond2))
-
-        var q = q1.mergeForInnerJoin(q2)
-        println(q.get)
+        q = q1.mergeForInnerJoin(q2)
         assertTrue(q.isDefined)
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond1", "value1")))
-        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref_cond2", "value2")))
-        assertTrue(q.get.project.contains(proj1))
-        assertTrue(q.get.project.contains(proj2))
-        assertTrue(q.get.project.contains(proj3))
+        println(q.get)
+        assertEquals("db.collection.find({query1})", q.get.from.asInstanceOf[xR2RMLQuery].query)
+        assertEquals(Set(new AbstractQueryConditionEquals("ref1", "value1")), q.get.where)
+        assertEquals(2, q.get.tpBindings.size)
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
+
+        // Same From, same projection of ?x, ?y as other reference, same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis, projy2), Set(cond1bis))
+        q = q1.mergeForInnerJoin(q2)
+        assertFalse(q.isDefined)
+
+        // Same From, same projection of ?x, same projection of ?y as ?x, NOT same Where
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis, projy1_as_x1), Set(cond1bis, cond3))
+        q = q1.mergeForInnerJoin(q2)
+        assertFalse(q.isDefined)
+    }
+
+    @Test def test_mergeAbstractAtmoicQuery_Uniq1() {
+        println("------ test_mergeAbstractAtmoicQuery_Uniq1")
+
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
+        val ls1bis = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
+
+        // Same From, same projection of ?x, same Where on ?x
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis), Set(cond1bis))
+
+        q = q1.mergeForInnerJoin(q2)
+        assertTrue(q.isDefined)
+        println(q.get)
+        assertEquals(q.get, q1)
+
+        // Same From, same projection of ?x, ?y as other reference, same Where on ?x
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls1bis, Set(projx1bis, projy2), Set(cond1bis, cond3))
+        q = q1.mergeForInnerJoin(q2)
+        println(q.get)
+
+        assertTrue(q.isDefined)
+        assertEquals("db.collection.find({query1})", q.get.from.asInstanceOf[xR2RMLQuery].query)
+        assertEquals(2, q.get.project.size)
+        assertTrue(q.get.project.contains(new AbstractQueryProjection(Set("ref1"), Some("?x"))))
+        assertTrue(q.get.project.contains(new AbstractQueryProjection(Set("ref3"), Some("?y"))))
+        assertEquals(2, q.get.where.size)
+        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref1", "value1")))
+        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref3", "value3")))
+        assertEquals(2, q.get.tpBindings.size)
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
+    }
+
+    @Test def test_mergeAbstractAtmoicQuery_Uniq2() {
+        println("------ test_mergeAbstractAtmoicQuery_Uniq2")
+
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
+        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, Set("ref1"))
+
+        // Right From is more specific than Left From, same projection of ?x, ?y as other reference, same Where on ?x
+        q1 = new AbstractAtomicQuery(tpb1, ls1, Set(projx1), Set(cond1))
+        q2 = new AbstractAtomicQuery(tpb2, ls2, Set(projx1bis, projy2), Set(cond1bis, cond3))
+        q = q1.mergeForInnerJoin(q2)
+        println(q.get)
+
+        assertTrue(q.isDefined)
+        assertEquals("db.collection.find({query1,query2})", q.get.from.asInstanceOf[xR2RMLQuery].query)
+        assertEquals(2, q.get.project.size)
+        assertTrue(q.get.project.contains(new AbstractQueryProjection(Set("ref1"), Some("?x"))))
+        assertTrue(q.get.project.contains(new AbstractQueryProjection(Set("ref3"), Some("?y"))))
+        assertEquals(2, q.get.where.size)
+        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref1", "value1")))
+        assertTrue(q.get.where.contains(new AbstractQueryConditionEquals("ref3", "value3")))
+        assertEquals(2, q.get.tpBindings.size)
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
+        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
     }
 
     /**
@@ -276,35 +279,23 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
-        var ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
+        var ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
 
         var q1 = new AbstractAtomicQuery(Set.empty, ls1, Set.empty, Set.empty)
         var q2 = new AbstractAtomicQuery(Set.empty, ls2, Set.empty, Set.empty)
 
         var q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
-        assertEquals(ls1, q.from)
+        assertEquals(q1, q)
 
         // -----------------------------------------
 
-        ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, List.empty)
-        q1 = new AbstractAtomicQuery(Set.empty, ls1, Set.empty, Set.empty)
+        ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, Set.empty)
         q2 = new AbstractAtomicQuery(Set.empty, ls2, Set.empty, Set.empty)
-
         q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
-        assertEquals(ls2, q.from)
-
-        // -----------------------------------------
-
-        ls2 = new xR2RMLQuery("db.collection.find({query2, query1})", "JSONPath", None, List.empty)
-        q1 = new AbstractAtomicQuery(Set.empty, ls1, Set.empty, Set.empty)
-        q2 = new AbstractAtomicQuery(Set.empty, ls2, Set.empty, Set.empty)
-
-        q = q1.propagateConditionFromJoinedQuery(q2)
-        println(q)
-        assertEquals(ls1, q.from)
+        assertEquals(q1, q) // no change
     }
 
     @Test def test_propagateConditionFromJoinedQuery2() {
@@ -313,8 +304,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
-        val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
 
         // No shared variable
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -328,9 +319,7 @@ class AbstractQueryTest {
 
         var q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
-        assertEquals(ls1, q.from)
-        assertEquals(Set(new AbstractQueryProjection(Set("ref1"), Some("?x"))), q.project) // no change 
-        assertEquals(Set(new AbstractQueryConditionEquals("ref1", "value1")), q.where) // no change
+        assertEquals(q1, q) // no change
     }
 
     @Test def test_propagateConditionFromJoinedQuery3() {
@@ -339,8 +328,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
-        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, List.empty)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
 
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
         val proj2 = new AbstractQueryProjection(Set("ref2"), Some("?x"))
@@ -354,7 +343,7 @@ class AbstractQueryTest {
 
         var q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
-        assertEquals(ls2, q.from) // change in the From 
+        assertEquals(ls1, q.from) // change in the From 
         assertEquals(Set(new AbstractQueryProjection(Set("ref1"), Some("?x"))), q.project) // no change in the projection
         assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value1"))) // original condition
         assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value2"))) // new condition
@@ -370,33 +359,4 @@ class AbstractQueryTest {
         assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value1"))) // original condition
         assertTrue(q.where.contains(new AbstractQueryConditionNotNull("ref1"))) // new condition
     }
-
-    @Test def test_propagateConditionFromJoinedQuery4() {
-        println("------ test_propagateConditionFromJoinedQuery4")
-
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
-
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
-        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, List.empty)
-
-        // No shared variable
-        var proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
-        var proj2 = new AbstractQueryProjection(Set("ref2"), Some("?x"))
-
-        val cond1 = new AbstractQueryConditionEquals("ref1", "value1")
-        val cond2 = new AbstractQueryConditionEquals("ref2", "value2")
-
-        var q1 = new AbstractAtomicQuery(Set.empty, ls1, Set(proj1), Set(cond1))
-        var q2 = new AbstractAtomicQuery(Set.empty, ls2, Set(proj2), Set(cond2))
-
-        var q = q1.propagateConditionFromJoinedQuery(q2)
-        println(q)
-        assertEquals(ls1, q.from) // no change in the From
-        assertEquals(Set(new AbstractQueryProjection(Set("ref1"), Some("?x"))), q.project) // no change in the projection
-        assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value1"))) // original condition
-        assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value2"))) // new condition
-    }
-
 }
-

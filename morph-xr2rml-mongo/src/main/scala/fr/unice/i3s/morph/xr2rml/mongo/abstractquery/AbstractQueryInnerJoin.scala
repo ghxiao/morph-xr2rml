@@ -214,23 +214,8 @@ class AbstractQueryInnerJoin(
                         var leftAtom = left.asInstanceOf[AbstractAtomicQuery]
                         var rightAtom = right.asInstanceOf[AbstractAtomicQuery]
 
-                        var wasMerged = false
-
-                        // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
-                        if (optimizer.selfJoinElimination) {
-                            val merged = leftAtom.mergeForInnerJoin(rightAtom)
-                            if (merged.isDefined) {
-                                //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
-                                // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
-                                membersV = membersV.slice(0, i) ++ List(merged.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
-                                continue = false
-                                wasMerged = true
-                                if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
-                            } else if (logger.isDebugEnabled) logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
-                        }
-
                         // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
-                        if (optimizer.propagateConditionFromJoin && !wasMerged) {
+                        if (optimizer.propagateConditionFromJoin) {
                             leftAtom = leftAtom.propagateConditionFromJoinedQuery(rightAtom)
                             if (logger.isDebugEnabled)
                                 if (leftAtom != left)
@@ -242,6 +227,18 @@ class AbstractQueryInnerJoin(
                                     logger.debug("Propagated condition of query " + i + " into query " + j)
 
                             membersV = membersV.slice(0, i) ++ List(leftAtom) ++ membersV.slice(i + 1, j) ++ List(rightAtom) ++ membersV.slice(j + 1, membersV.size)
+                        }
+                        
+                        // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
+                        if (optimizer.selfJoinElimination) {
+                            val merged = leftAtom.mergeForInnerJoin(rightAtom)
+                            if (merged.isDefined) {
+                                //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
+                                // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
+                                membersV = membersV.slice(0, i) ++ List(merged.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
+                                continue = false
+                                if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
+                            } else if (logger.isDebugEnabled) logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
                         }
                     }
                 } // end for j

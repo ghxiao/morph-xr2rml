@@ -1,21 +1,29 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.query.IReference
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
@@ -24,11 +32,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -95,10 +98,10 @@ class AbstractAtomicQuery(
 
     /**
      * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed:<br>
-     * 1. the Where part of the atomic abstract query is translated into an abstract 
+     * 1. the Where part of the atomic abstract query is translated into an abstract
      * MongoDB query using function JsonPathToMongoTranslator.trans().<br>
      * 2. the abstract MongoDB query is optimized and translated into a set of concrete MongoDB queries.<br>
-     * 
+     *
      * The result is stored in attribute 'this.targetQuery'.
      *
      * @param translator the query translator
@@ -307,34 +310,35 @@ class AbstractAtomicQuery(
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
      * The merge is allowed if and only if the following conditions are met:<br>
      * (i) both queries have the same From part (the logical source) and Where part;<br>
-     * (ii) they have at least one shared variable (on which the join is to be done) (see 1st example);<br>
-     * (iii) the shared variables are projected from the same xR2RML reference(s) in both queries (see 1st example);<br>
-     * (iv) if there are non-shared variables then this is not a self-join (see 2nd example).
+     * (ii) they have at least one shared variable (on which the join is to be done) and
+     * the shared variables are projected from the same xR2RML reference(s) in both queries (see example 1);<br>
+     * (iv) if there are non-shared variables then this is not a self-join (see example 2).
      * However, if each non-shared variable is projected from an xR2RML reference that is also projected
      * as a shared variable (4th example), then this is a proper self-join.<br>
      * Note: even if all non-shared variable belong to the same query then there are cases of
-     * query that are not a self-join (3rd example).
+     * query that are not a self-join (see example 3).
      *
-     * @example if Q1 and Q2 have the same logical source and Where conditions, and they have a shared variable ?x,
-     * If both queries project the same reference as ?x: "$.field AS ?x", then this is a self-join.<br>
+     * <b>Example 1</b>: if Q1 and Q2 have the same logical source and Where conditions, and they have a shared variable ?x,
+     * if both queries project the same reference as ?x: "$.field AS ?x", then this is a self-join.<br>
      * On the contrary, if projections are different: "$.field1 AS ?x" in Q1 and "$.field2 AS ?x" is Q2,
      * then this is not a self-join, on the contrary this is a regular join.
      *
-     * @example In a graph pattern like:<br>
-     * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z) </code><br>,
-     * we may obtain Q1 and Q2 with the same logical source and Where part,<br>
+     * <b>Example 2</b>:  In a graph pattern like:
+     * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z)</code>,<br>
+     * if Q1 and Q2 with the same logical source and Where part, and<br>
      * Q1 has projections "$.x AS ?x", "$.a AS ?y",<br>
      * Q2 has projections "$.x AS ?x", "$.b AS ?z".<br>
      * then this is not a self-join because there are non-shared variables whose reference
-     * is not the reference of a shared variable (as in 4th example).
+     * is not the reference of a shared variable (as in example 4).
      *
-     * @example In a graph pattern like:<br>
-     * <code>?x prop <blabla>. ?x prop ?z. FILTER (?z != <blabla>) </code><br>,<br>
+     * <b>Example 3</b>: In a graph pattern like:
+     * <code>?x prop ex:blabla. ?x prop ?z. FILTER (?z != ex:blabla)</code>,<br>
+     * if Q1 and Q2 with the same logical source and Where part, and<br>
      * Q1 has projections "$.a AS ?x"<br>
      * Q2 has projections "$.a AS ?x", "$.b AS ?z"<br>
-     * the filter illustrates why this cannot be a self-join.
+     * then this is not a self-join, as illustrated by the filter.
      *
-     * @example If Q1 and Q2 have the same logical source, and<br>
+     * <b>Example 4</b>: If Q1 and Q2 have the same logical source, and<br>
      * Q1 has projections "$.a AS ?x", "$.a AS ?y",<br>
      * Q2 has projections "$.a AS ?x", "$.a AS ?z"<br>
      * then this is a proper self-join because non-shared variables ?y and ?z are projected from
@@ -360,76 +364,120 @@ class AbstractAtomicQuery(
         val left = this
         val right = q.asInstanceOf[AbstractAtomicQuery]
 
-        if (left.from != right.from) {
-            if (logger.isTraceEnabled)
-                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different From parts.")
-            return None
-        }
-
-        if (left.where != right.where) {
-            if (logger.isTraceEnabled)
-                logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different Where parts.")
-            return None
-        }
-
         val sharedVars = left.getVariables intersect right.getVariables
         val sharedVarsLeftProjections = sharedVars.flatMap(v => left.getProjectionsForVariable(v)).map(_.references)
         val sharedVarsRightProjections = sharedVars.flatMap(v => right.getProjectionsForVariable(v)).map(_.references)
 
-        val nonSharedVarsLeft = left.getVariables diff right.getVariables
-        val nonSharedVarsRight = right.getVariables diff left.getVariables
-
-        // If there are non-shared variables then this is not a self-join (see 2nd and 3rd examples),
-        // except if each non-shared variable is projected from an xR2RML reference that is also projected
-        // as a shared variable (4th example), then this is a proper self-join.
-
-        nonSharedVarsLeft.foreach(x => {
-            // Get the projections associated with the non-shared variable x in the left query
-            val projs = left.getProjectionsForVariable(x)
-
-            // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
-            projs.foreach(proj => {
-                if (!sharedVarsLeftProjections.contains(proj.references)) return None
+        // Determine if both queries have the same From part (or one is a sub-query of the other),
+        // and they are joined on a unique reference. If this is the case, then for sure we can merge them.
+        var isJoinOnUniqueRefs = false
+        val mostSpec = MongoDBQuery.mostSpecificQuery(left.from, right.from)
+        if (mostSpec.isDefined) {
+            val sharedUniqueRefs = left.from.uniqueRefs intersect right.from.uniqueRefs
+            sharedVars.foreach(x => {
+                // We look for at least one shared variable that is projected from that same references in each query,
+                // and one of these references is unique in all documents of the database.
+                val leftRefs = left.getProjectionsForVariable(x).flatMap(_.references)
+                val rightRefs = right.getProjectionsForVariable(x).flatMap(_.references)
+                if (leftRefs == rightRefs) {
+                    val joinedUniqueRefs = sharedUniqueRefs intersect leftRefs
+                    if (joinedUniqueRefs.nonEmpty) {
+                        if (logger.isTraceEnabled)
+                            logger.trace("Detected join on unique reference(s) " + joinedUniqueRefs)
+                        isJoinOnUniqueRefs = true
+                    }
+                }
             })
-        })
+        }
 
-        nonSharedVarsRight.foreach(x => {
-            // Get the projections associated with the non-shared variable x in the right query
-            val projs = right.getProjectionsForVariable(x)
+        if (isJoinOnUniqueRefs) {
+            // ----------------------------- Most favorable case: join on a unique reference ---------------------------
+            val mergedBindings = left.tpBindings ++ right.tpBindings
+            val mergedProj = left.project ++ right.project
+            val mergedWhere = left.where ++ right.where
+            val result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
+            result
+        } else {
 
-            // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
-            projs.foreach(proj => {
-                if (!sharedVarsRightProjections.contains(proj.references)) return None
+            // ----------------------------- Standard Case: no join on a unique reference ---------------------------
+
+            // If both queries do NOT have the same From part and they they are NOT joined on a unique reference
+            // then the merge is possible only if they have exactly the same From and Where parts
+            if (!MongoDBQuery.sameQueries(left.from, right.from)) {
+                if (logger.isTraceEnabled)
+                    logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different From parts.")
+                return None
+            }
+
+            if (left.where != right.where) {
+                if (logger.isTraceEnabled)
+                    logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different Where parts.")
+                return None
+            }
+
+            // If the two queries have no shared variable then this cannot be a self-join
+            if (sharedVars.isEmpty) {
+                if (logger.isTraceEnabled)
+                    logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have no shared variable.")
+                None
+            }
+
+            // If there are non-shared variables then this is not a self-join (see 2nd and 3rd examples),
+            // unless each non-shared variable is projected from an xR2RML reference that is also projected
+            // as a shared variable (4th example), then this is a proper self-join.
+
+            val nonSharedVarsLeft = left.getVariables diff right.getVariables
+            nonSharedVarsLeft.foreach(x => {
+                // Get the projections associated with the non-shared variable x in the left query
+                val projs = left.getProjectionsForVariable(x)
+
+                // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
+                projs.foreach(proj => {
+                    if (!(sharedVarsLeftProjections contains proj.references)) {
+                        if (logger.isTraceEnabled)
+                            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have a non-shared variable " + x)
+                        return None
+                    }
+                })
             })
-        })
 
-        var result: Option[AbstractAtomicQuery] = None
-        if (sharedVars.nonEmpty) {
-            // Check if shared variables are projected from the same reference
+            val nonSharedVarsRight = right.getVariables diff left.getVariables
+            nonSharedVarsRight.foreach(x => {
+                // Get the projections associated with the non-shared variable x in the right query
+                val projs = right.getProjectionsForVariable(x)
+
+                // If one of these projections is not a projection of a shared variable, then this cannot be a self-join
+                projs.foreach(proj => {
+                    if (!(sharedVarsRightProjections contains proj.references)) {
+                        if (logger.isTraceEnabled)
+                            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have a non-shared variable " + x)
+                        return None
+                    }
+                })
+            })
+
+            // Check if the shared variables are projected from the same reference
             sharedVars.foreach(x => {
                 // Get the references corresponding to variable ?x in each query.
                 val leftRefs = left.getProjectionsForVariable(x).map(_.references)
                 val rightRefs = right.getProjectionsForVariable(x).map(_.references)
 
                 // Verify that at least one projection of ?x is the same in the left and right queries
-                val inter = leftRefs intersect rightRefs
-                if (inter.isEmpty) {
+                if (leftRefs intersect rightRefs isEmpty) {
                     if (logger.isTraceEnabled)
                         logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right +
-                            "\nbecause of variable " + x + ": left references " + leftRefs +
-                            " do not match right references " + rightRefs)
+                            "\nbecause shared variable " + x + " is projected from left references " + leftRefs +
+                            " that do not match right references " + rightRefs)
                     return None
                 }
             })
 
+            // Build the result query. Both queries have the same From and Where, we can use any of them, here the left ones
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val mergedWhere = left.where ++ right.where
-            result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, mergedWhere))
-        } else if (logger.isTraceEnabled)
-            logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have no shared variable.")
-
-        result
+            val result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, left.where))
+            result
+        }
     }
 
     /**
@@ -439,11 +487,12 @@ class AbstractAtomicQuery(
      *
      * If the two queries have some shared variables, then Equality and IsNotNull conditions of the right query
      * on those shared variables can be added to the conditions of the left query.
-     * @example
-     * Assume we have "\$.field1 AS ?x" in left and "\$.field2 AS ?x" in right.
+     *
+     * @example Assume we have "\$.field1 AS ?x" in left and "\$.field2 AS ?x" in right.
      * If the right query has a Where condition <code>Equals(\$.field2, "value")</code>, then we can add a new condition
      * to the Where conditions of the left query: <code>Equals(\$.field1, "value")</code>
      *
+     * @param q the right query of the join
      * @return an optimized version of 'this', based on the query in parameter, or 'this' is no optimization was possible.
      */
     def propagateConditionFromJoinedQuery(q: AbstractQuery): AbstractAtomicQuery = {
@@ -457,39 +506,39 @@ class AbstractAtomicQuery(
 
         // Check if some Where conditions of the right query can be added to the Where conditions of the left query to narrow it down
         var condsToReport = Set[AbstractQueryCondition]()
-        if (sharedVars.nonEmpty) {
-            sharedVars.foreach(x => {
-                // Get all the references associated with variable ?x in the left and right queries.
-                // Restriction: we deal only with single reference i.e. "ref AS ?x", but not references such as "(ref1, ref2) AS ?x"
-                val leftRefs = left.getProjectionsForVariable(x).filter(p => p.references.size == 1).map(_.references.head)
-                val rightRefs = right.getProjectionsForVariable(x).filter(p => p.references.size == 1).map(_.references.head)
+        sharedVars.foreach(x => {
+            // Get all the references associated with variable ?x in the left and right queries.
+            // Restriction: we deal only with single reference i.e. "ref AS ?x", but not references such as "(ref1, ref2) AS ?x"
+            val leftRefs = left.getProjectionsForVariable(x).filter(p => p.references.size == 1).map(_.references.head)
+            val rightRefs = right.getProjectionsForVariable(x).filter(p => p.references.size == 1).map(_.references.head)
 
-                rightRefs.foreach(ref => {
-                    // Select the Where conditions in the right query, of type isNotNull or Equals, 
-                    // that refer to the right reference ref associated with ?x
-                    val rightConds = right.where.filter(w => w.hasReference && w.asInstanceOf[IReference].reference == ref)
-                    rightConds.foreach(rightCond => {
-                        rightCond match {
-                            case eq: AbstractQueryConditionEquals => {
-                                leftRefs.foreach(leftRef => {
-                                    condsToReport += new AbstractQueryConditionEquals(leftRef, eq.eqValue)
-                                })
-                            }
-                            case nn: AbstractQueryConditionNotNull => {
-                                leftRefs.foreach(leftRef => {
-                                    condsToReport += new AbstractQueryConditionNotNull(leftRef)
-                                })
-                            }
+            rightRefs.foreach(ref => {
+                // Select the Where conditions in the right query, of type isNotNull or Equals, 
+                // that refer to the right reference ref associated with ?x
+                val rightConds = right.where.filter(w => w.hasReference && w.asInstanceOf[IReference].reference == ref)
+                rightConds.foreach(rightCond => {
+                    rightCond match {
+                        case eq: AbstractQueryConditionEquals => {
+                            leftRefs.foreach(leftRef => {
+                                condsToReport += new AbstractQueryConditionEquals(leftRef, eq.eqValue)
+                            })
                         }
-                    })
+                        case nn: AbstractQueryConditionNotNull => {
+                            leftRefs.foreach(leftRef => {
+                                condsToReport += new AbstractQueryConditionNotNull(leftRef)
+                            })
+                        }
+                    }
                 })
             })
-        }
+        })
 
         if (condsToReport.nonEmpty) {
             val newLeft = new AbstractAtomicQuery(left.tpBindings, left.from, left.project, left.where ++ condsToReport)
-            if (logger.isDebugEnabled)
-                logger.debug("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
+            if (logger.isDebugEnabled) {
+                if (newLeft != left)
+                    logger.debug("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
+            }
             newLeft
         } else
             left
@@ -517,7 +566,7 @@ class AbstractAtomicQuery(
         var result: Option[AbstractAtomicQuery] = None
         val left = this
 
-        if (left.from == right.from) {
+        if (MongoDBQuery.sameQueries(left.from, right.from)) {
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
             val leftOr = if (left.where.size > 1) new AbstractQueryConditionAnd(left.where.toList) else left.where.head
@@ -526,5 +575,15 @@ class AbstractAtomicQuery(
             result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, Set(mergedWhere)))
         }
         result
+    }
+
+    private def equalFromParts(s1: xR2RMLLogicalSource, s2: xR2RMLLogicalSource): Boolean = {
+        val q1 = s1.asInstanceOf[xR2RMLQuery]
+        val q2 = s2.asInstanceOf[xR2RMLQuery]
+
+        q1.logicalTableType == q2.logicalTableType && q1.refFormulation == q2.refFormulation &&
+            q1.docIterator == q2.docIterator && GeneralUtility.cleanString(q1.query) == GeneralUtility.cleanString(q2.query)
+
+        false
     }
 }

@@ -4,7 +4,7 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 
 class xR2RMLTable(
     val tableName: String)
-        extends xR2RMLLogicalSource(Constants.LogicalTableType.TABLE_NAME, Constants.xR2RML_REFFORMULATION_COLUMN, None, List.empty) {
+        extends xR2RMLLogicalSource(Constants.LogicalTableType.TABLE_NAME, Constants.xR2RML_REFFORMULATION_COLUMN, None, Set.empty) {
 
     override def equals(q: Any): Boolean = {
         q.isInstanceOf[xR2RMLTable] && {

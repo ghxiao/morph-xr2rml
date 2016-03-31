@@ -40,11 +40,12 @@ class MongoDBQuery(
 
     override def equals(a: Any): Boolean = {
         val m = a.asInstanceOf[MongoDBQuery]
-        this.collection == m.collection && GeneralUtility.cleanString(this.query) == GeneralUtility.cleanString(m.query) && {
-            if (!this.iterator.isDefined || !m.iterator.isDefined)
-                this.iterator == m.iterator
-            else
+
+        this.collection == m.collection && this.query == m.query && {
+            if (this.iterator.isDefined && m.iterator.isDefined)
                 GeneralUtility.cleanString(this.iterator.get) == GeneralUtility.cleanString(m.iterator.get)
+            else
+                this.iterator == m.iterator
         }
     }
 }
@@ -60,8 +61,9 @@ object MongoDBQuery {
      * This method return a MongoDBQuery instance where collection = myCollection
      * and query string = <code>{ 'a': { \$exists: true} }</code>
      */
-    def parseQueryString(query: String, stripCurlyBracket: Boolean): MongoDBQuery = {
+    def parseQueryString(q: String, stripCurlyBracket: Boolean): MongoDBQuery = {
 
+        val query = GeneralUtility.cleanString(q)
         var tokens = query.trim.split("\\.")
         if (!tokens(0).equals("db")) {
             logger.error("Invalid query string: " + query)
@@ -113,7 +115,7 @@ object MongoDBQuery {
 
         val q = mostSpecificQuery(mq1.query, mq2.query)
         if (q.isDefined)
-            Some(new xR2RMLQuery(q.get, q1.refFormulation, q1.docIterator, q1.uniqueRefs))
+            Some(new xR2RMLQuery(q.get, q1.refFormulation, q1.docIterator, q1.uniqueRefs union q2.uniqueRefs))
         else None
     }
 
@@ -132,8 +134,8 @@ object MongoDBQuery {
      */
     private def mostSpecificQuery(q1: String, q2: String): Option[String] = {
 
-        val mq1 = parseQueryString(GeneralUtility.cleanString(q1), true)
-        val mq2 = parseQueryString(GeneralUtility.cleanString(q2), true)
+        val mq1 = parseQueryString(q1, true)
+        val mq2 = parseQueryString(q2, true)
 
         if (mq1.collection != mq2.collection)
             return None
@@ -147,9 +149,10 @@ object MongoDBQuery {
     }
 
     /**
-     * Check if the left query is more specific than the query,
+     * Check if the left query is more specific than or equals the right query,
      * i.e. they that they have the same type, reference formulation and iterator,
-     * and the left query string starts like the right query string but they are not equal.
+     * and the left query string starts like the right query string.
+     * They may also equal each other.
      *
      * @example
      * left  = <code>db.collection.find({field1: 10, field2: 20})</code>, and
@@ -160,16 +163,36 @@ object MongoDBQuery {
      * @param right an xR2RMLQuery with a MongoDB query string
      * @return true if left is more specific than right
      */
-    def isLeftMoreSpecific(left: xR2RMLLogicalSource, right: xR2RMLLogicalSource): Boolean = {
+    def isLeftMoreSpecificOrEqual(left: xR2RMLLogicalSource, right: xR2RMLLogicalSource): Boolean = {
 
         if (left.logicalTableType != right.logicalTableType || left.refFormulation != right.refFormulation || left.docIterator != right.docIterator)
             return false
         if (!left.isInstanceOf[xR2RMLQuery] || !right.isInstanceOf[xR2RMLQuery])
             return false
 
-        val mqLeft = parseQueryString(GeneralUtility.cleanString(left.asInstanceOf[xR2RMLQuery].query), true)
-        val mqRight = parseQueryString(GeneralUtility.cleanString(right.asInstanceOf[xR2RMLQuery].query), true)
+        val mqLeft = parseQueryString(left.asInstanceOf[xR2RMLQuery].query, true)
+        val mqRight = parseQueryString(right.asInstanceOf[xR2RMLQuery].query, true)
 
-        (mqLeft.collection == mqRight.collection) && (mqLeft.query.startsWith(mqRight.query) && !(mqRight.query.startsWith(mqLeft.query)))
+        (mqLeft.collection == mqRight.collection) && (mqLeft.query.startsWith(mqRight.query))
+    }
+
+    /**
+     * Check if the left query equals the right query, regardless of encapsulating '{' and '}'
+     *
+     * @param left  an xR2RMLQuery with a MongoDB query string
+     * @param right an xR2RMLQuery with a MongoDB query string
+     * @return true if they are the same regardless of encapsulating '{' and '}'
+     */
+    def sameQueries(left: xR2RMLLogicalSource, right: xR2RMLLogicalSource): Boolean = {
+
+        if (left.logicalTableType != right.logicalTableType || left.refFormulation != right.refFormulation || left.docIterator != right.docIterator)
+            return false
+        if (!left.isInstanceOf[xR2RMLQuery] || !right.isInstanceOf[xR2RMLQuery])
+            return false
+
+        val mqLeft = parseQueryString(left.asInstanceOf[xR2RMLQuery].query, true)
+        val mqRight = parseQueryString(right.asInstanceOf[xR2RMLQuery].query, true)
+
+        (mqLeft.collection == mqRight.collection) && (mqLeft.query == mqRight.query)
     }
 }

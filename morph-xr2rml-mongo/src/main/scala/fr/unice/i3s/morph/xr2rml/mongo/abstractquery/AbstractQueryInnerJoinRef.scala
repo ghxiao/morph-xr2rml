@@ -15,7 +15,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoResultSet
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 

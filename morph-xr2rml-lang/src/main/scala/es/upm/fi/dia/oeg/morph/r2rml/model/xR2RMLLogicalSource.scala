@@ -16,16 +16,17 @@ import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
  * @param logicalTableType either TABLE_NAME or QUERY
  * @param refFormulation Syntax of data elements references (iterator, reference, template). Defaults to xrr:Column
  * @param docIterator Iteration pattern, defaults to None
- * @param uniqueRefs List of xR2RML references that identify unique fields, used in abstract query optimization
- * (notably self-join elimination).
+ * @param uniqueRefs List of xR2RML references that uniquely identifies documents of the database.
+ * Used in abstract query optimization (notably self-join elimination).
  * In an RDB, this is typically the primary key but it is possible to get this information using table metadata.
- * In MongoDB conversely, apart from the "_id" field, there is no way to know whether a field is unique.
+ * In MongoDB, the "_id" field is unique thus reference "$._id" is unique, but there is no way to know whether
+ * some other fields are unique.
  */
 abstract class xR2RMLLogicalSource(
         val logicalTableType: Constants.LogicalTableType.Value,
         val refFormulation: String,
         val docIterator: Option[String],
-        val uniqueRefs: List[String]) {
+        val uniqueRefs: Set[String]) {
 
     var tableMetaData: Option[MorphTableMetaData] = None;
 
@@ -112,10 +113,10 @@ object xR2RMLLogicalSource {
                 val sqlQueryStmt = resource.getProperty(Constants.R2RML_SQLQUERY_PROPERTY)
                 val queryStmt = resource.getProperty(Constants.xR2RML_QUERY_PROPERTY)
                 val uniqRefStmts = resource.listProperties(Constants.xR2RML_UNIQUEREF_PROPERTY)
-                val uniqueRefs: List[String] =
+                val uniqueRefs: Set[String] =
                     if (uniqRefStmts != null)
-                        uniqRefStmts.map(_.getObject.toString).toList
-                    else List.empty
+                        uniqRefStmts.map(_.getObject.toString).toSet
+                    else Set.empty
 
                 val source: String =
                     if (tableNameStmt != null)
