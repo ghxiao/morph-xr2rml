@@ -37,8 +37,8 @@ class AbstractQueryInnerJoin(
         throw new MorphException("Attempt to create nested inner joins: " + members)
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[AbstractQueryUnion] &&
-            this.members == a.asInstanceOf[AbstractQueryUnion].members
+        a.isInstanceOf[AbstractQueryInnerJoin] &&
+            this.members == a.asInstanceOf[AbstractQueryInnerJoin].members
     }
 
     /**
@@ -217,18 +217,17 @@ class AbstractQueryInnerJoin(
                         // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
                         if (optimizer.propagateConditionFromJoin) {
                             leftAtom = leftAtom.propagateConditionFromJoinedQuery(rightAtom)
-                            if (logger.isDebugEnabled)
-                                if (leftAtom != left)
-                                    logger.debug("Propagated condition of query " + j + " into query " + i)
+                            if (logger.isDebugEnabled && leftAtom != left)
+                                logger.debug("Propagated condition of query " + j + " into query " + i)
 
                             rightAtom = rightAtom.propagateConditionFromJoinedQuery(leftAtom)
-                            if (logger.isDebugEnabled)
-                                if (rightAtom != right)
-                                    logger.debug("Propagated condition of query " + i + " into query " + j)
+                            if (logger.isDebugEnabled && rightAtom != right)
+                                logger.debug("Propagated condition of query " + i + " into query " + j)
 
                             membersV = membersV.slice(0, i) ++ List(leftAtom) ++ membersV.slice(i + 1, j) ++ List(rightAtom) ++ membersV.slice(j + 1, membersV.size)
+                            continue = false
                         }
-                        
+
                         // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
                         if (optimizer.selfJoinElimination) {
                             val merged = leftAtom.mergeForInnerJoin(rightAtom)
@@ -247,6 +246,7 @@ class AbstractQueryInnerJoin(
             if (continue) {
                 // There was no change in the last run, we cannot do anymore optimization
                 if (membersV.size == 1)
+                    // If we merged 2 atomic queries we may only have one remaining
                     return membersV.head
                 else
                     return new AbstractQueryInnerJoin(membersV)
