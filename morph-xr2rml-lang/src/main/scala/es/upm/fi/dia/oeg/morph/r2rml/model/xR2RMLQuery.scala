@@ -6,8 +6,9 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 class xR2RMLQuery(
     val query: String,
     refFormulation: String,
-    iterator: Option[String])
-        extends xR2RMLLogicalSource(Constants.LogicalTableType.QUERY, refFormulation, iterator) {
+    iterator: Option[String],
+    uniqueRefs: List[String])
+        extends xR2RMLLogicalSource(Constants.LogicalTableType.QUERY, refFormulation, iterator, uniqueRefs) {
 
     /**
      * Return true if both xR2RMLQueries have the same query, reference formulation and iterator.

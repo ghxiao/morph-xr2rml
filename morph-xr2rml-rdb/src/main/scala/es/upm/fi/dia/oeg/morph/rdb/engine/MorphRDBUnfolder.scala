@@ -68,13 +68,13 @@ class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory
         val result = logicalTable.logicalTableType match {
 
             case Constants.LogicalTableType.TABLE_NAME => {
-                val logTableValWithEnclosedChar = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
+                val logTableValWithEnclosedChar = logicalTable.getValue.replaceAll("\"", dbEnclosedCharacter);
                 val resultAux = new SQLFromItem(logTableValWithEnclosedChar, Constants.LogicalTableType.TABLE_NAME);
                 resultAux.databaseType = this.dbType;
                 resultAux
             }
             case Constants.LogicalTableType.QUERY => {
-                val sqlString = logicalTable.getValue().replaceAll("\"", dbEnclosedCharacter);
+                val sqlString = logicalTable.getValue.replaceAll("\"", dbEnclosedCharacter);
                 // Add tailing ';' if not already there
                 val sqlString2 =
                     if (!sqlString.endsWith(";"))

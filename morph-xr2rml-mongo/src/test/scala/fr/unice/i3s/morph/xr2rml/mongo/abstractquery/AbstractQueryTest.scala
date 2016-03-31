@@ -23,8 +23,8 @@ class AbstractQueryTest {
         tm.name = "tm"
 
         // Two empty query either '' or '{}' 
-        val ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None)
-        val ls1bis = new xR2RMLQuery("db.collection.find({})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None, List.empty)
+        val ls1bis = new xR2RMLQuery("db.collection.find({})", "JSONPath", None, List.empty)
 
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
         val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -53,8 +53,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query})", "JSONPath", None)
-        val ls1bis = new xR2RMLQuery("db.collection.find({query})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query})", "JSONPath", None, List.empty)
+        val ls1bis = new xR2RMLQuery("db.collection.find({query})", "JSONPath", None, List.empty)
 
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
         val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -85,8 +85,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
-        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, List.empty)
 
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
         val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -116,9 +116,9 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
-        val ls1bis = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None)
-        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls1bis = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, List.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, List.empty)
 
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
         val proj1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -152,7 +152,7 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls = new xR2RMLQuery("db.collection.find({query}", "JSONPath", None)
+        val ls = new xR2RMLQuery("db.collection.find({query}", "JSONPath", None, List.empty)
 
         // One common projection on ?x with different order proj1=(ref1, ref2) vs. proj1bis=(ref2, ref1)
         // One other non matching projection on ?x (proj2)
@@ -276,8 +276,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
-        var ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        var ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
 
         var q1 = new AbstractAtomicQuery(Set.empty, ls1, Set.empty, Set.empty)
         var q2 = new AbstractAtomicQuery(Set.empty, ls2, Set.empty, Set.empty)
@@ -288,7 +288,7 @@ class AbstractQueryTest {
 
         // -----------------------------------------
 
-        ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None)
+        ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, List.empty)
         q1 = new AbstractAtomicQuery(Set.empty, ls1, Set.empty, Set.empty)
         q2 = new AbstractAtomicQuery(Set.empty, ls2, Set.empty, Set.empty)
 
@@ -298,7 +298,7 @@ class AbstractQueryTest {
 
         // -----------------------------------------
 
-        ls2 = new xR2RMLQuery("db.collection.find({query2, query1})", "JSONPath", None)
+        ls2 = new xR2RMLQuery("db.collection.find({query2, query1})", "JSONPath", None, List.empty)
         q1 = new AbstractAtomicQuery(Set.empty, ls1, Set.empty, Set.empty)
         q2 = new AbstractAtomicQuery(Set.empty, ls2, Set.empty, Set.empty)
 
@@ -313,8 +313,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
-        val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
 
         // No shared variable
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -339,8 +339,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
-        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, List.empty)
 
         val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
         val proj2 = new AbstractQueryProjection(Set("ref2"), Some("?x"))
@@ -377,8 +377,8 @@ class AbstractQueryTest {
         val tm = new R2RMLTriplesMap(null, null, null, null)
         tm.name = "tm"
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None)
-        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None)
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, List.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query2})", "JSONPath", None, List.empty)
 
         // No shared variable
         var proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))

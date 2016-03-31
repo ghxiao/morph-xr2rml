@@ -264,6 +264,9 @@ object Constants {
     val RML_ITERATOR_URI = RML_NS + "iterator";
     val RML_ITERATOR_PROPERTY = ResourceFactory.createProperty(RML_ITERATOR_URI);
 
+    val xR2RML_UNIQUEREF_URI = xR2RML_NS + "uniqueRef";
+    val xR2RML_UNIQUEREF_PROPERTY = ResourceFactory.createProperty(xR2RML_UNIQUEREF_URI);
+
     // Reference formulation
     val xR2RML_REFFORMULATION_COLUMN = "Column";
     val xR2RML_REFFORMULATION_JSONPATH = "JSONPath";

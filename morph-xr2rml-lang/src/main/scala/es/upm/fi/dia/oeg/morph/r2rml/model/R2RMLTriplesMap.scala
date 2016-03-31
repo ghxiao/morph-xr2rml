@@ -88,7 +88,7 @@ class R2RMLTriplesMap(
     }
 
     def getLogicalTableSize(): Long = {
-        this.logicalSource.getLogicalTableSize();
+        this.logicalSource.getLogicalTableSize
     }
 
     def getMappedClassURIs(): Iterable[String] = {

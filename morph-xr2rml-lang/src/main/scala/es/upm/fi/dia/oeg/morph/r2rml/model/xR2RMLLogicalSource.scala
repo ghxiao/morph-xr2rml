@@ -4,32 +4,37 @@ import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.rdf.model.Resource
 
+import scala.collection.JavaConversions._
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
 /**
- * Abstract class to represent an xR2RML LogicalSource, is inherited by R2RMLTable, R2RMLSqlQuey and xR2RMLQuery.
+ * Abstract class to represent an xR2RML LogicalSource, parent of xR2RMLTable and xR2RMLQuery.
  *
- * This class is a refactoring of former R2RMLLogicalTable class.
+ * @param logicalTableType either TABLE_NAME or QUERY
+ * @param refFormulation Syntax of data elements references (iterator, reference, template). Defaults to xrr:Column
+ * @param docIterator Iteration pattern, defaults to None
+ * @param uniqueRefs List of xR2RML references that identify unique fields, used in abstract query optimization
+ * (notably self-join elimination).
+ * In an RDB, this is typically the primary key but it is possible to get this information using table metadata.
+ * In MongoDB conversely, apart from the "_id" field, there is no way to know whether a field is unique.
  */
 abstract class xR2RMLLogicalSource(
         val logicalTableType: Constants.LogicalTableType.Value,
-
-        /** Syntax of data elements references (iterator, reference, template). Defaults to xrr:Column */
         val refFormulation: String,
-
-        /** Iteration pattern, defaults to none */
-        val docIterator: Option[String]) {
+        val docIterator: Option[String],
+        val uniqueRefs: List[String]) {
 
     var tableMetaData: Option[MorphTableMetaData] = None;
 
     var alias: String = null;
 
-    val logger = Logger.getLogger(this.getClass().getName());
+    val logger = Logger.getLogger(this.getClass.getName);
 
-    def getLogicalTableSize(): Long = {
-        if (this.tableMetaData.isDefined) { this.tableMetaData.get.getTableRows(); }
+    def getLogicalTableSize: Long = {
+        if (this.tableMetaData.isDefined) { this.tableMetaData.get.getTableRows; }
         else { -1 }
     }
 
@@ -45,14 +50,14 @@ abstract class xR2RMLLogicalSource(
                     if (dbMetaData.isDefined) { dbMetaData.get.dbType; }
                     else { Constants.DATABASE_DEFAULT }
                 val enclosedChar = Constants.getEnclosedCharacter(dbType);
-                val tableNameAux = xr2rmlTable.getValue().replaceAll("\"", enclosedChar);
+                val tableNameAux = xr2rmlTable.getValue.replaceAll("\"", enclosedChar);
                 tableNameAux
             }
             case xr2rmlQuery: xR2RMLQuery => {
-                val queryStringAux = xr2rmlQuery.getValue().trim()
+                val queryStringAux = xr2rmlQuery.getValue.trim
                 val queryString = {
                     // Remove trailing ';' if any
-                    if (queryStringAux.endsWith(";")) { queryStringAux.substring(0, queryStringAux.length() - 1) }
+                    if (queryStringAux.endsWith(";")) { queryStringAux.substring(0, queryStringAux.length - 1) }
                     else { queryStringAux }
                 }
                 "(" + queryString + ")";
@@ -76,28 +81,29 @@ abstract class xR2RMLLogicalSource(
     }
 
     /** Return the table name or query depending on the type of logical table */
-    def getValue(): String;
+    def getValue: String;
 
-    override def toString(): String = {
+    override def toString: String = {
         val result = this match {
             case _: xR2RMLTable => { "xR2RMLTable"; }
             case _: xR2RMLQuery => { "xR2RMLQuery"; }
             case _ => throw new Exception("Unkown type of logical source or logical table")
         }
-        result + ": " + this.getValue() + ". ReferenceFormulation: " + this.refFormulation + ". Iterator: " + this.docIterator
+        result + ": " + this.getValue + ". ReferenceFormulation: " + this.refFormulation + ". Iterator: " + this.docIterator
     }
 }
 
 object xR2RMLLogicalSource {
-    val logger = Logger.getLogger(this.getClass().getName());
+    val logger = Logger.getLogger(this.getClass.getName);
 
     /**
      * Check properties of a logical source or logical table to create the appropriate
-     * instance of R2RMLTable, R2RMLSqlQuey and xR2RMLQuery.
+     * instance of xR2RMLTable and xR2RMLQuery.
      *
      * @param reource an xrr:LogicalSource or rr:LogicalTable resource
      * @param logResType class URI of a logical source or logical table
      * @param refFormulation the reference formulation
+     * @return instance of xR2RMLTable and xR2RMLQuery
      */
     def parse(resource: Resource, logResType: String, refFormulation: String): xR2RMLLogicalSource = {
         val logSrc: xR2RMLLogicalSource =
@@ -105,18 +111,23 @@ object xR2RMLLogicalSource {
                 val tableNameStmt = resource.getProperty(Constants.R2RML_TABLENAME_PROPERTY)
                 val sqlQueryStmt = resource.getProperty(Constants.R2RML_SQLQUERY_PROPERTY)
                 val queryStmt = resource.getProperty(Constants.xR2RML_QUERY_PROPERTY)
+                val uniqRefStmts = resource.listProperties(Constants.xR2RML_UNIQUEREF_PROPERTY)
+                val uniqueRefs: List[String] =
+                    if (uniqRefStmts != null)
+                        uniqRefStmts.map(_.getObject.toString).toList
+                    else List.empty
 
                 val source: String =
                     if (tableNameStmt != null)
-                        "Table name: " + tableNameStmt.getObject().toString()
+                        "Table name: " + tableNameStmt.getObject.toString
                     else if (sqlQueryStmt != null)
-                        "SQL query: " + sqlQueryStmt.getObject().toString().trim()
+                        "SQL query: " + sqlQueryStmt.getObject.toString.trim
                     else if (queryStmt != null)
-                        "Query: " + queryStmt.getObject().toString().trim()
+                        "Query: " + queryStmt.getObject.toString.trim
                     else
                         "Undefined property tableName, sqlQuery or query."
 
-                // Check compliance with xR2RML
+                // Check compliance with R2RML
                 if (isLogicalTable(logResType)) {
                     if (queryStmt != null) {
                         val msg = "Logical Table cannot have an xrr:query property. " + source;
@@ -131,7 +142,7 @@ object xR2RMLLogicalSource {
                 }
 
                 if (tableNameStmt != null) {
-                    val tableName = tableNameStmt.getObject().toString()
+                    val tableName = tableNameStmt.getObject.toString
 
                     // Check validity of optional properties iterator and referenceFormulation
                     if (hasIterator(resource))
@@ -147,10 +158,10 @@ object xR2RMLLogicalSource {
                 } else if (sqlQueryStmt != null) {
 
                     // Regular R2RML view
-                    val queryStringAux = sqlQueryStmt.getObject().toString().trim();
+                    val queryStringAux = sqlQueryStmt.getObject.toString.trim;
                     val queryStr =
                         if (queryStringAux.endsWith(";")) {
-                            queryStringAux.substring(0, queryStringAux.length() - 1); // remove tailing ';'
+                            queryStringAux.substring(0, queryStringAux.length - 1); // remove tailing ';'
                         } else {
                             queryStringAux
                         }
@@ -164,12 +175,12 @@ object xR2RMLLogicalSource {
                         throw new Exception(msg);
                     }
 
-                    new xR2RMLQuery(queryStr, refFormulation, readIterator(resource))
+                    new xR2RMLQuery(queryStr, refFormulation, readIterator(resource), uniqueRefs)
 
                 } else if (queryStmt != null) {
                     // xR2RML query
-                    val queryStr = queryStmt.getObject().toString().trim();
-                    new xR2RMLQuery(queryStr, refFormulation, readIterator(resource))
+                    val queryStr = queryStmt.getObject.toString.trim;
+                    new xR2RMLQuery(queryStr, refFormulation, readIterator(resource), uniqueRefs)
 
                 } else {
                     val errorMessage = "Missing logical source property: rr:tableName, rr:sqlQuery or xrr:query";
@@ -196,8 +207,8 @@ object xR2RMLLogicalSource {
             if (iterStmt == null)
                 None
             else {
-                val iterStr = iterStmt.getObject().toString().trim();
-                if (!iterStr.isEmpty())
+                val iterStr = iterStmt.getObject.toString.trim;
+                if (!iterStr.isEmpty)
                     Some(iterStr)
                 else None
             }

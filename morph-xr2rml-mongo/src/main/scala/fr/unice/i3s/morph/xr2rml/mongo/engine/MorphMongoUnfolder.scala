@@ -38,7 +38,7 @@ class MorphMongoUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(facto
             }
             case _: xR2RMLQuery => {
                 val encldChar = Constants.getEnclosedCharacter(dbType);
-                val query = logicalSrc.getValue().replaceAll("\"", encldChar);
+                val query = logicalSrc.getValue.replaceAll("\"", encldChar);
                 query
             }
             case _ => { throw new MorphException("Unknown logical table/source type: " + logicalSrc) }
