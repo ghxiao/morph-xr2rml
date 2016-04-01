@@ -4,8 +4,8 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
-
 import org.apache.log4j.Logger
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphProperties extends java.util.Properties {
     val logger = Logger.getLogger(this.getClass());
@@ -126,6 +126,13 @@ class MorphProperties extends java.util.Properties {
         }
 
         this.rdfLanguageForResult = this.readString(Constants.OUTPUTFILE_RDF_LANGUAGE, Constants.DEFAULT_OUTPUT_FORMAT);
+        if (rdfLanguageForResult != Constants.OUTPUT_FORMAT_RDFXML &&
+            rdfLanguageForResult != Constants.OUTPUT_FORMAT_RDFXML_ABBREV &&
+            rdfLanguageForResult != Constants.OUTPUT_FORMAT_NTRIPLE &&
+            rdfLanguageForResult != Constants.OUTPUT_FORMAT_TURTLE &&
+            rdfLanguageForResult != Constants.OUTPUT_FORMAT_N3) {
+            throw new MorphException("Invalid value \"" + rdfLanguageForResult + "\" for property output.rdflanguage")
+        }
         logger.info("Output RDF syntax = " + this.rdfLanguageForResult);
 
         this.outputDisplay = this.readBoolean(Constants.OUTPUTFILE_DISPLAY, true);
@@ -142,7 +149,7 @@ class MorphProperties extends java.util.Properties {
 
         this.propagateConditionFromJoin = this.readBoolean(Constants.OPTIMIZE_PROPCONDJOIN, true);
         logger.info("Propagate conditions from a joined query = " + this.propagateConditionFromJoin);
-        
+
         this.reorderSTG = this.readBoolean(Constants.REORDER_STG, true);
         logger.info("Reorder STG = " + this.reorderSTG);
 

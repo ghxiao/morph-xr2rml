@@ -3,17 +3,17 @@ package es.upm.fi.dia.oeg.morph.base.engine
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.io.Writer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.QueryFactory
+
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.materializer.MaterializerFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 
 abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
@@ -85,7 +85,7 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
             else new StringWriter
 
         val jenaMode = this.getProperties.jenaMode;
-        val materializer = MaterializerFactory.create(outputStream, jenaMode)
+        val materializer = MorphBaseMaterializer(outputStream, this.getProperties.rdfLanguageForResult, jenaMode)
         val prefix = this.getMappingDocument.mappingDocumentPrefixMap
         if (prefix != null)
             materializer.setModelPrefixMap(prefix);

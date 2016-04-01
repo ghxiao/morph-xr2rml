@@ -70,7 +70,7 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
                         val strResultSet = ResultSetFormatter.asXMLString(rewindableRS)
                         factory.getMaterializer.outputStream.write(strResultSet)
                         rewindableRS.reset
-                        logger.info("\n" + ResultSetFormatter.asText(rewindableRS))
+                        logger.info("Tabular result set:\n" + ResultSetFormatter.asText(rewindableRS))
                     }
                 } else {
                     while (resultSet.hasNext()) {

@@ -60,30 +60,10 @@ object MorphRunner {
             logger.info("Running data translation...")
             runner.run()
 
-            var outputFilepath = properties.outputFilePath.get
-            var outputFormat = properties.rdfLanguageForResult
-
-            if (runner.sparqlQuery.isDefined) {
-                // --- Query rewriting mode: display SPARQL result
-                if (properties.outputDisplay) {
+            if (properties.outputDisplay) {
+                if (properties.outputFilePath.isDefined) {
                     logger.info("Query result:")
-                    Source.fromFile(outputFilepath).foreach { print }
-                }
-            } else {
-                // --- Graph materialization
-                if (properties.outputDisplay || !outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
-
-                    // Reload the resulting RDF file
-                    var model = ModelFactory.createDefaultModel().read(FileManager.get().open(outputFilepath), null, Constants.DEFAULT_OUTPUT_FORMAT)
-
-                    if (properties.outputDisplay)
-                        model.write(System.out, outputFormat, null)
-
-                    if (!outputFormat.equals(Constants.DEFAULT_OUTPUT_FORMAT)) {
-                        // Save the result in the output file again but with the requested format (in case it is different)
-                        logger.info("Saving output to format " + outputFormat + "...");
-                        model.write(new PrintWriter(properties.outputFilePath.get, "UTF-8"), outputFormat)
-                    }
+                    Source.fromFile(properties.outputFilePath.get).foreach { print }
                 }
             }
 
