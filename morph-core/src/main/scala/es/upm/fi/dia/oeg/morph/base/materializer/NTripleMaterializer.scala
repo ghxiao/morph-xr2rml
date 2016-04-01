@@ -9,18 +9,25 @@ import com.hp.hpl.jena.rdf.model.RDFNode
 
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
-class NTripleMaterializer(model: Model, ntOutputStream: Writer)
-        extends MorphBaseMaterializer(model, ntOutputStream) {
+class NTripleMaterializer(model: Model, outputStream: Writer)
+        extends MorphBaseMaterializer(model, outputStream) {
 
-    //THIS IS IMPORTANT, SCALA PASSES PARAMETER BY VALUE!
-    this.outputStream = ntOutputStream;
+    override val logger = Logger.getLogger(this.getClass().getName())
 
-    override val logger = Logger.getLogger(this.getClass().getName());
-
+    /**
+     * Serialize the current model into the output file
+     */
     override def materialize() {
+        materialize(this.model)
+    }
+
+    /**
+     * Utility method to serialize any model into the output file
+     */
+    override def materialize(model: Model) {
         logger.info("Model size (in triples): " + model.size())
-        logger.info("Writing serialization to output stream to " + outputStream)
-        this.model.write(this.outputStream, "TURTLE", null)
+        logger.info("Writing serialization to output stream " + outputStream)
+        model.write(this.outputStream, "TURTLE", null)
         this.outputStream.flush()
         this.outputStream.close()
     }
@@ -104,7 +111,7 @@ class NTripleMaterializer(model: Model, ntOutputStream: Writer)
 
     /**
      * Materialize RDF triple in target graphs
-     * 
+     *
      * @return number of triples generated
      */
     override def materializeQuads(

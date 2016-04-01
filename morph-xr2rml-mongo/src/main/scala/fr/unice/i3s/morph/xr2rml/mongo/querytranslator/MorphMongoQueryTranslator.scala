@@ -83,8 +83,11 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
 
         //--- Translate the SPARQL query into an abstract query
         val emptyBindings = bindings.filter(b => b._2.bound.isEmpty)
-        if (bindings.isEmpty || !emptyBindings.isEmpty) {
-            logger.warn("Could not find bindings for all triple patterns of the query:\n" + bindings)
+        if (bindings.isEmpty) {
+            logger.warn("No bindings found for any triple pattern of the query")
+            None
+        } else if (!emptyBindings.isEmpty) {
+            logger.warn("Could not find bindings for triple patterns:\n" + emptyBindings.keys)
             None
         } else {
             val res = translateSparqlQuery(bindings, opFiltered.get)
@@ -302,6 +305,18 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     left
                 else
                     right
+            }
+            case opFilter: OpFilter => {
+                excludeTriplesAboutCollecOrContainer(opFilter.getSubOp)
+            }
+            case opSlice: OpSlice => {
+                excludeTriplesAboutCollecOrContainer(opSlice.getSubOp)
+            }
+            case opDistinct: OpDistinct => {
+                excludeTriplesAboutCollecOrContainer(opDistinct.getSubOp)
+            }
+            case opOrder: OpOrder => {
+                excludeTriplesAboutCollecOrContainer(opOrder.getSubOp)
             }
             case _ => { Some(op) }
         }

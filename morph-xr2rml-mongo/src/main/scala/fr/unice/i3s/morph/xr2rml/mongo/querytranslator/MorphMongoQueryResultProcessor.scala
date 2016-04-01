@@ -16,6 +16,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import com.hp.hpl.jena.sparql.resultset.ResultSetMem
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import com.hp.hpl.jena.rdf.model.Model
 
 /**
  * Execute the database query and produce the XML SPARQL result set
@@ -26,7 +28,7 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
 
     /**
      * Execute the database query, translate the database results into triples,
-     * evaluate the SPARQL query on the resulting graph and save the XML output to a file.
+     * evaluate the SPARQL query on the resulting graph and save the output to a file.
      *
      * @param mapSparqlSql map of SPARQL queries and associated AbstractQuery instances.
      * Each AbstractQuery has been translated into executable target queries
@@ -42,22 +44,39 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
 
             // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
             start = System.currentTimeMillis();
-            val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
-            val resultSet: ResultSet = qexec.execSelect()
 
-            if (logger.isDebugEnabled) {
-                // In debug mode, store as an memory result set and display in XM as well as tabular formats
-                val rewind = new ResultSetMem(resultSet)
-                if (rewind.hasNext()) {
-                    val strResultSet = ResultSetFormatter.asXMLString(rewind)
-                    factory.getMaterializer.outputStream.write(strResultSet)
-                    rewind.reset
-                    logger.debug("\n" + ResultSetFormatter.asText(rewind))
-                }
-            } else {
-                while (resultSet.hasNext()) {
-                    val strResultSet = ResultSetFormatter.asXMLString(resultSet)
-                    factory.getMaterializer.outputStream.write(strResultSet)
+            if (sparqlQuery.isAskType)
+                throw new MorphException("SPARQL ASK not supported")
+
+            else if (sparqlQuery.isConstructType)
+                throw new MorphException("SPARQL ASK not supported")
+
+            else if (sparqlQuery.isDescribeType) {
+
+                val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
+                val result: Model = qexec.execDescribe
+                // Write the result to the output file
+                factory.getMaterializer.materialize(result)
+
+            } else if (sparqlQuery.isSelectType) {
+
+                val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
+                val resultSet: ResultSet = qexec.execSelect
+
+                if (factory.getProperties.outputDisplay) {
+                    // Store as an memory result set to be able to display it in tabular format as well as save it to a file
+                    val rewindableRS = new ResultSetMem(resultSet)
+                    if (rewindableRS.hasNext()) {
+                        val strResultSet = ResultSetFormatter.asXMLString(rewindableRS)
+                        factory.getMaterializer.outputStream.write(strResultSet)
+                        rewindableRS.reset
+                        logger.info("\n" + ResultSetFormatter.asText(rewindableRS))
+                    }
+                } else {
+                    while (resultSet.hasNext()) {
+                        val strResultSet = ResultSetFormatter.asXMLString(resultSet)
+                        factory.getMaterializer.outputStream.write(strResultSet)
+                    }
                 }
             }
 

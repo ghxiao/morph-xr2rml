@@ -64,9 +64,9 @@ object MorphRunner {
             var outputFormat = properties.rdfLanguageForResult
 
             if (runner.sparqlQuery.isDefined) {
-                // --- Query rewriting mode: display XML SPARQL result set
+                // --- Query rewriting mode: display SPARQL result
                 if (properties.outputDisplay) {
-                    logger.info("Query result set:")
+                    logger.info("Query result:")
                     Source.fromFile(outputFilepath).foreach { print }
                 }
             } else {

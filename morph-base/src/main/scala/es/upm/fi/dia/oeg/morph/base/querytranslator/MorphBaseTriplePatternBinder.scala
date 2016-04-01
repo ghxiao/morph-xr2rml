@@ -76,7 +76,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 
         op match {
 
-            case opProject: OpProject => { // SELECT clause
+            case opProject: OpProject => { // list of projected variables
                 bindm(opProject.getSubOp())
             }
 
@@ -124,7 +124,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                             results = results - tp1.toString + TPBindings(tp1, bindingsTp1 intersect results(tp1.toString).bound)
                         else
                             results = results + TPBindings(tp1, bindingsTp1)
-                        if (logger.isDebugEnabled()) logger.debug("Binding of BGP: " + results)
+                        if (logger.isDebugEnabled()) logger.debug("Binding of BGP: " + results.values.mkString(", "))
                         results
                     }
                 }
@@ -253,17 +253,17 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                 results
             }
 
-            case opFilter: OpFilter => { //FILTER pattern
-                bindm(opFilter.getSubOp())
+            case opFilter: OpFilter => {
+                bindm(opFilter.getSubOp)
             }
             case opSlice: OpSlice => {
-                Map.empty
+                bindm(opSlice.getSubOp)
             }
             case opDistinct: OpDistinct => {
-                Map.empty
+                bindm(opDistinct.getSubOp)
             }
             case opOrder: OpOrder => {
-                Map.empty
+                bindm(opOrder.getSubOp)
             }
             case _ => {
                 Map.empty
@@ -273,7 +273,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 
     /**
      * Compute the list of triples maps TM that are bound to triple pattern tp.
-     * TM is bound to tp if and only if:
+     * TM is bound to tp if and only if:<br>
      * 		compatible(TM.sub, tp.sub) ^ compatible(TM.pred, tp.pred) ^ compatible(TM.obj, tp.obj)}
      */
     private def bindmTP(tp: Triple): List[R2RMLTriplesMap] = {

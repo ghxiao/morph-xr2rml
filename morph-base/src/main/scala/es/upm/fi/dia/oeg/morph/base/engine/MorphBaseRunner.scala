@@ -37,7 +37,7 @@ class MorphBaseRunner(
             factory.getDataTranslator.translateData_Materialization(factory.getMappingDocument)
 
             // Write the result to the output file
-            factory.getMaterializer.materialize();
+            factory.getMaterializer.materialize
             logger.info("Data materialization duration: " + (System.currentTimeMillis() - start) + "ms.");
 
         } else {
