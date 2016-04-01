@@ -270,13 +270,43 @@ class AbstractQueryInnerJoinRef(
     }
 
     /**
-     * Try to merge the the child and parent queries
+     * Try to propagate conditions from one to the other or to merge the child and parent queries
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
 
-        if (!optimizer.selfJoinElimination) return this
+        var childQ = child
+        var parentQ = parent
 
-        val opt = child.mergeForInnerJoin(this.parent)
-        opt.getOrElse(this)
+        if (logger.isDebugEnabled)
+            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
+
+        var newThis: AbstractQuery =
+            if (optimizer.propagateConditionFromJoin) {
+                // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
+                // In the case on an inner join for a referencing triples map, this may happen only if the same 
+                // variable is used several times in the triple pattern e.g. ?x ex:pred ?x
+                childQ = childQ.propagateConditionFromJoinedQuery(parentQ)
+                if (logger.isDebugEnabled && childQ != child)
+                    logger.debug("Propagated condition of parent into child")
+
+                parentQ = parentQ.propagateConditionFromJoinedQuery(childQ)
+                if (logger.isDebugEnabled && parentQ != parent)
+                    logger.debug("Propagated condition of child into parent")
+
+                new AbstractQueryInnerJoinRef(this.tpBindings, childQ, this.childRef, parentQ, this.parentRef)
+            } else
+                this
+
+        if (optimizer.selfJoinElimination) {
+            // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
+            val opt = childQ.mergeForInnerJoinRef(this.childRef, parentQ, this.parentRef)
+            newThis = opt.getOrElse(newThis)
+        }
+
+        if (logger.isDebugEnabled) {
+            if (newThis != this)
+                logger.debug("\n------------------ Query optimized into ------------------\n" + newThis)
+        }
+        newThis
     }
 }

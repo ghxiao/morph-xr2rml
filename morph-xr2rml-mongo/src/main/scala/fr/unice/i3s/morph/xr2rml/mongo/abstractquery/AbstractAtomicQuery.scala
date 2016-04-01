@@ -308,7 +308,20 @@ class AbstractAtomicQuery(
 
     /**
      * Merge this atomic abstract query with another one in order to perform self-join elimination.
-     * The merge is allowed if and only if the following conditions are met:<br>
+     * Two cases are considered:
+     * 
+     * (1) The two queries have the same From part or one is a sub-set of the other, and they are 
+     * joined on a at least one variable whose reference is declared as unique in the triples map 
+     * logical source (xrr:UniqueRef).
+     * Example:<br>
+     * q1.from: <code>db.collection.find({query1})</code>,<br>
+     * q2.from: <code>db.collection.find({query1, query2})</code><br>
+     * q2.from is a sub-set of q1.from, in other words q2.from is more specific than q1.from.<br>
+     * If q1.project and q2.project contain the same projection "$.field AS ?x", and both
+     * logical sources declare property <code>xrr:uniqueRef "$.field"</code>, then this is a self-join.
+     * 
+     * (2) When no unique reference is involved, the merge is allowed if and only if the conditions 
+     * below are met:<br>
      * (i) both queries have the same From part (the logical source) and Where part;<br>
      * (ii) they have at least one shared variable (on which the join is to be done) and
      * the shared variables are projected from the same xR2RML reference(s) in both queries (see example 1);<br>
@@ -321,7 +334,7 @@ class AbstractAtomicQuery(
      * <b>Example 1</b>: if Q1 and Q2 have the same logical source and Where conditions, and they have a shared variable ?x,
      * if both queries project the same reference as ?x: "$.field AS ?x", then this is a self-join.<br>
      * On the contrary, if projections are different: "$.field1 AS ?x" in Q1 and "$.field2 AS ?x" is Q2,
-     * then this is not a self-join, on the contrary this is a regular join.
+     * then this is not a self-join, on the contrary this is a regular join.<br>
      *
      * <b>Example 2</b>:  In a graph pattern like:
      * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z)</code>,<br>
@@ -329,21 +342,21 @@ class AbstractAtomicQuery(
      * Q1 has projections "$.x AS ?x", "$.a AS ?y",<br>
      * Q2 has projections "$.x AS ?x", "$.b AS ?z".<br>
      * then this is not a self-join because there are non-shared variables whose reference
-     * is not the reference of a shared variable (as in example 4).
+     * is not the reference of a shared variable (as in example 4).<br>
      *
      * <b>Example 3</b>: In a graph pattern like:
      * <code>?x prop ex:blabla. ?x prop ?z. FILTER (?z != ex:blabla)</code>,<br>
      * if Q1 and Q2 with the same logical source and Where part, and<br>
      * Q1 has projections "$.a AS ?x"<br>
      * Q2 has projections "$.a AS ?x", "$.b AS ?z"<br>
-     * then this is not a self-join, as illustrated by the filter.
+     * then this is not a self-join, as illustrated by the filter.<br>
      *
      * <b>Example 4</b>: If Q1 and Q2 have the same logical source, and<br>
      * Q1 has projections "$.a AS ?x", "$.a AS ?y",<br>
      * Q2 has projections "$.a AS ?x", "$.a AS ?z"<br>
      * then this is a proper self-join because non-shared variables ?y and ?z are projected from
      * reference "$.a" that happens to be projected as the shared variable ?x.
-     *
+     * 
      * @note The same variable can be projected several times in an atomic query,
      * e.g. when the same variable is used several times in a triple pattern e.g.: "?x ns:predicate ?x .".<br>
      * In addition, a projection can contain several references in case the variable is matched with a template
@@ -391,7 +404,7 @@ class AbstractAtomicQuery(
         }
 
         if (isJoinOnUniqueRefs) {
-            // ----------------------------- Most favorable case: join on a unique reference ---------------------------
+            // ----------------------------- Most favorable case: join on a variable bound to a unique reference ---------------------------
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
             val mergedWhere = left.where ++ right.where
@@ -401,7 +414,7 @@ class AbstractAtomicQuery(
 
             // ----------------------------- Standard Case: no join on a unique reference ---------------------------
 
-            // If both queries do NOT have the same From part and they they are NOT joined on a unique reference
+            // If both queries do NOT have the same From part or they are NOT joined on a unique reference,
             // then the merge is possible only if they have exactly the same From and Where parts
             if (!MongoDBQuery.sameQueries(left.from, right.from)) {
                 if (logger.isTraceEnabled)
@@ -476,6 +489,83 @@ class AbstractAtomicQuery(
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
             val result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, left.where))
+            result
+        }
+    }
+
+    /**
+     * Merge this atomic abstract query with another one in order to perform self-join elimination
+     * in the context of a referencing object map: join between queries of child and parent triples maps.
+     * Two cases are considered:
+     * 
+     * (1) The two queries have the same From part or one is a sub-set of the other, and they are 
+     * joined on a reference declared as unique in the triples map logical source (xrr:UniqueRef). 
+     * Example:<br>
+     * q1.from: <code>db.collection.find({query1})</code>,<br>
+     * q2.from: <code>db.collection.find({query1, query2})</code><br>
+     * q2.from is a sub-set of q1.from, i.e. q2.from is more specific than q1.from.<br>
+     * If the child and parent references are both "$.field", and both logical sources declare property 
+     * <code>xrr:uniqueRef "$.field"</code>, then this is a self-join.
+     * 
+     * (2) When no unique reference is involved, the merge is allowed if and only if both have 
+     * the same From part (the logical source) and Where part.
+     *
+     * @note This is a simplified version of method mergeForInnerJoin().
+     *
+     * @param childRef the xR2RML child reference of the join condition: rr:joinCondition [ ... rr:child ... ]
+     * @param parent the atomic query representing the parent triples map
+     * @param parentRef the xR2RML parent reference of the join condition: rr:joinCondition [ ... rr:parent ... ]
+     * @return an AbstractAtomicQuery if the merge is possible, None otherwise
+     */
+    def mergeForInnerJoinRef(childRef: String,
+                             parent: AbstractAtomicQuery,
+                             parentRef: String): Option[AbstractAtomicQuery] = {
+
+        val child = this
+
+        // Determine if both queries have the same From part (or one is a sub-query of the other),
+        // and they are joined on a unique reference. If this is the case, then for sure we can merge them.
+        var isJoinOnUniqueRefs = false
+        val mostSpec = MongoDBQuery.mostSpecificQuery(child.from, parent.from)
+        if (mostSpec.isDefined) {
+            val sharedUniqueRefs = child.from.uniqueRefs intersect parent.from.uniqueRefs
+            if (childRef == parentRef)
+                if (sharedUniqueRefs contains childRef) {
+                    if (logger.isTraceEnabled)
+                        logger.trace("Detected join on unique reference(s) " + childRef)
+                    isJoinOnUniqueRefs = true
+                }
+        }
+
+        if (isJoinOnUniqueRefs) {
+            // ----------------------------- Most favorable case: join on a a unique reference ---------------------------
+            val mergedBindings = child.tpBindings ++ parent.tpBindings
+            val mergedProj = child.project ++ parent.project
+            val mergedWhere = child.where ++ parent.where
+            val result = Some(new AbstractAtomicQuery(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
+            result
+        } else {
+
+            // ----------------------------- Standard Case: no join on a unique reference ---------------------------
+
+            // If both queries do NOT have the same From part or they are NOT joined on a unique reference,
+            // then the merge is possible only if they have exactly the same From and Where parts
+            if (!MongoDBQuery.sameQueries(child.from, parent.from)) {
+                if (logger.isTraceEnabled)
+                    logger.trace("Self-join elimination impossible bewteen \n" + child + "\nand\n" + parent + "\nbecause they have different From parts.")
+                return None
+            }
+
+            if (child.where != parent.where) {
+                if (logger.isTraceEnabled)
+                    logger.trace("Self-join elimination impossible bewteen \n" + child + "\nand\n" + parent + "\nbecause they have different Where parts.")
+                return None
+            }
+
+            // Build the result query. Both queries have the same From and Where, we can use any of them, here the left ones
+            val mergedBindings = child.tpBindings ++ parent.tpBindings
+            val mergedProj = child.project ++ parent.project
+            val result = Some(new AbstractAtomicQuery(mergedBindings, child.from, mergedProj, child.where))
             result
         }
     }
