@@ -18,6 +18,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import com.hp.hpl.jena.sparql.resultset.ResultSetMem
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.sparql.core.describe.DescribeBNodeClosure
 
 /**
  * Execute the database query and produce the XML SPARQL result set
@@ -44,23 +45,24 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
 
             // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
             start = System.currentTimeMillis();
+            val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
 
-            if (sparqlQuery.isAskType)
+            if (sparqlQuery.isAskType) {
                 throw new MorphException("SPARQL ASK not supported")
 
-            else if (sparqlQuery.isConstructType)
-                throw new MorphException("SPARQL ASK not supported")
-
-            else if (sparqlQuery.isDescribeType) {
-
-                val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
-                val result: Model = qexec.execDescribe
-                // Write the result to the output file
+            } else if (sparqlQuery.isConstructType) {
+                val result: Model = qexec.execConstruct
                 factory.getMaterializer.materialize(result)
+                qexec.close
+
+            } else if (sparqlQuery.isDescribeType) {
+
+                val dh: DescribeBNodeClosure = null
+                val result: Model = qexec.execDescribe
+                factory.getMaterializer.materialize(result)
+                qexec.close
 
             } else if (sparqlQuery.isSelectType) {
-
-                val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
                 val resultSet: ResultSet = qexec.execSelect
 
                 if (factory.getProperties.outputDisplay) {
@@ -78,6 +80,7 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
                         factory.getMaterializer.outputStream.write(strResultSet)
                     }
                 }
+                qexec.close
             }
 
             end = System.currentTimeMillis();
