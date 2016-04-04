@@ -23,11 +23,9 @@ import com.hp.hpl.jena.sparql.util.Closure
 import com.hp.hpl.jena.sparql.util.Context
 
 /**
- * DescribeHandler that calculates the bNode closure.
- *  Takes all the statements of this resource, and for every object that is
- *  a bNode, it recursively includes its statements.
+ * Describe handler that considers all statements for which the resource is either a subject or an object,
+ * and for every object a bNode, it recursively includes its statements.
  */
-
 class ExtendedDescribeBNodeCloser extends DescribeHandler() {
 
     var acc: Model = null

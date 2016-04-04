@@ -1,13 +1,14 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
+import scala.collection.JavaConverters._
 import org.apache.log4j.Logger
-
 import com.hp.hpl.jena.graph.Node
+import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
-
+import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
@@ -20,6 +21,14 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.sparql.algebra.op.OpTable
+import com.hp.hpl.jena.sparql.algebra.op.OpNull
+import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.sparql.syntax.ElementGroup
+import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
+import com.hp.hpl.jena.sparql.core.Var
+import com.hp.hpl.jena.sparql.syntax.ElementUnion
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
@@ -50,6 +59,13 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
     /**
      * High level entry point to the query translation process.
+     * 
+     * A query that simply contains <code>DESCRIBE &lt;uri&gt;</code> is expanded to
+     * <code>DESCRIBE &lt;uri&gt; WHERE {
+     *   { &lt;uri&gt; ?p ?x. }
+     *   UNION
+     *   { ?y ?q &lt;uri&gt; . }
+     * }</code>
      *
      * @param sparqlQuery the SPARQL query to translate
      * @return a MorphAbstractQuery instance in which the targetQuery parameter has been set with
@@ -58,8 +74,45 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * The result is None in case an error occurred.
      */
     def translate(sparqlQuery: Query): Option[AbstractQuery] = {
+
+        if (sparqlQuery.isDescribeType) {
+            /* Remark:
+             * sparqlQuery.getResultURIs: static URIs in the SELECT/DESCRIBE clause
+             * sparqlQuery.getResultVars: variables in the SELECT/DESCRIBE clause (as strings e.g. "x")
+             * sparqlQuery.getProjectVars: variables in the SELECT/DESCRIBE clause (as instances of Var)
+             * sparqlQuery.isQueryResultStar: true if the '*' is in the SELECT/DESCRIBE clause
+            */
+            if (sparqlQuery.getProjectVars.isEmpty && !sparqlQuery.getResultURIs.isEmpty) {
+
+                val op = Algebra.compile(sparqlQuery)
+                if (op.isInstanceOf[OpTable] || op.isInstanceOf[OpNull]) {
+                    val listUris = sparqlQuery.getResultURIs().iterator.asScala.toList
+
+                    var idx = 1
+                    val union = new ElementUnion
+
+                    listUris.foreach(uri => {
+                        val bgp1 = new ElementTriplesBlock()
+                        bgp1.addTriple(Triple.create(uri, Var.alloc("p" + idx), Var.alloc("x" + idx)))
+                        val bgp2 = new ElementTriplesBlock()
+                        bgp2.addTriple(Triple.create(Var.alloc("y" + idx), Var.alloc("q" + idx), uri))
+
+                        union.addElement(bgp1)
+                        union.addElement(bgp2)
+                        idx += 1
+                    })
+
+                    val body = new ElementGroup()
+                    body.addElement(union);
+                    sparqlQuery.setQueryPattern(body)
+                    logger.info("Expanded query to: \n" + sparqlQuery)
+                }
+            }
+        }
+
         val start = System.currentTimeMillis()
-        val result = this.translate(Algebra.compile(sparqlQuery));
+        val result = this.translate(Algebra.compile(sparqlQuery))
+
         logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
         result
     }

@@ -55,14 +55,8 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
     val logger = Logger.getLogger(this.getClass());
 
     def createRunner: MorphBaseRunner = {
-
         if (logger.isDebugEnabled) logger.debug("Creating MorphBaseRunner")
-
-        val sparqlQuery =
-            if (properties.queryFilePath.isDefined)
-                Some(QueryFactory.read(properties.queryFilePath.get))
-            else None
-        new MorphBaseRunner(this, sparqlQuery)
+        new MorphBaseRunner(this, properties.queryFilePath)
     }
 
     def createConnection: GenericConnection

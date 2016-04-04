@@ -238,7 +238,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      */
     def excludeTriplesAboutCollecOrContainer(op: Op): Option[Op] = {
         val result = op match {
-            case opProject: OpProject => { // SELECT clause
+            case opProject: OpProject => {
                 val subOp = excludeTriplesAboutCollecOrContainer(opProject.getSubOp)
                 if (subOp.isDefined)
                     Some(new OpProject(subOp.get, opProject.getVars))

@@ -4,8 +4,8 @@ PREFIX ex: <http://example.org/>
 
 #CONSTRUCT { ?x ex:shotWithActor ?actor1, ?actor2 }
 #DESCRIBE ?y
-DESCRIBE <http://example.org/movie/m2046>
-#SELECT *
+#DESCRIBE <http://example.org/movie/m2046>
+SELECT *
 WHERE {
     #-- Test with a term map whose object is an rdf:Seq
     ?x ex:directed ?y .
