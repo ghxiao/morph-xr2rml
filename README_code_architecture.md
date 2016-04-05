@@ -1,16 +1,15 @@
-# Maven Projects Hierarchy
-`
-                morph-core
-                    |
-             morph-xr2rml-lang
-                    |
-                morph-base
-                  /    \
-  morph-xr2rml-mongo   morph-xr2rml-rdb
-               |         |
-               \         /
-            morph-xr2rml-dist
-`
+# Maven Projects Dependencies
+
+`                morph-core`
+`                    |`
+`             morph-xr2rml-lang`
+`                    |`
+`                morph-base`
+`                  /    \`
+`  morph-xr2rml-mongo   morph-xr2rml-rdb`
+`               |         |`
+`               \         /`
+`            morph-xr2rml-dist`
 
 **morph-core**: brings major global definitions: constants, utility classes (properties, exceptions,
 RDF and XML manipulation and serialization), mixed syntax path utilities, SQL machinery (that would be better of 
@@ -102,7 +101,7 @@ Below we focus on the SPARQL-to-MongoDB method.
 
 The MorphBaseRunner orchestrates the process:
 
-#### Query translation
+##### Query translation
 
 MorphBaseQueryTranslator.translate() is the entry point of the process.
 
@@ -112,7 +111,7 @@ The abstract query is optimized by eliminating self-joins, self-unions and propa
 3. Each atomic abstract query (fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQuery) is translated into one or several MongoDB queries. 
 In case several queries are produced, their results must be UNIONed by the query evaluation engine (next step)
 
-#### Query evaluation
+##### Query evaluation
 1. The MorphMongoQueryResultProcessor runs the MongoDB query/queries against the database.
 2. The data translator (MorphBaseDataTranslator/MorphMongoDataTranslator) translates the results into triples according to triples map,
 and performs operations not supported by MongoDB: joins, unions. This comes up with a temporary result graph.

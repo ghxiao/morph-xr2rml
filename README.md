@@ -34,7 +34,7 @@ Technical report, CNRS, 2015. https://hal.archives-ouvertes.fr/hal-01066663
 
 ### Limitations
 
-#### xR2RML Language support
+##### xR2RML Language support
 - The generation of RDF collection and containers is supported in all cases (from a list of values resulting of the evaluation of a mixed syntax path typically, from the result of a join query implied by a referencing object map), except in the case of a regular R2RML join query applied to a relational database: the result of the join SQL query cannot be translated into an RDF collection or container.
 - Only simple NestedTermMaps are implemented i.e. to qualify RDF terms generated within an RDF collection/container.
 More complex nested term maps (with recursive parsing using another nested term map and using xrr:reference or rr:template properties) are not supported.
