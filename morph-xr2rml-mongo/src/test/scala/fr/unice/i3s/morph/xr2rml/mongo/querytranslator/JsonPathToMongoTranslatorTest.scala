@@ -306,7 +306,7 @@ class JsonPathToMongoTranslatorTest {
 
         var jpExpr = """$.p"""
 
-        val cond = new AbstractQueryConditionOr(List(
+        val cond = AbstractQueryConditionOr.create(Set(
             new AbstractQueryConditionEquals(jpExpr, new Integer(2)),
             new AbstractQueryConditionIsNull(jpExpr)
         ))

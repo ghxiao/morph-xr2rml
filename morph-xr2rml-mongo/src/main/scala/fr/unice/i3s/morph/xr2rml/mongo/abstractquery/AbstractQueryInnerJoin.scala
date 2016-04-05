@@ -17,17 +17,19 @@ import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
  * Representation of the INNER JOIN abstract query generated from the join of several basic graph patterns.
  * It is not allowed to create an inner join instance with nested inner joins.
  *
- * Use AbstractQueryInnerJoin.apply(left, right) to build instances: instead of creating nested
- * inner joins, this flattens the members of the left and right queries.
- *
- * @param left the query representing the left basic graph pattern of the join
- * @param right the query representing the right basic graph pattern of the join
+ * @param lstMembers the abstract query members of the inner join, flattened if there are embedded inner joins
  */
 class AbstractQueryInnerJoin(
-    val members: List[AbstractQuery])
+    lstMembers: List[AbstractQuery])
         extends AbstractQuery(Set.empty) {
 
     val logger = Logger.getLogger(this.getClass().getName());
+
+    val members: List[AbstractQuery] = lstMembers.flatMap { m =>
+        if (m.isInstanceOf[AbstractQueryInnerJoin])
+            m.asInstanceOf[AbstractQueryInnerJoin].members
+        else List(m)
+    }
 
     if (members.size < 2)
         throw new MorphException("Attempt to create an inner join with less than 2 members: " + members)
@@ -260,30 +262,5 @@ class AbstractQueryInnerJoin(
             }
         }
         throw new MorphException("We should not quit the function this way.")
-    }
-}
-
-object AbstractQueryInnerJoin {
-
-    /**
-     * Constructor with a right and left query. If one of them is an inner join then its members
-     * are concatenated to those of the other query. This avoids embedded inner joins by construction.
-     */
-    def apply(left: AbstractQuery, right: AbstractQuery): AbstractQueryInnerJoin = {
-
-        if (left.isInstanceOf[AbstractQueryInnerJoin]) {
-            val leftIJ = left.asInstanceOf[AbstractQueryInnerJoin]
-            if (right.isInstanceOf[AbstractQueryInnerJoin]) {
-                val rightIJ = right.asInstanceOf[AbstractQueryInnerJoin]
-                new AbstractQueryInnerJoin(leftIJ.members ++ rightIJ.members)
-            } else
-                new AbstractQueryInnerJoin(leftIJ.members :+ right)
-        } else {
-            if (right.isInstanceOf[AbstractQueryInnerJoin]) {
-                val rightIJ = right.asInstanceOf[AbstractQueryInnerJoin]
-                new AbstractQueryInnerJoin(left +: rightIJ.members)
-            } else
-                new AbstractQueryInnerJoin(List(left, right))
-        }
     }
 }

@@ -16,6 +16,8 @@ prefix taxrefhab: <http://inpn.mnhn.fr/taxref/habitat#>
 prefix taxrefbgs: <http://inpn.mnhn.fr/taxref/bioGeoStatus#>
 prefix taxrefprop: <http://inpn.mnhn.fr/taxref/properties/>
 
+#DESCRIBE <http://inpn.mnhn.fr/taxref/label/60585>
+
 SELECT *
 WHERE {
     #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ?p ?x .

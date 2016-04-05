@@ -22,4 +22,8 @@ class AbstractQueryConditionEquals(
             this.reference == c.reference && this.eqValue == c.eqValue
         }
     }
+
+    override def hashCode(): Int = {
+        this.toString.hashCode()
+    }
 }

@@ -659,9 +659,9 @@ class AbstractAtomicQuery(
         if (MongoDBQuery.sameQueries(left.from, right.from)) {
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val leftOr = if (left.where.size > 1) new AbstractQueryConditionAnd(left.where.toList) else left.where.head
-            val rightOr = if (right.where.size > 1) new AbstractQueryConditionAnd(right.where.toList) else right.where.head
-            val mergedWhere = new AbstractQueryConditionOr(List(leftOr, rightOr))
+            val leftOr = if (left.where.size > 1) AbstractQueryConditionAnd.create(left.where) else left.where.head
+            val rightOr = if (right.where.size > 1) AbstractQueryConditionAnd.create(right.where) else right.where.head
+            val mergedWhere = AbstractQueryConditionOr.create(Set(leftOr, rightOr))
             result = Some(new AbstractAtomicQuery(mergedBindings, left.from, mergedProj, Set(mergedWhere)))
         }
         result

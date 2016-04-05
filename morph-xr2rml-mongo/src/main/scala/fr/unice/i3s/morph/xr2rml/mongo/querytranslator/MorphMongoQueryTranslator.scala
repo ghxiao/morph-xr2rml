@@ -142,7 +142,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         val left = this.transTPm(tpBindingsLeft.get)
                         val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
                         if (right.isDefined)
-                            Some(AbstractQueryInnerJoin(left, right.get))
+                            Some(new AbstractQueryInnerJoin(List(left, right.get)))
                         else
                             Some(left)
                     }
@@ -152,7 +152,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 val left = translateSparqlQuery(bindings, opJoin.getLeft)
                 val right = translateSparqlQuery(bindings, opJoin.getRight)
                 if (left.isDefined && right.isDefined)
-                    Some(AbstractQueryInnerJoin(left.get, right.get))
+                    Some(new AbstractQueryInnerJoin(List(left.get, right.get)))
                 else if (left.isDefined)
                     left
                 else if (right.isDefined)

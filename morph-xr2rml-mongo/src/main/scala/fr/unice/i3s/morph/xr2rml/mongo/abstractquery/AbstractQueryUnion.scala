@@ -16,11 +16,17 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
  * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
  * from which we have derived this query
  *
- * @param members the abstract query members of the union
+ * @param lstMembers the abstract query members of the union, flattened if there are embedded unions
  */
 class AbstractQueryUnion(
-    val members: List[AbstractQuery])
+    lstMembers: List[AbstractQuery])
         extends AbstractQuery(Set.empty) {
+
+    val members: List[AbstractQuery] = lstMembers.flatMap { m =>
+        if (m.isInstanceOf[AbstractQueryUnion])
+            m.asInstanceOf[AbstractQueryUnion].members
+        else List(m)
+    }
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -150,5 +156,4 @@ class AbstractQueryUnion(
 
         throw new MorphException("We should not quit the function this way.")
     }
-
 }

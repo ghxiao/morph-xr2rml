@@ -17,4 +17,8 @@ class AbstractQueryConditionNotNull(
         c.isInstanceOf[AbstractQueryConditionNotNull] &&
             this.reference == c.asInstanceOf[AbstractQueryConditionNotNull].reference
     }
+
+    override def hashCode(): Int = {
+        this.toString.hashCode()
+    }
 }

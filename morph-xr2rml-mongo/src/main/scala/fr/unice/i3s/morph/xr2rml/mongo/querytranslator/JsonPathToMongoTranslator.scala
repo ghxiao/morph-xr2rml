@@ -188,13 +188,13 @@ object JsonPathToMongoTranslator {
             case ConditionType.Or => {
                 // AbstractQueryConditionOr => MongoQueryNodeOr
                 val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
-                new MongoQueryNodeOr(condOr.members.map(c => trans(c, iter, projection)))
+                new MongoQueryNodeOr(condOr.members.toList.map(c => trans(c, iter, projection)))
             }
 
             case ConditionType.And => {
                 // AbstractQueryConditionAnd => MongoQueryNodeAnd
                 val condAnd = cond.asInstanceOf[AbstractQueryConditionAnd]
-                new MongoQueryNodeAnd(condAnd.members.map(c => trans(c, iter, projection)))
+                new MongoQueryNodeAnd(condAnd.members.toList.map(c => trans(c, iter, projection)))
             }
 
             case _ =>
