@@ -480,7 +480,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
                 }
             }
 
-            val varsMentioned = aggregator.getExpr().getVarsMentioned();
+            val varsMentioned = aggregator.getExprList().get(0).getVarsMentioned();
             if (varsMentioned.size() > 1) {
                 val errorMessage = "Multiple variables in aggregation function is not supported: " + aggregator;
                 logger.error(errorMessage);
