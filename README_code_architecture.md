@@ -1,15 +1,20 @@
 # Maven Projects Dependencies
 
-`                morph-core`
-`                    |`
-`             morph-xr2rml-lang`
-`                    |`
-`                morph-base`
-`                  /    \`
-`  morph-xr2rml-mongo   morph-xr2rml-rdb`
-`               |         |`
-`               \         /`
-`            morph-xr2rml-dist`
+Morph-xR2RML consists of the following projects. Dependencies are noted top to down, i.e. 
+the project on the top is the root on which all others depend.
+
+```
+                morph-core
+                    |
+             morph-xr2rml-lang
+                    |
+                morph-base
+                  /    \
+  morph-xr2rml-mongo   morph-xr2rml-rdb
+               |         |
+               \         /
+            morph-xr2rml-dist
+```
 
 **morph-core**: brings major global definitions: constants, utility classes (properties, exceptions,
 RDF and XML manipulation and serialization), mixed syntax path utilities, SQL machinery (that would be better of 
