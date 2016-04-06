@@ -98,6 +98,9 @@ object Constants {
     // Config file properties
     // ------------------------------------------------------
 
+    val SERVER_ACTIVE = "server.active"
+    val SERVER_PORT = "server.port"
+
     // Database
     val NO_OF_DATABASE_NAME_PROP_NAME = "no_of_database";
     val DATABASE_NAME_PROP_NAME = "database.name";

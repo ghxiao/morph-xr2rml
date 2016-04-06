@@ -13,8 +13,11 @@ class MorphProperties extends java.util.Properties {
     var configurationFileURL: String = null;
     var configurationDirectory: String = null
 
+    var serverActive: Boolean = false
+    var serverPort: Int = 8080
+
     var mappingDocumentFilePath: String = null;
-    var outputFilePath: Option[String] = None;
+    var outputFilePath: String = null;
     var queryFilePath: Option[String] = None;
     var rdfLanguageForResult: String = null;
     var outputDisplay: Boolean = true;
@@ -104,19 +107,17 @@ class MorphProperties extends java.util.Properties {
             this.queryFilePath = Some(queryFilePathPropertyValue);
         }
 
-        val outputFilePropertyValue = this.getProperty(Constants.OUTPUTFILE_PROP_NAME);
-        this.outputFilePath =
-            if (outputFilePropertyValue != null && !outputFilePropertyValue.isEmpty) {
-                Some(outputFilePropertyValue)
-            } else {
-                logger.error("Parameter output.file.path is mandatory. Please fill it in file " + this.configurationFileURL + ".")
-                System.exit(-1)
-                None
-            }
+        this.serverActive = this.readBoolean(Constants.SERVER_ACTIVE, false)
+        logger.info("Server active = " + this.serverActive)
+
+        this.serverPort = this.readInteger(Constants.SERVER_PORT, 8080)
+        logger.info("Server port number = " + this.serverPort)
+
+        this.outputFilePath = this.getProperty(Constants.OUTPUTFILE_PROP_NAME, "result.rdf")
+        logger.info("Output file = " + this.outputFilePath)
 
         if (configurationDirectory != null) {
-            if (this.outputFilePath.isDefined)
-                this.outputFilePath = Some(configurationDirectory + outputFilePath.get);
+            this.outputFilePath = configurationDirectory + outputFilePath
 
             if (this.queryFilePath.isDefined) {
                 val isNetResourceQuery = GeneralUtility.isNetResource(queryFilePath.get);
@@ -142,28 +143,28 @@ class MorphProperties extends java.util.Properties {
         logger.info("Jena mode = " + jenaMode);
 
         this.selfJoinElimination = this.readBoolean(Constants.OPTIMIZE_TB, true);
-        logger.info("Self join elimination = " + this.selfJoinElimination);
+        logger.info("Optimization - Self join elimination = " + this.selfJoinElimination);
 
         this.selfUnionElimination = this.readBoolean(Constants.OPTIMIZE_SU, true);
-        logger.info("Self union elimination = " + this.selfUnionElimination);
+        logger.info("Optimization - Self union elimination = " + this.selfUnionElimination);
 
         this.propagateConditionFromJoin = this.readBoolean(Constants.OPTIMIZE_PROPCONDJOIN, true);
-        logger.info("Propagate conditions from a joined query = " + this.propagateConditionFromJoin);
+        logger.info("Optimization - Propagate conditions from a joined query = " + this.propagateConditionFromJoin);
 
         this.reorderSTG = this.readBoolean(Constants.REORDER_STG, true);
-        logger.info("Reorder STG = " + this.reorderSTG);
+        logger.info("Optimization - Reorder STG = " + this.reorderSTG);
 
         this.subQueryElimination = this.readBoolean(Constants.SUBQUERY_ELIMINATION, true);
-        logger.info("Subquery elimination = " + this.subQueryElimination);
+        logger.info("Optimization - Subquery elimination = " + this.subQueryElimination);
 
         this.transJoinSubQueryElimination = this.readBoolean(Constants.TRANSJOIN_SUBQUERY_ELIMINATION, true);
-        logger.info("Trans join subquery elimination = " + this.transJoinSubQueryElimination);
+        logger.info("Optimization - Trans join subquery elimination = " + this.transJoinSubQueryElimination);
 
         this.transSTGSubQueryElimination = this.readBoolean(Constants.TRANSSTG_SUBQUERY_ELIMINATION, true);
-        logger.info("Trans stg subquery elimination = " + this.transSTGSubQueryElimination);
+        logger.info("Optimization - Trans stg subquery elimination = " + this.transSTGSubQueryElimination);
 
         this.subQueryAsView = this.readBoolean(Constants.SUBQUERY_AS_VIEW, false);
-        logger.info("Subquery as view = " + this.subQueryAsView);
+        logger.info("Optimization - Subquery as view = " + this.subQueryAsView);
 
         this.cacheQueryResult = this.readBoolean(Constants.CACHE_QUERY_RESULT, false);
         logger.info("Cache the result of queries for join evaluation (non Relational DBs) = " + this.cacheQueryResult);
@@ -283,9 +284,9 @@ class MorphProperties extends java.util.Properties {
     }
 
     def setOutputFilePath(outputPath: String) = {
-        this.outputFilePath = if (outputPath == null || outputPath.equals("")) {
-            None
-        } else { Some(outputPath) }
+        this.outputFilePath =
+            if (outputPath == null) ""
+            else { outputPath }
     }
 }
 
@@ -303,30 +304,30 @@ object MorphProperties {
     def apply(pConfigurationDirectory: String, configurationFile: String): MorphProperties = {
         val properties = new MorphProperties();
 
-        var absoluteConfigurationFile = configurationFile;
-        var configurationDirectory = pConfigurationDirectory;
+        var configFile = configurationFile;
+        var configDir = pConfigurationDirectory;
 
-        if (configurationDirectory != null) {
-            if (!configurationDirectory.endsWith(File.separator)) {
-                configurationDirectory = configurationDirectory + File.separator;
+        if (configDir != null) {
+            if (!configDir.endsWith(File.separator)) {
+                configDir = configDir + File.separator;
             }
-            absoluteConfigurationFile = configurationDirectory + configurationFile;
+            configFile = configDir + configurationFile;
         }
-        properties.configurationFileURL = absoluteConfigurationFile;
-        properties.configurationDirectory = configurationDirectory;
+        properties.configurationFileURL = configFile;
+        properties.configurationDirectory = configDir;
 
-        logger.info("Reading configuration file : " + absoluteConfigurationFile);
+        logger.info("Reading configuration file : " + configFile);
         try {
-            properties.load(new FileInputStream(absoluteConfigurationFile));
+            properties.load(new FileInputStream(configFile));
         } catch {
             case e: FileNotFoundException => {
-                val errorMessage = "Configuration file not found: " + absoluteConfigurationFile;
+                val errorMessage = "Configuration file not found: " + configFile;
                 logger.error(errorMessage);
                 e.printStackTrace();
                 throw e;
             }
             case e: IOException => {
-                val errorMessage = "Error reading configuration file: " + absoluteConfigurationFile;
+                val errorMessage = "Error reading configuration file: " + configFile;
                 logger.error(errorMessage);
                 e.printStackTrace();
                 throw e;

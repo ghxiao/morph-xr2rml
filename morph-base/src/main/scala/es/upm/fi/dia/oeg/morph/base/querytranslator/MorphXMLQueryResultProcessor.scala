@@ -54,7 +54,6 @@ abstract class MorphXMLQueryResultProcessor(factory: IMorphFactory)
      * Save the XML document to a file
      */
     override def postProcess() = {
-        if (logger.isDebugEnabled()) logger.debug("Writing query result document:\n" + XMLUtility.printXMLDocument(xmlDoc, true, false))
         XMLUtility.saveXMLDocument(xmlDoc, factory.getMaterializer.outputStream);
     }
 

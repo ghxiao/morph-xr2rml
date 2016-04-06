@@ -56,7 +56,7 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     def createRunner: MorphBaseRunner = {
         if (logger.isDebugEnabled) logger.debug("Creating MorphBaseRunner")
-        new MorphBaseRunner(this, properties.queryFilePath)
+        new MorphBaseRunner(this)
     }
 
     def createConnection: GenericConnection
@@ -76,10 +76,7 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
         // Initialize the SPARQL DESCRIBE handler
         DescribeHandlerRegistry.get.add(new ExtendedDescribeBNodeCloserFactory)
 
-        val outputStream: Writer =
-            if (this.getProperties.outputFilePath.isDefined)
-                new PrintWriter(this.getProperties.outputFilePath.get, "UTF-8")
-            else new StringWriter
+        val outputStream: Writer = new PrintWriter(this.getProperties.outputFilePath, "UTF-8")
 
         val jenaMode = this.getProperties.jenaMode;
         val materializer = MorphBaseMaterializer(outputStream, this.getProperties.rdfLanguageForResult, jenaMode)

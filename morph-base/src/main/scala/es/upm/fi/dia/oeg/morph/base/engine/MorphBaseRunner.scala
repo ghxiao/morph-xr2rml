@@ -8,54 +8,63 @@ import java.io.PrintWriter
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.query.Query
 
-class MorphBaseRunner(
-        val factory: IMorphFactory,
-        val sparqlQueryStr: Option[String]) {
-
-    val sparqlQuery = if (sparqlQueryStr.isDefined)
-        Some(QueryFactory.read(sparqlQueryStr.get))
-    else None
+class MorphBaseRunner(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass());
 
     /**
-     * Main function to run the translation of data. Runner must be initialized with a config file.
+     * RDF Triples materialization
      */
-    def run(): String = {
-        val start = System.currentTimeMillis();
+    def runMaterialization = {
+        logger.info("Running graph materialization...")
+        val startTime = System.currentTimeMillis()
 
-        var status: String = null;
+        // Run the queries and generate triples
+        factory.getDataTranslator.translateData_Materialization(factory.getMappingDocument)
 
-        if (this.sparqlQuery.isEmpty) {
-            // ----- RDF Triples materialization
-            val start = System.currentTimeMillis();
+        // Write the result to the output file
+        factory.getMaterializer.materialize
+        conclude(startTime)
+    }
 
-            // Run the queries and generate triples
-            factory.getDataTranslator.translateData_Materialization(factory.getMappingDocument)
+    /**
+     * Run with a SPARQL query into read from a local file
+     */
+    def run = {
+        if (factory.getProperties.queryFilePath.isDefined) {
+            val sparqlQuery = QueryFactory.read(factory.getProperties.queryFilePath.get)
+            this.runQuery(sparqlQuery)
+        } else
+            this.runMaterialization
+    }
 
-            // Write the result to the output file
-            factory.getMaterializer.materialize
-            logger.info("Data materialization duration: " + (System.currentTimeMillis() - start) + "ms.");
+    /**
+     * Run with a SPARQL query
+     */
+    def runQuery(sparqlQuery: Query) = {
+        logger.info("Running query translation...")
+        val startTime = System.currentTimeMillis()
 
-        } else {
-            // ----- Translate SPARQL query into a target database query
-            val rewrittenQuery = factory.getQueryTranslator.translate(sparqlQuery.get);
-            if (rewrittenQuery.isDefined) {
-                logger.info("SPARQL Query = \n" + sparqlQuery);
-                logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
-                logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
+        val rewrittenQuery = factory.getQueryTranslator.translate(sparqlQuery)
+        if (rewrittenQuery.isDefined) {
+            logger.info("SPARQL Query = \n" + sparqlQuery);
+            logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
+            logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
 
-                val mapSparqlRewritten = Map((sparqlQuery.get -> rewrittenQuery.get))
-                factory.getQueryResultProcessor.translateResult(mapSparqlRewritten);
-            } else
-                logger.warn("Could not translate the SPARQL into a target query.")
-        }
+            val mapSparqlRewritten = Map((sparqlQuery -> rewrittenQuery.get))
+            factory.getQueryResultProcessor.translateResult(mapSparqlRewritten)
+        } else
+            logger.warn("Could not translate the SPARQL into a target query.")
 
-        val end = System.currentTimeMillis();
-        logger.info("Total Running Time = " + (end - start) + "ms.");
-        logger.info("**********************DONE****************************");
-        return status;
+        conclude(startTime)
+    }
+
+    private def conclude(startTime: Long) = {
+        val endTime = System.currentTimeMillis();
+        logger.warn("Execution time = " + (endTime - startTime) + "ms.");
+        logger.warn("**********************DONE****************************");
     }
 }
 

@@ -1,23 +1,18 @@
 package fr.unice.i3s.morph.xr2rml.engine
 
-import java.io.FileWriter
+import scala.io.Source
+
 import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.CommandLineParser
 import org.apache.log4j.Logger
 import org.apache.log4j.PropertyConfigurator
-import com.hp.hpl.jena.rdf.model.ModelFactory
-import com.hp.hpl.jena.util.FileManager
-import es.upm.fi.dia.oeg.morph.base.Constants
+
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.io.PrintWriter
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import java.io.FileInputStream
-import scala.io.Source
+import fr.unice.i3s.morph.xr2rml.server.SparqlEndpoint
 
 /**
  * MorphRunner is the main entry point of the Morph-xR2RML application.
@@ -27,11 +22,14 @@ import scala.io.Source
  */
 object MorphRunner {
 
-    // Log4j init
-    val log4jfile = this.getClass().getClassLoader().getResource("xr2rml-log4j.properties")
+    val log4jfile = this.getClass.getClassLoader.getResource("xr2rml-log4j.properties")
     println("Loading log4j configuration: " + log4jfile)
     PropertyConfigurator.configure(log4jfile)
-    val logger = Logger.getLogger(this.getClass());
+
+    val logger = Logger.getLogger(this.getClass())
+
+    var runner: MorphBaseRunner = null
+    var factory: MorphBaseRunnerFactory = null
 
     def main(args: Array[String]) {
         try {
@@ -51,19 +49,20 @@ object MorphRunner {
             logger.info("properties Directory = " + configDir)
             logger.info("properties File      = " + configFile)
 
-            // Create the runner factory based on the class name given in configuration file
+            // Create the runner factory based on the class name given in configuration file, abnd the runner
             val properties = MorphProperties(configDir, configFile)
-            val runnerFact = MorphBaseRunnerFactory.createFactory(properties)
+            factory = MorphBaseRunnerFactory.createFactory(properties)
+            runner = factory.createRunner
 
-            // Create the runner and start the translation process
-            val runner = runnerFact.createRunner
-            logger.info("Running data translation...")
-            runner.run()
-
-            if (properties.outputDisplay) {
-                if (properties.outputFilePath.isDefined) {
+            if (factory.getProperties.serverActive) {
+                // Create the SPARQL endpoint and wait for queries
+                logger.info("Running SPARQL endpoint...")
+                SparqlEndpoint.create                
+            } else {
+                runner.run
+                if (properties.outputDisplay) {
                     logger.info("Query result:")
-                    Source.fromFile(properties.outputFilePath.get).foreach { print }
+                    Source.fromFile(properties.outputFilePath).foreach { print }
                 }
             }
 
