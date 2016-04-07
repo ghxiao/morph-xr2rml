@@ -98,13 +98,12 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                     val classRes = factory.getMaterializer.model.createResource(classURI);
                     if (subjectGraphs == null || subjectGraphs.isEmpty) {
                         for (sub <- subjects) {
-                            factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, null);
-                            factory.getMaterializer.outputStream.flush();
+                            factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, null)
                         }
                     } else {
                         subjectGraphs.foreach(subjectGraph => {
                             for (sub <- subjects)
-                                factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph);
+                                factory.getMaterializer.materializeQuad(sub, RDF.`type`, classRes, subjectGraph)
                         });
                     }
                 });

@@ -85,6 +85,10 @@ object Constants {
     val JENA_TDB_DIRECTORY = "jena.tdb.dir";
     val JENA_TDB_FILEBASE = "jena.tdb.filebase";
 
+    // SPARQL result format
+    val OUTPUT_FORMAT_RESULT_XML = "XML";
+    val OUTPUT_FORMAT_RESULT_JSON = "JSON";
+
     // RDF format
     val OUTPUT_FORMAT_RDFXML = "RDF/XML";
     val OUTPUT_FORMAT_RDFXML_ABBREV = "RDF/XML-ABBREV";
@@ -116,7 +120,8 @@ object Constants {
     val QUERYFILE_PROP_NAME = "query.file.path";
     val ONTOURL_PROP_NAME = "onto.url.path";
     val OUTPUTFILE_PROP_NAME = "output.file.path";
-    val OUTPUTFILE_RDF_LANGUAGE = "output.rdflanguage";
+    val OUTPUT_SYNTAX_RDF = "output.syntax.rdf";
+    val OUTPUT_SYNTAX_RESULT = "output.syntax.result";
     val OUTPUTFILE_DISPLAY = "output.display";
     val SPLIT_OUTPUT_PER_CONCEPT = "split_output_per_concept";
 

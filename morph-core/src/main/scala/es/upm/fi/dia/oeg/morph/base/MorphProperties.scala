@@ -4,7 +4,9 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
+
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class MorphProperties extends java.util.Properties {
@@ -14,12 +16,13 @@ class MorphProperties extends java.util.Properties {
     var configurationDirectory: String = null
 
     var serverActive: Boolean = false
-    var serverPort: Int = 8080
+    var serverPort: Int = -1
 
     var mappingDocumentFilePath: String = null;
     var outputFilePath: String = null;
     var queryFilePath: Option[String] = None;
-    var rdfLanguageForResult: String = null;
+    var outputSyntaxRdf: String = null;
+    var outputSyntaxResult: String = null;
     var outputDisplay: Boolean = true;
     var jenaMode: String = null;
     var databaseType: String = null;
@@ -113,7 +116,7 @@ class MorphProperties extends java.util.Properties {
         this.serverPort = this.readInteger(Constants.SERVER_PORT, 8080)
         logger.info("Server port number = " + this.serverPort)
 
-        this.outputFilePath = this.getProperty(Constants.OUTPUTFILE_PROP_NAME, "result.rdf")
+        this.outputFilePath = this.getProperty(Constants.OUTPUTFILE_PROP_NAME, "result.txt")
         logger.info("Output file = " + this.outputFilePath)
 
         if (configurationDirectory != null) {
@@ -126,15 +129,22 @@ class MorphProperties extends java.util.Properties {
             }
         }
 
-        this.rdfLanguageForResult = this.readString(Constants.OUTPUTFILE_RDF_LANGUAGE, Constants.DEFAULT_OUTPUT_FORMAT);
-        if (rdfLanguageForResult != Constants.OUTPUT_FORMAT_RDFXML &&
-            rdfLanguageForResult != Constants.OUTPUT_FORMAT_RDFXML_ABBREV &&
-            rdfLanguageForResult != Constants.OUTPUT_FORMAT_NTRIPLE &&
-            rdfLanguageForResult != Constants.OUTPUT_FORMAT_TURTLE &&
-            rdfLanguageForResult != Constants.OUTPUT_FORMAT_N3) {
-            throw new MorphException("Invalid value \"" + rdfLanguageForResult + "\" for property output.rdflanguage")
+        this.outputSyntaxRdf = this.readString(Constants.OUTPUT_SYNTAX_RDF, Constants.DEFAULT_OUTPUT_FORMAT);
+        if (outputSyntaxRdf != Constants.OUTPUT_FORMAT_RDFXML &&
+            outputSyntaxRdf != Constants.OUTPUT_FORMAT_RDFXML_ABBREV &&
+            outputSyntaxRdf != Constants.OUTPUT_FORMAT_NTRIPLE &&
+            outputSyntaxRdf != Constants.OUTPUT_FORMAT_TURTLE &&
+            outputSyntaxRdf != Constants.OUTPUT_FORMAT_N3) {
+            throw new MorphException("Invalid value \"" + outputSyntaxRdf + "\" for property " + Constants.OUTPUT_SYNTAX_RDF)
         }
-        logger.info("Output RDF syntax = " + this.rdfLanguageForResult);
+        logger.info("Output RDF syntax = " + this.outputSyntaxRdf);
+
+        this.outputSyntaxResult = this.readString(Constants.OUTPUT_SYNTAX_RESULT, Constants.OUTPUT_FORMAT_RESULT_XML);
+        if (outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_XML &&
+            outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_JSON) {
+            throw new MorphException("Invalid value \"" + outputSyntaxResult + "\" for property " + Constants.OUTPUT_SYNTAX_RESULT)
+        }
+        logger.info("Output SPARQL result syntax = " + this.outputSyntaxRdf);
 
         this.outputDisplay = this.readBoolean(Constants.OUTPUTFILE_DISPLAY, true);
         logger.info("Display result on std output = " + this.outputDisplay);

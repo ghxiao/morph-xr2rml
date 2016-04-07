@@ -1,18 +1,18 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
-import java.io.PrintWriter
-import java.io.StringWriter
-import java.io.Writer
+import java.io.FileOutputStream
+
 import org.apache.log4j.Logger
-import com.hp.hpl.jena.query.QueryFactory
+
+import com.hp.hpl.jena.sparql.core.describe.DescribeHandlerRegistry
+
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.materializer.ExtendedDescribeBNodeCloserFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import com.hp.hpl.jena.sparql.core.describe.DescribeHandlerRegistry
-import es.upm.fi.dia.oeg.morph.base.materializer.ExtendedDescribeBNodeCloserFactory
 
 abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
@@ -76,10 +76,8 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
         // Initialize the SPARQL DESCRIBE handler
         DescribeHandlerRegistry.get.add(new ExtendedDescribeBNodeCloserFactory)
 
-        val outputStream: Writer = new PrintWriter(this.getProperties.outputFilePath, "UTF-8")
-
         val jenaMode = this.getProperties.jenaMode;
-        val materializer = MorphBaseMaterializer(outputStream, this.getProperties.rdfLanguageForResult, jenaMode)
+        val materializer = MorphBaseMaterializer(this, jenaMode)
         val prefix = this.getMappingDocument.mappingDocumentPrefixMap
         if (prefix != null)
             materializer.setModelPrefixMap(prefix);

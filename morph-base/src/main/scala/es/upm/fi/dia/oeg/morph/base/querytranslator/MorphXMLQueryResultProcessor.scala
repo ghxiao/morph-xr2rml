@@ -9,6 +9,8 @@ import com.hp.hpl.jena.query.Query
 
 import es.upm.fi.dia.oeg.morph.base.XMLUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
 
 abstract class MorphXMLQueryResultProcessor(factory: IMorphFactory)
         extends MorphBaseQueryResultProcessor(factory) {
@@ -54,7 +56,8 @@ abstract class MorphXMLQueryResultProcessor(factory: IMorphFactory)
      * Save the XML document to a file
      */
     override def postProcess() = {
-        XMLUtility.saveXMLDocument(xmlDoc, factory.getMaterializer.outputStream);
+        val writer = new PrintWriter(factory.getProperties.outputFilePath, "UTF-8")
+        XMLUtility.saveXMLDocument(xmlDoc, writer)
     }
 
     override def getOutput() = {

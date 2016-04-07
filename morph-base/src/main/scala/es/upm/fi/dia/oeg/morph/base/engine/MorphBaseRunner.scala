@@ -44,6 +44,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
      * Run with a SPARQL query
      */
     def runQuery(sparqlQuery: Query) = {
+        logger.info("=================================================================================================================")
         logger.info("Running query translation...")
         val startTime = System.currentTimeMillis()
 

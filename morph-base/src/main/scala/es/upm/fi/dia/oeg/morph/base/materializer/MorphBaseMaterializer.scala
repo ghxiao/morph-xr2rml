@@ -1,21 +1,26 @@
 package es.upm.fi.dia.oeg.morph.base.materializer
 
-import scala.collection.JavaConversions._
-import org.apache.log4j.Logger
-import com.hp.hpl.jena.rdf.model.Model
-import com.hp.hpl.jena.rdf.model.RDFNode
-import es.upm.fi.dia.oeg.morph.base.Constants
-import com.hp.hpl.jena.rdf.model.ModelFactory
 import java.io.File
-import com.hp.hpl.jena.tdb.TDBFactory
 import java.io.OutputStream
-import java.io.Writer
+import java.io.OutputStreamWriter
+
+import scala.collection.JavaConversions.mapAsJavaMap
+
+import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.rdf.model.ModelFactory
+import com.hp.hpl.jena.rdf.model.RDFNode
+import com.hp.hpl.jena.tdb.TDBFactory
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import java.io.FileOutputStream
 
 class MorphBaseMaterializer(
-        val model: Model,
-        val outputStream: Writer,
-        val outputFormat: String) {
+        val factory: IMorphFactory,
+        val model: Model) {
 
     val logger = Logger.getLogger(this.getClass.getName)
 
@@ -28,11 +33,15 @@ class MorphBaseMaterializer(
      * Utility method to serialize any model into the output file
      */
     def materialize(model: Model) {
+        val outputStream = new FileOutputStream(factory.getProperties.outputFilePath)
+
         logger.info("Model size (in triples): " + model.size())
         logger.info("Writing serialization to output stream " + outputStream)
-        model.write(this.outputStream, outputFormat, null)
-        this.outputStream.flush()
-        this.outputStream.close()
+
+        val writer = new OutputStreamWriter(outputStream, "UTF-8")
+        model.write(writer, factory.getProperties.outputSyntaxRdf, null)
+        outputStream.flush
+        outputStream.close
     }
 
     def setModelPrefixMap(prefixMap: Map[String, String]) = {
@@ -171,12 +180,13 @@ class MorphBaseMaterializer(
 object MorphBaseMaterializer {
     val logger = Logger.getLogger(this.getClass.getName)
 
-    def apply(outputStream: Writer, outputFormat: String, jenaMode: String): MorphBaseMaterializer = {
-        if (logger.isDebugEnabled) 
-            logger.debug("Creating MorphBaseMaterializer. Mode: " + jenaMode + ", format: " + outputFormat + ", output: " + outputStream)
-            
+    def apply(factory: IMorphFactory, jenaMode: String): MorphBaseMaterializer = {
+        if (logger.isDebugEnabled)
+            logger.debug("Creating MorphBaseMaterializer. Mode: " + jenaMode + ", format: " + 
+                    factory.getProperties.outputSyntaxRdf + ", output: " + factory.getProperties.outputFilePath)
+
         val model = MorphBaseMaterializer.createJenaModel(jenaMode)
-        new MorphBaseMaterializer(model, outputStream, outputFormat)
+        new MorphBaseMaterializer(factory, model)
     }
 
     /**
