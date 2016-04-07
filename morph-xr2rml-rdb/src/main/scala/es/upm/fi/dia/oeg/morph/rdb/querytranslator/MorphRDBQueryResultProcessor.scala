@@ -36,38 +36,28 @@ class MorphRDBQueryResultProcessor(factory: IMorphFactory) extends MorphXMLQuery
 
     /**
      * Execute the query and translate the results from the database into triples.<br>
-     * In the RDB case the AbstractQuery should contain only one element, since
-     * the UNION is supported in SQL.<br>
+     * In the RDB case the AbstractQuery should contain only one element.<br>
      */
-    override def translateResult(mapSparqlSql: Map[Query, AbstractQuery]) {
+    override def translateResult(sparqlQuery: Query, abstractQuery: AbstractQuery) {
         val start = System.currentTimeMillis();
-        var i = 0;
-        mapSparqlSql.foreach(mapElement => {
-            val sparqlQuery = mapElement._1
-            // In the RDB case the abstract query should just contain one GenericQuery
-            val genQuery = mapElement._2.targetQuery(0).asInstanceOf[GenericQuery]
-            val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
-            // Execution of the concrete SQL query against the database
-            val resultSet = factory.getDataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
-            val columnNames = iQuery.getSelectItemAliases();
-            resultSet.setColumnNames(columnNames);
+        // In the RDB case the abstract query should just contain one GenericQuery
+        val genQuery = abstractQuery.targetQuery(0).asInstanceOf[GenericQuery]
+        val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
-            // Write the XMl result set to the output
-            if (i == 0) {
-                // The first time, initialize the XML document of the SPARQL result set
-                this.preProcess(sparqlQuery);
-            }
-            this.process(sparqlQuery, resultSet);
-            i = i + 1;
-        })
+        // Execution of the concrete SQL query against the database
+        val resultSet = factory.getDataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
+        val columnNames = iQuery.getSelectItemAliases();
+        resultSet.setColumnNames(columnNames);
 
-        if (i > 0) {
-            this.postProcess();
-        }
+        // Initialize the XML document and build the content
+        this.preProcess(sparqlQuery);
+        this.process(sparqlQuery, resultSet)
+        
+        // Write the XMl result set to the output
+        this.postProcess
 
-        val end = System.currentTimeMillis();
-        logger.info("Result generation time = " + (end - start) + "ms.");
+        logger.info("Result generation time = " + (System.currentTimeMillis - start) + "ms.");
     }
 
     /**

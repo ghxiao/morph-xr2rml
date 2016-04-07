@@ -14,6 +14,14 @@ class MorphBaseRunner(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass());
 
+    def run = {
+        if (factory.getProperties.queryFilePath.isDefined) {
+            val sparqlQuery = QueryFactory.read(factory.getProperties.queryFilePath.get)
+            this.runQuery(sparqlQuery)
+        } else
+            this.runMaterialization
+    }
+
     /**
      * RDF Triples materialization
      */
@@ -30,17 +38,6 @@ class MorphBaseRunner(val factory: IMorphFactory) {
     }
 
     /**
-     * Run with a SPARQL query into read from a local file
-     */
-    def run = {
-        if (factory.getProperties.queryFilePath.isDefined) {
-            val sparqlQuery = QueryFactory.read(factory.getProperties.queryFilePath.get)
-            this.runQuery(sparqlQuery)
-        } else
-            this.runMaterialization
-    }
-
-    /**
      * Run with a SPARQL query
      */
     def runQuery(sparqlQuery: Query) = {
@@ -54,8 +51,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
             logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
             logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
 
-            val mapSparqlRewritten = Map((sparqlQuery -> rewrittenQuery.get))
-            factory.getQueryResultProcessor.translateResult(mapSparqlRewritten)
+            factory.getQueryResultProcessor.translateResult(sparqlQuery, rewrittenQuery.get)
         } else
             logger.warn("Could not translate the SPARQL into a target query.")
 
