@@ -1,30 +1,29 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
-import java.io.Writer
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
 import scala.collection.JavaConversions.asScalaBuffer
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.query.Query
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.TermMapResult
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
+import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
-class MorphRDBQueryResultProcessor(factory: IMorphFactory) extends MorphXMLQueryResultProcessor(factory) {
+class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProcessor(factory) {
 
     override val logger = Logger.getLogger(this.getClass().getName());
 

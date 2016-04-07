@@ -12,8 +12,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
 
-abstract class MorphXMLQueryResultProcessor(factory: IMorphFactory)
-        extends MorphBaseQueryResultProcessor(factory) {
+abstract class MorphXMLQueryProcessor(factory: IMorphFactory)
+        extends MorphBaseQueryProcessor(factory) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 

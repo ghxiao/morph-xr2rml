@@ -2,32 +2,29 @@ package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
+
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import Zql.ZConstant
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.sql.DatatypeMapper
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
 
@@ -228,9 +225,8 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
     }
 
     /**
-     * Generate triples in the context of the query rewriting.
-     * This method has been implemented for MongoDB only, in the RDB case the query rewriting is how it was
-     * initially developed in Morph-RDB.
+     * This method has been implemented for MongoDB only, in the RDB case the query rewriting
+     * is how it was initially developed in Morph-RDB.
      *
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */

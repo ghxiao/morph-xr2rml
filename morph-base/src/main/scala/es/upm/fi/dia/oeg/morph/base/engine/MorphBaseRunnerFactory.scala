@@ -1,7 +1,5 @@
 package es.upm.fi.dia.oeg.morph.base.engine
 
-import java.io.FileOutputStream
-
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.sparql.core.describe.DescribeHandlerRegistry
@@ -10,7 +8,7 @@ import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.materializer.ExtendedDescribeBNodeCloserFactory
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
@@ -32,7 +30,7 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     var queryTranslator: MorphBaseQueryTranslator = null
 
-    var queryResultProcessor: MorphBaseQueryResultProcessor = null
+    var queryProcessor: MorphBaseQueryProcessor = null
 
     override def getProperties: MorphProperties = properties
 
@@ -50,7 +48,7 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     override def getQueryTranslator: MorphBaseQueryTranslator = queryTranslator
 
-    override def getQueryResultProcessor: MorphBaseQueryResultProcessor = queryResultProcessor
+    override def getQueryProcessor: MorphBaseQueryProcessor = queryProcessor
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -69,7 +67,7 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     def createQueryTranslator: MorphBaseQueryTranslator
 
-    def createQueryResultProcessor: MorphBaseQueryResultProcessor;
+    def createQueryProcessor: MorphBaseQueryProcessor;
 
     private def createMaterializer: MorphBaseMaterializer = {
 
@@ -99,7 +97,7 @@ object MorphBaseRunnerFactory {
         factory.materializer = factory.createMaterializer
         factory.dataTranslator = factory.createDataTranslator
         factory.queryTranslator = factory.createQueryTranslator
-        factory.queryResultProcessor = factory.createQueryResultProcessor
+        factory.queryProcessor = factory.createQueryProcessor
         factory
     }
 }

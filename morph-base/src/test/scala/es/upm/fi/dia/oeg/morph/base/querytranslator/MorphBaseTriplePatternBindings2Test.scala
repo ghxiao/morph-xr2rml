@@ -39,7 +39,7 @@ class MorphFactoryConcret extends MorphBaseRunnerFactory {
     override def createDataSourceReader: MorphBaseDataSourceReader = null
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
-    override def createQueryResultProcessor: MorphBaseQueryResultProcessor = null
+    override def createQueryProcessor: MorphBaseQueryProcessor = null
 }
 
 class MorphBaseTriplePatternBindings2Test {

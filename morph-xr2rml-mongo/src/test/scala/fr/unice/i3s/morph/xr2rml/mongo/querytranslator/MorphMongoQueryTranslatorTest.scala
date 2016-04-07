@@ -1,20 +1,26 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
-import collection.JavaConversions._
+import scala.collection.JavaConversions.asScalaBuffer
+
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
+import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.sparql.algebra.Algebra
+import com.hp.hpl.jena.sparql.algebra.op.OpBGP
+
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
@@ -30,9 +36,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
-import com.hp.hpl.jena.sparql.algebra.Algebra
-import com.hp.hpl.jena.query.QueryFactory
-import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
@@ -41,7 +44,7 @@ class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
     override def createDataSourceReader: MorphBaseDataSourceReader = null
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
-    override def createQueryResultProcessor: MorphBaseQueryResultProcessor = null
+    override def createQueryProcessor: MorphBaseQueryProcessor = null
 }
 
 class MorphMongoQueryTranslatorTest {

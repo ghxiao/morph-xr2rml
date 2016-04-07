@@ -5,9 +5,9 @@ import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryProcessor
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslator
 
 class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
@@ -43,7 +43,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
         new MorphRDBQueryTranslator(this)
     }
 
-    override def createQueryResultProcessor: MorphBaseQueryResultProcessor = {
-        new MorphRDBQueryResultProcessor(this)
+    override def createQueryProcessor: MorphBaseQueryProcessor = {
+        new MorphRDBQueryProcessor(this)
     }
 }

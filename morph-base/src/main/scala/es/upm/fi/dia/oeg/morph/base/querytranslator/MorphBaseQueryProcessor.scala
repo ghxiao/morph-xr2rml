@@ -9,10 +9,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 /**
- * Abstract class for the engine that shall translate results of a SPARQL query into 
+ * Abstract class for the engine that shall execute a query and translate results into
  * RDF triples (DESCRIBE, CONTRUCT) or a SPARQL result set (SELECT, ASK)
  */
-abstract class MorphBaseQueryResultProcessor(factory: IMorphFactory) {
+abstract class MorphBaseQueryProcessor(factory: IMorphFactory) {
 
     def preProcess(sparqlQuery: Query): Unit
 

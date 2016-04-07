@@ -19,12 +19,12 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryResultProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 
 /**
  * Execute the database query and produce the XML SPARQL result set
  */
-class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQueryResultProcessor(factory) {
+class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProcessor(factory) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -38,7 +38,7 @@ class MorphMongoQueryResultProcessor(factory: IMorphFactory) extends MorphBaseQu
     override def translateResult(sparqlQuery: Query, abstractQuery: AbstractQuery) {
 
         var start = System.currentTimeMillis()
-        factory.getDataTranslator.translateData_QueryRewriting(abstractQuery)
+        factory.getDataTranslator.generateRDFTriples(abstractQuery)
         logger.info("Duration of query execution and generation of triples = " + (System.currentTimeMillis - start) + "ms.");
 
         // Late SPARQL evaluation: evaluate the SPARQL query on the result graph

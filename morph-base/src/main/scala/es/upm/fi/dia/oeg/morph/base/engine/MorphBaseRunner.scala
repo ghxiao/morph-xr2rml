@@ -51,7 +51,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
             logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
             logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
 
-            factory.getQueryResultProcessor.translateResult(sparqlQuery, rewrittenQuery.get)
+            factory.getQueryProcessor.translateResult(sparqlQuery, rewrittenQuery.get)
         } else
             logger.warn("Could not translate the SPARQL into a target query.")
 

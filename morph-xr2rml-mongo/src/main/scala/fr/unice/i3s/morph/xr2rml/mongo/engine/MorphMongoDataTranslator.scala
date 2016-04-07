@@ -1,28 +1,22 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype
 import com.hp.hpl.jena.rdf.model.Literal
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.vocabulary.RDF
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
-import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQuery
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryUnion
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 
 class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
 
@@ -211,16 +205,18 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
         if (!query.isTargetQuerySet)
             throw new MorphException("Target queries not set in " + query)
 
+        var start = System.currentTimeMillis()
         val listTerms = query.generateRdfTerms(factory.getDataSourceReader, this)
         var nbTriples = 0
         for (terms <- listTerms) {
             nbTriples += factory.getMaterializer.materializeQuads(terms.subjects, terms.predicates, terms.objects, List.empty, terms.graphs)
         }
         if (logger.isDebugEnabled) logger.debug("Materialized " + nbTriples + " triples.")
+        logger.info("Duration of query execution and generation of triples = " + (System.currentTimeMillis - start) + "ms.");
     }
 
     /**
-     * Apply a term map to a document of the result set, and generate a list of RDF terms:
+     * Apply a term map to a JSON document, and generate a list of RDF terms:
      * for each element reference in the term map (reference or template), read values from the document,
      * then translate those values into RDF terms.
      */
@@ -312,7 +308,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
     /**
      * Create a JENA literal resource with optional data type and language tag.
-     * This method is overriden in the case of JSON to enable the mapping between JSON data types
+     * This method is overridden in the case of JSON to enable the mapping between JSON data types
      * and XSD data types
      *
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException

@@ -51,26 +51,11 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     protected def generateRDFTriples(tm: R2RMLTriplesMap): Unit
 
     /**
-     * Generate triples in the context of the query rewriting: run the child and optional parent queries,
-     * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
-     */
-    def translateData_QueryRewriting(query: AbstractQuery): Unit = {
-        try {
-            this.generateRDFTriples(query)
-        } catch {
-            case e: Exception => {
-                logger.error("Unexpected error while generatring triples for " + query.tpBindings + ": " + e.getMessage)
-                e.printStackTrace()
-            }
-        }
-    }
-
-    /**
-     * Generate triples in the context of the query rewriting: run the child and optional parent queries,
-     * and apply the triples map bound to the child query (GenericQuery.bondTriplesMap) to create RDF triples.
+     * Generate triples in the context of the query rewriting: run the queries and apply
+     * the triples map bound to the query (GenericQuery.bondTriplesMap) to create RDF triples.
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    protected def generateRDFTriples(query: AbstractQuery): Unit
+    def generateRDFTriples(query: AbstractQuery): Unit
 
     /**
      * Convert a value (string, integer, boolean, etc) into an RDF term.
