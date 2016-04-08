@@ -26,7 +26,10 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
     override val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Query the database and build triples from the result. For each document of the result set:
+     * Query the database and build triples from the result.
+     * Triples are stored in the Jena model of the data materializer.
+     * 
+     *  For each document of the result set:
      * <ol>
      * <li>create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,</li>
      * <li>loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,

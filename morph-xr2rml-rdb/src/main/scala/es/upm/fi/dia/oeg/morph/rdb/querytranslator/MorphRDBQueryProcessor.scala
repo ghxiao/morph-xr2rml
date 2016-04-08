@@ -57,7 +57,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
 
         // Write the XML result set to the output
         xmlResult.save
-        logger.info("Result generation time = " + (System.currentTimeMillis - start) + "ms.");
+        logger.info("Time for query execution and result generation = " + (System.currentTimeMillis - start) + "ms.");
     }
 
     /**

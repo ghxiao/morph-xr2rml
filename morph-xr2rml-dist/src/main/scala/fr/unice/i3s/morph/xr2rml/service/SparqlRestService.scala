@@ -20,6 +20,8 @@ import javax.ws.rs.core.HttpHeaders
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 
 /**
  * REST service implementing the SPARQL query protocol for queries SELECT, DESCRIBE and CONSTRUCT
@@ -99,21 +101,21 @@ class SparqlrestService {
 
             // Create the runner to execute this query
             val factory = MorphBaseRunnerFactory.createFactory
-            val runner = factory.createRunner
+            val runner: MorphBaseRunner = factory.createRunner
 
-            runner.runQuery(sparqlQuery)
+            // Negotiate the content type of the response to the SPARQL query
+            val negContentType = runner.negotiateContentType(contentType, sparqlQuery)
+            if (!negContentType.isDefined)
+                return Response.status(Status.BAD_REQUEST).header(HttpHeaders.CONTENT_TYPE, "text/plain").entity("Requested content type not supported.").build
+
+            runner.runQuery(sparqlQuery, negContentType.get)
 
             // Read the response from the output file and direct it to the HTTP response
             val file = new FileInputStream(factory.getProperties.outputFilePath)
             return Response.status(Status.OK).
                 header(headerAccept, "*").
-                header(HttpHeaders.CONTENT_TYPE, "application/sparql-results+xml").
+                header(HttpHeaders.CONTENT_TYPE, negContentType.get).
                 entity(new InputStreamReader(file, "UTF-8")).build
-
-            // Mime types:
-            // XML : application/xml, text/xml
-            // RDF: application/rdf+xml, text/turtle, text/nt
-            // SPARQL result: application/sparql-results+xml, application/sparql-results+json, application/sparql-results+csv, application/sparql-results+tsv
 
         } catch {
             case e: Exception => {

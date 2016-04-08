@@ -27,12 +27,12 @@ class MorphBaseMaterializer(
     /**
      * Serialize the current model into the output file
      */
-    def materialize() { materialize(this.model) }
+    def serialize() { serialize(this.model) }
 
     /**
      * Utility method to serialize any model into the output file
      */
-    def materialize(model: Model) {
+    def serialize(model: Model) {
         val outputStream = new FileOutputStream(factory.getProperties.outputFilePath)
 
         logger.info("Model size (in triples): " + model.size())

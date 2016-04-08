@@ -70,7 +70,7 @@ import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTransTPResult
-import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TriplePatternPredicateBounder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
@@ -1276,8 +1276,8 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
             //.... JOIN ... ON <joinOnExpression>
             val joinOnExps = termsC.flatMap(termC => {
-                val isTermCInSubjectGP1 = SPARQLUtility.isNodeInSubjectGraph(termC, gp1);
-                val isTermCInSubjectGP2 = SPARQLUtility.isNodeInSubjectGraph(termC, gp2);
+                val isTermCInSubjectGP1 = SparqlUtility.isNodeInSubjectGraph(termC, gp1);
+                val isTermCInSubjectGP2 = SparqlUtility.isNodeInSubjectGraph(termC, gp2);
 
                 if (termC.isVariable()) {
                     val termCColumns1 = this.getColumnsByNode(termC, gp1SelectItems);

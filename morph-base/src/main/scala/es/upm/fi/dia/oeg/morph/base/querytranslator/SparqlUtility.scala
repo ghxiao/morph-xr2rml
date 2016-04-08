@@ -1,22 +1,31 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import com.hp.hpl.jena.graph.Node
-import com.hp.hpl.jena.sparql.algebra.Op
-import com.hp.hpl.jena.graph.Triple
-import com.hp.hpl.jena.sparql.algebra.op.OpBGP
-import scala.collection.JavaConversions._
-import com.hp.hpl.jena.sparql.algebra.op.OpJoin
-import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
-import com.hp.hpl.jena.sparql.algebra.op.OpUnion
-import com.hp.hpl.jena.sparql.algebra.op.OpFilter
-import com.hp.hpl.jena.sparql.algebra.op.OpProject
-import com.hp.hpl.jena.sparql.algebra.op.OpSlice
-import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
-import com.hp.hpl.jena.sparql.algebra.op.OpOrder
-import com.hp.hpl.jena.sparql.core.BasicPattern
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.collection.JavaConversions.iterableAsScalaIterable
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
 
-object SPARQLUtility {
+import com.hp.hpl.jena.graph.Node
+import com.hp.hpl.jena.graph.Triple
+import com.hp.hpl.jena.query.Query
+import com.hp.hpl.jena.sparql.algebra.Op
+import com.hp.hpl.jena.sparql.algebra.op.OpBGP
+import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
+import com.hp.hpl.jena.sparql.algebra.op.OpFilter
+import com.hp.hpl.jena.sparql.algebra.op.OpJoin
+import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
+import com.hp.hpl.jena.sparql.algebra.op.OpOrder
+import com.hp.hpl.jena.sparql.algebra.op.OpProject
+import com.hp.hpl.jena.sparql.algebra.op.OpSlice
+import com.hp.hpl.jena.sparql.algebra.op.OpUnion
+import com.hp.hpl.jena.sparql.core.BasicPattern
+
+import es.upm.fi.dia.oeg.morph.base.Constants
+
+object SparqlUtility {
     val logger = Logger.getLogger(this.getClass().getName());
 
     def groupTriplesBySubject(triples: java.util.List[Triple]): java.util.List[Triple] = {
@@ -49,7 +58,6 @@ object SPARQLUtility {
                 }
             }
         }
-
         result;
     }
 
@@ -194,5 +202,91 @@ object SPARQLUtility {
             found = isNodeInSubjectGraph(node, opRight);
         }
         found;
+    }
+
+    /**
+     * Decide the output format and content type of the SPARQL results, based on the SPARQL query
+     * and the value of the content-type HTTP header.
+     *
+     * If the content-type is null or empty, the default RDF syntax or result format is returned depending on the query type.
+     *
+     * Note: the content-type header may contain several values.
+     *
+     * @param contentType value of the content-type HTTP header. Can be null.
+     * @param query the SPARQL query. Cannot be null.
+     * @param defaultRdfSyntax default RDF syntax, should be read from the configuration file. Cannot be null.
+     * @param defaultResultFrmt default format for SPARQL result sets, should be read from the configuration file. Cannot be null.
+     *
+     * @return a couple (negotiated content-type, corresponding format among Constants.OUTPUT_FORMAT*),
+     * or None if the requested format cannot be satisfied.<br>
+     * Example:
+     *   <code>("application/sparql-results+xml", Constants.OUTPUT_FORMAT_RESULT_XML)</code>
+     */
+    def negotiateContentType(
+        contentType: String,
+        query: Query,
+        defaultRdfSyntax: String,
+        defaultResultFrmt: String): Option[(String, String)] = {
+
+        val result = if (query.isAskType || query.isSelectType) {
+
+            // --- Formats for a SPARQL result set
+            if (contentType == null || contentType == "") {
+                Some((outputFormatToContentType(defaultResultFrmt), defaultResultFrmt))
+            } else {
+                val ctl = contentType.toLowerCase
+                if (ctl contains "application/sparql-results+xml")
+                    Some(("application/sparql-results+xml", Constants.OUTPUT_FORMAT_RESULT_XML))
+                else if (ctl contains "application/sparql-results+json")
+                    Some(("application/sparql-results+json", Constants.OUTPUT_FORMAT_RESULT_JSON))
+                else if (ctl contains "application/sparql-results+csv")
+                    None
+                else if (ctl contains "application/sparql-results+vsv")
+                    None
+                else
+                    None
+            }
+
+        } else if (query.isConstructType || query.isDescribeType) {
+
+            // --- RDF formats
+            if (contentType == null || contentType == "")
+                Some((outputFormatToContentType(defaultRdfSyntax), defaultRdfSyntax))
+            else {
+                val ctl = contentType.toLowerCase
+                if (ctl contains "text/turtle")
+                    Some(("text/turtle", Constants.OUTPUT_FORMAT_TURTLE))
+                else if (ctl contains "application/rdf+xml")
+                    Some(("application/rdf+xml", Constants.OUTPUT_FORMAT_RDFXML))
+                else if (ctl contains "text/nt")
+                    Some(("text/nt", Constants.OUTPUT_FORMAT_NTRIPLE))
+                else if (ctl contains "text/n3")
+                    Some(("text/n3", Constants.OUTPUT_FORMAT_N3))
+                else
+                    None
+            }
+        } else None
+
+        if (logger.isInfoEnabled)
+            logger.info("Request Content-Type: " + contentType + ". Negotiated: " + result.getOrElse("None"))
+        result
+    }
+
+    private def outputFormatToContentType(outputFormat: String): String = {
+        outputFormat match {
+            // --- Formats for a SPARQL result set
+            case Constants.OUTPUT_FORMAT_RESULT_XML => "application/sparql-results+xml"
+            case Constants.OUTPUT_FORMAT_RESULT_JSON => "application/sparql-results+json"
+
+            // --- RDF formats
+            case Constants.OUTPUT_FORMAT_TURTLE => "text/turtle"
+            case Constants.OUTPUT_FORMAT_RDFXML => "application/rdf+xml"
+            case Constants.OUTPUT_FORMAT_RDFXML_ABBREV => "application/rdf+xml"
+            case Constants.OUTPUT_FORMAT_NTRIPLE => "text/nt"
+            case Constants.OUTPUT_FORMAT_N3 => "text/n3"
+            case Constants.OUTPUT_FORMAT_NQUAD => "application/n-quads"
+
+            case _ => ""
+        }
     }
 }

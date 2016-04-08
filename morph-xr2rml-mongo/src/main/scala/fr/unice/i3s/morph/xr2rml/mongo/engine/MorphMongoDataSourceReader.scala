@@ -32,8 +32,9 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
     val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Execute a MongoDB query against the connection.
-     * @return iterator on strings representing the result JSON documents.
+     * Execute a MongoDB query against the database connection.
+     * 
+     * @return a MorphMongoResultSet containing a list strings representing the result JSON documents.
      * May return an empty result set but not null.
      */
     override def execute(query: GenericQuery): MorphBaseResultSet = {

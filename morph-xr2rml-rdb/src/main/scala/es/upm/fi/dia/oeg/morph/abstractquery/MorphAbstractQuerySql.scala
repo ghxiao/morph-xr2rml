@@ -11,7 +11,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 /**
  * This class is used as a simple encapsulation of an SQL query in the RDB case, because the original SPARQL-to-SQL query
  * translation method from Morph-RDB has not been updated to deal with abstract queries.
- * Therefore all functions below thrown an exception. Only the targetQuery is used in this class.
+ * Therefore all functions below throw an exception. Only the targetQuery is used in this class.
  */
 class AbstractQuerySql extends AbstractQuery(Set.empty) {
 

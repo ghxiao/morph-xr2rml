@@ -38,7 +38,7 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
 
         var start = System.currentTimeMillis()
         factory.getDataTranslator.generateRDFTriples(abstractQuery)
-        logger.info("Duration of query execution and generation of triples = " + (System.currentTimeMillis - start) + "ms.");
+        logger.info("Time for query execution and triples generation = " + (System.currentTimeMillis - start) + "ms.");
 
         // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
         start = System.currentTimeMillis();
@@ -51,14 +51,14 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
         } else if (sparqlQuery.isConstructType) {
             // --- SPARQL CONSTRUCT
             val result: Model = qexec.execConstruct
-            factory.getMaterializer.materialize(result)
+            factory.getMaterializer.serialize(result)
             qexec.close
 
         } else if (sparqlQuery.isDescribeType) {
             // --- SPARQL DESCRIBE
             val dh: DescribeBNodeClosure = null
             val result: Model = qexec.execDescribe
-            factory.getMaterializer.materialize(result)
+            factory.getMaterializer.serialize(result)
             qexec.close
 
         } else if (sparqlQuery.isSelectType) {
@@ -95,6 +95,6 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
             qexec.close
         }
 
-        logger.info("Late SPARQL query evaluation time = " + (System.currentTimeMillis - start) + "ms.");
+        logger.info("Time for lLate SPARQL query evaluation = " + (System.currentTimeMillis - start) + "ms.");
     }
 }

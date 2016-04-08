@@ -28,7 +28,6 @@ object MorphRunner {
 
     val logger = Logger.getLogger(this.getClass())
 
-    var runner: MorphBaseRunner = null
     var factory: MorphBaseRunnerFactory = null
 
     def main(args: Array[String]) {
@@ -57,11 +56,11 @@ object MorphRunner {
                 // --- Create the SPARQL endpoint and wait for queries
                 logger.info("Running SPARQL endpoint...")
                 SparqlEndpoint.create(properties)
-                
+
             } else {
                 // --- Create a runner factory and a runner
                 val factory = MorphBaseRunnerFactory.createFactory
-                runner = factory.createRunner
+                val runner = factory.createRunner
                 runner.run
                 if (properties.outputDisplay) {
                     logger.info("Query result:")

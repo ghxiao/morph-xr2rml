@@ -17,7 +17,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphCondSQLResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
-import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
@@ -155,7 +155,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
 
             } else { //object.isVariable() // improvement by Freddy
 
-                if (!SPARQLUtility.isBlankNode(tpObject)) {
+                if (!SparqlUtility.isBlankNode(tpObject)) {
                     val isSingleTripleFromTripleBlock = {
                         tp match {
                             case etp: MorphTriple => {

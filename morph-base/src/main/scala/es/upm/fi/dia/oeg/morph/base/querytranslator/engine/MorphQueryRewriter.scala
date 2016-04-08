@@ -26,7 +26,7 @@ import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.RDFS
 
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
-import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 
 /** Utility methods to rewrite SPARQL queries */
 class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: Boolean)
@@ -129,7 +129,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                 }
             }
 
-            val triplesSubjects = SPARQLUtility.getSubjects(triples).distinct;
+            val triplesSubjects = SparqlUtility.getSubjects(triples).distinct;
             if (mapNodeTableSize != null && mapNodeTableSize.size() == triplesSubjects.size()) {
 
                 val mapNodeTableSizeResorted = mapNodeTableSize.toList sortBy { _._2 };
@@ -168,8 +168,8 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                     val rightTpObject = rightTp.getObject();
 
                     val leftChildTriples = leftChildRewrittenBGP.getPattern().getList().toList;
-                    val leftChildSubjects = SPARQLUtility.getSubjects(leftChildTriples);
-                    val leftChildObjects = SPARQLUtility.getObjects(leftChildTriples);
+                    val leftChildSubjects = SparqlUtility.getSubjects(leftChildTriples);
+                    val leftChildObjects = SparqlUtility.getObjects(leftChildTriples);
                     val needsPhantomTP = !leftChildSubjects.contains(rightTpSubject);
 
                     if (needsPhantomTP) {
@@ -179,7 +179,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
 
                         val phantomTriple = new Triple(phantomSubject, phantomPredicate, phantomObject);
                         val newLeftChildRewrittenTPList = leftChildRewrittenTPList ::: List(phantomTriple);
-                        val bgpGrouped = SPARQLUtility.groupTriplesBySubject(newLeftChildRewrittenTPList);
+                        val bgpGrouped = SparqlUtility.groupTriplesBySubject(newLeftChildRewrittenTPList);
                         val triplesGrouped = bgpGrouped.toList;
 
                         val bgpWithPhantomTP = {
@@ -206,7 +206,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                             val rightEtp = new MorphTriple(rightTpSubject, rightTpPredicate, rightTpObject, true);
                             val newLeftChildRewrittenTPList = leftChildRewrittenTPList ::: List(rightEtp);
 
-                            val bgpGrouped = SPARQLUtility.groupTriplesBySubject(newLeftChildRewrittenTPList);
+                            val bgpGrouped = SparqlUtility.groupTriplesBySubject(newLeftChildRewrittenTPList);
                             val triplesGrouped = bgpGrouped.toList;
 
                             try {
@@ -240,7 +240,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
 
     private def rewriteBGP(bgp: OpBGP): Op = {
         val bgpTriples = bgp.getPattern().getList().toList;
-        val triplesGrouped = SPARQLUtility.groupTriplesBySubject(bgpTriples);
+        val triplesGrouped = SparqlUtility.groupTriplesBySubject(bgpTriples);
 
         val basicPattern = {
             if (this.reorderSTG) {

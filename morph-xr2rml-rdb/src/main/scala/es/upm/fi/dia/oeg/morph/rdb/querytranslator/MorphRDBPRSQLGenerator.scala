@@ -13,7 +13,7 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphPRSQLResult
-import es.upm.fi.dia.oeg.morph.base.querytranslator.SPARQLUtility
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
@@ -134,7 +134,7 @@ class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
 
         val tpSubject = tp.getSubject();
         val result: List[ZSelectItem] = {
-            if (!SPARQLUtility.isBlankNode(tpSubject)) {
+            if (!SparqlUtility.isBlankNode(tpSubject)) {
                 val parentResult = genPRSQLSubject2(tp, alphaResult, betaGenerator, nameGenerator, cmSubject).toList;
 
                 val subject = tp.getSubject();
@@ -212,7 +212,7 @@ class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
         val tpObject = tp.getObject();
 
         val result: List[ZSelectItem] = {
-            if (!SPARQLUtility.isBlankNode(tpObject)) {
+            if (!SparqlUtility.isBlankNode(tpObject)) {
                 if (RDF.`type`.getURI().equalsIgnoreCase(predicateURI)) {
                     val tm = cmSubject.asInstanceOf[R2RMLTriplesMap];
                     val classURIs = tm.subjectMap.classURIs;
@@ -282,7 +282,7 @@ class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfold
 
     def genPRSQLObjectMappingId(tpObject: Node, cmSubject: R2RMLTriplesMap, predicateURI: String) = {
         val childResult: List[ZSelectItem] = {
-            if (tpObject.isVariable() && !SPARQLUtility.isBlankNode(tpObject)) {
+            if (tpObject.isVariable() && !SparqlUtility.isBlankNode(tpObject)) {
                 val propertyMappings =
                     cmSubject.getPropertyMappings(predicateURI);
                 if (propertyMappings == null || propertyMappings.isEmpty()) {
