@@ -46,7 +46,6 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
      */
     override def generateRDFTriples(tm: R2RMLTriplesMap) = {
 
-        logger.info("Starting translating triples map into RDF instances...");
         val ls = tm.logicalSource;
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;

@@ -105,6 +105,11 @@ class AbstractQueryInnerJoinRef(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
+        if (logger.isInfoEnabled) {
+            logger.info("===============================================================================");
+            logger.info("Generating RDF triples from the inner join Ref query:\n" + this.toStringConcrete)
+        }
+
         // Cache queries in case we have several bindings for this query
         var executedQueries = Map[String, Set[String]]()
 
@@ -129,7 +134,10 @@ class AbstractQueryInnerJoinRef(
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
             val iter: Option[String] = tm.logicalSource.docIterator
-            logger.info("Generating RDF triples from inner join Ref query under triples map " + tm.toString + ": \n" + this.toStringConcrete);
+            if (logger.isInfoEnabled) {
+
+                logger.info("Generating RDF triples from inner join Ref query under triples map " + tm.toString + ": \n" + this.toStringConcrete);
+            }
 
             // Execute the child queries
             val childResSets = child.targetQuery.map(query => {

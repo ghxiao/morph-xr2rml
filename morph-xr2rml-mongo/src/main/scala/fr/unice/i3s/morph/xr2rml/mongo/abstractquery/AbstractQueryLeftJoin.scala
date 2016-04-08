@@ -83,7 +83,10 @@ class AbstractQueryLeftJoin(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
-        logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
+        if (logger.isInfoEnabled) {
+            logger.info("===============================================================================");
+            logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
+        }
         val joinResult: scala.collection.mutable.Map[String, MorphBaseResultRdfTerms] = new scala.collection.mutable.HashMap
 
         // First, generate the triples for both left and right graph patterns of the join
@@ -167,7 +170,7 @@ class AbstractQueryLeftJoin(
                 if (logger.isDebugEnabled)
                     if (rightAtom != right)
                         logger.debug("Propagated condition of from left to right query")
-                        
+
                 val res = new AbstractQueryLeftJoin(leftOpt, rightAtom)
                 if (logger.isDebugEnabled) logger.debug("\n------------------ Query optimized into ------------------\n" + res)
                 res

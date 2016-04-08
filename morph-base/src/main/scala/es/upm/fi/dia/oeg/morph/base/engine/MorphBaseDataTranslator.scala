@@ -30,8 +30,10 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     def translateData_Materialization(mappingDocument: R2RMLMappingDocument): Unit = {
         val tms = mappingDocument.triplesMaps
         for (tm <- tms) {
-            logger.info("===============================================================================");
-            logger.info("Starting data materialization of triples map " + tm.id);
+            if (logger.isInfoEnabled) {
+                logger.info("===============================================================================");
+                logger.info("Starting data materialization of triples map " + tm.id);
+            }
             try {
                 this.generateRDFTriples(tm)
             } catch {

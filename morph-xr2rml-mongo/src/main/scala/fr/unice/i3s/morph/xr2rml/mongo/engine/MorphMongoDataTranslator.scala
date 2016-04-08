@@ -39,7 +39,6 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
      */
     override def generateRDFTriples(tm: R2RMLTriplesMap): Unit = {
 
-        logger.info("Starting translating triples map " + tm.toString + " into RDF triples...");
         val ls = tm.logicalSource;
         val sm = tm.subjectMap;
         val poms = tm.predicateObjectMaps;
@@ -72,7 +71,6 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
         for (document <- childResultSet) {
             i = i + 1;
             if (logger.isDebugEnabled()) logger.debug("Generating triples for document " + i + "/" + childResultSet.size + ": " + document)
-            if (logger.isInfoEnabled()) System.out.print("Generating triples for document: " + i + "/" + childResultSet.size + "          \r")
 
             try {
                 // Create the subject resource

@@ -118,7 +118,10 @@ class AbstractQueryInnerJoin(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
-        logger.info("Generating RDF triples from the inner join query:\n" + this.toStringConcrete)
+        if (logger.isInfoEnabled) {
+            logger.info("===============================================================================");
+            logger.info("Generating RDF triples from the inner join query:\n" + this.toStringConcrete)
+        }
 
         var joinResult = Map[String, MorphBaseResultRdfTerms]()
 

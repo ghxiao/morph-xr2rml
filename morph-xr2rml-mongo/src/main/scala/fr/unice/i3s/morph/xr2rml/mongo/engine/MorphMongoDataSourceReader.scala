@@ -63,6 +63,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
 
         // A query is simply and uniquely identified by its concrete string value
         val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, logSrcIterator)
+        val start = System.currentTimeMillis
         val queryResult =
             if (executedQueries.contains(queryMapId)) {
                 if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache: " + query)
@@ -89,7 +90,11 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
                 queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
             } else queryResult
 
-        if (logger.isDebugEnabled()) logger.debug("Query \n" + query.concreteQuery + "\n returned " + queryResult.size + " results, " + queryResultIter.size + " result(s) after applying the iterator.")
+        if (logger.isInfoEnabled) {
+            logger.info("Executing query: " + query.concreteQuery)
+            logger.info("Query returned " + queryResult.size + " result(s), " + queryResultIter.size + " result(s) after applying the iterator.")
+            logger.info("Query execution time was " + (System.currentTimeMillis - start) + " ms.");
+        }
         new MorphMongoResultSet(queryResultIter)
     }
 

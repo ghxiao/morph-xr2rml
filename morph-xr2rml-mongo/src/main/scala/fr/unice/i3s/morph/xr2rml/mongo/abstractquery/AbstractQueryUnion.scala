@@ -85,7 +85,10 @@ class AbstractQueryUnion(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
-        logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
+        if (logger.isInfoEnabled) {
+            logger.info("===============================================================================");
+            logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
+        }
 
         var res = Set[MorphBaseResultRdfTerms]()
         members.foreach(m => { res = res ++ m.generateRdfTerms(dataSourceReader, dataTranslator) })

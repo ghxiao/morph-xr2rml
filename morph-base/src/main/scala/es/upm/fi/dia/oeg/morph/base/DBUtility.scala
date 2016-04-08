@@ -36,8 +36,7 @@ object DBUtility {
         if (timeout > 0) { stmt.setQueryTimeout(timeout); }
         val start = System.currentTimeMillis();
         val result = stmt.execute(query);
-        val end = System.currentTimeMillis();
-        logger.info("SQL execution time was " + (end - start) + " ms.");
+        logger.info("SQL execution time was " + (System.currentTimeMillis - start) + " ms.");
 
         if (result) { stmt.getResultSet(); }
         else { null }
