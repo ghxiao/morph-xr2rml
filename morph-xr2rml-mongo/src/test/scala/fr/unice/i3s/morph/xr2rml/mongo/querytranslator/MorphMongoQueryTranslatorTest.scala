@@ -45,12 +45,14 @@ class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
     override def createQueryProcessor: MorphBaseQueryProcessor = null
+
+    override def postCreateFactory = {}
 }
 
 class MorphMongoQueryTranslatorTest {
 
     var props = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")
-    var mappingDocument = R2RMLMappingDocument(props, null)
+    var mappingDocument = R2RMLMappingDocument(props)
 
     val factory = new MorphFactoryConcret2
     factory.mappingDocument = mappingDocument

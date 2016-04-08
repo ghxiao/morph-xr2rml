@@ -49,16 +49,19 @@ object MorphRunner {
             logger.info("properties Directory = " + configDir)
             logger.info("properties File      = " + configFile)
 
-            // Create the runner factory based on the class name given in configuration file, abnd the runner
+            // Initialize the runner factory
             val properties = MorphProperties(configDir, configFile)
-            factory = MorphBaseRunnerFactory.createFactory(properties)
-            runner = factory.createRunner
+            MorphBaseRunnerFactory.initFactory(properties)
 
-            if (factory.getProperties.serverActive) {
-                // Create the SPARQL endpoint and wait for queries
+            if (properties.serverActive) {
+                // --- Create the SPARQL endpoint and wait for queries
                 logger.info("Running SPARQL endpoint...")
-                SparqlEndpoint.create                
+                SparqlEndpoint.create(properties)
+                
             } else {
+                // --- Create a runner factory and a runner
+                val factory = MorphBaseRunnerFactory.createFactory
+                runner = factory.createRunner
                 runner.run
                 if (properties.outputDisplay) {
                     logger.info("Query result:")

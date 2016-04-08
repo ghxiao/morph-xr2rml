@@ -6,8 +6,8 @@ import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.glassfish.jersey.servlet.ServletContainer
 
+import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import fr.unice.i3s.morph.xr2rml.service.SparqlrestService
-import fr.unice.i3s.morph.xr2rml.engine.MorphRunner
 
 /**
  * Servlet container based on Jetty embedded server to run the SPARQL endpoint
@@ -16,11 +16,11 @@ object SparqlEndpoint {
 
     val logger = Logger.getLogger(this.getClass)
 
-    def create {
+    def create(properties: MorphProperties) {
         val context = new ServletContextHandler(ServletContextHandler.SESSIONS)
         context.setContextPath("/")
 
-        val server = new Server(MorphRunner.factory.getProperties.serverPort)
+        val server = new Server(properties.serverPort)
         server.setHandler(context)
 
         val servlet = new ServletHolder(classOf[ServletContainer])

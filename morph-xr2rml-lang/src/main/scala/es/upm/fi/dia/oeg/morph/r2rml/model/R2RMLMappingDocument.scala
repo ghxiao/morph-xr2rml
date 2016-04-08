@@ -1,7 +1,5 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
-import java.sql.Connection
-
 import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.JavaConversions.setAsJavaSet
@@ -15,7 +13,6 @@ import com.hp.hpl.jena.util.FileManager
 import com.hp.hpl.jena.vocabulary.RDF
 
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
@@ -31,18 +28,6 @@ class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
     var mappingDocumentPath: String = null;
 
     val logger = Logger.getLogger(this.getClass());
-
-    private def buildMetaData(conn: GenericConnection, databaseName: String, databaseType: String) = {
-        if (conn.isRelationalDB) {
-            logger.info("Building database MetaData ")
-            if (conn != null && this.dbMetaData == None) {
-                val sqlCnx = conn.concreteCnx.asInstanceOf[Connection]
-                val newMetaData = MorphDatabaseMetaData(sqlCnx, databaseName, databaseType);
-                this.dbMetaData = Some(newMetaData);
-                this.triplesMaps.foreach(cm => cm.buildMetaData(this.dbMetaData));
-            }
-        }
-    }
 
     def getPropertyMappingsByPropertyURI(propertyURI: String): Iterable[R2RMLPredicateObjectMap] = {
         this.triplesMaps.map(cm => cm.getPropertyMappings(propertyURI)).flatten
@@ -228,7 +213,7 @@ class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
 object R2RMLMappingDocument {
     val logger = Logger.getLogger(this.getClass().getName());
 
-    def apply(props: MorphProperties, connection: GenericConnection): R2RMLMappingDocument = {
+    def apply(props: MorphProperties): R2RMLMappingDocument = {
         
         val mdPath = props.mappingDocumentFilePath
         
@@ -268,10 +253,6 @@ object R2RMLMappingDocument {
         // From the list of R2RMLTriplesMap, create an R2RML mapping document
         val md = new R2RMLMappingDocument(classMappings.toSet);
         md.mappingDocumentPath = mdPath;
-
-        // Build METADATA
-        if (connection != null)
-            md.buildMetaData(connection, props.databaseName, props.databaseType);
 
         md.mappingDocumentPrefixMap = model.getNsPrefixMap().toMap;
         md

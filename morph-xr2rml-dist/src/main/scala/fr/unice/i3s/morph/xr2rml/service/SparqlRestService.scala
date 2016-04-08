@@ -1,20 +1,25 @@
 package fr.unice.i3s.morph.xr2rml.service
 
+import java.io.FileInputStream
+import java.io.InputStreamReader
+
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.query.QueryFactory
 
 import fr.unice.i3s.morph.xr2rml.engine.MorphRunner
+import javax.ws.rs.Consumes
+import javax.ws.rs.FormParam
 import javax.ws.rs.GET
+import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.HttpHeaders
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import java.io.InputStreamReader
-import java.io.FileInputStream
-import javax.ws.rs.Consumes
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 
 /**
  * REST service implementing the SPARQL query protocol for queries SELECT, DESCRIBE and CONSTRUCT
@@ -37,30 +42,69 @@ class SparqlrestService {
     }
 
     /**
-     * Processing of SPARQL queries SELECT, DESCRIBE and CONSTRUCT
+     * SPARQL Protocol 1.1: Query via GET has no Request Content Type
      */
     @GET
-    @Consumes(Array("application/sparql-query"))
-    def processSparqlQuery(@QueryParam("query") query: String,
-                            @QueryParam("default-graph-uri") defaultGraphUris: java.util.List[String],
-                            @QueryParam("named-graph-uri") namedGraphUris: java.util.List[String]): Response = {
+    def processSparqlQueryGet(@QueryParam("query") query: String,
+                              @QueryParam("default-graph-uri") defaultGraphUris: java.util.List[String],
+                              @QueryParam("named-graph-uri") namedGraphUris: java.util.List[String],
+                              @Context headers: HttpHeaders): Response = {
+
+        processSparqlQuery(query, defaultGraphUris, namedGraphUris, headers)
+    }
+
+    /**
+     * SPARQL Protocol 1.1:
+     * Query via URL-encoded POST has "application/x-www-form-urlencoded" Request Content Type.
+     * Query via POST directly has "application/sparql-query" Request Content Type.
+     */
+    @POST
+    @Consumes(Array("application/x-www-form-urlencoded", "application/sparql-query"))
+    def processSparqlQueryPost(@FormParam("query") query: String,
+                               @FormParam("default-graph-uri") defaultGraphUris: java.util.List[String],
+                               @FormParam("named-graph-uri") namedGraphUris: java.util.List[String],
+                               @Context headers: HttpHeaders): Response = {
+
+        // @Context servletResponse: HttpServletResponse
+        processSparqlQuery(query, defaultGraphUris, namedGraphUris, headers)
+    }
+
+    /**
+     * Processing of SPARQL queries SELECT, DESCRIBE and CONSTRUCT
+     */
+    private def processSparqlQuery(query: String,
+                                   defaultGraphUris: java.util.List[String],
+                                   namedGraphUris: java.util.List[String],
+                                   headers: HttpHeaders): Response = {
+
+        val contentType =
+            if (headers.getRequestHeader(HttpHeaders.CONTENT_TYPE) != null)
+                headers.getRequestHeader(HttpHeaders.CONTENT_TYPE).get(0)
+            else
+                "application/sparql-results+xml"
 
         if (logger.isDebugEnabled) {
-            logger.debug("GET XML, SPARQL query: " + query)
-            logger.debug("GET XML, default graph: " + defaultGraphUris)
-            logger.debug("GET XML, named graph: " + namedGraphUris)
+            logger.debug("HTTP GET, SPARQL query: " + query)
+            logger.debug("HTTP GET, default graph: " + defaultGraphUris)
+            logger.debug("HTTP GET, named graph: " + namedGraphUris)
+            logger.debug("HTTP GET, content type: " + contentType)
         }
 
         try {
             if (query == null || query.isEmpty)
-                return Response.status(Status.NOT_FOUND).header(HttpHeaders.CONTENT_TYPE, "text/plain").entity("No SPARQL query provided.").build
+                return Response.status(Status.BAD_REQUEST).header(HttpHeaders.CONTENT_TYPE, "text/plain").entity("No SPARQL query provided.").build
 
             // Execute the SPARQL query against the database
             val sparqlQuery = QueryFactory.create(query)
-            MorphRunner.runner.runQuery(sparqlQuery)
+
+            // Create the runner to execute this query
+            val factory = MorphBaseRunnerFactory.createFactory
+            val runner = factory.createRunner
+
+            runner.runQuery(sparqlQuery)
 
             // Read the response from the output file and direct it to the HTTP response
-            val file = new FileInputStream(MorphRunner.factory.getProperties.outputFilePath)
+            val file = new FileInputStream(factory.getProperties.outputFilePath)
             return Response.status(Status.OK).
                 header(headerAccept, "*").
                 header(HttpHeaders.CONTENT_TYPE, "application/sparql-results+xml").

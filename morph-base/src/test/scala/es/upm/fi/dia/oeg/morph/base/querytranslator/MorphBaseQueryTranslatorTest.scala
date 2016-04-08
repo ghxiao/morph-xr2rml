@@ -30,7 +30,7 @@ class MorphBaseQueryTranslatorTest {
 
     val factory = new MorphFactoryConcret
     factory.properties = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")
-    factory.mappingDocument = R2RMLMappingDocument(factory.properties, null)
+    factory.mappingDocument = R2RMLMappingDocument(factory.properties)
 
     var queryTranslator = new MorphQueryTranslatorConcret(factory)
 

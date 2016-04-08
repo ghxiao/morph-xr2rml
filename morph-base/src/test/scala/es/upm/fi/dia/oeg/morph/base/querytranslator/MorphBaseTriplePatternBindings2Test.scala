@@ -40,13 +40,15 @@ class MorphFactoryConcret extends MorphBaseRunnerFactory {
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
     override def createQueryProcessor: MorphBaseQueryProcessor = null
+
+    override def postCreateFactory = {}
 }
 
 class MorphBaseTriplePatternBindings2Test {
 
     val factory = new MorphFactoryConcret
     factory.properties = MorphProperties.apply("src/test/resources/query_translator", "morph_test_bindings.properties")
-    factory.mappingDocument = R2RMLMappingDocument(factory.properties, null)
+    factory.mappingDocument = R2RMLMappingDocument(factory.properties)
 
     var queryTranslator = new MorphQueryTranslatorConcret(factory)
 

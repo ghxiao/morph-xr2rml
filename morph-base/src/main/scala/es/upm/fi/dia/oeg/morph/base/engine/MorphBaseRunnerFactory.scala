@@ -16,9 +16,9 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     var properties: MorphProperties = null
 
-    var connection: GenericConnection = null
-
     var mappingDocument: R2RMLMappingDocument = null
+
+    var connection: GenericConnection = null
 
     var unfolder: MorphBaseUnfolder = null
 
@@ -52,11 +52,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     val logger = Logger.getLogger(this.getClass());
 
-    def createRunner: MorphBaseRunner = {
-        if (logger.isDebugEnabled) logger.debug("Creating MorphBaseRunner")
-        new MorphBaseRunner(this)
-    }
-
     def createConnection: GenericConnection
 
     def createUnfolder: MorphBaseUnfolder
@@ -81,23 +76,56 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
             materializer.setModelPrefixMap(prefix);
         materializer
     }
+
+    /**
+     * Optional database-specific steps of the factory creation
+     */
+    def postCreateFactory: Unit
+
+    def createRunner: MorphBaseRunner = {
+        new MorphBaseRunner(this)
+    }
+
 }
 
 object MorphBaseRunnerFactory {
-    def createFactory(properties: MorphProperties): MorphBaseRunnerFactory = {
+
+    var properties: MorphProperties = null
+
+    var mappingDocument: R2RMLMappingDocument = null
+
+    /**
+     * Initialize the factory: create global objects that can be shared by parallel executions 
+     * of a runner, i.e. properties and mapping document.
+     * 
+     * This method must be called before create any factory.
+     */
+    def initFactory(props: MorphProperties) = {
+        MorphBaseRunnerFactory.properties = props
+        MorphBaseRunnerFactory.mappingDocument = R2RMLMappingDocument(properties)
+    }
+
+    /**
+     * Create all instances needed to safely execute several runners in parallel
+     *
+     * @Note initFactory() method must have been called before calling createFactory()
+     */
+    def createFactory: MorphBaseRunnerFactory = {
 
         val factory = Class.forName(properties.runnerFactoryClassName).newInstance().asInstanceOf[MorphBaseRunnerFactory]
 
-        // DO NOT CHANGE ORDER - Objects must be created in this order because of their dependencies
-        factory.properties = properties
+        factory.properties = MorphBaseRunnerFactory.properties
+        factory.mappingDocument = MorphBaseRunnerFactory.mappingDocument
+
         factory.connection = factory.createConnection
-        factory.mappingDocument = R2RMLMappingDocument(factory.properties, factory.connection);
         factory.unfolder = factory.createUnfolder
         factory.dataSourceReader = factory.createDataSourceReader
         factory.materializer = factory.createMaterializer
         factory.dataTranslator = factory.createDataTranslator
         factory.queryTranslator = factory.createQueryTranslator
         factory.queryProcessor = factory.createQueryProcessor
+
+        factory.postCreateFactory // optionally perform any other database-specific step of the creation
         factory
     }
 }

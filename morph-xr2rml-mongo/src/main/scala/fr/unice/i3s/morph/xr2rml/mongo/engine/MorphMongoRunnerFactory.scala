@@ -17,6 +17,11 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
     override val logger = Logger.getLogger(this.getClass().getName())
 
     /**
+     * Optional database-specific steps of the factory creation
+     */
+    override def postCreateFactory = {}
+
+    /**
      * Return a valid connection to the database or raises a runtime exception if anything goes wrong
      */
     override def createConnection: GenericConnection = {
@@ -33,7 +38,6 @@ class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
         }
         cnx
     }
-
     override def createUnfolder: MorphMongoUnfolder = {
         new MorphMongoUnfolder(this)
     }
