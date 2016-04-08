@@ -31,10 +31,13 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
      * Execute the database query, translate the database results into triples,
      * evaluate the SPARQL query on the resulting graph and save the output to a file.
      *
-     * @param mapSparqlSql map of SPARQL queries and associated AbstractQuery instances.
-     * Each AbstractQuery has been translated into executable target queries
+     * @param sparqlQuery SPARQL query 
+     * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery
+     * in which the executable target queries have been computed
+     * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, or of the 
+     * RDF syntaxes for a SPARQL DESCRIBE or CONSTRUCT query
      */
-    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery) {
+    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String) {
 
         var start = System.currentTimeMillis()
         factory.getDataTranslator.generateRDFTriples(abstractQuery)
@@ -51,14 +54,14 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
         } else if (sparqlQuery.isConstructType) {
             // --- SPARQL CONSTRUCT
             val result: Model = qexec.execConstruct
-            factory.getMaterializer.serialize(result)
+            factory.getMaterializer.serialize(result, syntax)
             qexec.close
 
         } else if (sparqlQuery.isDescribeType) {
             // --- SPARQL DESCRIBE
             val dh: DescribeBNodeClosure = null
             val result: Model = qexec.execDescribe
-            factory.getMaterializer.serialize(result)
+            factory.getMaterializer.serialize(result, syntax)
             qexec.close
 
         } else if (sparqlQuery.isSelectType) {
@@ -70,11 +73,11 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
                 resultSet = new ResultSetMem(resultSet)
 
             if (resultSet.hasNext) {
-                if (factory.getProperties.outputSyntaxResult == Constants.OUTPUT_FORMAT_RESULT_XML) {
+                if (syntax == Constants.OUTPUT_FORMAT_RESULT_XML) {
                     val writer = new PrintWriter(factory.getProperties.outputFilePath, "UTF-8")
                     writer.write(ResultSetFormatter.asXMLString(resultSet))
                     writer.close
-                } else if (factory.getProperties.outputSyntaxResult == Constants.OUTPUT_FORMAT_RESULT_JSON) {
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_JSON) {
                     val outputStream = new FileOutputStream(factory.getProperties.outputFilePath)
                     ResultSetFormatter.outputAsJSON(outputStream, resultSet)
                     outputStream.close

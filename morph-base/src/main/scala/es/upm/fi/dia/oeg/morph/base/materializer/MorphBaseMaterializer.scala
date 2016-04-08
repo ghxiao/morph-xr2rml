@@ -27,19 +27,19 @@ class MorphBaseMaterializer(
     /**
      * Serialize the current model into the output file
      */
-    def serialize() { serialize(this.model) }
+    def serialize(syntax: String) { serialize(this.model, syntax) }
 
     /**
      * Utility method to serialize any model into the output file
      */
-    def serialize(model: Model) {
+    def serialize(model: Model, syntax: String) {
         val outputStream = new FileOutputStream(factory.getProperties.outputFilePath)
 
         logger.info("Model size (in triples): " + model.size())
         logger.info("Writing serialization to output stream " + outputStream)
 
         val writer = new OutputStreamWriter(outputStream, "UTF-8")
-        model.write(writer, factory.getProperties.outputSyntaxRdf, null)
+        model.write(writer, syntax, null)
         outputStream.flush
         outputStream.close
     }

@@ -79,9 +79,9 @@ class SparqlrestService {
                                    namedGraphUris: java.util.List[String],
                                    headers: HttpHeaders): Response = {
 
-        val contentType =
-            if (headers.getRequestHeader(HttpHeaders.CONTENT_TYPE) != null)
-                headers.getRequestHeader(HttpHeaders.CONTENT_TYPE).get(0)
+        val accept =
+            if (headers.getRequestHeader(HttpHeaders.ACCEPT) != null)
+                headers.getRequestHeader(HttpHeaders.ACCEPT).get(0)
             else
                 "application/sparql-results+xml"
 
@@ -89,12 +89,16 @@ class SparqlrestService {
             logger.debug("HTTP GET, SPARQL query: " + query)
             logger.debug("HTTP GET, default graph: " + defaultGraphUris)
             logger.debug("HTTP GET, named graph: " + namedGraphUris)
-            logger.debug("HTTP GET, content type: " + contentType)
+            logger.debug("HTTP GET, Content-Type: " + headers.getRequestHeader(HttpHeaders.CONTENT_TYPE))
+            logger.debug("HTTP GET, Accept: " + accept)
         }
 
         try {
             if (query == null || query.isEmpty)
-                return Response.status(Status.BAD_REQUEST).header(HttpHeaders.CONTENT_TYPE, "text/plain").entity("No SPARQL query provided.").build
+                return Response.status(Status.BAD_REQUEST).
+                    header(headerAccept, "*").
+                    header(HttpHeaders.CONTENT_TYPE, "text/plain").
+                    entity("No SPARQL query provided.").build
 
             // Execute the SPARQL query against the database
             val sparqlQuery = QueryFactory.create(query)
@@ -104,9 +108,12 @@ class SparqlrestService {
             val runner: MorphBaseRunner = factory.createRunner
 
             // Negotiate the content type of the response to the SPARQL query
-            val negContentType = runner.negotiateContentType(contentType, sparqlQuery)
+            val negContentType = runner.negotiateContentType(accept, sparqlQuery)
             if (!negContentType.isDefined)
-                return Response.status(Status.BAD_REQUEST).header(HttpHeaders.CONTENT_TYPE, "text/plain").entity("Requested content type not supported.").build
+                return Response.status(Status.BAD_REQUEST).
+                    header(headerAccept, "*").
+                    header(HttpHeaders.CONTENT_TYPE, "text/plain").
+                    entity("Requested content type not supported: " + accept).build
 
             runner.runQuery(sparqlQuery, negContentType.get)
 

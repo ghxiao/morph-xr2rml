@@ -38,7 +38,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
         factory.getDataTranslator.translateData_Materialization(factory.getMappingDocument)
 
         // Write the result to the output file
-        factory.getMaterializer.serialize
+        factory.getMaterializer.serialize(factory.getProperties.outputSyntaxRdf)
         conclude(startTime)
     }
 
@@ -46,17 +46,26 @@ class MorphBaseRunner(val factory: IMorphFactory) {
      * Run with a SPARQL query, either from the SPARQL endpoint more or in stand-alone running mode
      *
      * @param sparqlQuery hum... the SPARQL query.
-     * @param contentType content-type HTTP header from the SPARQL query if any. Can be null.
+     * @param contentType content-type HTTP header from the SPARQL query if any. Can be null,
+     * in that case the format used us that of the configuration file
      */
-    def runQuery(query: Query, contentType: String) = {
+    def runQuery(query: Query, contentType: String): Unit = {
         if (logger.isInfoEnabled) {
             logger.info("=================================================================================================================")
             logger.info("Running query translation. Content-type: " + contentType)
         }
-
+        
+        // Figure out the output syntax using the query content-type if any, 
+        // the type of query (SELECT, ASK, DESCRIBE, CONSTRUCT),
+        // and the default formats mentioned in the configuration file
         val dfltSyntaxRdf = factory.getProperties.outputSyntaxRdf
         val dfltResultFrmt = factory.getProperties.outputSyntaxResult
         val negCT = SparqlUtility.negotiateContentType(contentType, query, dfltSyntaxRdf, dfltResultFrmt)
+        val syntax =
+            if (!negCT.isDefined) {
+                logger.error("Content-type negotiation failed. Ignoring the query.")
+                return
+            } else negCT.get._2
 
         val startTime = System.currentTimeMillis()
 
@@ -68,7 +77,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
                 logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
             }
 
-            factory.getQueryProcessor.process(query, rewrittenQuery.get)
+            factory.getQueryProcessor.process(query, rewrittenQuery.get, syntax)
         } else
             logger.warn("Could not translate the SPARQL into a target query.")
 

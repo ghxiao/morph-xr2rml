@@ -38,8 +38,15 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
     /**
      * Execute the query and translate the results from the database into triples.<br>
      * In the RDB case the AbstractQuery should contain only one element.<br>
+     * 
+     * @param sparqlQuery SPARQL query 
+     * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery, 
+     * in which the executable target queries have been computed
+     * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, and RDF 
+     * syntax for a SPARQL DESCRIBE or CONSTRUCT query
+     * 
      */
-    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery) {
+    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String) {
         val start = System.currentTimeMillis();
 
         // In the RDB case the abstract query should just contain one GenericQuery

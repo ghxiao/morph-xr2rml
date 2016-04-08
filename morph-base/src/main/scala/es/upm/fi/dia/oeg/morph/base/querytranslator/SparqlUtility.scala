@@ -243,6 +243,8 @@ object SparqlUtility {
                     None
                 else if (ctl contains "application/sparql-results+vsv")
                     None
+                else if (ctl contains "application/xml")
+                    Some(("application/xml", Constants.OUTPUT_FORMAT_RESULT_XML))
                 else
                     None
             }
@@ -268,7 +270,7 @@ object SparqlUtility {
         } else None
 
         if (logger.isInfoEnabled)
-            logger.info("Request Content-Type: " + contentType + ". Negotiated: " + result.getOrElse("None"))
+            logger.info("Request Accept: " + contentType + ". Negotiated: " + result.getOrElse("None"))
         result
     }
 
