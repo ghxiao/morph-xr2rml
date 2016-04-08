@@ -14,14 +14,6 @@ import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
  */
 abstract class MorphBaseQueryProcessor(factory: IMorphFactory) {
 
-    def preProcess(sparqlQuery: Query): Unit
-
-    def process(sparqlQuery: Query, resultSet: MorphBaseResultSet): Unit
-
-    def postProcess(): Unit
-
-    def getOutput(): Object
-
     /**
      * Execute the query and translate the results from the database into triples.<br>
      * In the RDB case the AbstractQuery should contain only one element.<br>
@@ -29,6 +21,6 @@ abstract class MorphBaseQueryProcessor(factory: IMorphFactory) {
      * Conversely, for MongoDB there may be several queries in the AbstractQuery.
      * In this case the xR2RML processor shall compute the union of those queries.
      */
-    def translateResult(sparqlQuery: Query, abstractQuery: AbstractQuery)
+    def process(sparqlQuery: Query, abstractQuery: AbstractQuery)
 
 }

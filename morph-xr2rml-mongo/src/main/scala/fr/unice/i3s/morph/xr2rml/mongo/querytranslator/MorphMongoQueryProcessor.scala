@@ -15,7 +15,6 @@ import com.hp.hpl.jena.sparql.core.describe.DescribeBNodeClosure
 import com.hp.hpl.jena.sparql.resultset.ResultSetMem
 
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
@@ -35,7 +34,7 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
      * @param mapSparqlSql map of SPARQL queries and associated AbstractQuery instances.
      * Each AbstractQuery has been translated into executable target queries
      */
-    override def translateResult(sparqlQuery: Query, abstractQuery: AbstractQuery) {
+    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery) {
 
         var start = System.currentTimeMillis()
         factory.getDataTranslator.generateRDFTriples(abstractQuery)
@@ -98,12 +97,4 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
 
         logger.info("Late SPARQL query evaluation time = " + (System.currentTimeMillis - start) + "ms.");
     }
-
-    override def preProcess(sparqlQuery: Query): Unit = {}
-
-    override def process(sparqlQuery: Query, resultSet: MorphBaseResultSet): Unit = {}
-
-    override def postProcess(): Unit = {}
-
-    override def getOutput(): Object = { null }
 }

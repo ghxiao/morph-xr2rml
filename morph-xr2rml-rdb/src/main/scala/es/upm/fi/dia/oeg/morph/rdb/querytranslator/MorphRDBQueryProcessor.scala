@@ -14,18 +14,20 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.TermMapResult
+import es.upm.fi.dia.oeg.morph.base.XMLUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphXMLQueryProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
+import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlResultSetXml
 import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
 
-class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProcessor(factory) {
+class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProcessor(factory) {
 
-    override val logger = Logger.getLogger(this.getClass().getName());
+    val logger = Logger.getLogger(this.getClass().getName());
 
     private var mapTemplateMatcher: Map[String, Matcher] = Map.empty;
 
@@ -37,7 +39,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
      * Execute the query and translate the results from the database into triples.<br>
      * In the RDB case the AbstractQuery should contain only one element.<br>
      */
-    override def translateResult(sparqlQuery: Query, abstractQuery: AbstractQuery) {
+    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery) {
         val start = System.currentTimeMillis();
 
         // In the RDB case the abstract query should just contain one GenericQuery
@@ -50,42 +52,49 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
         resultSet.setColumnNames(columnNames);
 
         // Initialize the XML document and build the content
-        this.preProcess(sparqlQuery);
-        this.process(sparqlQuery, resultSet)
-        
-        // Write the XMl result set to the output
-        this.postProcess
+        val xmlResult = SparqlResultSetXml(factory, sparqlQuery)
+        this.makeBody(xmlResult, sparqlQuery, resultSet)
 
+        // Write the XML result set to the output
+        xmlResult.save
         logger.info("Result generation time = " + (System.currentTimeMillis - start) + "ms.");
     }
 
     /**
      * Create the body of the SPARQL result set
      * <pre>
-     * <result>
-     * 	 <binding name="var1"> <uri>...</uri> </binding>
-     * 	 <binding name="var2"> <literal>...</literal> </binding>
+     * &lt;result&gt;
+     * 	 &lt;binding name="var1"&gt; &lt;uri&gt;...&lt;/uri&gt; &lt;/binding&gt;
+     * 	 &lt;binding name="var2"&gt; &lt;literal&gt;...&lt;/literal&gt; &lt;/binding&gt;
      *   ...
-     * </result>
+     * &lt;/result&gt;
      * ...
      * </pre>
-     *
      */
-    override def process(sparqlQuery: Query, absResultSet: MorphBaseResultSet) = {
+    private def makeBody(xmlResultSet: SparqlResultSetXml, sparqlQuery: Query, absResultSet: MorphBaseResultSet) = {
         var i = 0;
+
+        val xmlDoc = xmlResultSet.getDoc
+        val results = xmlDoc.createElement("results")
+        val rootElement = xmlDoc.getElementsByTagName("sparql").item(0)
+        rootElement.appendChild(results)
+
         val resultSet = absResultSet.asInstanceOf[MorphRDBResultSet]
+
+
         while (resultSet.next()) {
-            val resultElement = xmlDoc.createElement("result");
-            resultsElement.appendChild(resultElement);
+            
+            val result = xmlDoc.createElement("result")
+            results.appendChild(result)
 
             for (varName <- sparqlQuery.getResultVars()) {
                 val translatedColVal = this.translateResultSet(varName, resultSet);
                 if (translatedColVal != null) {
-                    val lexicalValue = transformToLexical(translatedColVal.translatedValue, translatedColVal.xsdDatatype)
+                    val lexicalValue = XMLUtility.transformToLexical(translatedColVal.translatedValue, translatedColVal.xsdDatatype)
                     if (lexicalValue != null) {
                         val bindingElt = xmlDoc.createElement("binding");
                         bindingElt.setAttribute("name", varName);
-                        resultElement.appendChild(bindingElt);
+                        result.appendChild(bindingElt);
                         val termType = translatedColVal.termType;
                         if (termType != null) {
                             val termTypeEltName = {
@@ -105,7 +114,8 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
             }
             i = i + 1;
         }
-        logger.info(i + " variable result mappings retrieved");
+        logger.info(i + " variable result mappings retrieved")
+        println(XMLUtility.printXMLDocument(xmlDoc, true, false))
     }
 
     private def translateResultSet(varName: String, absResultSet: MorphBaseResultSet): TermMapResult = {
@@ -125,9 +135,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
                     } else {
                         val termMap: R2RMLTermMap = {
                             mapValue.get match {
-                                case mappedValueTermMap: R2RMLTermMap => {
-                                    mappedValueTermMap;
-                                }
+                                case mappedValueTermMap: R2RMLTermMap => { mappedValueTermMap }
                                 case mappedValueRefObjectMap: R2RMLRefObjectMap => {
                                     val parentTriplesMap = factory.getMappingDocument.getParentTriplesMap(mappedValueRefObjectMap);
                                     parentTriplesMap.subjectMap;
@@ -144,10 +152,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
                                 termMap.termMapType match {
                                     case Constants.MorphTermMapType.TemplateTermMap => {
                                         val templateString = termMap.getTemplateString();
-                                        if (this.mapTemplateMatcher.contains(templateString)) {
-                                            val matcher = this.mapTemplateMatcher.get(templateString);
-                                            // so what??? This block does nothing
-                                        } else {
+                                        if (!this.mapTemplateMatcher.contains(templateString)) {
                                             val pattern = Pattern.compile(Constants.R2RML_TEMPLATE_PATTERN);
                                             val matcher = pattern.matcher(templateString);
                                             this.mapTemplateMatcher += (templateString -> matcher);
@@ -189,6 +194,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
                                         // Side effects not guaranteed!
                                         templateResult(0);
                                     }
+
                                     case Constants.MorphTermMapType.ColumnTermMap | Constants.MorphTermMapType.ReferenceTermMap => {
                                         val rsObjectVarName = resultSet.getObject(varName).toString()
                                         if (rsObjectVarName == null)
@@ -196,6 +202,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
                                         else
                                             rsObjectVarName.toString();
                                     }
+
                                     case Constants.MorphTermMapType.ConstantTermMap => {
                                         termMap.getConstantValue();
                                     }
@@ -273,5 +280,4 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphXMLQueryProces
             }
         }
     }
-
 }
