@@ -74,7 +74,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         //--- Calculate the Triple Pattern Bindings
         val opFiltered = excludeTriplesAboutCollecOrContainer(op)
         if (!opFiltered.isDefined) {
-            logger.warn("Query cannot be processed due to collection/container related triples")
+            logger.warn("Query cannot be processed due to collection/container related triples.")
             return None
         }
         val bindings = triplePatternBinder.bindm(opFiltered.get)
@@ -187,16 +187,16 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 this.translateSparqlQuery(bindings, opFilter.getSubOp)
             }
             case opSlice: OpSlice => {
-                logger.warn("SPARQL Slice no supported in query translation.")
-                None
+                logger.warn("SPARQL LIMIT no supported in query translation.")
+                this.translateSparqlQuery(bindings, opSlice.getSubOp)
             }
             case opDistinct: OpDistinct => {
                 logger.warn("SPARQL DISTINCT no supported in query translation.")
-                None
+                this.translateSparqlQuery(bindings, opDistinct.getSubOp)
             }
             case opOrder: OpOrder => {
                 logger.warn("SPARQL ORDER no supported in query translation.")
-                None
+                this.translateSparqlQuery(bindings, opOrder.getSubOp)
             }
             case _ => {
                 logger.warn("SPARQL feature no supported in query translation.")
@@ -206,8 +206,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     }
 
     private final val REGEX_RDF_CONTAINER_PREDICATE = ("^" + Constants.RDF_NS + """_\p{Alnum}+""").r
-    private final val REGEX_RDF_LIST_PREDICATE = ("^" + Constants.RDF_NS + """[first|rest|nil]""").r
-    private final val REGEX_RDF_LIST_CONT_CLASSES = ("^" + Constants.RDF_NS + """[List|Bag|Seq|Alt]""").r
+    private final val REGEX_RDF_LIST_PREDICATE = ("^" + Constants.RDF_NS + """(first|rest|nil)""").r
+    private final val REGEX_RDF_LIST_CONT_CLASSES = ("^" + Constants.RDF_NS + """(List|Bag|Seq|Alt)""").r
 
     /**
      * Check if a triple deals with collections or containers, i.e. either its predicate is one<br>
@@ -224,7 +224,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         return REGEX_RDF_CONTAINER_PREDICATE.findFirstMatchIn(pred).isDefined ||
             REGEX_RDF_LIST_PREDICATE.findFirstMatchIn(pred).isDefined ||
             // rdf:type [rdf:List|rdf:Bag|rdf:Seq|rdf:Alt]
-            (pred == Constants.RDF_NS + "type" && REGEX_RDF_LIST_CONT_CLASSES.findFirstMatchIn(pred).isDefined)
+            (pred == (Constants.RDF_NS + "type") && tp.getObject.isURI && REGEX_RDF_LIST_CONT_CLASSES.findFirstMatchIn(obj).isDefined)
     }
 
     /**
@@ -307,16 +307,32 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     right
             }
             case opFilter: OpFilter => {
-                excludeTriplesAboutCollecOrContainer(opFilter.getSubOp)
+                val sub = excludeTriplesAboutCollecOrContainer(opFilter.getSubOp)
+                if (sub.isDefined)
+                    Some(OpFilter.filter(opFilter.getExprs, sub.get))
+                else
+                    None
             }
             case opSlice: OpSlice => {
-                excludeTriplesAboutCollecOrContainer(opSlice.getSubOp)
+                val sub = excludeTriplesAboutCollecOrContainer(opSlice.getSubOp)
+                if (sub.isDefined)
+                    Some(new OpSlice(sub.get, opSlice.getStart, opSlice.getLength))
+                else
+                    None
             }
             case opDistinct: OpDistinct => {
-                excludeTriplesAboutCollecOrContainer(opDistinct.getSubOp)
+                val sub = excludeTriplesAboutCollecOrContainer(opDistinct.getSubOp)
+                if (sub.isDefined)
+                    Some(OpDistinct.create(sub.get))
+                else
+                    None
             }
             case opOrder: OpOrder => {
-                excludeTriplesAboutCollecOrContainer(opOrder.getSubOp)
+                val sub = excludeTriplesAboutCollecOrContainer(opOrder.getSubOp)
+                if (sub.isDefined)
+                    Some(new OpOrder(sub.get, opOrder.getConditions))
+                else
+                    None
             }
             case _ => { Some(op) }
         }

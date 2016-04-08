@@ -36,6 +36,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
+import es.upm.fi.dia.oeg.morph.base.Constants
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
@@ -235,6 +236,20 @@ class MorphMongoQueryTranslatorTest {
         val q = Q.asInstanceOf[AbstractQueryInnerJoinRef]
         assertEquals("$.directed.*", q.childRef)
         assertEquals("$.dirname", q.parentRef)
+    }
+
+    @Test def test_excludeTriplesAboutCollecOrContainer0() {
+        println("------ test_excludeTriplesAboutCollecOrContainer0")
+
+        val q = """ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX ex: <http://example.org/>
+                    SELECT * WHERE { ?x a ?y . }"""
+
+        val query = QueryFactory.create(q)
+        val op = Algebra.compile(query)
+        val op2 = queryTranslator.excludeTriplesAboutCollecOrContainer(op)
+        println(op2)
+        assertTrue(op2.isDefined)
     }
 
     @Test def test_excludeTriplesAboutCollecOrContainer() {
