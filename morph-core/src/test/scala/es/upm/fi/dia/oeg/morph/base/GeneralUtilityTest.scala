@@ -93,7 +93,7 @@ class GeneralUtilityTest {
     @Test def TestCreateRandomFile() {
         println("------------------ TestCreateRandomFile ------------------")
 
-        val dir = new File("/tmp").createNewFile
+        val dir = new File("/tmp").mkdirs
         
         var f = GeneralUtility.createRandomFile("/tmp", "", "")
         assertTrue(f.isDefined)

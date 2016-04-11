@@ -34,20 +34,23 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
      * evaluate the SPARQL query on the resulting graph and save the output to a file.
      *
      * @param sparqlQuery SPARQL query
-     * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery
-     * in which the executable target queries have been computed
+     * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery,
+     * in which the executable target queries have been computed.
+     * If None, then an empty response must be generated.
      * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, or of the
      * RDF syntaxes for a SPARQL DESCRIBE or CONSTRUCT query
      */
-    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String): Option[File] = {
+    override def process(sparqlQuery: Query, abstractQuery: Option[AbstractQuery], syntax: String): Option[File] = {
 
-        var start = System.currentTimeMillis
+        val start = System.currentTimeMillis
 
-        factory.getDataTranslator.generateRDFTriples(abstractQuery)
-        logger.info("Time for query execution and triples generation = " + (System.currentTimeMillis - start) + "ms.");
+        if (abstractQuery.isDefined) {
+            factory.getDataTranslator.generateRDFTriples(abstractQuery.get)
+            logger.info("Time for query execution and triples generation = " + (System.currentTimeMillis - start) + "ms.");
+        }
 
         // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
-        start = System.currentTimeMillis();
+        // If abstractQuery is not defined then the model will be empty. Therefore no response will come up.
         val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
 
         // Decide the output file
@@ -84,19 +87,17 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
                     // Create an in-memory result set to display it in tabular format as well as save it to a file
                     resultSet = new ResultSetMem(resultSet)
 
-                if (resultSet.hasNext) {
-                    if (syntax == Constants.OUTPUT_FORMAT_RESULT_XML) {
-                        val writer = new PrintWriter(output.get, "UTF-8")
-                        writer.write(ResultSetFormatter.asXMLString(resultSet))
-                        writer.close
-                    } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_JSON) {
-                        val outputStream = new FileOutputStream(output.get)
-                        ResultSetFormatter.outputAsJSON(outputStream, resultSet)
-                        outputStream.close
-                    } else {
-                        logger.error("Invalid output result syntax: " + factory.getProperties.outputSyntaxResult)
-                        output = None
-                    }
+                if (syntax == Constants.OUTPUT_FORMAT_RESULT_XML) {
+                    val writer = new PrintWriter(output.get, "UTF-8")
+                    writer.write(ResultSetFormatter.asXMLString(resultSet))
+                    writer.close
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_JSON) {
+                    val outputStream = new FileOutputStream(output.get)
+                    ResultSetFormatter.outputAsJSON(outputStream, resultSet)
+                    outputStream.close
+                } else {
+                    logger.error("Invalid output result syntax: " + factory.getProperties.outputSyntaxResult)
+                    output = None
                 }
 
                 if (output.isDefined && factory.getProperties.outputDisplay) {

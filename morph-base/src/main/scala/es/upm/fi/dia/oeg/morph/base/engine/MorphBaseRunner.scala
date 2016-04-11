@@ -77,10 +77,13 @@ class MorphBaseRunner(val factory: IMorphFactory) {
                 logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
                 logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
             }
-
-            output = factory.getQueryProcessor.process(query, rewrittenQuery.get, syntax)
         } else
             logger.warn("Could not translate the SPARQL into a target query.")
+
+        // Execute the query and build the response.
+        // If the translation failed because no binding was found (rewrittenQuery is None) 
+        // then send an empty response, but send a valid SPARQL response anyway
+        output = factory.getQueryProcessor.process(query, rewrittenQuery, syntax)
 
         if (logger.isInfoEnabled)
             logger.info("Query response output file: " + output.getOrElse("None"))

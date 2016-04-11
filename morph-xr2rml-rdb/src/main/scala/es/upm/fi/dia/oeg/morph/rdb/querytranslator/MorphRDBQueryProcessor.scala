@@ -47,18 +47,20 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
      * syntax for a SPARQL DESCRIBE or CONSTRUCT query
      *
      */
-    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String): Option[File] = {
+    override def process(sparqlQuery: Query, abstractQuery: Option[AbstractQuery], syntax: String): Option[File] = {
         val start = System.currentTimeMillis();
 
         // Decide the output file
         var output: Option[File] =
-            if (factory.getProperties.serverActive)
+            if (!abstractQuery.isDefined)
+                None
+            else if (factory.getProperties.serverActive)
                 GeneralUtility.createRandomFile("", factory.getProperties.outputFilePath + ".", "")
             else Some(new File(factory.getProperties.outputFilePath))
 
-        if (output.isDefined) {
+        if (output.isDefined && abstractQuery.isDefined) {
             // In the RDB case the abstract query should just contain one GenericQuery
-            val genQuery = abstractQuery.targetQuery(0).asInstanceOf[GenericQuery]
+            val genQuery = abstractQuery.get.targetQuery(0).asInstanceOf[GenericQuery]
             val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database

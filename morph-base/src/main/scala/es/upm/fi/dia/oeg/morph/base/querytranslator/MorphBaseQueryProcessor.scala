@@ -21,9 +21,10 @@ abstract class MorphBaseQueryProcessor(factory: IMorphFactory) {
      * 
      * @param sparqlQuery SPARQL query 
      * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery,
-     * in which the executable target queries have been computed
+     * in which the executable target queries have been computed.
+     * If None, then an empty response must be generated.
      * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, and RDF 
      * syntax for a SPARQL DESCRIBE or CONSTRUCT query
      */
-    def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String): Option[File]
+    def process(sparqlQuery: Query, abstractQuery: Option[AbstractQuery], syntax: String): Option[File]
 }
