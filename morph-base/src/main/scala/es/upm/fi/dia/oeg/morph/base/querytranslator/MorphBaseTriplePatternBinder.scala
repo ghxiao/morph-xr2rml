@@ -24,6 +24,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import com.hp.hpl.jena.sparql.algebra.op.OpGroup
 
 /**
  * Representation of the bindings of several triples map to a triple pattern
@@ -264,6 +265,9 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
             }
             case opOrder: OpOrder => {
                 bindm(opOrder.getSubOp)
+            }
+            case opGroup: OpGroup => {
+                bindm(opGroup.getSubOp)
             }
             case _ => {
                 Map.empty

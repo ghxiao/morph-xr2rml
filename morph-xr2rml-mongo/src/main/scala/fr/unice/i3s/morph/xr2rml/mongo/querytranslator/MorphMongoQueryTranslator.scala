@@ -2,12 +2,15 @@ package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
 import com.hp.hpl.jena.sparql.algebra.op.OpFilter
+import com.hp.hpl.jena.sparql.algebra.op.OpGroup
 import com.hp.hpl.jena.sparql.algebra.op.OpJoin
 import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
 import com.hp.hpl.jena.sparql.algebra.op.OpOrder
@@ -15,12 +18,15 @@ import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
+
+import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
+import es.upm.fi.dia.oeg.morph.base.query.IReference
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
@@ -34,10 +40,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
-import es.upm.fi.dia.oeg.morph.base.query.IReference
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
-import es.upm.fi.dia.oeg.morph.base.Constants
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -198,6 +200,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 logger.warn("SPARQL ORDER no supported in query translation.")
                 this.translateSparqlQuery(bindings, opOrder.getSubOp)
             }
+            case opGroup: OpGroup => {
+                logger.warn("SPARQL GROUP BY no supported in query translation.")
+                this.translateSparqlQuery(bindings, opGroup.getSubOp)
+            }
             case _ => {
                 logger.warn("SPARQL feature no supported in query translation.")
                 None
@@ -331,6 +337,13 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 val sub = excludeTriplesAboutCollecOrContainer(opOrder.getSubOp)
                 if (sub.isDefined)
                     Some(new OpOrder(sub.get, opOrder.getConditions))
+                else
+                    None
+            }
+            case opGroup: OpGroup => {
+                val sub = excludeTriplesAboutCollecOrContainer(opGroup.getSubOp)
+                if (sub.isDefined)
+                    Some(new OpGroup(sub.get, opGroup.getGroupVars, opGroup.getAggregators))
                 else
                     None
             }

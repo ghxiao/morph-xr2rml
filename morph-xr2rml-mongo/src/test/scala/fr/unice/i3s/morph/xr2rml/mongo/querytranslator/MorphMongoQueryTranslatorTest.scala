@@ -337,4 +337,33 @@ class MorphMongoQueryTranslatorTest {
             NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#List"))
         assertFalse(triples.contains(tp.toString))
     }
+
+    @Test def test_excludeTriplesAboutCollecOrContainer_NoExclusion() {
+        println("------ test_excludeTriplesAboutCollecOrContainer_NoExclusion")
+
+        val q = """ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX ex: <http://example.org/>
+                    SELECT DISTINCT ?x WHERE { ?x a ?y . } GROUP BY ?x HAVING (?x > 10)"""
+        val query = QueryFactory.create(q)
+        val op = Algebra.compile(query)
+
+        val op2 = queryTranslator.excludeTriplesAboutCollecOrContainer(op)
+        println(op2)
+        assertEquals(op, op2.get)
+
+    }
+    @Test def test_excludeTriplesAboutCollecOrContainer_NoExclusion2() {
+        println("------ test_excludeTriplesAboutCollecOrContainer_NoExclusion2")
+
+        val q = """ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX ex: <http://example.org/>
+                    SELECT DISTINCT * WHERE { ?x a ?y . } ORDER BY ?x DESC(?y) LIMIT 1000"""
+        val query = QueryFactory.create(q)
+        val op = Algebra.compile(query)
+
+        val op2 = queryTranslator.excludeTriplesAboutCollecOrContainer(op)
+        println(op2)
+        assertEquals(op, op2.get)
+    }
+
 }
