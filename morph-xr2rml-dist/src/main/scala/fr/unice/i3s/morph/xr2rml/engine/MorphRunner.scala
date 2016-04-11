@@ -13,6 +13,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import fr.unice.i3s.morph.xr2rml.server.SparqlEndpoint
+import java.net.URL
 
 /**
  * MorphRunner is the main entry point of the Morph-xR2RML application.
@@ -22,15 +23,21 @@ import fr.unice.i3s.morph.xr2rml.server.SparqlEndpoint
  */
 object MorphRunner {
 
-    val log4jfile = this.getClass.getClassLoader.getResource("xr2rml-log4j.properties")
-    println("Loading log4j configuration: " + log4jfile)
-    PropertyConfigurator.configure(log4jfile)
-
-    val logger = Logger.getLogger(this.getClass())
-
-    var factory: MorphBaseRunnerFactory = null
-
     def main(args: Array[String]) {
+        val overrideLlog4j = System.getProperty("log4j.configuration")
+        val log4jfile =
+            if (overrideLlog4j != null && !overrideLlog4j.isEmpty)
+                new URL(overrideLlog4j)
+            else {
+                println("To override log4j configuration add JVM option: -Dlog4j.configuration=file:/home/.../your_log4j.properties" )
+                this.getClass.getClassLoader.getResource("xr2rml-log4j.properties")
+            }
+
+        println("Loading log4j configuration: " + log4jfile)
+        PropertyConfigurator.configure(log4jfile)
+
+        val logger = Logger.getLogger(this.getClass())
+
         try {
             // Default config dir and file
             var configDir = "example_mysql"
@@ -54,7 +61,6 @@ object MorphRunner {
 
             if (properties.serverActive) {
                 // --- Create the SPARQL endpoint and wait for queries
-                logger.info("Running SPARQL endpoint...")
                 SparqlEndpoint.create(properties)
 
             } else {

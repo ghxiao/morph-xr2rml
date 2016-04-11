@@ -32,6 +32,7 @@ object SparqlEndpoint {
         context.addServlet(servlet, "/*")
 
         server.start()
+        println("SPARQL endpoint started on: http://localhost:" + properties.serverPort + "/sparql")
         server.join()
     }
 }

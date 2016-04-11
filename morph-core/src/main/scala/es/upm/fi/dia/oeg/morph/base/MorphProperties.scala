@@ -326,7 +326,7 @@ object MorphProperties {
         properties.configurationFileURL = configFile;
         properties.configurationDirectory = configDir;
 
-        logger.info("Reading configuration file : " + configFile);
+        println("Reading configuration file : " + configFile);
         try {
             properties.load(new FileInputStream(configFile));
         } catch {
