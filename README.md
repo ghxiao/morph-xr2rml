@@ -78,7 +78,7 @@ Besides, the logger configuration can be overriden by passing the `log4j.configu
 java -Dlog4j.configuration=file:/path/to/my/log4j.configuration -jar ...
 ```
 
-**From an IDE ** such as Eclipse or IntelliJ: In project morph-xr2rml-dist locate main class `fr.unice.i3s.morph.xr2rml.engine.MorphRunner`, and run it as a Scala application with arguments `--configDir` and `--configFile`.
+**From an IDE** such as Eclipse or IntelliJ: In project morph-xr2rml-dist locate main class `fr.unice.i3s.morph.xr2rml.engine.MorphRunner`, and run it as a Scala application with arguments `--configDir` and `--configFile`.
 
 ### SPARQL endpoint
 
