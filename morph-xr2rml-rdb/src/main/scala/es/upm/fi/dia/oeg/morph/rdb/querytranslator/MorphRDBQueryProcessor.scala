@@ -24,6 +24,7 @@ import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
+import java.io.File
 
 class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProcessor(factory) {
 
@@ -38,33 +39,43 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
     /**
      * Execute the query and translate the results from the database into triples.<br>
      * In the RDB case the AbstractQuery should contain only one element.<br>
-     * 
-     * @param sparqlQuery SPARQL query 
-     * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery, 
+     *
+     * @param sparqlQuery SPARQL query
+     * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery,
      * in which the executable target queries have been computed
-     * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, and RDF 
+     * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, and RDF
      * syntax for a SPARQL DESCRIBE or CONSTRUCT query
-     * 
+     *
      */
-    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String) {
+    override def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String): Option[File] = {
         val start = System.currentTimeMillis();
 
-        // In the RDB case the abstract query should just contain one GenericQuery
-        val genQuery = abstractQuery.targetQuery(0).asInstanceOf[GenericQuery]
-        val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
+        // Decide the output file
+        var output: Option[File] =
+            if (factory.getProperties.serverActive)
+                GeneralUtility.createRandomFile("", factory.getProperties.outputFilePath + ".", "")
+            else Some(new File(factory.getProperties.outputFilePath))
 
-        // Execution of the concrete SQL query against the database
-        val resultSet = factory.getDataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
-        val columnNames = iQuery.getSelectItemAliases();
-        resultSet.setColumnNames(columnNames);
+        if (output.isDefined) {
+            // In the RDB case the abstract query should just contain one GenericQuery
+            val genQuery = abstractQuery.targetQuery(0).asInstanceOf[GenericQuery]
+            val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
-        // Initialize the XML document and build the content
-        val xmlResult = SparqlResultSetXml(factory, sparqlQuery)
-        this.makeBody(xmlResult, sparqlQuery, resultSet)
+            // Execution of the concrete SQL query against the database
+            val resultSet = factory.getDataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
+            val columnNames = iQuery.getSelectItemAliases();
+            resultSet.setColumnNames(columnNames);
 
-        // Write the XML result set to the output
-        xmlResult.save
-        logger.info("Time for query execution and result generation = " + (System.currentTimeMillis - start) + "ms.");
+            // Initialize the XML document and build the content
+            val xmlResult = SparqlResultSetXml(factory, sparqlQuery)
+            this.makeBody(xmlResult, sparqlQuery, resultSet)
+
+            // Write the XML result set to the output
+            xmlResult.save(output.get)
+            logger.info("Time for query execution and result generation = " + (System.currentTimeMillis - start) + "ms.")
+        }
+
+        output
     }
 
     /**
@@ -88,9 +99,8 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
 
         val resultSet = absResultSet.asInstanceOf[MorphRDBResultSet]
 
-
         while (resultSet.next()) {
-            
+
             val result = xmlDoc.createElement("result")
             results.appendChild(result)
 

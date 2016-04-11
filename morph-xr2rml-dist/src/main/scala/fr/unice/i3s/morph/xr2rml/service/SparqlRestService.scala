@@ -115,21 +115,31 @@ class SparqlrestService {
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").
                     entity("Requested content type not supported: " + accept).build
 
-            runner.runQuery(sparqlQuery, negContentType.get)
+            val output = runner.runQuery(sparqlQuery, negContentType.get)
 
             // Read the response from the output file and direct it to the HTTP response
-            val file = new FileInputStream(factory.getProperties.outputFilePath)
-            return Response.status(Status.OK).
-                header(headerAccept, "*").
-                header(HttpHeaders.CONTENT_TYPE, negContentType.get).
-                entity(new InputStreamReader(file, "UTF-8")).build
+            if (output.isDefined) {
+                val file = new FileInputStream(output.get)
+                val isr = new InputStreamReader(file, "UTF-8")
+                    Response.status(Status.OK).
+                        header(headerAccept, "*").
+                        header(HttpHeaders.CONTENT_TYPE, negContentType.get).
+                        entity(isr).build
+            } else
+                return Response.status(Status.INTERNAL_SERVER_ERROR).
+                    header(HttpHeaders.CONTENT_TYPE, "text/plain").
+                    header(headerAccept, "*").
+                    entity("Could not write output result").build
 
         } catch {
             case e: Exception => {
                 val msg = "Error in SPARQL query processing: " + e.getMessage
                 logger.error(msg)
                 if (logger.isDebugEnabled) logger.debug("Strack trace:\n" + e.getStackTraceString)
-                return Response.status(Status.INTERNAL_SERVER_ERROR).header(HttpHeaders.CONTENT_TYPE, "text/plain").entity(msg).build
+                return Response.status(Status.INTERNAL_SERVER_ERROR).
+                    header(HttpHeaders.CONTENT_TYPE, "text/plain").
+                    header(headerAccept, "*").
+                    entity(msg).build
             }
         }
     }

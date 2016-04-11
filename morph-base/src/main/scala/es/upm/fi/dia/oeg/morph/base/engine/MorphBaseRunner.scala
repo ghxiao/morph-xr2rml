@@ -11,6 +11,7 @@ import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.query.QueryFactory
 
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
+import java.io.File
 
 class MorphBaseRunner(val factory: IMorphFactory) {
 
@@ -49,12 +50,14 @@ class MorphBaseRunner(val factory: IMorphFactory) {
      * @param contentType content-type HTTP header from the SPARQL query if any. Can be null,
      * in that case the format used us that of the configuration file
      */
-    def runQuery(query: Query, contentType: String): Unit = {
+    def runQuery(query: Query, contentType: String): Option[File] = {
         if (logger.isInfoEnabled) {
             logger.info("=================================================================================================================")
             logger.info("Running query translation. Content-type: " + contentType)
         }
-        
+        val startTime = System.currentTimeMillis()
+        var output: Option[File] = None
+
         // Figure out the output syntax using the query content-type if any, 
         // the type of query (SELECT, ASK, DESCRIBE, CONSTRUCT),
         // and the default formats mentioned in the configuration file
@@ -64,10 +67,8 @@ class MorphBaseRunner(val factory: IMorphFactory) {
         val syntax =
             if (!negCT.isDefined) {
                 logger.error("Content-type negotiation failed. Ignoring the query.")
-                return
+                return None
             } else negCT.get._2
-
-        val startTime = System.currentTimeMillis()
 
         val rewrittenQuery = factory.getQueryTranslator.translate(query)
         if (rewrittenQuery.isDefined) {
@@ -77,11 +78,14 @@ class MorphBaseRunner(val factory: IMorphFactory) {
                 logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
             }
 
-            factory.getQueryProcessor.process(query, rewrittenQuery.get, syntax)
+            output = factory.getQueryProcessor.process(query, rewrittenQuery.get, syntax)
         } else
             logger.warn("Could not translate the SPARQL into a target query.")
 
+        if (logger.isInfoEnabled)
+            logger.info("Query response output file: " + output.getOrElse("None"))
         conclude(startTime)
+        output
     }
 
     private def conclude(startTime: Long) = {

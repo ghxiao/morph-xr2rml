@@ -264,6 +264,8 @@ object SparqlUtility {
                     Some(("text/nt", Constants.OUTPUT_FORMAT_NTRIPLE))
                 else if (ctl contains "text/n3")
                     Some(("text/n3", Constants.OUTPUT_FORMAT_N3))
+                else if (ctl contains "application/xml")
+                    Some(("application/xml", Constants.OUTPUT_FORMAT_RDFXML))
                 else
                     None
             }

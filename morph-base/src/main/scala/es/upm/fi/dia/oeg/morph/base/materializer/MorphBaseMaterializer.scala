@@ -25,23 +25,42 @@ class MorphBaseMaterializer(
     val logger = Logger.getLogger(this.getClass.getName)
 
     /**
-     * Serialize the current model into the output file
+     * Serialize the default Jena model into the output file defined in the configuration
+     *
+     * @param syntax the RDF syntax to use
+     * @return the output file or None if the operation failed
      */
-    def serialize(syntax: String) { serialize(this.model, syntax) }
+    def serialize(syntax: String): Option[File] = {
+        val output = new File(factory.getProperties.outputFilePath)
+        serialize(this.model, output, syntax)
+    }
 
     /**
-     * Utility method to serialize any model into the output file
+     * Serialize a Jena model into a given output file
+     *
+     * @param model the Jena model to serialize
+     * @param output the file where to write the RDF serialization
+     * @param syntax the RDF syntax to use
+     * @return the same file as parameter 'output', or None if any error occurs
      */
-    def serialize(model: Model, syntax: String) {
-        val outputStream = new FileOutputStream(factory.getProperties.outputFilePath)
+    def serialize(model: Model, output: File, syntax: String): Option[File] = {
+        try {
+            val outputStream = new FileOutputStream(output)
 
-        logger.info("Model size (in triples): " + model.size())
-        logger.info("Writing serialization to output stream " + outputStream)
+            logger.info("Model size (in triples): " + model.size())
+            logger.info("Writing serialization to output stream " + outputStream)
 
-        val writer = new OutputStreamWriter(outputStream, "UTF-8")
-        model.write(writer, syntax, null)
-        outputStream.flush
-        outputStream.close
+            val writer = new OutputStreamWriter(outputStream, "UTF-8")
+            model.write(writer, syntax, null)
+            outputStream.flush
+            outputStream.close
+            Some(output)
+        } catch {
+            case e: Exception => {
+                logger.error("Cannot serialize model into RDF. Cause: " + e.getMessage)
+                None
+            }
+        }
     }
 
     def setModelPrefixMap(prefixMap: Map[String, String]) = {
@@ -182,8 +201,8 @@ object MorphBaseMaterializer {
 
     def apply(factory: IMorphFactory, jenaMode: String): MorphBaseMaterializer = {
         if (logger.isDebugEnabled)
-            logger.debug("Creating MorphBaseMaterializer. Mode: " + jenaMode + ", format: " + 
-                    factory.getProperties.outputSyntaxRdf + ", output: " + factory.getProperties.outputFilePath)
+            logger.debug("Creating MorphBaseMaterializer. Mode: " + jenaMode + ", format: " +
+                factory.getProperties.outputSyntaxRdf + ", output: " + factory.getProperties.outputFilePath)
 
         val model = MorphBaseMaterializer.createJenaModel(jenaMode)
         new MorphBaseMaterializer(factory, model)

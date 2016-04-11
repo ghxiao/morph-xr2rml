@@ -6,6 +6,7 @@ import org.junit.Test
 
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.rdf.model.RDFNode
+import java.io.File
 
 class GeneralUtilityTest {
 
@@ -87,5 +88,27 @@ class GeneralUtilityTest {
 
         assertFalse(GeneralUtility.compareRdfContainer(lst1, lst2))
         assertFalse(GeneralUtility.compareRdfContainer(lst2, lst1))
+    }
+
+    @Test def TestCreateRandomFile() {
+        println("------------------ TestCreateRandomFile ------------------")
+
+        val dir = new File("/tmp").createNewFile
+        
+        var f = GeneralUtility.createRandomFile("/tmp", "", "")
+        assertTrue(f.isDefined)
+        println(f.get)
+        assertFalse(f.get.exists)
+        f.get.createNewFile        
+        assertTrue(f.get.canWrite)
+        f.get.delete()
+
+        f = GeneralUtility.createRandomFile("/tmp", "test_", ".txt")
+        assertTrue(f.isDefined)
+        println(f.get)
+        assertFalse(f.get.exists)
+        f.get.createNewFile        
+        assertTrue(f.get.canWrite)
+        f.get.delete()
     }
 }

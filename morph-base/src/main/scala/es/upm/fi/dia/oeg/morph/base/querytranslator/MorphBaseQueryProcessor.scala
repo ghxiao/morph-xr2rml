@@ -7,6 +7,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import java.io.File
 
 /**
  * Abstract class for the engine that shall execute a query and translate results into
@@ -24,5 +25,5 @@ abstract class MorphBaseQueryProcessor(factory: IMorphFactory) {
      * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, and RDF 
      * syntax for a SPARQL DESCRIBE or CONSTRUCT query
      */
-    def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String)
+    def process(sparqlQuery: Query, abstractQuery: AbstractQuery, syntax: String): Option[File]
 }

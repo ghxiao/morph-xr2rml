@@ -1,11 +1,17 @@
 package es.upm.fi.dia.oeg.morph.base
 
+import java.io.File
 import java.net.URL
+
+import scala.util.Random
+
 import org.apache.log4j.Logger
+
+import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.RDFNode
 import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.vocabulary.RDF
+import java.nio.file.Path
 
 object GeneralUtility {
     val logger = Logger.getLogger("GeneralUtility");
@@ -259,5 +265,29 @@ object GeneralUtility {
     }
 
     def cleanString(str: String) = str.trim.replaceAll("\\s", "")
+
+    /**
+     * Get an available random file name in the specified directory
+     *
+     * @param dir the directory, "" for current running directory
+     * @param prefix file prefix
+     * @param suffix file suffix (typically the extension)
+     * @param nameSize Size of generated filename. Note: 5 chars is about 60^5 = 777 millions of possible names
+     * @return A file Path, or None if can't found anyone
+     */
+    def createRandomFile(dir: String, prefix: String = "", suffix: String = "", maxTries: Int = 10, nameSize: Int = 6): Option[File] = {
+        val alphabet = ('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')
+
+        def generateName = (1 to nameSize).map(_ => alphabet(Random.nextInt(alphabet.size))).mkString
+
+        val dirPath = new File(dir).toPath
+        var newFile: File = null
+        for (_ <- (1 to maxTries).iterator) {
+            newFile = dirPath.resolve(prefix + generateName + suffix).toFile
+            if (!newFile.exists)
+                return Some(newFile)
+        }
+        None
+    }
 }
 

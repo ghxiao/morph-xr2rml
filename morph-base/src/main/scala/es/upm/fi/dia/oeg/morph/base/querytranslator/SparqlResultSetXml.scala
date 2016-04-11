@@ -12,6 +12,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
 import org.w3c.dom.Document
+import java.io.File
 
 class SparqlResultSetXml(factory: IMorphFactory, xmlDoc: Document, sparqlQuery: Query) {
 
@@ -20,8 +21,8 @@ class SparqlResultSetXml(factory: IMorphFactory, xmlDoc: Document, sparqlQuery: 
     /**
      * Save the XML document to a file
      */
-    def save = {
-        val writer = new PrintWriter(factory.getProperties.outputFilePath, "UTF-8")
+    def save(output: File) = {
+        val writer = new PrintWriter(output, "UTF-8")
         XMLUtility.saveXMLDocument(xmlDoc, writer)
     }
 
