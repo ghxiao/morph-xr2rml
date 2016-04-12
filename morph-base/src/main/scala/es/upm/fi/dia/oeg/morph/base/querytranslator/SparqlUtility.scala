@@ -240,11 +240,13 @@ object SparqlUtility {
                 else if (ctl contains "application/sparql-results+json")
                     Some(("application/sparql-results+json", Constants.OUTPUT_FORMAT_RESULT_JSON))
                 else if (ctl contains "application/sparql-results+csv")
-                    None
-                else if (ctl contains "application/sparql-results+vsv")
-                    None
+                    Some(("application/sparql-results+csv", Constants.OUTPUT_FORMAT_RESULT_CSV))
+                else if (ctl contains "application/sparql-results+tsv")
+                    Some(("application/sparql-results+tsv", Constants.OUTPUT_FORMAT_RESULT_TSV))
                 else if (ctl contains "application/xml")
                     Some(("application/xml", Constants.OUTPUT_FORMAT_RESULT_XML))
+                else if (ctl contains "text/plain")
+                    Some(("text/plain", Constants.OUTPUT_FORMAT_RESULT_XML))
                 else
                     None
             }
@@ -256,7 +258,7 @@ object SparqlUtility {
                 Some((outputFormatToContentType(defaultRdfSyntax), defaultRdfSyntax))
             else {
                 val ctl = contentType.toLowerCase
-                if (ctl contains "text/turtle")
+                if (ctl.contains("text/turtle") || ctl.contains("application/turtle") || ctl.contains("application/x-turtle"))
                     Some(("text/turtle", Constants.OUTPUT_FORMAT_TURTLE))
                 else if (ctl contains "application/rdf+xml")
                     Some(("application/rdf+xml", Constants.OUTPUT_FORMAT_RDFXML))
@@ -266,6 +268,8 @@ object SparqlUtility {
                     Some(("text/n3", Constants.OUTPUT_FORMAT_N3))
                 else if (ctl contains "application/xml")
                     Some(("application/xml", Constants.OUTPUT_FORMAT_RDFXML))
+                else if (ctl contains "text/plain")
+                    Some(("text/plain", Constants.OUTPUT_FORMAT_TURTLE))
                 else
                     None
             }
@@ -281,6 +285,8 @@ object SparqlUtility {
             // --- Formats for a SPARQL result set
             case Constants.OUTPUT_FORMAT_RESULT_XML => "application/sparql-results+xml"
             case Constants.OUTPUT_FORMAT_RESULT_JSON => "application/sparql-results+json"
+            case Constants.OUTPUT_FORMAT_RESULT_CSV => "application/sparql-results+csv"
+            case Constants.OUTPUT_FORMAT_RESULT_TSV => "application/sparql-results+tsv"
 
             // --- RDF formats
             case Constants.OUTPUT_FORMAT_TURTLE => "text/turtle"

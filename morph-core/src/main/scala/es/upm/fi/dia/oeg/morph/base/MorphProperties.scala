@@ -141,7 +141,9 @@ class MorphProperties extends java.util.Properties {
 
         this.outputSyntaxResult = this.readString(Constants.OUTPUT_SYNTAX_RESULT, Constants.OUTPUT_FORMAT_RESULT_XML);
         if (outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_XML &&
-            outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_JSON) {
+            outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_JSON &&
+            outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_CSV &&
+            outputSyntaxResult != Constants.OUTPUT_FORMAT_RESULT_TSV) {
             throw new MorphException("Invalid value \"" + outputSyntaxResult + "\" for property " + Constants.OUTPUT_SYNTAX_RESULT)
         }
         logger.info("Output SPARQL result syntax = " + this.outputSyntaxRdf);

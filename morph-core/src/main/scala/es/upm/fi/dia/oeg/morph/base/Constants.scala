@@ -88,6 +88,8 @@ object Constants {
     // SPARQL result format
     val OUTPUT_FORMAT_RESULT_XML = "XML";
     val OUTPUT_FORMAT_RESULT_JSON = "JSON";
+    val OUTPUT_FORMAT_RESULT_CSV = "CSV";
+    val OUTPUT_FORMAT_RESULT_TSV = "TSV";
 
     // RDF format
     val OUTPUT_FORMAT_RDFXML = "RDF/XML";

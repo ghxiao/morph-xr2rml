@@ -95,6 +95,14 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
                     val outputStream = new FileOutputStream(output.get)
                     ResultSetFormatter.outputAsJSON(outputStream, resultSet)
                     outputStream.close
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_CSV) {
+                    val outputStream = new FileOutputStream(output.get)
+                    ResultSetFormatter.outputAsCSV(outputStream, resultSet)
+                    outputStream.close
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_TSV) {
+                    val outputStream = new FileOutputStream(output.get)
+                    ResultSetFormatter.outputAsTSV(outputStream, resultSet)
+                    outputStream.close
                 } else {
                     logger.error("Invalid output result syntax: " + factory.getProperties.outputSyntaxResult)
                     output = None
