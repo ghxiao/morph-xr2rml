@@ -70,20 +70,30 @@ class MorphBaseRunner(val factory: IMorphFactory) {
                 return None
             } else negCT.get._2
 
-        val rewrittenQuery = factory.getQueryTranslator.translate(query)
-        if (rewrittenQuery.isDefined) {
-            if (logger.isInfoEnabled) {
-                logger.info("SPARQL Query = \n" + query);
-                logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
-                logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
-            }
-        } else
-            logger.warn("Could not translate the SPARQL into a target query.")
+        val translated = factory.getQueryTranslator.translate(query)
+        val rewrittenSparqlQuery = translated._1
+        val rewrittenQuery = translated._2
 
-        // Execute the query and build the response.
-        // If the translation failed because no binding was found (rewrittenQuery is None) 
-        // then send an empty response, but send a valid SPARQL response anyway
-        output = factory.getQueryProcessor.process(query, rewrittenQuery, syntax)
+        if (rewrittenSparqlQuery.isDefined) {
+            // The abstract query can be ignored, only the SPARQL query will be executed
+            output = factory.getQueryProcessor.process(rewrittenSparqlQuery.get, None, syntax)
+            
+        } else {
+            
+            if (rewrittenQuery.isDefined) {
+                if (logger.isInfoEnabled) {
+                    logger.info("SPARQL Query = \n" + query);
+                    logger.info("------------------ Abstract Query ------------------ = \n" + rewrittenQuery.get.toString);
+                    logger.info("------------------ Concrete Query ------------------ = \n" + rewrittenQuery.get.toStringConcrete);
+                }
+            } else
+                logger.warn("Could not translate the SPARQL into a target query.")
+
+            // Execute the query and build the response.
+            // If the translation failed because no binding was found (rewrittenQuery is None) 
+            // then send an empty response, but send a valid SPARQL response anyway
+            output = factory.getQueryProcessor.process(query, rewrittenQuery, syntax)
+        }
 
         if (logger.isInfoEnabled)
             logger.info("Query response output file: " + output.getOrElse("None"))
@@ -93,7 +103,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
 
     private def conclude(startTime: Long) = {
         val endTime = System.currentTimeMillis();
-        logger.warn("Execution time = " + (endTime - startTime) + "ms.");
+        logger.warn("SPARQL query processing time = " + (endTime - startTime) + "ms.");
         logger.warn("**********************DONE****************************");
     }
 

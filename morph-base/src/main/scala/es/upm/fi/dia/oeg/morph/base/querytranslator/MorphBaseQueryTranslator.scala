@@ -1,14 +1,28 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import scala.collection.JavaConverters._
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConverters.asScalaIteratorConverter
+
 import org.apache.log4j.Logger
+
 import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
+import com.hp.hpl.jena.sparql.algebra.TableFactory
+import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
+import com.hp.hpl.jena.sparql.algebra.op.OpNull
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
+import com.hp.hpl.jena.sparql.algebra.op.OpSlice
+import com.hp.hpl.jena.sparql.algebra.op.OpTable
+import com.hp.hpl.jena.sparql.core.Var
+import com.hp.hpl.jena.sparql.engine.binding.BindingFactory
+import com.hp.hpl.jena.sparql.syntax.ElementGroup
+import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
+import com.hp.hpl.jena.sparql.syntax.ElementUnion
+
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
@@ -21,14 +35,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import com.hp.hpl.jena.rdf.model.Resource
-import com.hp.hpl.jena.sparql.algebra.op.OpTable
-import com.hp.hpl.jena.sparql.algebra.op.OpNull
-import com.hp.hpl.jena.query.QueryFactory
-import com.hp.hpl.jena.sparql.syntax.ElementGroup
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
-import com.hp.hpl.jena.sparql.core.Var
-import com.hp.hpl.jena.sparql.syntax.ElementUnion
+import com.hp.hpl.jena.sparql.algebra.OpAsQuery
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
@@ -59,24 +66,43 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
     /**
      * High level entry point to the query translation process.
-     * 
-     * A query that simply contains <code>DESCRIBE &lt;uri&gt;</code> is expanded to
-     * <code>DESCRIBE &lt;uri&gt; WHERE {
-     *   { &lt;uri&gt; ?p ?x. }
-     *   UNION
-     *   { ?y ?q &lt;uri&gt; . }
-     * }</code>
+     *
+     * 1. A query that simply contains <code>DESCRIBE &lt;uri&gt;</code> is expanded to the following
+     * before it is translated:
+     * {{{DESCRIBE <uri> WHERE {
+     *   { <uri> ?p ?x. } UNION { ?y ?q <uri> . }
+     * } }}}
+     *
+     * 2. SPARQL query simplification: a query like this
+     * {{{SELECT DISTINCT ?p WHERE { ?s ?o ?p } }}}
+     *
+     * is transformed into the SPARQL 1.1. query:
+     * {{{SELECT DISTINCT ?p WHERE { VALUES ?p { :abc :def ... } } }}}
+     * and the abstract query is not executed at all.
      *
      * @param sparqlQuery the SPARQL query to translate
-     * @return a MorphAbstractQuery instance in which the targetQuery parameter has been set with
-     * a set containing a set of concrete queries. In the RDB case there is only one query.
-     * In the MongoDB case there may be several queries, which means a union of the results of all queries.
-     * The result is None in case an error occurred.
+     * @return a couple in which one is None and the other is set:<br>
+     *
+     * - Case (None, AbstractQuery): the AbstractQuery instance, the targetQuery parameter has been set with
+     * a set of concrete queries. In the RDB case there is only one query;
+     * in the MongoDB case there may be several queries, which means a union of the results of all queries.
+     * The result is None in case an error occurred.<br>
+     *
+     * - Case (SPARQL query, None): no abstract query will be executed, only the SPARQL query will be
+     * (see point 2 above)
      */
-    def translate(sparqlQuery: Query): Option[AbstractQuery] = {
+    def translate(sparqlQuery: Query): (Option[Query], Option[AbstractQuery]) = {
+
+        val start = System.currentTimeMillis()
 
         if (sparqlQuery.isDescribeType) {
-            /* Remark:
+            /* 
+             * Expand query
+             *   DESCRIBE <uri>
+             * to
+             *   DESCRIBE <uri> WHERE { { <uri> ?p ?x. } UNION { ?y ?q <uri> . } }
+             *   
+             * Remark:
              * sparqlQuery.getResultURIs: static URIs in the SELECT/DESCRIBE clause
              * sparqlQuery.getResultVars: variables in the SELECT/DESCRIBE clause (as strings e.g. "x")
              * sparqlQuery.getProjectVars: variables in the SELECT/DESCRIBE clause (as instances of Var)
@@ -110,11 +136,39 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             }
         }
 
-        val start = System.currentTimeMillis()
-        val result = this.translate(Algebra.compile(sparqlQuery))
+        // --- Perform the database-specific query translation
+        val opQuery = Algebra.compile(sparqlQuery)
+        val abstractQuery = this.translate(opQuery)
+        if (abstractQuery.isDefined) {
 
-        logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
-        result
+            /* Check if the query can be simplified if all projected variables have constant values.
+             * A query like:
+             *   SELECT DISTINCT ?p WHERE { ?s ?o ?p }
+             * is transformed into:
+             *   SELECT DISTINCT ?p WHERE { VALUES ?p { :abc :def ... } }
+             * if ?p is always bound with constant values
+             */
+            val opMod = allVarsProjectedAsConstantTermMaps(opQuery, abstractQuery.get)
+            logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
+            if (opMod.isDefined) {
+                if (logger.isDebugEnabled)
+                    logger.debug("Abstract query will not be executed. SPARQL query is replaced with query: \n" + opMod.get)
+
+                val queryMod = OpAsQuery.asQuery(opMod.get)
+                if (sparqlQuery.isAskType)
+                    queryMod.setQueryAskType
+                else if (sparqlQuery.isSelectType)
+                    queryMod.setQuerySelectType
+                else if (sparqlQuery.isDescribeType)
+                    queryMod.setQueryDescribeType
+                else if (sparqlQuery.isConstructType)
+                    queryMod.setQueryConstructType
+
+                (Some(queryMod), None)
+            } else
+                (None, abstractQuery)
+
+        } else (None, None)
     }
 
     protected def translate(op: Op): Option[AbstractQuery]
@@ -382,5 +436,78 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             refValueConds.toSet
         } else
             Set.empty
+    }
+
+    /**
+     * Deal with queries prototypical of schema exploration, like:
+     * {{{SELECT DISTINCT ?p
+     * WHERE { ?s ?o ?p }
+     * LIMIT 100 }}}
+     *
+     * In a the naive approach, this will entail a massive UNION of all triples maps.
+     *
+     * If all triples maps have a constant predicate map in this case, then in the abstract query variable "?p"
+     * will always be projected with constant URIs. Thx to the DISTINCT keyword, we don't need to perform
+     * the abstract query, it is sufficient to transform the SPARQL query into the SPARQL 1.1. query:
+     * {{{SELECT DISTINCT ?p WHERE
+     * VALUES ?p { :abc :def ... }
+     * LIMIT 100 }}}
+     *
+     * @param sparqlQuery the query under Jena algrebra form
+     * @param abstractQuery the abstract query that was built from the SPARQL query
+     * @return None if no change was performed of another SPARQL query if the transformation was possible
+     */
+    private def allVarsProjectedAsConstantTermMaps(sparqlQuery: Op, abstractQuery: AbstractQuery): Option[Op] = {
+
+        var op: Op = null
+
+        if (sparqlQuery.isInstanceOf[OpSlice]) // LIMIT
+            op = sparqlQuery.asInstanceOf[OpSlice].getSubOp
+
+        if (op.isInstanceOf[OpDistinct]) { // DISTINCT
+            op = op.asInstanceOf[OpDistinct].getSubOp
+
+            if (op.isInstanceOf[OpProject]) { // variables projected in the SPARQL query
+                val opProject = op.asInstanceOf[OpProject]
+                opProject.getVars.foreach { x =>
+                    // For each variable x projected in the SPARQL query, get the xR2RML references that are matched with it.
+                    // This could be "$.codeField AS ?x" or "http://domain.org/something AS ?x".
+                    val absProj = abstractQuery.getProjectionsForVariable(x.toString)
+                    absProj.foreach { proj =>
+                        // If x has more than one xR2RML reference, it means it was matched with a template term map e.g. "http://...{ref1}... {ref2}"
+                        // => this is not a constant term map, no need to continue.
+                        if (proj.references.size > 1)
+                            return None
+                        else {
+                            val ref = proj.references.head
+                            // If the projection "... AS ?x" is with an xR2RML reference but not a URI, then we can't simplify the query
+                            if (!ref.toLowerCase.startsWith("http")) return None
+                        }
+                    }
+                }
+
+                if (logger.isInfoEnabled())
+                    logger.info("All projected variables " + opProject.getVars + " are matched with a constant URI => no need to run the query")
+
+                val table = TableFactory.create(opProject.getVars)
+                opProject.getVars.foreach { x =>
+                    val absProj = abstractQuery.getProjectionsForVariable(x.toString)
+                    absProj.foreach { proj =>
+                        table.addBinding(BindingFactory.binding(x, NodeFactory.createURI(proj.references.head)))
+                    }
+                }
+
+                // Create distinct ( project ( ?x ( table ( row [...] ) ) ) )
+                op = new OpDistinct(new OpProject(OpTable.create(table), opProject.getVars))
+
+                // If there was a LIMIT ... encapsulate in an slice ( ... )
+                if (sparqlQuery.isInstanceOf[OpSlice]) { // LIMIT
+                    val opSlice = sparqlQuery.asInstanceOf[OpSlice]
+                    op = new OpSlice(op, opSlice.getStart, opSlice.getLength)
+                }
+                return Some(op)
+            }
+        }
+        None
     }
 }

@@ -12,6 +12,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 
 /**
  * Representation of the INNER JOIN abstract query generated from the join of several basic graph patterns.
@@ -102,6 +103,16 @@ class AbstractQueryInnerJoin(
      */
     override def getVariables: Set[String] = {
         members.flatMap(m => m.getVariables).toSet
+    }
+
+    /**
+     * Get the xR2RML projection of variable ?x in this query.
+     *
+     * @param varName the variable name
+     * @return a set of projections in which the 'as' field is defined and equals 'varName'
+     */
+    override def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection] = {
+        members.flatMap(m => m.getProjectionsForVariable(varName)).toSet
     }
 
     /**

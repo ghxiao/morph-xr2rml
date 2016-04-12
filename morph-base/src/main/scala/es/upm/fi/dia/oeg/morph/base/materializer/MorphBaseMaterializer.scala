@@ -48,7 +48,7 @@ class MorphBaseMaterializer(
             val outputStream = new FileOutputStream(output)
 
             logger.info("Model size (in triples): " + model.size())
-            logger.info("Writing serialization to output stream " + outputStream)
+            logger.info("Writing serialization to output " + output)
 
             val writer = new OutputStreamWriter(outputStream, "UTF-8")
             model.write(writer, syntax, null)

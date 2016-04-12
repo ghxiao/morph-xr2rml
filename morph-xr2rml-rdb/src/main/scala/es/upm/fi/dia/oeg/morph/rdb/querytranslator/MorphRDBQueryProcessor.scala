@@ -40,7 +40,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
      * Execute the query and translate the results from the database into triples.<br>
      * In the RDB case the AbstractQuery should contain only one element.<br>
      *
-     * @param sparqlQuery SPARQL query
+     * @param sparqlQuery the original SPARQL query, needed to format the response
      * @param abstractQuery associated AbstractQuery resulting from the translation of sparqlQuery,
      * in which the executable target queries have been computed
      * @param syntax the output syntax:  XML or JSON for a SPARQL SELECT or ASK query, and RDF
@@ -74,7 +74,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
 
             // Write the XML result set to the output
             xmlResult.save(output.get)
-            logger.info("Time for query execution and result generation = " + (System.currentTimeMillis - start) + "ms.")
+            logger.info("Time for database query execution and result generation = " + (System.currentTimeMillis - start) + "ms.")
         }
 
         output

@@ -5,8 +5,10 @@ import scala.collection.JavaConversions.seqAsJavaList
 
 import org.apache.log4j.Logger
 
+import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.sparql.algebra.Op
+import com.hp.hpl.jena.sparql.algebra.TableFactory
 import com.hp.hpl.jena.sparql.algebra.op.OpBGP
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
 import com.hp.hpl.jena.sparql.algebra.op.OpFilter
@@ -16,8 +18,10 @@ import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
 import com.hp.hpl.jena.sparql.algebra.op.OpOrder
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
+import com.hp.hpl.jena.sparql.algebra.op.OpTable
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 import com.hp.hpl.jena.sparql.core.BasicPattern
+import com.hp.hpl.jena.sparql.engine.binding.BindingFactory
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
@@ -74,12 +78,12 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         val start = System.currentTimeMillis()
 
         //--- Calculate the Triple Pattern Bindings
-        val opFiltered = excludeTriplesAboutCollecOrContainer(op)
-        if (!opFiltered.isDefined) {
+        var opMod = excludeTriplesAboutCollecOrContainer(op)
+        if (!opMod.isDefined) {
             logger.warn("Query cannot be processed due to collection/container related triples.")
             return None
         }
-        val bindings = triplePatternBinder.bindm(opFiltered.get)
+        val bindings = triplePatternBinder.bindm(opMod.get)
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
         logger.info("Triple pattern bindings:\n" + bindings.values.mkString("\n"))
 
@@ -92,13 +96,14 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             logger.warn("Could not find bindings for triple patterns:\n" + emptyBindings.keys)
             None
         } else {
-            val res = translateSparqlQuery(bindings, opFiltered.get)
-            if (res.isDefined) {
+            var abstractQuery = translateSparqlQueryToAbstract(bindings, opMod.get)
+            if (abstractQuery.isDefined) {
+
                 // Optimize the abstract query
-                val absq = res.get.optimizeQuery(optimizer)
-                if (absq != res.get) {
+                val absq = abstractQuery.get.optimizeQuery(optimizer)
+                if (absq != abstractQuery.get) {
                     logger.info("\n-------------------------------------------------------------------------\n" +
-                        "------------------ Abstract query BEFORE optimization: ------------------\n" + res.get)
+                        "------------------ Abstract query BEFORE optimization: ------------------\n" + abstractQuery.get)
                     logger.info("\n------------------ Abstract query AFTER optimization: -------------------\n" + absq +
                         "\n-------------------------------------------------------------------------")
                 }
@@ -118,10 +123,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      * @return a AbstractQuery instance or None if the query element is not supported in the translation
      * @todo manage SPARQL filters
      */
-    private def translateSparqlQuery(bindings: Map[String, TPBindings], op: Op): Option[AbstractQuery] = {
+    private def translateSparqlQueryToAbstract(bindings: Map[String, TPBindings], op: Op): Option[AbstractQuery] = {
         op match {
             case opProject: OpProject => { // SELECT clause
-                this.translateSparqlQuery(bindings, opProject.getSubOp)
+                this.translateSparqlQueryToAbstract(bindings, opProject.getSubOp)
             }
             case bgp: OpBGP => { // Basic Graph Pattern
                 val triples: List[Triple] = bgp.getPattern.getList.toList
@@ -142,7 +147,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         None
                     } else {
                         val left = this.transTPm(tpBindingsLeft.get)
-                        val right = this.translateSparqlQuery(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
+                        val right = this.translateSparqlQueryToAbstract(bindings, new OpBGP(BasicPattern.wrap(triples.tail)))
                         if (right.isDefined)
                             Some(new AbstractQueryInnerJoin(List(left, right.get)))
                         else
@@ -151,8 +156,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 }
             }
             case opJoin: OpJoin => { // AND pattern
-                val left = translateSparqlQuery(bindings, opJoin.getLeft)
-                val right = translateSparqlQuery(bindings, opJoin.getRight)
+                val left = translateSparqlQueryToAbstract(bindings, opJoin.getLeft)
+                val right = translateSparqlQueryToAbstract(bindings, opJoin.getRight)
                 if (left.isDefined && right.isDefined)
                     Some(new AbstractQueryInnerJoin(List(left.get, right.get)))
                 else if (left.isDefined)
@@ -162,8 +167,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 else None
             }
             case opLeftJoin: OpLeftJoin => { //OPT pattern
-                val left = translateSparqlQuery(bindings, opLeftJoin.getLeft)
-                val right = translateSparqlQuery(bindings, opLeftJoin.getRight)
+                val left = translateSparqlQueryToAbstract(bindings, opLeftJoin.getLeft)
+                val right = translateSparqlQueryToAbstract(bindings, opLeftJoin.getRight)
                 if (left.isDefined && right.isDefined)
                     Some(new AbstractQueryLeftJoin(left.get, right.get))
                 else if (left.isDefined)
@@ -173,8 +178,8 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 else None
             }
             case opUnion: OpUnion => { //UNION pattern
-                val left = translateSparqlQuery(bindings, opUnion.getLeft)
-                val right = translateSparqlQuery(bindings, opUnion.getRight)
+                val left = translateSparqlQueryToAbstract(bindings, opUnion.getLeft)
+                val right = translateSparqlQueryToAbstract(bindings, opUnion.getRight)
 
                 if (left.isDefined && right.isDefined)
                     Some(new AbstractQueryUnion(List(left.get, right.get)))
@@ -186,23 +191,23 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             }
             case opFilter: OpFilter => { //FILTER pattern
                 logger.warn("SPARQL Filter no supported. Ignoring it.")
-                this.translateSparqlQuery(bindings, opFilter.getSubOp)
+                this.translateSparqlQueryToAbstract(bindings, opFilter.getSubOp)
             }
             case opSlice: OpSlice => {
                 logger.warn("SPARQL LIMIT no supported in query translation.")
-                this.translateSparqlQuery(bindings, opSlice.getSubOp)
+                this.translateSparqlQueryToAbstract(bindings, opSlice.getSubOp)
             }
             case opDistinct: OpDistinct => {
                 logger.warn("SPARQL DISTINCT no supported in query translation.")
-                this.translateSparqlQuery(bindings, opDistinct.getSubOp)
+                this.translateSparqlQueryToAbstract(bindings, opDistinct.getSubOp)
             }
             case opOrder: OpOrder => {
                 logger.warn("SPARQL ORDER no supported in query translation.")
-                this.translateSparqlQuery(bindings, opOrder.getSubOp)
+                this.translateSparqlQueryToAbstract(bindings, opOrder.getSubOp)
             }
             case opGroup: OpGroup => {
                 logger.warn("SPARQL GROUP BY no supported in query translation.")
-                this.translateSparqlQuery(bindings, opGroup.getSubOp)
+                this.translateSparqlQueryToAbstract(bindings, opGroup.getSubOp)
             }
             case _ => {
                 logger.warn("SPARQL feature no supported in query translation.")
@@ -232,7 +237,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             // rdf:type [rdf:List|rdf:Bag|rdf:Seq|rdf:Alt]
             (pred == (Constants.RDF_NS + "type") && tp.getObject.isURI && REGEX_RDF_LIST_CONT_CLASSES.findFirstMatchIn(obj).isDefined)
     }
-
+    
     /**
      * Remove from a SPARQL query all triples that pertain to the management of RDF collections and containers:
      * i.e. with a predicate rdf:first, rdf:rest, rdf:nil, rdf:_1, rdf:_2 etc.

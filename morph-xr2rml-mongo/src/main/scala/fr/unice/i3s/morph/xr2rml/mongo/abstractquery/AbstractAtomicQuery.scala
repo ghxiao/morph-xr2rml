@@ -158,7 +158,7 @@ class AbstractAtomicQuery(
      * @param varName the variable name
      * @return a set of projections in which the 'as' field is defined and equals 'varName'
      */
-    private def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection] = {
+    override def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection] = {
         this.project.filter(p => { p.as.isDefined && p.as.get == varName })
     }
 

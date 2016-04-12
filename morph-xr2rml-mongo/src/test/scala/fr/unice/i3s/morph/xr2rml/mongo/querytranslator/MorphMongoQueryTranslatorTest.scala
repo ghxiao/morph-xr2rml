@@ -37,6 +37,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 import es.upm.fi.dia.oeg.morph.base.Constants
+import java.net.URI
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
@@ -352,6 +353,7 @@ class MorphMongoQueryTranslatorTest {
         assertEquals(op, op2.get)
 
     }
+
     @Test def test_excludeTriplesAboutCollecOrContainer_NoExclusion2() {
         println("------ test_excludeTriplesAboutCollecOrContainer_NoExclusion2")
 
@@ -365,5 +367,15 @@ class MorphMongoQueryTranslatorTest {
         println(op2)
         assertEquals(op, op2.get)
     }
+    @Test def test_allVarsProjectedAsConstantTermMaps() {
+        println("------ test_allVarsProjectedAsConstantTermMaps")
 
+        val q = """ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX : <http://example.org/>
+                    SELECT distinct ?p WHERE { VALUES ?p { :abc :def } } LIMIT 1000"""
+        val query = QueryFactory.create(q)
+        val op = Algebra.compile(query)
+        println(op)
+    }
+    
 }

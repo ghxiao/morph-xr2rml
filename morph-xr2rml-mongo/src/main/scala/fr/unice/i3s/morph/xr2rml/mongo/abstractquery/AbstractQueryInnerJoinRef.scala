@@ -17,6 +17,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataSourceReader
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 
 /**
  * Representation of the INNER JOIN abstract query between two atomic abstract queries,
@@ -86,6 +87,16 @@ class AbstractQueryInnerJoinRef(
      */
     override def getVariables: Set[String] = {
         (child.getVariables ++ parent.getVariables)
+    }
+
+    /**
+     * Get the xR2RML projection of variable ?x in this query.
+     *
+     * @param varName the variable name
+     * @return a set of projections in which the 'as' field is defined and equals 'varName'
+     */
+    override def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection] = {
+        child.getProjectionsForVariable(varName) ++ parent.getProjectionsForVariable(varName)
     }
 
     /**

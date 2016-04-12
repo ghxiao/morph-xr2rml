@@ -5,10 +5,10 @@ package es.upm.fi.dia.oeg.morph.base.query
  * In the Project part of the abstract query representation this stands for: <reference> AS ?variable
  *
  * @param references The references on which this projection applies, typically a column name (RDB)
- * or JSONPath expression (MongoDB) from a xrr:reference. 
+ * or JSONPath expression (MongoDB) from a xrr:reference.
  * Possibly multiple expressions in case of a rr:template property, e.g. : for template http://foo.com/{ref1}/{ref2}
  * we shall have the projection: Set(ref1,ref2) AS ?x
- * 
+ *
  * @param as name of the SPARQL variable this reference stands for. Optional since a projection for a joined reference
  * does not stand for any variable
  *
@@ -37,4 +37,9 @@ class AbstractQueryProjection(
             this.references == p.references && this.as == p.as
         }
     }
+
+    override def hashCode(): Int = {
+        this.getClass.hashCode + this.as.hashCode() + this.references.map(_.hashCode).reduceLeft((x, y) => x + y)
+    }
+
 }

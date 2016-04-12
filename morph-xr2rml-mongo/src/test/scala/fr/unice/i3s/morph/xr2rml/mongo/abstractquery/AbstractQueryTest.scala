@@ -13,6 +13,8 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
+import com.hp.hpl.jena.sparql.algebra.Algebra
+import com.hp.hpl.jena.query.QueryFactory
 
 class AbstractQueryTest {
 
@@ -359,4 +361,30 @@ class AbstractQueryTest {
         assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value1"))) // original condition
         assertTrue(q.where.contains(new AbstractQueryConditionNotNull("ref1"))) // new condition
     }
+    
+
+    @Test def test_getProjectionsForVariable() {
+        println("------ test_getProjectinosForVariable")
+
+        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
+        val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
+
+        // No shared variable
+        val proj1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
+        val proj2 = new AbstractQueryProjection(Set("ref2"), Some("?y"))
+        val proj3 = new AbstractQueryProjection(Set("ref3"), Some("?x"))
+        val proj4 = new AbstractQueryProjection(Set("ref4"), Some("?z"))
+        val proj5 = new AbstractQueryProjection(Set("ref5"), Some("?q"))
+
+        var q1 = new AbstractAtomicQuery(Set.empty, null, Set(proj1, proj2), Set.empty)
+        var q2 = new AbstractAtomicQuery(Set.empty, null, Set(proj3, proj4), Set.empty)
+        var q3 = new AbstractAtomicQuery(Set.empty, null, Set(proj5), Set.empty)
+
+        assertEquals(Set(proj1), q1.getProjectionsForVariable("?x"))
+        assertEquals(Set(proj3), q2.getProjectionsForVariable("?x"))
+        assertEquals(Set.empty, q3.getProjectionsForVariable("?x"))
+        
+        val qij = new AbstractQueryInnerJoin(List(q1, q2, q3))
+        assertEquals(Set(proj3, proj1), qij.getProjectionsForVariable("?x"))
+    }    
 }

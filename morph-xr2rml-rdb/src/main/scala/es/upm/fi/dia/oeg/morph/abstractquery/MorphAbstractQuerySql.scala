@@ -7,6 +7,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 
 /**
  * This class is used as a simple encapsulation of an SQL query in the RDB case, because the original SPARQL-to-SQL query
@@ -39,6 +40,10 @@ class AbstractQuerySql extends AbstractQuery(Set.empty) {
      * Return the list of SPARQL variables projected in this abstract query
      */
     override def getVariables: Set[String] = {
+        throw new MorphException("Not supported")
+    }
+
+    override def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection] = {
         throw new MorphException("Not supported")
     }
 

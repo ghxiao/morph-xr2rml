@@ -46,7 +46,7 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
 
         if (abstractQuery.isDefined) {
             factory.getDataTranslator.generateRDFTriples(abstractQuery.get)
-            logger.info("Time for query execution and triples generation = " + (System.currentTimeMillis - start) + "ms.");
+            logger.info("Time for database query execution and triples generation = " + (System.currentTimeMillis - start) + "ms.");
         }
 
         // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
