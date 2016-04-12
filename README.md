@@ -88,7 +88,7 @@ http://localhost:8080/sparql
 ```
 Property `query.file.path` is ignored and queries can be submitted using either HTTP GET or POST methods as described in the [SPARQL protocol](https://www.w3.org/TR/rdf-sparql-protocol/) recommendation.
 
-For SPARQL SELECT queries, the XML and JSON serializations are supported. CSV and TSV are not supported.
+For SPARQL SELECT queries, the XML, JSON, CSV and TSV serializations are supported.
 
 For SPARQL DESCRIBE and CONSTRUCT queries, the supported serializations are RDF/XML, RDF/XML-ABBREV, N-TRIPLE, N-QUAD, TURTLE and N3.
 
@@ -139,8 +139,8 @@ output.file.path=result.txt
 # Applies to the graph materialization and the rewriting of SPARQL CONSTRUCT and DESCRIBE queries
 output.syntax.rdf=TURTLE
 
-# Output syntax for SPARQL result set: XML|JSON. Default: XML
-# Applies to the rewriting of SPARQL SELECT and ASK queries
+# -- Output syntax for SPARQL result set (SPARQL SELECT and ASK queries): XML|JSON|CSV|TSV. Default: XML
+# When "server.active = true", this may be overridden by the Accept HTTP header of the request
 output.syntax.result=XML
 
 # Display the result on the std output after the processing: true|false. Default: true
