@@ -24,6 +24,8 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
 /**
  * Execute the database query and produce the XML SPARQL result set
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProcessor(factory) {
 

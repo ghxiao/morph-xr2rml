@@ -12,6 +12,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphBaseTriplePatternBindingsTest {
 
     val triplePatternBinder = new MorphBaseTriplePatternBinder(null)

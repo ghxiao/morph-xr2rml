@@ -7,6 +7,10 @@ import org.junit.Test
 
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MongoDBQueryTest {
 
     @Test def testMostSpecificQuery_empty() {

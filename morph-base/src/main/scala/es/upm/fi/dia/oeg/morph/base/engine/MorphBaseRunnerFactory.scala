@@ -12,6 +12,10 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
+/**
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
+ */
 abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     var properties: MorphProperties = null
@@ -95,9 +99,9 @@ object MorphBaseRunnerFactory {
     var mappingDocument: R2RMLMappingDocument = null
 
     /**
-     * Initialize the factory: create global objects that can be shared by parallel executions 
+     * Initialize the factory: create global objects that can be shared by parallel executions
      * of a runner, i.e. properties and mapping document.
-     * 
+     *
      * This method must be called before create any factory.
      */
     def initFactory(props: MorphProperties) = {

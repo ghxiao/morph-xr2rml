@@ -5,6 +5,10 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 abstract class MongoQueryNodeCond extends MongoQueryNode {
 }
 

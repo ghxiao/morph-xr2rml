@@ -5,6 +5,8 @@ import com.mongodb.DBObject
 
 /**
  * Most simple Jongo result handler to return the JSON serialization of the result
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class JongoResultHandler extends ResultHandler[String] {
 

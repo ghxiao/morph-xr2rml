@@ -28,6 +28,8 @@ import com.hp.hpl.jena.sparql.algebra.op.OpGroup
 
 /**
  * Representation of the bindings of several triples map to a triple pattern
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class TPBindings(
         val tp: Triple,
@@ -61,6 +63,8 @@ class TPBinding(val tp: Triple, val bound: R2RMLTriplesMap) {
  * i.e. those triples maps that are possible candidates to generate RDF triples matching the triple pattern.
  *
  * See full definitions in https://hal.archives-ouvertes.fr/hal-01245883.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 

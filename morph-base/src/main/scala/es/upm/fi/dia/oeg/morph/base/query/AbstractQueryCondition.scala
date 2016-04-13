@@ -20,6 +20,8 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * Equals(reference, value) becomes OR(Equals(reference, value), IsNull(reference))
  *
  * @param condType The type of condition
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 abstract class AbstractQueryCondition(val condType: ConditionType.Value) {
 

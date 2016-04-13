@@ -16,6 +16,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphMongoUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory) {
 
     val logger = Logger.getLogger(this.getClass().getName());

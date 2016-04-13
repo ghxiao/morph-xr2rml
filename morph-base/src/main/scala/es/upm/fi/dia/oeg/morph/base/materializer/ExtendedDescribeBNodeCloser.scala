@@ -25,6 +25,8 @@ import com.hp.hpl.jena.sparql.util.Context
 /**
  * Describe handler that considers all statements for which the resource is either a subject or an object,
  * and for every object a bNode, it recursively includes its statements.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class ExtendedDescribeBNodeCloser extends DescribeHandler() {
 

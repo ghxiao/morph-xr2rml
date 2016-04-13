@@ -25,6 +25,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 
 /**
  * REST service implementing the SPARQL query protocol for queries SELECT, DESCRIBE and CONSTRUCT
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 @Path("/sparql")
 class SparqlrestService {
@@ -100,14 +102,12 @@ class SparqlrestService {
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").
                     entity("No SPARQL query provided.").build
 
-            // Execute the SPARQL query against the database
-            val sparqlQuery = QueryFactory.create(query)
-
             // Create the runner to execute this query
             val factory = MorphBaseRunnerFactory.createFactory
             val runner: MorphBaseRunner = factory.createRunner
 
             // Negotiate the content type of the response to the SPARQL query
+            val sparqlQuery = QueryFactory.create(query)
             val negContentType = runner.negotiateContentType(accept, sparqlQuery)
             if (!negContentType.isDefined)
                 return Response.status(Status.BAD_REQUEST).
@@ -115,16 +115,17 @@ class SparqlrestService {
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").
                     entity("Requested content type not supported: " + accept).build
 
+            // Execute the query against the database and save results to an output file
             val output = runner.runQuery(sparqlQuery, negContentType.get)
 
             // Read the response from the output file and direct it to the HTTP response
             if (output.isDefined) {
                 val file = new FileInputStream(output.get)
                 val isr = new InputStreamReader(file, "UTF-8")
-                    Response.status(Status.OK).
-                        header(headerAccept, "*").
-                        header(HttpHeaders.CONTENT_TYPE, negContentType.get).
-                        entity(isr).build
+                Response.status(Status.OK).
+                    header(headerAccept, "*").
+                    header(HttpHeaders.CONTENT_TYPE, negContentType.get).
+                    entity(isr).build
             } else
                 return Response.status(Status.INTERNAL_SERVER_ERROR).
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").

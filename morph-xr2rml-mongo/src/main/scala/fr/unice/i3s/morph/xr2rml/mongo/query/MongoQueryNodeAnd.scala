@@ -4,7 +4,9 @@ import scala.collection.mutable.Queue
 
 /**
  * MongoDB query starting with an AND node:
- * 	$and: [{doc1}, {doc1}... {docN}]
+ * <code>\$and: [{doc1}, {doc1}... {docN}]</code>
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoQueryNodeAnd(val members: List[MongoQueryNode]) extends MongoQueryNode {
 

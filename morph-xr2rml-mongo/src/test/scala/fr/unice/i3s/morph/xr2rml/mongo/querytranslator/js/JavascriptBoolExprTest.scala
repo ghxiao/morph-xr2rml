@@ -13,6 +13,10 @@ import org.mozilla.javascript.ast.AstNode
 import org.mozilla.javascript.ast.AstRoot
 import org.mozilla.javascript.ast.NodeVisitor
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class JavascriptBoolExprTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")

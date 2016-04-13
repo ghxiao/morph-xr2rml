@@ -17,6 +17,10 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
+/**
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
+ */
 abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass().getName());

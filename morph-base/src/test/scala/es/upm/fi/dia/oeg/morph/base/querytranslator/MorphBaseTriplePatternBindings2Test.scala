@@ -44,6 +44,10 @@ class MorphFactoryConcret extends MorphBaseRunnerFactory {
     override def postCreateFactory = {}
 }
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphBaseTriplePatternBindings2Test {
 
     val factory = new MorphFactoryConcret

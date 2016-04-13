@@ -33,7 +33,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
  * Prior to understand this code, one should read carefully the algorithm described in
  * "Mapping-based SPARQL access to a MongoDB database": https://hal.archives-ouvertes.fr/hal-01245883.
  *
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Franck Michel, I3S laboratory
  */
 object JsonPathToMongoTranslator {
 

@@ -24,7 +24,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.js.JavascriptBoolExprFact
  *
  * To understand this code, you must have read and understood the algorithm first. Ask the author for the reference.
  *
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Franck Michel, I3S laboratory
  */
 object JavascriptToMongoTranslator {
 

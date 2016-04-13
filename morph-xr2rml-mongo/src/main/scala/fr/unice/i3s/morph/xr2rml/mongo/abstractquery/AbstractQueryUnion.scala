@@ -16,8 +16,9 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  *
  * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
  * from which we have derived this query
- *
  * @param lstMembers the abstract query members of the union, flattened if there are embedded unions
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryUnion(
     lstMembers: List[AbstractQuery])

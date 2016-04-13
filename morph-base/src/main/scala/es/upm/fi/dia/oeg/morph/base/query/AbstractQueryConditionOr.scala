@@ -7,6 +7,8 @@ import scala.annotation.migration
  * abstract query optimization phase.
  *
  * @param members the member conditions of the OR
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryConditionOr(
         val members: Set[AbstractQueryCondition]) extends AbstractQueryCondition(ConditionType.Or) {

@@ -5,6 +5,8 @@ package es.upm.fi.dia.oeg.morph.base.query
  * process by matching terms of a triple pattern with references from a term map.
  *
  * @param reference the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryConditionNotNull(
         var reference: String) extends AbstractQueryCondition(ConditionType.IsNotNull) with IReference {

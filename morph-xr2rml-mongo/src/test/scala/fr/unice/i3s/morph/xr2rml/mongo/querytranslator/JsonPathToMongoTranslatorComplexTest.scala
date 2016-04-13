@@ -8,6 +8,10 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCondEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class JsonPathToMongoTranslatorComplexTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")

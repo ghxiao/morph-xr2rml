@@ -8,9 +8,9 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 /**
  * This class is an abstract representation of JavaScript boolean expressions, based on the Rhino AstNode class.
  * It is used during the translation of JSONPath expressions containing JavaScript parts, into a MongoDB query.
- * Examples of such JSONPaths: $.p[?(@.q == @.r)].r, $[?(@.q && @.r.length >= 10)].s
+ * Examples of such JSONPaths: <code>$.p[?(@.q == @.r)].r</code>, <code>$[?(@.q && @.r.length >= 10)].s</code>
  * 
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Franck Michel, I3S laboratory
  */
 class JavascriptBoolExpr(val astNode: AstNode) {
 

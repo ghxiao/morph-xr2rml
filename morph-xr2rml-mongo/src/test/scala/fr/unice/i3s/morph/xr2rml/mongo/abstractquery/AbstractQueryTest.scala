@@ -16,6 +16,10 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.query.QueryFactory
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class AbstractQueryTest {
 
     val tm = new R2RMLTriplesMap(null, null, null, null)

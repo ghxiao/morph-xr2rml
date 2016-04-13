@@ -9,11 +9,11 @@ import com.hp.hpl.jena.sparql.core.describe.DescribeHandler
 import com.hp.hpl.jena.sparql.core.describe.DescribeHandlerFactory
 
 class ExtendedDescribeBNodeCloserFactory extends DescribeHandlerFactory {
-    
-    override def create(): DescribeHandler = {
-       new ExtendedDescribeBNodeCloser()
-    }
 
+    override def create(): DescribeHandler = {
+        new ExtendedDescribeBNodeCloser()
+    }
+}
     /*
  * (c) Copyright 2007, 2008, 2009 Hewlett-Packard Development Company, LP
  * All rights reserved.
@@ -40,5 +40,3 @@ class ExtendedDescribeBNodeCloserFactory extends DescribeHandlerFactory {
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-}

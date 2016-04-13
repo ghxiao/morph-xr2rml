@@ -7,6 +7,8 @@ import scala.annotation.migration
  * abstract query optimization phase.
  *
  * @param members the member conditions of the AND
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryConditionAnd(
         val members: Set[AbstractQueryCondition]) extends AbstractQueryCondition(ConditionType.And) {

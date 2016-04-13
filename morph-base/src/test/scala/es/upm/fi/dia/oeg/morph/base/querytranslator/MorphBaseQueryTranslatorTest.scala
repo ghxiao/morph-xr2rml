@@ -26,6 +26,10 @@ class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQ
     }
 }
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphBaseQueryTranslatorTest {
 
     val factory = new MorphFactoryConcret

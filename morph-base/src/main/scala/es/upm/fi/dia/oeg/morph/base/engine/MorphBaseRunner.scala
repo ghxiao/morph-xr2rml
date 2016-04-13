@@ -13,6 +13,10 @@ import com.hp.hpl.jena.query.QueryFactory
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import java.io.File
 
+/**
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
+ */
 class MorphBaseRunner(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass());

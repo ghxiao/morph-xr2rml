@@ -16,7 +16,7 @@ import org.mozilla.javascript.ast.NodeVisitor
 /**
  * This utility object creates abstract representations of JavaScript boolean expressions, based on the Rhino AstNode class
  *
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Franck Michel, I3S laboratory
  */
 object JavascriptBoolExprFactory {
 

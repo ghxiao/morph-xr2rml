@@ -18,6 +18,10 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import java.io.FileOutputStream
 
+/**
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
+ */
 class MorphBaseMaterializer(
         val factory: IMorphFactory,
         val model: Model) {

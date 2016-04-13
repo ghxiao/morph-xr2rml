@@ -20,6 +20,8 @@ import java.net.URL
  * It expects two input parameters: the configuration directory (option --configDir) and the
  * configuration file name (option --configFile) that must be located in the configuration directory.
  * The configuration file lists, among others, the name of the mapping file and the output file.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 object MorphRunner {
 

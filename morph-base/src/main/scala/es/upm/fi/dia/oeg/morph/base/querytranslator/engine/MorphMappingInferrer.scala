@@ -24,6 +24,14 @@ import com.hp.hpl.jena.vocabulary.RDF
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
+/**
+ * Binding of triples maps to triples patterns.
+ * This is the legacy class from Morph-RDB that is still used for SPARQL-to-SQL translation.
+ * 
+ * For SPARQL-to-MongoDB, see class MorphBaseTriplePatternBinder
+ *  
+ * @author Freddy Priyatna
+ */
 class MorphMappingInferrer(mappingDocument: R2RMLMappingDocument) {
 
     val logger = Logger.getLogger(this.getClass());

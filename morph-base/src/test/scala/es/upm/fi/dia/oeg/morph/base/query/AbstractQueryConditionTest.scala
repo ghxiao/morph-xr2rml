@@ -5,6 +5,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class AbstractQueryConditionTest {
 
     @Test def test_EqualOperator = {

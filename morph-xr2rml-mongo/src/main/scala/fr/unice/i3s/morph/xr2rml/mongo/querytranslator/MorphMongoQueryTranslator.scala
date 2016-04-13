@@ -53,7 +53,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
  * exactly one predicate and one object map.
  * In the code this assumption is mentioned by the annotation @NORMALIZED_ASSUMPTION
  *
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Franck Michel, I3S laboratory
  */
 class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 

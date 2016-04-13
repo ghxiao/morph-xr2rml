@@ -13,6 +13,8 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
  * But "members" must not contain another MongoQueryNodeField: <code>{'p': {'q': {\$eq: 1}}}</code> is invalid in MongoDB.
  *
  * If field is "p" and the next node is an equality condition node, the toString() will result in: <code>'p': {\$eq: 'value'}</code>.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoQueryNodeField(jsPath: String, val members: List[MongoQueryNode], arraySlice: List[MongoQueryProjection]) extends MongoQueryNode {
 

@@ -7,6 +7,10 @@ import org.junit.Test
 
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MongoQueryNodeTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")

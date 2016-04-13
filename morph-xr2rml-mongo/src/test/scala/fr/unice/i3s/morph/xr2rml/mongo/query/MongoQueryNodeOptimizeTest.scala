@@ -4,6 +4,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MongoQueryNodeOptimizeTest {
 
     @Test def testOptimizeFlattenAnds() {

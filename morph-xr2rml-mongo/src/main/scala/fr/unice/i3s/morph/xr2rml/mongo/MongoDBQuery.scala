@@ -13,6 +13,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
  * 'collection' is the collection name while <code>{ 'a': { \$exists: true} }</code> is the query string
  *
  * Optionally, an iterator of the logical source can be set after object creation.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoDBQuery(
         val collection: String,

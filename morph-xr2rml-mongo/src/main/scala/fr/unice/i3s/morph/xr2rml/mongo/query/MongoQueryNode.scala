@@ -6,6 +6,8 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 /**
  * Abstract representation of a MongoDB query. This is used during query construction and
  * optimization phases, and allows to generate concrete MongoDB queries.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 abstract class MongoQueryNode {
 

@@ -7,6 +7,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 
 /**
  * Tests of the Regex expressions in JsonPathToMongoTranslator
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class JsonPathToMongoRegexTest {
 

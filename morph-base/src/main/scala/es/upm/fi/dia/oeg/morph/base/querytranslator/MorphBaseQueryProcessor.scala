@@ -12,6 +12,8 @@ import java.io.File
 /**
  * Abstract class for the engine that shall execute a query and translate results into
  * RDF triples (DESCRIBE, CONTRUCT) or a SPARQL result set (SELECT, ASK)
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 abstract class MorphBaseQueryProcessor(factory: IMorphFactory) {
 

@@ -29,6 +29,8 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * @param childRef the xR2RML child reference of the join condition: rr:joinCondition [ ... rr:child ... ]
  * @param parent the query representing the parent triples map
  * @param parentRef the xR2RML parent reference of the join condition: rr:joinCondition [ ... rr:parent ... ]
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryInnerJoinRef(
 

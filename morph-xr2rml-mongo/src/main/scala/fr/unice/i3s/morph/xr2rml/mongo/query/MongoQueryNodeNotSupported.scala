@@ -3,6 +3,8 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 /**
  * The No-Operation MongoDB query operator: this class is used when we cannot translate a
  * JSONPath expression into a MongoDB query.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoQueryNodeNotSupported(val path: String) extends MongoQueryNode {
 

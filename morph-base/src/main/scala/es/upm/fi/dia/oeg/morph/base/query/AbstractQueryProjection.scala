@@ -12,7 +12,7 @@ package es.upm.fi.dia.oeg.morph.base.query
  * @param as name of the SPARQL variable this reference stands for. Optional since a projection for a joined reference
  * does not stand for any variable
  *
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryProjection(
         val references: Set[String],

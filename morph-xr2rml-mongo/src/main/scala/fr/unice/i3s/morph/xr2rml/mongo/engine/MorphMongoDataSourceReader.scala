@@ -24,6 +24,11 @@ import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
+/**
+ * Utility class to handle the execution of MongoDB queries
+ * 
+ * @author Franck Michel, I3S laboratory
+ */
 class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSourceReader(factory) {
 
     /** Cache of already executed queries. The key of the map is the query string itself. */

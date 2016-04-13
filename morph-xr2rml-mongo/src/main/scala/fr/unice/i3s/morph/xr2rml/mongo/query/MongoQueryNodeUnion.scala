@@ -5,6 +5,8 @@ import scala.collection.mutable.Queue
 /**
  * A UNION of MongoDB queries. This is semantically equivalent to an OR node,
  * but will be executed a separate queries whereof results are joined by the xR2RML processing engine
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoQueryNodeUnion(val members: List[MongoQueryNode]) extends MongoQueryNode {
 

@@ -12,6 +12,10 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphMongoQueryProcessor
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphMongoRunnerFactory extends MorphBaseRunnerFactory {
 
     override val logger = Logger.getLogger(this.getClass().getName())

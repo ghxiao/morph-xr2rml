@@ -8,6 +8,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 trait IMorphFactory {
 
     def getProperties: MorphProperties

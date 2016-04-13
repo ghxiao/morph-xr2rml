@@ -91,7 +91,7 @@ object Constants {
     val OUTPUT_FORMAT_RESULT_CSV = "CSV";
     val OUTPUT_FORMAT_RESULT_TSV = "TSV";
 
-    // RDF format
+    // RDF format 
     val OUTPUT_FORMAT_RDFXML = "RDF/XML";
     val OUTPUT_FORMAT_RDFXML_ABBREV = "RDF/XML-ABBREV";
     val OUTPUT_FORMAT_NTRIPLE = "N-TRIPLE";

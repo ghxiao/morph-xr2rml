@@ -51,6 +51,10 @@ class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
     override def postCreateFactory = {}
 }
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphMongoQueryTranslatorTest {
 
     var props = MorphProperties.apply("src/test/resources/query_translator", "morph.properties")

@@ -18,6 +18,11 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
+/**
+ * Utility class to transform a triples map or a MongoDB query into RDF triples
+ * 
+ * @author Franck Michel, I3S laboratory
+ */
 class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
 
     if (!factory.getConnection.isMongoDB)

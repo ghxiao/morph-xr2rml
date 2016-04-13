@@ -57,6 +57,8 @@ import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
  *
  * @param where set of conditions applied to xR2RML references, entailed by matching the triples map
  * with the triple pattern. If there are more than one condition the semantics is a logical AND of all.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractAtomicQuery(
 

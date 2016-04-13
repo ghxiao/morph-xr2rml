@@ -7,6 +7,8 @@ package es.upm.fi.dia.oeg.morph.base.query
  * @param reference the xR2RML reference (e.g. column name or JSONPath expression) on which the condition applies,
  * typically the column name or JSONPath expression
  * @param eqValue object of the equality condition
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryConditionEquals(
         var reference: String,

@@ -6,10 +6,11 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 /**
  * Simple encapsulation of a target database query
  *
- * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
- * from which we have derived this query
  * @param dbType the type of target database
  * @param concreteQuery the concrete instance of query object: ISqlQuery in case of RDB, MongoDBQuery in case of MongoDB, etc.
+ * @param iter an optional iterator from the logical source
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class GenericQuery(
 

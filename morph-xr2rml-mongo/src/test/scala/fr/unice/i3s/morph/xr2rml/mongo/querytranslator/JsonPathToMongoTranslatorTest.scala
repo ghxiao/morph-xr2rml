@@ -14,6 +14,10 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class JsonPathToMongoTranslatorTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")

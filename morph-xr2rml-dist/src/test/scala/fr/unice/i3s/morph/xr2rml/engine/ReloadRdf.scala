@@ -1,20 +1,10 @@
 package fr.unice.i3s.morph.xr2rml.engine
 
-import java.io.FileWriter
-import org.apache.commons.cli.BasicParser
-import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.CommandLineParser
 import org.apache.log4j.Logger
 import org.apache.log4j.PropertyConfigurator
 import com.hp.hpl.jena.rdf.model.ModelFactory
 import com.hp.hpl.jena.util.FileManager
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.io.PrintWriter
 
 object ReloadRdf {
 

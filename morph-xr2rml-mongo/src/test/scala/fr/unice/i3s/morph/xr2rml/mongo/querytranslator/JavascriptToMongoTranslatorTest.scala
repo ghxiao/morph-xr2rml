@@ -7,6 +7,10 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeNotSupported
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class JavascriptToMongoTranslatorTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")

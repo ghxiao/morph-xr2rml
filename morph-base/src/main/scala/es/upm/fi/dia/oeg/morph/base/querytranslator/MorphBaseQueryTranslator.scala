@@ -40,7 +40,8 @@ import com.hp.hpl.jena.sparql.algebra.OpAsQuery
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
  *
- * @author Franck Michel (franck.michel@cnrs.fr)
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
  */
 abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 

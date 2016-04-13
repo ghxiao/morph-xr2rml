@@ -20,6 +20,8 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
  * This is not empty only for atomic queries. Initially each atomic query should have exactly a binding
  * for exactly one triple pattern.
  * After the abstract query optimization (e.g. self-join elimination) there may be more than one binding.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 abstract class AbstractQuery(
         val tpBindings: Set[TPBinding]) {

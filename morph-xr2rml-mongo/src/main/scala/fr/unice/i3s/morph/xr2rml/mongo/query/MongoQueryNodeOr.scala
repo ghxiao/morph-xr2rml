@@ -5,6 +5,8 @@ import scala.collection.mutable.Queue
 /**
  * MongoDB query starting with an OR node:
  * 	<code>\$or: [{doc1}, {doc1}... {docN}]</code>
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoQueryNodeOr(val members: List[MongoQueryNode]) extends MongoQueryNode {
 

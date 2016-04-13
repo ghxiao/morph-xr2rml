@@ -19,6 +19,8 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * It is not allowed to create an inner join instance with nested inner joins.
  *
  * @param lstMembers the abstract query members of the inner join, flattened if there are embedded inner joins
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryInnerJoin(
     lstMembers: List[AbstractQuery])

@@ -5,9 +5,10 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 
 /**
- * A data source reader is used in case of the query rewriting access method,
- * to execute queries on the fly.
- * It is not used in the data materialization access method.
+ * A data source reader is used to execute queries against the target database
+ * 
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
  */
 abstract class MorphBaseDataSourceReader(val factory: IMorphFactory) {
 

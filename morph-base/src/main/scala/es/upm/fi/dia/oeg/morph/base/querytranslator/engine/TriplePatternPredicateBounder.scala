@@ -15,6 +15,14 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.R2RMLMappingUtility
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
+/**
+ * Binding of triples maps to triples patterns.
+ * This is the legacy class from Morph-RDB that is still used for SPARQL-to-SQL translation.
+ * 
+ * For SPARQL-to-MongoDB, see class MorphBaseTriplePatternBinder
+ *  
+ * @author Freddy Priyatna
+ */
 class TriplePatternPredicateBounder(tableMetaData: Option[MorphTableMetaData]) {
 
     val logger = Logger.getLogger(this.getClass());

@@ -2,6 +2,8 @@ package fr.unice.i3s.morph.xr2rml.mongo.query
 
 /**
  * MongoDB projection of the slice of an array, like: <code>'p': {\$slice: -10}</code>
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MongoQueryProjectionArraySlice(val path: String, val index: String) extends MongoQueryProjection {
 

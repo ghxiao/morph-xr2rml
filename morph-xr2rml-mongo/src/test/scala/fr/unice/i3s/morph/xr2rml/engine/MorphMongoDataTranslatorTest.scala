@@ -5,6 +5,10 @@ import org.junit.Test
 
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 
+/**
+ * @author Franck Michel, I3S laboratory
+ *
+ */
 class MorphMongoDataTranslatorTest {
 
     @Test def parseQueryString() = {

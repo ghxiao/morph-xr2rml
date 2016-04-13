@@ -15,6 +15,8 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  *
  * @param left the query representing the left basic graph pattern of the join
  * @param right the query representing the right basic graph pattern of the join
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryLeftJoin(
 

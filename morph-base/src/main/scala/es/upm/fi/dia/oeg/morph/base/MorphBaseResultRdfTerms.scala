@@ -7,6 +7,8 @@ import com.hp.hpl.jena.rdf.model.RDFNode
  *
  * Attributes subjectAsVariable, predicateAsVariable and objectAsVariable
  * keep track of the SPARQL variable to which each term is attached, if any.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MorphBaseResultRdfTerms(
         val subjects: List[RDFNode], val subjectAsVariable: Option[String],
