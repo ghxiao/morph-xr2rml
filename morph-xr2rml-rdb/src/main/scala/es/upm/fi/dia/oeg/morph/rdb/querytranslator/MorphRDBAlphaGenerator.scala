@@ -21,9 +21,12 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
+import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBUnfolder
 
-class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
+class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, baseUnfolder: MorphBaseUnfolder) {
 
+    val unfolder = baseUnfolder.asInstanceOf[MorphRDBUnfolder]
+    
     val databaseType = if (md.dbMetaData.isDefined) { md.dbMetaData.get.dbType; }
     else { Constants.DATABASE_DEFAULT }
 

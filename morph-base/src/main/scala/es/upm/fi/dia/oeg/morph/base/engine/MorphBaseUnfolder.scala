@@ -3,10 +3,8 @@ package es.upm.fi.dia.oeg.morph.base.engine
 import Zql.ZUtils
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 abstract class MorphBaseUnfolder(factory: IMorphFactory) {
 
@@ -15,8 +13,6 @@ abstract class MorphBaseUnfolder(factory: IMorphFactory) {
     var dbType = factory.getProperties.databaseType;
 
     def unfoldTriplesMap(tm: R2RMLTriplesMap): GenericQuery
-
-    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable
 
     def unfoldJoinConditions(
         joinConditions: Set[R2RMLJoinCondition],

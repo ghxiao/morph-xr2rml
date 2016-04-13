@@ -62,7 +62,7 @@ class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory
      * @return instance of SQLFromItem or SQLQuery
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
+    def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = {
         val dbEnclosedCharacter = Constants.getEnclosedCharacter(dbType);
 
         val result = logicalTable.logicalTableType match {

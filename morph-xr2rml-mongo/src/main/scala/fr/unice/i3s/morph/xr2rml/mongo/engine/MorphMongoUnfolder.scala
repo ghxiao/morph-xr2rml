@@ -1,20 +1,18 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
-import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLJoinCondition
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 
 /**
  * @author Franck Michel, I3S laboratory
@@ -52,8 +50,6 @@ class MorphMongoUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(facto
         logger.info("Query for triples map " + triplesMap.id + ": " + mongoQuery.toString)
         new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery, logicalSrc.docIterator)
     }
-
-    override def unfoldLogicalSource(logicalTable: xR2RMLLogicalSource): SQLLogicalTable = { null }
 
     override def unfoldJoinConditions(
         joinConditions: Set[R2RMLJoinCondition],
