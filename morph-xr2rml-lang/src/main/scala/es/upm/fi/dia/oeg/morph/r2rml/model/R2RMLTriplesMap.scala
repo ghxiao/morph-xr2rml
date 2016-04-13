@@ -11,7 +11,6 @@ import com.hp.hpl.jena.rdf.model.Resource
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
 class R2RMLTriplesMap(
         val resource: Resource, 
