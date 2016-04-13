@@ -20,22 +20,23 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.rdb.MorphRDBUtility
 
-class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
+class MorphRDBCondSQLGenerator(md: RDBR2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
 
     val logger = Logger.getLogger("MorphCondSQLGenerator");
 
-    def genCondSQL(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: R2RMLTriplesMap, predicateURI: String, mapVarNotNull: Map[Node, Boolean]): MorphCondSQLResult = {
+    def genCondSQL(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, tm: RDBR2RMLTriplesMap, predicateURI: String, mapVarNotNull: Map[Node, Boolean]): MorphCondSQLResult = {
 
-        val condSQLSubject = this.genCondSQLSubject(tp, alphaResult, betaGenerator, cm);
+        val condSQLSubject = this.genCondSQLSubject(tp, alphaResult, betaGenerator, tm);
 
         val condSQLPredicateObject = {
             try {
-                this.genCondSQLPredicateObject(tp, alphaResult, betaGenerator, cm, predicateURI, mapVarNotNull);
+                this.genCondSQLPredicateObject(tp, alphaResult, betaGenerator, tm, predicateURI, mapVarNotNull);
             } catch {
                 case e: Exception =>
                     {
@@ -54,7 +55,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
         return exp;
     }
 
-    def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: R2RMLTriplesMap, predicateURI: String, mapVarNotNull: Map[Node, Boolean]): Iterable[ZExpression] = {
+    def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: RDBR2RMLTriplesMap, predicateURI: String, mapVarNotNull: Map[Node, Boolean]): Iterable[ZExpression] = {
 
         val tableMetaData = cm.getLogicalSource().tableMetaData;
 
@@ -246,7 +247,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
         result
     }
 
-    def genCondSQLSubject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: R2RMLTriplesMap): ZExpression = {
+    def genCondSQLSubject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: RDBR2RMLTriplesMap): ZExpression = {
 
         val subject = tp.getSubject();
         val betaSubjectSelectItems = betaGenerator.calculateBetaSubject(tp, cm, alphaResult);
@@ -287,7 +288,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
         result1;
     }
 
-    def genCondSQLSTG(stg: List[Triple], alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: R2RMLTriplesMap, mapVarNotNull: Map[Node, Boolean]): MorphCondSQLResult = {
+    def genCondSQLSTG(stg: List[Triple], alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: RDBR2RMLTriplesMap, mapVarNotNull: Map[Node, Boolean]): MorphCondSQLResult = {
 
         //var exps : Set[ZExpression] = Set.empty;
         val firstTriple = stg.get(0);
@@ -437,7 +438,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
         result;
     }
 
-    def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: R2RMLTriplesMap, pm: R2RMLPredicateObjectMap): ZExpression = {
+    def genCondSQLPredicateObject(tp: Triple, alphaResult: MorphAlphaResult, betaGenerator: MorphRDBBetaGenerator, cm: RDBR2RMLTriplesMap, pm: R2RMLPredicateObjectMap): ZExpression = {
         val tpObject = tp.getObject();
         val logicalTableAlias = alphaResult.alphaSubject.getAlias();
 
@@ -526,7 +527,7 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
                     val refObjectMapAlias = parentLogicalTable.alias;
 
                     val uriCondition = MorphRDBUtility.generateCondForWellDefinedURI(
-                        parentTriplesMap.subjectMap, parentTriplesMap, tpObject.getURI(),
+                        parentTriplesMap.subjectMap, parentTriplesMap.asInstanceOf[RDBR2RMLTriplesMap], tpObject.getURI(),
                         refObjectMapAlias);
 
                     val expressionsList = List(uriCondition);
@@ -544,9 +545,8 @@ class MorphRDBCondSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfo
         result2;
     }
 
-     def genCondSQLSubjectURI(tpSubject: Node, alphaResult: MorphAlphaResult, cm: R2RMLTriplesMap): ZExpression = {
+     def genCondSQLSubjectURI(tpSubject: Node, alphaResult: MorphAlphaResult, tm: RDBR2RMLTriplesMap): ZExpression = {
         val subjectURI = tpSubject.getURI();
-        val tm = cm.asInstanceOf[R2RMLTriplesMap];
         val subjectURIConstant = new ZConstant(subjectURI, ZConstant.STRING);
         val logicalTableAlias = alphaResult.alphaSubject.getAlias();
         val subjectTermMapType = tm.subjectMap.termMapType;

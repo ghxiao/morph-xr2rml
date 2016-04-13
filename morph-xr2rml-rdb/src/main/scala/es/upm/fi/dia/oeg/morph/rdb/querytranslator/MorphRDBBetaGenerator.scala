@@ -9,7 +9,7 @@ import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import com.hp.hpl.jena.graph.Triple
@@ -18,13 +18,13 @@ import Zql.ZSelectItem
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 
-class MorphRDBBetaGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
+class MorphRDBBetaGenerator(md: RDBR2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
 
     val logger = Logger.getLogger(this.getClass());
 

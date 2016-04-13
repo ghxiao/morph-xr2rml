@@ -84,13 +84,14 @@ import es.upm.fi.dia.oeg.morph.base.sql.SQLFromItem
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLQuery
 import es.upm.fi.dia.oeg.morph.base.sql.SQLUnion
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.NameGenerator
 
 class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
     val unfolder = factory.getUnfolder
-    val mappingDocument = factory.getMappingDocument
+    val mappingDocument = factory.getMappingDocument.asInstanceOf[RDBR2RMLMappingDocument]
 
     val nameGenerator: NameGenerator = new NameGenerator()
     val alphaGenerator: MorphRDBAlphaGenerator = new MorphRDBAlphaGenerator(mappingDocument, unfolder)
@@ -108,6 +109,9 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
 
     /** Is-Null of Is-Not-null conditions for variables in a SPARQL query */
     var mapVarNotNull: Map[Node, Boolean] = Map.empty;
+
+    /** Map of nodes of a SPARQL query and the candidate triples maps for each node **/
+    var mapInferredTMs: Map[Node, Set[RDBR2RMLTriplesMap]] = Map.empty;
 
     override val logger = Logger.getLogger(this.getClass());
 
@@ -801,7 +805,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
     /**
      * Translation of a triple pattern into a SQL query based on a candidate triples map.
      */
-    private def transTP(tp: Triple, cm: R2RMLTriplesMap): ISqlQuery = {
+    private def transTP(tp: Triple, cm: RDBR2RMLTriplesMap): ISqlQuery = {
         val tpPredicate = tp.getPredicate();
 
         val result: ISqlQuery = {
@@ -875,7 +879,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
      * Translation of a triple pattern into an SQL query based on a candidate triples map
      * and a bounded (grounded) predicate.
      */
-    private def transTP(tp: Triple, cm: R2RMLTriplesMap, predicateURI: String, unboundedPredicate: Boolean): MorphTransTPResult = {
+    private def transTP(tp: Triple, cm: RDBR2RMLTriplesMap, predicateURI: String, unboundedPredicate: Boolean): MorphTransTPResult = {
 
         // Find predicate-object maps with that specific predicate
         val pms = cm.getPropertyMappings(predicateURI);
@@ -1464,7 +1468,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         result;
     }
 
-    private def transSTGUnionFree(stg: List[Triple], cm: R2RMLTriplesMap): MorphTransTPResult = {
+    private def transSTGUnionFree(stg: List[Triple], cm: RDBR2RMLTriplesMap): MorphTransTPResult = {
         //AlphaSTG
         val alphaResultUnionList = this.alphaGenerator.calculateAlphaSTG(stg, cm);
 
@@ -1488,7 +1492,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         transTPResult
     }
 
-    private def transSTG(stg: List[Triple], cm: R2RMLTriplesMap): ISqlQuery = {
+    private def transSTG(stg: List[Triple], cm: RDBR2RMLTriplesMap): ISqlQuery = {
         //AlphaSTG
         val alphaResultUnionList = this.alphaGenerator.calculateAlphaSTG(stg, cm);
 

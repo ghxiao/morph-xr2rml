@@ -13,10 +13,7 @@ import com.hp.hpl.jena.sparql.algebra.op.OpJoin
 import com.hp.hpl.jena.sparql.algebra.op.OpLeftJoin
 import com.hp.hpl.jena.sparql.algebra.op.OpUnion
 
-import Zql.ZSelectItem
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLTriplesMap
 
 class MorphQueryTranslatorUtility {
 
@@ -28,7 +25,7 @@ object MorphQueryTranslatorUtility {
      * From a set of nodes with their respective candidate triples maps, build the a set of nodes that are
      * in both sets with the intersection of their respective triples maps
      */
-    def mapsIntersection(map1: Map[Node, Set[R2RMLTriplesMap]], map2: Map[Node, Set[R2RMLTriplesMap]]): Map[Node, Set[R2RMLTriplesMap]] = {
+    def mapsIntersection(map1: Map[Node, Set[RDBR2RMLTriplesMap]], map2: Map[Node, Set[RDBR2RMLTriplesMap]]): Map[Node, Set[RDBR2RMLTriplesMap]] = {
         val map1KeySet = map1.keySet;
         val map2KeySet = map2.keySet;
         val mapKeySetsIntersection = map1KeySet.intersect(map2KeySet);
@@ -57,8 +54,8 @@ object MorphQueryTranslatorUtility {
         resultFinal.toMap;
     }
 
-    def mapsIntersection(maps: List[Map[Node, Set[R2RMLTriplesMap]]]): Map[Node, Set[R2RMLTriplesMap]] = {
-        val result: Map[Node, Set[R2RMLTriplesMap]] = {
+    def mapsIntersection(maps: List[Map[Node, Set[RDBR2RMLTriplesMap]]]): Map[Node, Set[RDBR2RMLTriplesMap]] = {
+        val result: Map[Node, Set[RDBR2RMLTriplesMap]] = {
             if (maps == null || maps.isEmpty) {
                 Map.empty;
             } else if (maps.size == 1) {

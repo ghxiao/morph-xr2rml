@@ -15,17 +15,13 @@ import com.hp.hpl.jena.vocabulary.RDF
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 
-class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
+class R2RMLMappingDocument(
+        val triplesMaps: Iterable[R2RMLTriplesMap],
+        val mappingDocumentPath: String,
+        val mappingDocumentPrefixMap: Map[String, String]) {
 
-    var dbMetaData: Option[MorphDatabaseMetaData] = None;
-
-    var id: String = null;
-
-    var mappingDocumentPrefixMap: Map[String, String] = Map.empty;
-
-    var mappingDocumentPath: String = null;
+    val id: String = null;
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -33,12 +29,13 @@ class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
         this.triplesMaps.map(cm => cm.getPropertyMappings(propertyURI)).flatten
     }
 
-    def getClassMappingByPropertyURIs(propertyURIs: Iterable[String]): Iterable[R2RMLTriplesMap] =
+    def getClassMappingByPropertyURIs(propertyURIs: Iterable[String]): Iterable[R2RMLTriplesMap] = {
         this.triplesMaps.filter(cm =>
             propertyURIs.toSet.subsetOf(cm.predicateObjectMaps.flatMap(_.getMappedPredicateNames).toSet)
         )
+    }
 
-    def getClassMappingsByClassURI(classURI: String) =
+    def getClassMappingsByClassURI(classURI: String): Iterable[R2RMLTriplesMap] =
         this.triplesMaps.filter(_.getMappedClassURIs.exists(_.equals(classURI)))
 
     /**
@@ -62,8 +59,7 @@ class R2RMLMappingDocument(val triplesMaps: Iterable[R2RMLTriplesMap]) {
     def getParentTriplesMap(refObjectMap: R2RMLRefObjectMap): R2RMLTriplesMap = {
         // Build the list of JENA resources that correspond to all triples maps that are
         // referenced as a parent triples map by the given referencing object map.
-        val parentTripleMapResources = this.triplesMaps.map(cm => {
-            val tm = cm.asInstanceOf[R2RMLTriplesMap];
+        val parentTripleMapResources = this.triplesMaps.map(tm => {
             val poms = tm.predicateObjectMaps;
             poms.map(pom => {
                 val roms = pom.refObjectMaps; // pom.refObjectMaps may be an empty list but not null
@@ -214,9 +210,9 @@ object R2RMLMappingDocument {
     val logger = Logger.getLogger(this.getClass().getName());
 
     def apply(props: MorphProperties): R2RMLMappingDocument = {
-        
+
         val mdPath = props.mappingDocumentFilePath
-        
+
         if (logger.isDebugEnabled) logger.debug("Creating R2RMLMappingDocument ");
 
         val model = ModelFactory.createDefaultModel();
@@ -239,10 +235,8 @@ object R2RMLMappingDocument {
         // Build an equivalent list of R2RMLTriplesMap instances, id is the name of the triples map local name (like #MyTiplesMap) 
         val classMappings = if (tmList != null) {
             tmList.map(tmRes => {
-                val triplesMapKey = tmRes.getLocalName();
                 // From that point on, each triples map is browsed in depth to create the whole model (logical source, term maps)
                 val tm = R2RMLTriplesMap(tmRes, R2RMLMappingDocument.readReferenceFormulation(props));
-                tm.id = triplesMapKey;
                 tm;
             })
         } else {
@@ -251,10 +245,7 @@ object R2RMLMappingDocument {
         }
 
         // From the list of R2RMLTriplesMap, create an R2RML mapping document
-        val md = new R2RMLMappingDocument(classMappings.toSet);
-        md.mappingDocumentPath = mdPath;
-
-        md.mappingDocumentPrefixMap = model.getNsPrefixMap().toMap;
+        val md = new R2RMLMappingDocument(classMappings.toSet, mdPath, model.getNsPrefixMap().toMap)
         md
     }
 

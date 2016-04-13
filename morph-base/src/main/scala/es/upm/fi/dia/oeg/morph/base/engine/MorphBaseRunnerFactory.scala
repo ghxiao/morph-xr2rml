@@ -120,8 +120,10 @@ object MorphBaseRunnerFactory {
 
         factory.properties = MorphBaseRunnerFactory.properties
         factory.mappingDocument = MorphBaseRunnerFactory.mappingDocument
-
         factory.connection = factory.createConnection
+        
+        factory.postCreateFactory // optionally perform any other database-specific step of the creation
+
         factory.unfolder = factory.createUnfolder
         factory.dataSourceReader = factory.createDataSourceReader
         factory.materializer = factory.createMaterializer
@@ -129,7 +131,6 @@ object MorphBaseRunnerFactory {
         factory.queryTranslator = factory.createQueryTranslator
         factory.queryProcessor = factory.createQueryProcessor
 
-        factory.postCreateFactory // optionally perform any other database-specific step of the creation
         factory
     }
 }

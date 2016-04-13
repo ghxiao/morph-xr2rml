@@ -1,14 +1,12 @@
 package es.upm.fi.dia.oeg.morph.r2rml.model
 
+import scala.collection.JavaConversions.asScalaIterator
+
 import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.rdf.model.Resource
 
-import scala.collection.JavaConversions._
-
 import es.upm.fi.dia.oeg.morph.base.Constants
-import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
-import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
 /**
  * Abstract class to represent an xR2RML LogicalSource, parent of xR2RMLTable and xR2RMLQuery.
@@ -28,58 +26,9 @@ abstract class xR2RMLLogicalSource(
         val docIterator: Option[String],
         val uniqueRefs: Set[String]) {
 
-    var tableMetaData: Option[MorphTableMetaData] = None;
-
     var alias: String = null;
 
     val logger = Logger.getLogger(this.getClass.getName);
-
-    def getLogicalTableSize: Long = {
-        if (this.tableMetaData.isDefined) { this.tableMetaData.get.getTableRows; }
-        else { -1 }
-    }
-
-    def buildMetaData(dbMetaData: Option[MorphDatabaseMetaData]) = {
-        val source = this match {
-            case _: xR2RMLTable => this.asInstanceOf[xR2RMLTable]
-            case _: xR2RMLQuery => this.asInstanceOf[xR2RMLQuery]
-        }
-
-        val tableName = this match {
-            case xr2rmlTable: xR2RMLTable => {
-                val dbType =
-                    if (dbMetaData.isDefined) { dbMetaData.get.dbType; }
-                    else { Constants.DATABASE_DEFAULT }
-                val enclosedChar = Constants.getEnclosedCharacter(dbType);
-                val tableNameAux = xr2rmlTable.getValue.replaceAll("\"", enclosedChar);
-                tableNameAux
-            }
-            case xr2rmlQuery: xR2RMLQuery => {
-                val queryStringAux = xr2rmlQuery.getValue.trim
-                val queryString = {
-                    // Remove trailing ';' if any
-                    if (queryStringAux.endsWith(";")) { queryStringAux.substring(0, queryStringAux.length - 1) }
-                    else { queryStringAux }
-                }
-                "(" + queryString + ")";
-            }
-            case _ => {
-                val msg = "Unknown logical table/source type: " + this
-                logger.error(msg)
-                throw new Exception(msg)
-            }
-        }
-
-        if (dbMetaData.isDefined) {
-            val optionTableMetaData = dbMetaData.get.getTableMetaData(tableName);
-            val tableMetaData = optionTableMetaData.getOrElse(
-                MorphTableMetaData.buildTableMetaData(tableName, dbMetaData.get));
-            this.tableMetaData =
-                if (tableMetaData != null)
-                    Some(tableMetaData)
-                else None
-        }
-    }
 
     /** Return the table name or query depending on the type of logical table */
     def getValue: String;

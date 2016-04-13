@@ -7,9 +7,16 @@ import es.upm.fi.dia.oeg.morph.base.DBUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBxR2RMLQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBxR2RMLTable
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryProcessor
 import es.upm.fi.dia.oeg.morph.rdb.querytranslator.MorphRDBQueryTranslator
 
@@ -22,15 +29,32 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
      */
     override def postCreateFactory = {
 
-        if (this.connection.isRelationalDB) {
-            logger.info("Building database MetaData ")
-            if (this.connection != null && this.mappingDocument.dbMetaData == None) {
-                val sqlCnx = this.connection.concreteCnx.asInstanceOf[Connection]
-                val newMetaData = MorphDatabaseMetaData(sqlCnx, this.properties.databaseName, this.properties.databaseType);
-                this.mappingDocument.dbMetaData = Some(newMetaData);
-                this.mappingDocument.triplesMaps.foreach(cm => cm.buildMetaData(this.mappingDocument.dbMetaData));
+        if (this.connection == null || !this.connection.isRelationalDB)
+            throw new MorphException("Connection non initialized or not a relational database connection: " + this.connection)
+
+        logger.info("Building database MetaData")
+
+        val sqlCnx = this.connection.concreteCnx.asInstanceOf[Connection]
+
+        val metaData = MorphDatabaseMetaData(sqlCnx, this.properties.databaseName, this.properties.databaseType);
+        val optMetaData = if (metaData == null) None else Some(metaData)
+
+        // Create new TriplesMaps with a logical source that contains db metadata
+        val rdbTMs: Iterable[RDBR2RMLTriplesMap] = this.mappingDocument.triplesMaps.map { tm =>
+            val rdbLS = tm.getLogicalSource match {
+                case tab: xR2RMLTable => new RDBxR2RMLTable(tab.tableName)
+                case qry: xR2RMLQuery => new RDBxR2RMLQuery(qry.query, qry.refFormulation, qry.docIterator, qry.uniqueRefs)
+                case _ => throw new Exception("Unsupported type of Logical Source: " + tm.getLogicalSource)
             }
+            rdbLS.buildMetaData(optMetaData)
+            
+            val rdbTM = new RDBR2RMLTriplesMap(tm.resource, rdbLS, tm.refFormulation, tm.subjectMap, tm.predicateObjectMaps)
+            rdbTM
         }
+
+        val rdbMappingdocument = new RDBR2RMLMappingDocument(rdbTMs, this.mappingDocument.mappingDocumentPath, this.mappingDocument.mappingDocumentPrefixMap)
+        rdbMappingdocument.dbMetaData = optMetaData
+        this.mappingDocument = rdbMappingdocument
     }
 
     override def createConnection: GenericConnection = {

@@ -32,8 +32,8 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLSubjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLTable
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBxR2RMLQuery
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBxR2RMLTable
 import es.upm.fi.dia.oeg.morph.rdb.MorphRDBUtility
 
 class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory) {
@@ -204,10 +204,10 @@ class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory
 
         // UNFOLD LOGICAL SOURCE: build an SQL from item with all tables in the logical source
         val logicalSrcUnfolded: SQLFromItem = logicalSrc match {
-            case _: xR2RMLTable => {
+            case _: RDBxR2RMLTable => {
                 this.unfoldLogicalSource(logicalSrc).asInstanceOf[SQLFromItem];
             }
-            case _: xR2RMLQuery => {
+            case _: RDBxR2RMLQuery => {
                 val logicalTableAux = this.unfoldLogicalSource(logicalSrc)
                 logicalTableAux match {
                     case _: SQLQuery => {

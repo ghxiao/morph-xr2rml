@@ -15,13 +15,13 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphPRSQLResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLSelectItem
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.NameGenerator
 
-class MorphRDBPRSQLGenerator(md: R2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
+class MorphRDBPRSQLGenerator(md: RDBR2RMLMappingDocument, unfolder: MorphBaseUnfolder) {
 
     var mapHashCodeMapping: Map[Integer, Object] = Map.empty
 

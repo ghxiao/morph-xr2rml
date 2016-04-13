@@ -15,6 +15,9 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.query.QueryFactory
+import com.hp.hpl.jena.rdf.model.ResourceFactory
+import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.rdf.model.Model
 
 /**
  * @author Franck Michel, I3S laboratory
@@ -22,9 +25,9 @@ import com.hp.hpl.jena.query.QueryFactory
  */
 class AbstractQueryTest {
 
-    val tm = new R2RMLTriplesMap(null, null, null, null)
-    tm.name = "tm"
-
+    val res = ResourceFactory.createResource("http://toto#MyTriplesMap")
+    val tm = new R2RMLTriplesMap(res, null, null, null, null)
+    
     val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
     val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
     val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
@@ -282,8 +285,8 @@ class AbstractQueryTest {
     @Test def test_propagateConditionFromJoinedQuery1() {
         println("------ test_propagateConditionFromJoinedQuery1")
 
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
+        val res = ResourceFactory.createResource("http://toto#MyTriplesMap")
+        val tm = new R2RMLTriplesMap(res, null, null, null, null)
 
         val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
         var ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
@@ -307,8 +310,8 @@ class AbstractQueryTest {
     @Test def test_propagateConditionFromJoinedQuery2() {
         println("------ test_propagateConditionFromJoinedQuery2")
 
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
+        val res = ResourceFactory.createResource("http://toto#MyTriplesMap")
+        val tm = new R2RMLTriplesMap(res, null, null, null, null)
 
         val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
         val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
@@ -331,8 +334,8 @@ class AbstractQueryTest {
     @Test def test_propagateConditionFromJoinedQuery3() {
         println("------ test_propagateConditionFromJoinedQuery3")
 
-        val tm = new R2RMLTriplesMap(null, null, null, null)
-        tm.name = "tm"
+        val res = ResourceFactory.createResource("http://toto#MyTriplesMap")
+        val tm = new R2RMLTriplesMap(res, null, null, null, null)
 
         val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
         val ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
@@ -365,7 +368,6 @@ class AbstractQueryTest {
         assertTrue(q.where.contains(new AbstractQueryConditionEquals("ref1", "value1"))) // original condition
         assertTrue(q.where.contains(new AbstractQueryConditionNotNull("ref1"))) // new condition
     }
-    
 
     @Test def test_getProjectionsForVariable() {
         println("------ test_getProjectinosForVariable")
@@ -387,8 +389,8 @@ class AbstractQueryTest {
         assertEquals(Set(proj1), q1.getProjectionsForVariable("?x"))
         assertEquals(Set(proj3), q2.getProjectionsForVariable("?x"))
         assertEquals(Set.empty, q3.getProjectionsForVariable("?x"))
-        
+
         val qij = new AbstractQueryInnerJoin(List(q1, q2, q3))
         assertEquals(Set(proj3, proj1), qij.getProjectionsForVariable("?x"))
-    }    
+    }
 }

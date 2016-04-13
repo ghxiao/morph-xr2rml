@@ -60,9 +60,6 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass());
 
-    /** Map of nodes of a SPARQL query and the candidate triples maps for each node **/
-    var mapInferredTMs: Map[Node, Set[R2RMLTriplesMap]] = Map.empty;
-
     //Optimize.setFactory(new MorphQueryRewritterFactory());
 
     /**

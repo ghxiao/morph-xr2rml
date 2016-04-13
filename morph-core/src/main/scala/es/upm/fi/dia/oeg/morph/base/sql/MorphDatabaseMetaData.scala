@@ -1,8 +1,9 @@
 package es.upm.fi.dia.oeg.morph.base.sql
 
-import org.apache.log4j.Logger
 import java.sql.Connection
 import java.sql.DatabaseMetaData
+
+import org.apache.log4j.Logger
 
 class MorphDatabaseMetaData(
         val conn: Connection,

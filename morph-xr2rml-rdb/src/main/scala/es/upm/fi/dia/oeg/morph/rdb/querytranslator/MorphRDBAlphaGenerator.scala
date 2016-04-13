@@ -17,13 +17,13 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResultUnion
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.sql.SQLJoinTable
 import es.upm.fi.dia.oeg.morph.base.sql.SQLLogicalTable
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import es.upm.fi.dia.oeg.morph.r2rml.model.RDBR2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLPredicateObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBUnfolder
 
-class MorphRDBAlphaGenerator(md: R2RMLMappingDocument, baseUnfolder: MorphBaseUnfolder) {
+class MorphRDBAlphaGenerator(md: RDBR2RMLMappingDocument, baseUnfolder: MorphBaseUnfolder) {
 
     val unfolder = baseUnfolder.asInstanceOf[MorphRDBUnfolder]
     

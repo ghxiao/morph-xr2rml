@@ -11,27 +11,20 @@ import com.hp.hpl.jena.rdf.model.Resource
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.sql.MorphDatabaseMetaData
 import es.upm.fi.dia.oeg.morph.base.sql.MorphTableMetaData
 
 class R2RMLTriplesMap(
+        val resource: Resource, 
         val logicalSource: xR2RMLLogicalSource,
         val refFormulation: String,
         val subjectMap: R2RMLSubjectMap,
         val predicateObjectMaps: Set[R2RMLPredicateObjectMap]) {
 
-    var id: String = null;
+    val id: String = resource.getLocalName
 
-    var name: String = null;
-
-    var resource: Resource = null;
+    val name: String = resource.getLocalName()
 
     val logger = Logger.getLogger(this.getClass());
-
-    def buildMetaData(dbMetadata: Option[MorphDatabaseMetaData]) = {
-        logger.debug("Building metadata for TriplesMap: " + this.name);
-        this.logicalSource.buildMetaData(dbMetadata);
-    }
 
     override def toString(): String = { return this.name }
 
@@ -87,16 +80,8 @@ class R2RMLTriplesMap(
         result;
     }
 
-    def getLogicalTableSize(): Long = {
-        this.logicalSource.getLogicalTableSize
-    }
-
     def getMappedClassURIs(): Iterable[String] = {
         this.subjectMap.classURIs;
-    }
-
-    def getTableMetaData(): Option[MorphTableMetaData] = {
-        this.logicalSource.tableMetaData;
     }
 
     def getLogicalSource(): xR2RMLLogicalSource = {
@@ -167,9 +152,7 @@ object R2RMLTriplesMap {
             Set.empty
         };
 
-        val tm = new R2RMLTriplesMap(logSource, refFormulation, subjectMap, predicateObjectMaps.toSet);
-        tm.resource = tmResource
-        tm.name = tmResource.getLocalName();
+        val tm = new R2RMLTriplesMap(tmResource, logSource, refFormulation, subjectMap, predicateObjectMaps.toSet);
         if (logger.isTraceEnabled) logger.trace("Completed parsing triples map: " + tmResource.getLocalName())
         tm;
     }
