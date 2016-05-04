@@ -418,8 +418,10 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
         if (termMap.isReferenceValued) {
             // Make a new equality condition between the reference in the term map and the value in the triple pattern term
-            Set(new AbstractQueryConditionEquals(termMap.getOriginalValue, tpTerm.toString(false)))
-
+            if (tpTerm.isLiteral)
+                Set(new AbstractQueryConditionEquals(termMap.getOriginalValue, tpTerm.getLiteralValue.toString))
+            else
+                Set(new AbstractQueryConditionEquals(termMap.getOriginalValue, tpTerm.toString(false)))
         } else if (termMap.isTemplateValued) {
             // Get the references of the template string and the associated values in the triple pattern term
             val refValueCouples = TemplateUtility.getTemplateMatching(termMap.getOriginalValue, tpTerm.toString(false))
