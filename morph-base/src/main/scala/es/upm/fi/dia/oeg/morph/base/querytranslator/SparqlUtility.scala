@@ -206,13 +206,13 @@ object SparqlUtility {
 
     /**
      * Decide the output format and content type of the SPARQL results, based on the SPARQL query
-     * and the value of the content-type HTTP header.
+     * and the value of the Accept HTTP header.
      *
-     * If the content-type is null or empty, the default RDF syntax or result format is returned depending on the query type.
+     * If the Accept is null or empty, the default RDF syntax or result format is returned depending on the query type.
      *
-     * Note: the content-type header may contain several values.
+     * Note: the Accept header may contain several values.
      *
-     * @param contentType value of the content-type HTTP header. Can be null.
+     * @param accept value of the Accept HTTP header. Can be null.
      * @param query the SPARQL query. Cannot be null.
      * @param defaultRdfSyntax default RDF syntax, should be read from the configuration file. Cannot be null.
      * @param defaultResultFrmt default format for SPARQL result sets, should be read from the configuration file. Cannot be null.
@@ -223,7 +223,7 @@ object SparqlUtility {
      *   <code>("application/sparql-results+xml", Constants.OUTPUT_FORMAT_RESULT_XML)</code>
      */
     def negotiateContentType(
-        contentType: String,
+        accept: String,
         query: Query,
         defaultRdfSyntax: String,
         defaultResultFrmt: String): Option[(String, String)] = {
@@ -231,21 +231,21 @@ object SparqlUtility {
         val result = if (query.isAskType || query.isSelectType) {
 
             // --- Formats for a SPARQL result set
-            if (contentType == null || contentType == "") {
+            if (accept == null || accept == "") {
                 Some((outputFormatToContentType(defaultResultFrmt), defaultResultFrmt))
             } else {
-                val ctl = contentType.toLowerCase
-                if (ctl contains "application/sparql-results+xml")
+                val accl = accept.toLowerCase
+                if (accl contains "application/sparql-results+xml")
                     Some(("application/sparql-results+xml", Constants.OUTPUT_FORMAT_RESULT_XML))
-                else if (ctl contains "application/sparql-results+json")
+                else if (accl contains "application/sparql-results+json")
                     Some(("application/sparql-results+json", Constants.OUTPUT_FORMAT_RESULT_JSON))
-                else if (ctl contains "application/sparql-results+csv")
+                else if (accl contains "application/sparql-results+csv")
                     Some(("application/sparql-results+csv", Constants.OUTPUT_FORMAT_RESULT_CSV))
-                else if (ctl contains "application/sparql-results+tsv")
+                else if (accl contains "application/sparql-results+tsv")
                     Some(("application/sparql-results+tsv", Constants.OUTPUT_FORMAT_RESULT_TSV))
-                else if (ctl contains "application/xml")
+                else if (accl contains "application/xml")
                     Some(("application/xml", Constants.OUTPUT_FORMAT_RESULT_XML))
-                else if (ctl contains "text/plain")
+                else if (accl contains "text/plain")
                     Some(("text/plain", Constants.OUTPUT_FORMAT_RESULT_XML))
                 else
                     None
@@ -254,21 +254,21 @@ object SparqlUtility {
         } else if (query.isConstructType || query.isDescribeType) {
 
             // --- RDF formats
-            if (contentType == null || contentType == "")
+            if (accept == null || accept == "")
                 Some((outputFormatToContentType(defaultRdfSyntax), defaultRdfSyntax))
             else {
-                val ctl = contentType.toLowerCase
-                if (ctl.contains("text/turtle") || ctl.contains("application/turtle") || ctl.contains("application/x-turtle"))
+                val accl = accept.toLowerCase
+                if (accl.contains("text/turtle") || accl.contains("application/turtle") || accl.contains("application/x-turtle"))
                     Some(("text/turtle", Constants.OUTPUT_FORMAT_TURTLE))
-                else if (ctl contains "application/rdf+xml")
+                else if (accl contains "application/rdf+xml")
                     Some(("application/rdf+xml", Constants.OUTPUT_FORMAT_RDFXML))
-                else if (ctl contains "text/nt")
+                else if (accl contains "text/nt")
                     Some(("text/nt", Constants.OUTPUT_FORMAT_NTRIPLE))
-                else if (ctl contains "text/n3")
+                else if (accl contains "text/n3")
                     Some(("text/n3", Constants.OUTPUT_FORMAT_N3))
-                else if (ctl contains "application/xml")
+                else if (accl contains "application/xml")
                     Some(("application/xml", Constants.OUTPUT_FORMAT_RDFXML))
-                else if (ctl contains "text/plain")
+                else if (accl contains "text/plain")
                     Some(("text/plain", Constants.OUTPUT_FORMAT_TURTLE))
                 else
                     None
@@ -276,7 +276,7 @@ object SparqlUtility {
         } else None
 
         if (logger.isInfoEnabled)
-            logger.info("Request Accept: " + contentType + ". Negotiated: " + result.getOrElse("None"))
+            logger.info("Request Accept: " + accept + ". Negotiated: " + result.getOrElse("None"))
         result
     }
 

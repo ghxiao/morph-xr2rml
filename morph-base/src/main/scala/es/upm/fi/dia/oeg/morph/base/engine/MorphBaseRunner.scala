@@ -112,20 +112,20 @@ class MorphBaseRunner(val factory: IMorphFactory) {
     }
 
     /**
-     * Decide the output format and content type of the SPARQL results, based on the SPARQL query
-     * and the value of the content-type HTTP header.
-     * If the content-type is null, the default RDF syntax or result format is returned depending on the query type.
+     * Decide the output format and content type of the SPARQL results, based on the type of SPARQL query
+     * and the value of the Accept HTTP header.
+     * If the Accept is null, the default RDF syntax or result format is returned depending on the query type.
      *
-     * @param contentType value of the content-type HTTP header. Can be null.
+     * @param accept value of the Accept HTTP header. Can be null.
      * @param query the SPARQL query. Cannot be null.
      *
      * @return the content-type value e.g. "application/sparql-results+xml"
      */
-    def negotiateContentType(contentType: String, query: Query): Option[String] = {
+    def negotiateContentType(accept: String, query: Query): Option[String] = {
 
         val dfltSyntaxRdf = factory.getProperties.outputSyntaxRdf
         val dfltSyntaxResult = factory.getProperties.outputSyntaxResult
-        val neg = SparqlUtility.negotiateContentType(contentType, query, dfltSyntaxRdf, dfltSyntaxResult)
+        val neg = SparqlUtility.negotiateContentType(accept, query, dfltSyntaxRdf, dfltSyntaxResult)
         if (neg.isDefined)
             Some(neg.get._1)
         else

@@ -7,7 +7,8 @@ import org.apache.log4j.Logger
 
 import com.hp.hpl.jena.query.QueryFactory
 
-import fr.unice.i3s.morph.xr2rml.engine.MorphRunner
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import javax.ws.rs.Consumes
 import javax.ws.rs.FormParam
 import javax.ws.rs.GET
@@ -19,9 +20,6 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.HttpHeaders
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
-import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 
 /**
  * REST service implementing the SPARQL query protocol for queries SELECT, DESCRIBE and CONSTRUCT
@@ -88,11 +86,11 @@ class SparqlrestService {
                 "application/sparql-results+xml"
 
         if (logger.isDebugEnabled) {
-            logger.debug("HTTP GET, SPARQL query: " + query)
-            logger.debug("HTTP GET, default graph: " + defaultGraphUris)
-            logger.debug("HTTP GET, named graph: " + namedGraphUris)
-            logger.debug("HTTP GET, Content-Type: " + headers.getRequestHeader(HttpHeaders.CONTENT_TYPE))
-            logger.debug("HTTP GET, Accept: " + accept)
+            logger.debug("SPARQL query: " + query)
+            logger.debug("Default graph: " + defaultGraphUris)
+            logger.debug("Named graph: " + namedGraphUris)
+            logger.debug("Content-Type: " + headers.getRequestHeader(HttpHeaders.CONTENT_TYPE))
+            logger.debug("Accept: " + accept)
         }
 
         try {
@@ -110,7 +108,7 @@ class SparqlrestService {
             val sparqlQuery = QueryFactory.create(query)
             val negContentType = runner.negotiateContentType(accept, sparqlQuery)
             if (!negContentType.isDefined)
-                return Response.status(Status.BAD_REQUEST).
+                return Response.status(Status.NOT_ACCEPTABLE).
                     header(headerAccept, "*").
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").
                     entity("Requested content type not supported: " + accept).build
