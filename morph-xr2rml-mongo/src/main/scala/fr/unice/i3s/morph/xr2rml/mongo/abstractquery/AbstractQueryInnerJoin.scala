@@ -19,7 +19,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * It is not allowed to create an inner join instance with nested inner joins.
  *
  * @param lstMembers the abstract query members of the inner join, flattened if there are embedded inner joins
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryInnerJoin(
@@ -242,8 +242,11 @@ class AbstractQueryInnerJoin(
                             if (logger.isDebugEnabled && rightAtom != right)
                                 logger.debug("Propagated condition of query " + i + " into query " + j)
 
-                            membersV = membersV.slice(0, i) ++ List(leftAtom) ++ membersV.slice(i + 1, j) ++ List(rightAtom) ++ membersV.slice(j + 1, membersV.size)
-                            continue = false
+                            if (leftAtom != left || rightAtom != right) {
+                                membersV = membersV.slice(0, i) ++ List(leftAtom) ++ membersV.slice(i + 1, j) ++ List(rightAtom) ++ membersV.slice(j + 1, membersV.size)
+                                continue = false
+                            } else if (logger.isDebugEnabled)
+                                logger.debug("No condition propagated between queries " + i + " and " + j)
                         }
 
                         // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
@@ -255,7 +258,8 @@ class AbstractQueryInnerJoin(
                                 membersV = membersV.slice(0, i) ++ List(merged.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
                                 continue = false
                                 if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
-                            } else if (logger.isDebugEnabled) logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
+                            } else if (logger.isDebugEnabled)
+                                logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
                         }
                     }
                 } // end for j
