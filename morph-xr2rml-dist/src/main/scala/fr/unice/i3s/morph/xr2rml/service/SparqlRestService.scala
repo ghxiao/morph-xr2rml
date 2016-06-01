@@ -85,12 +85,12 @@ class SparqlrestService {
             else
                 "application/sparql-results+xml"
 
-        if (logger.isDebugEnabled) {
-            logger.debug("SPARQL query: " + query)
-            logger.debug("Default graph: " + defaultGraphUris)
-            logger.debug("Named graph: " + namedGraphUris)
-            logger.debug("Content-Type: " + headers.getRequestHeader(HttpHeaders.CONTENT_TYPE))
-            logger.debug("Accept: " + accept)
+        if (logger.isInfoEnabled) {
+            logger.info("SPARQL query: " + query)
+            logger.info("Default graph: " + defaultGraphUris)
+            logger.info("Named graph: " + namedGraphUris)
+            logger.info("Content-Type: " + headers.getRequestHeader(HttpHeaders.CONTENT_TYPE))
+            logger.info("Accept: " + accept)
         }
 
         try {

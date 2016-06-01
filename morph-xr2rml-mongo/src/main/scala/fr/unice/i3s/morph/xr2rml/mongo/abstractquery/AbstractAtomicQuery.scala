@@ -12,7 +12,6 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
@@ -314,7 +313,7 @@ class AbstractAtomicQuery(
      * 
      * (1) The two queries have the same From part or one is a sub-set of the other, and they are 
      * joined on a at least one variable whose reference is declared as unique in the triples map 
-     * logical source (xrr:UniqueRef).
+     * logical source (xrr:uniqueRef).
      * Example:<br>
      * q1.from: <code>db.collection.find({query1})</code>,<br>
      * q2.from: <code>db.collection.find({query1, query2})</code><br>

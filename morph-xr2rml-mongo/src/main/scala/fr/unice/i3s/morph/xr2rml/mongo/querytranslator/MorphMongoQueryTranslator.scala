@@ -194,23 +194,23 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 this.translateSparqlQueryToAbstract(bindings, opFilter.getSubOp)
             }
             case opSlice: OpSlice => {
-                logger.warn("SPARQL LIMIT no supported in query translation.")
+                logger.warn("SPARQL LIMIT not supported in query translation.")
                 this.translateSparqlQueryToAbstract(bindings, opSlice.getSubOp)
             }
             case opDistinct: OpDistinct => {
-                logger.warn("SPARQL DISTINCT no supported in query translation.")
+                logger.warn("SPARQL DISTINCT not supported in query translation.")
                 this.translateSparqlQueryToAbstract(bindings, opDistinct.getSubOp)
             }
             case opOrder: OpOrder => {
-                logger.warn("SPARQL ORDER no supported in query translation.")
+                logger.warn("SPARQL ORDER not supported in query translation.")
                 this.translateSparqlQueryToAbstract(bindings, opOrder.getSubOp)
             }
             case opGroup: OpGroup => {
-                logger.warn("SPARQL GROUP BY no supported in query translation.")
+                logger.warn("SPARQL GROUP BY not supported in query translation.")
                 this.translateSparqlQueryToAbstract(bindings, opGroup.getSubOp)
             }
             case _ => {
-                logger.warn("SPARQL feature no supported in query translation.")
+                logger.warn("SPARQL feature not supported in query translation.")
                 None
             }
         }
