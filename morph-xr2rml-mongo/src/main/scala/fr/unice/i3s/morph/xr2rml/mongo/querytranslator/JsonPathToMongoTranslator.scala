@@ -39,50 +39,44 @@ object JsonPathToMongoTranslator {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
+    final val PONCT_CHARS = """#%@_~=/""";
+    final val PONCT_CHARS_ESCAPED = """\&\!\-\+\?\\\|\^\$\<\>\(\)\{\}\[\]"""; // ? \ | ^ $ < > ( ) { } [ ]
+    final val FIELD_NAME_QUOTED = """a-zA-Z0-9""" + PONCT_CHARS + PONCT_CHARS_ESCAPED;
+
     /**
      * Regex for heading JSONPath expressions containing a concatenation of single field names (with tailing-dot or in array notation)
      * array indexes and wildcard, i.e. one of: .p, ["p"], [i], .* or [*].
      * Field alternatives (["q","r"]) and array index alternatives ([1,2]) are NOT allowed.
+     *
+     * The "_" is valid in "$._id", but any other special char must be within double quotes likes "$.q["#ab/cd"]
      */
-    final val JSONPATH_PATH = """^(\.\p{Alnum}+|\["\p{Alnum}+"\]|\[\p{Digit}+\]|\[\*\]|\.\*)+""".r
+    final val JSONPATH_PATH = ("""^(\.\w+|\["[""" + FIELD_NAME_QUOTED + """]+"\]|\[\p{Digit}+\]|\[\*\]|\.\*)+""").r;
 
     /**
      * Regex for heading JSONPath expressions containing a concatenation of single field names (with tailing-dot or in array notation)
      * and array indexes, i.e. one of: .p, ["p"] or [i]. E.g. '.p.q.r', '.p[10]["r"]'
      * '*' is NOT allowed. Field alternatives (["q","r"]) and array index alternatives ([1,2]) are NOT allowed.
      */
-    final val JSONPATH_PATH_NS = """^(\.\p{Alnum}+|\["\p{Alnum}+"\]|\[\p{Digit}+\])+""".r
-
-    /**
-     *  Regex for a heading JSONPath field name with heading dot: .p
-     *  The full match will be .p but the first capturing group will only p
-     */
-    //final val JSONPATH_FIELD_NAME_DOTTED = """^\.(\p{Alnum}+)""".r
-
-    /**
-     *  Regex for a heading JSONPath field name in array notation: ["p"]
-     *  The full match will be ["p"] but the first capturing group will only p
-     */
-    //final val JSONPATH_FIELD_NAME_ARRAY_NOTATION = """^\["(\p{Alnum}+)"\]""".r
+    final val JSONPATH_PATH_NS = ("""^(\.\w+|\["[""" + FIELD_NAME_QUOTED + """]+"\]|\[\p{Digit}+\])+""").r;
 
     /**
      *  Regex for a JSONPath field name in double-quoted in an alternatives: "q"
      *  The full match will be like "p" (including double-quotes), the first capturing group will only the p
      *  (without the double-quotes)
      */
-    final val JSONPATH_FIELD_NAME_QUOTED = """"(\p{Alnum}+)"""".r
+    final val JSONPATH_FIELD_NAME_QUOTED = ("\"([" + FIELD_NAME_QUOTED + "]+)\"").r;
 
     /**
      * Regex for heading JSONPath field alternatives: ["q","r", ...]
      * The "?:" and the beginning of the group just indicates to not show it as part of the captured groups.
      */
-    final val JSONPATH_FIELD_ALTERNATIVE = """^(\["\p{Alnum}+"(?:,"\p{Alnum}+")+\])""".r
+    final val JSONPATH_FIELD_ALTERNATIVE = ("""^(\["[""" + FIELD_NAME_QUOTED + """]+"(?:,"[""" + FIELD_NAME_QUOTED + """]+")+\])""").r;
 
     /**
      *  Regex for a heading JSONPath array index in array notation: [5]
      *  The full match will be [5] but the first capturing group will only 5
      */
-    final val JSONPATH_ARRAY_IDX_ARRAY_NOTATION = """^\[(\p{Digit}+)\]""".r
+    final val JSONPATH_ARRAY_IDX_ARRAY_NOTATION = """^\[(\p{Digit}+)\]""".r;
 
     /**
      * Regex for JSONPath array index: basically an integer.
@@ -156,7 +150,7 @@ object JsonPathToMongoTranslator {
      * @param cond and condition on a JSONPath expression to translate, must  be empty or null
      * @param iter the iterator from the logical source, i.e. the From part of the anstract atomic query
      * @param projection set of projections to push in the MongoDB query
-     * 
+     *
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
      * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
      *

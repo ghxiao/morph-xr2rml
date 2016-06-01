@@ -7,12 +7,25 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 
 /**
  * Tests of the Regex expressions in JsonPathToMongoTranslator
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class JsonPathToMongoRegexTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
+
+    @Test def test() {
+        println("------ test")
+
+        var jpExpr = """["sb/pb"]"""
+        var result = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(jpExpr).toList
+        println(result)
+
+        jpExpr = """._id["$oid"]"""
+        result = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(jpExpr).toList
+        println(result)
+        println("- " + result(0).subgroups)
+    }
 
     @Test def test_JPpath_ns() {
         println("------ test_JPpath_ns")
@@ -46,6 +59,22 @@ class JsonPathToMongoRegexTest {
         assertEquals(0, result.length)
     }
 
+    @Test def test_JPpath_ns_specialchars() {
+        println("------ test_JPpath_ns_specialchars")
+
+        var jpExpr = """.p._r["q_!#f%&j+-k?@_~=/\|^$a<>b()c{}_q"]"""
+        var result = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(1, result.length)
+        assertEquals(jpExpr, result(0).group(0))
+
+        jpExpr = """._r_["!+-?_~=/\|xx>(q{_q"]["!#a%v&@=|b^$>)_q"].*.r"""
+        result = JsonPathToMongoTranslator.JSONPATH_PATH_NS.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(1, result.length)
+        assertEquals("""._r_["!+-?_~=/\|xx>(q{_q"]["!#a%v&@=|b^$>)_q"]""", result(0).group(0))
+    }
+
     @Test def test_JPpath() {
         println("------ test_JPpath")
 
@@ -61,8 +90,42 @@ class JsonPathToMongoRegexTest {
         assertEquals(1, result.length)
         assertEquals(jpExpr, result(0).group(0))
 
+        jpExpr = """.p.*.q"""
+        result = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(1, result.length)
+        assertEquals(jpExpr, result(0).group(0))
+
         jpExpr = """$.p"""
         result = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(0, result.length)
+    }
+
+    @Test def test_JPpath_specialchars() {
+        println("------ test_JPpath_specialchars")
+
+        var jpExpr = """.p.*["q_!#%&+-?@_~=/\|^$<>(){}_q"]"""
+        var result = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(1, result.length)
+        assertEquals(jpExpr, result(0).group(0))
+
+        jpExpr = """.p[*]["q_!#%&+-?@_~=/\|^$<>(){}_q"].*"""
+        result = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(1, result.length)
+        assertEquals(jpExpr, result(0).group(0))
+
+        jpExpr = """._r_["!#%&+-?@_~=/\|^$<>(){}_q"]"""
+        result = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(jpExpr).toList
+        println(result)
+        assertEquals(1, result.length)
+        assertEquals(jpExpr, result(0).group(0))
+
+        jpExpr = """$._r_["!#%&+-?@_~=/\|^$<>(){}_q"]"""
+        result = JsonPathToMongoTranslator.JSONPATH_PATH.findAllMatchIn(jpExpr).toList
+        println(result)
         assertEquals(0, result.length)
     }
 

@@ -34,7 +34,7 @@ class JsonPathToMongoTranslatorTest {
         println(query.toString)
         assertTrue(query.isInstanceOf[MongoQueryNodeNotSupported])
 
-        jpExpr = """$.*.q"""
+        jpExpr = """$.*._q_"""
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionNotNull(jpExpr), None)
         println(query.toString)
         assertTrue(query.isInstanceOf[MongoQueryNodeNotSupported])
@@ -87,10 +87,10 @@ class JsonPathToMongoTranslatorTest {
     @Test def test_R2a() {
         println("------ test_R2a")
 
-        var jpExpr = """$.p[5].q["a", "b", "c"].r"""
+        var jpExpr = """$.p[5].__q["a", "b", "c"].r"""
         var query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, "v"), None)
         println(query.toString)
-        assertEquals(cleanString("$or: [{'p.5.q.a.r': {$eq: 'v'}}, {'p.5.q.b.r': {$eq: 'v'}}, {'p.5.q.c.r': {$eq: 'v'}}]"), cleanString(query.toString))
+        assertEquals(cleanString("$or: [{'p.5.__q.a.r': {$eq: 'v'}}, {'p.5.__q.b.r': {$eq: 'v'}}, {'p.5.__q.c.r': {$eq: 'v'}}]"), cleanString(query.toString))
 
         jpExpr = """$.p.q["a", "b", "c"]"""
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, "v"), None)
@@ -258,6 +258,16 @@ class JsonPathToMongoTranslatorTest {
         println(query.toString)
         assertEquals(cleanString("'p': {$eq: 1}"), cleanString(query.toString))
 
+        jpExpr = """$._id"""
+        query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)
+        println(query.toString)
+        assertEquals(cleanString("'_id': {$eq: 1}"), cleanString(query.toString))
+
+        jpExpr = """$._pp.qq.r_r"""
+        query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)
+        println(query.toString)
+        assertEquals(cleanString("'_pp.qq.r_r': {$eq: 1}"), cleanString(query.toString))
+
         jpExpr = """$["p"]"""
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)
         println(query.toString)
@@ -267,6 +277,11 @@ class JsonPathToMongoTranslatorTest {
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)
         println(query.toString)
         assertEquals(cleanString("'p.5.q.r': {$eq: 1}"), cleanString(query.toString))
+
+        jpExpr = """$["sb/pb"]"""
+        query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)
+        println(query.toString)
+        assertEquals(cleanString("'sb/pb': {$eq: 1}"), cleanString(query.toString))
     }
 
     @Test def test_R9() {
