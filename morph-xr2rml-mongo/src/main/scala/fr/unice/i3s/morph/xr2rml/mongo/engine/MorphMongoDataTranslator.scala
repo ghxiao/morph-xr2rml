@@ -20,7 +20,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 /**
  * Utility class to transform a triples map or a MongoDB query into RDF triples
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) {
@@ -33,7 +33,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
     /**
      * Query the database and build triples from the result.
      * Triples are stored in the Jena model of the data materializer.
-     * 
+     *
      *  For each document of the result set:
      * <ol>
      * <li>create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,</li>
@@ -265,9 +265,14 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
             // --- Reference-valued term map
             case Constants.MorphTermMapType.ReferenceTermMap => {
+                val msPath =
+                    if (termMap.reference == "$._id")
+                        // The MongoDB "_id" field is an ObjectId: retrieve the $oid subfield to get the id value
+                        MixedSyntaxPath("$._id.$oid", termMap.refFormulaion)
+                    else
+                        termMap.getMixedSyntaxPaths()(0) // '(0)' because in a reference there is only one mixed syntax path
 
                 // Evaluate the value against the mixed syntax path
-                val msPath = termMap.getMixedSyntaxPaths()(0) // '(0)' because in a reference there is only one mixed syntax path
                 val values: List[Object] = msPath.evaluate(jsonDoc)
 
                 // Generate RDF terms from the values resulting from the evaluation
@@ -278,10 +283,25 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
             case Constants.MorphTermMapType.TemplateTermMap => {
 
                 // For each group of the template, compute a list of replacement strings
-                val msPaths = termMap.getMixedSyntaxPaths()
-                val listReplace = for (i <- 0 to (msPaths.length - 1)) yield {
+                // CHANGE 2016/06/02: Replaced this line: 
+                //     val msPaths = termMap.getMixedSyntaxPaths()
+                // with the following, in order to deal with the _id field:
+                val msPaths = {
+                    // Get the list of template strings
+                    val tplStrings = TemplateUtility.getTemplateGroups(termMap.templateString)
 
-                    // Evaluate the raw value against the mixed-syntax path.
+                    // For each one, parse it as a mixed syntax path
+                    tplStrings.map(tplString => {
+                        if (tplString == "$._id")
+                            // The MongoDB "_id" field is an ObjectId: retrieve the $oid subfield to get the id value
+                            MixedSyntaxPath("$._id.$oid", termMap.refFormulaion)
+                        else
+                            MixedSyntaxPath(tplString, termMap.refFormulaion)
+                    })
+                }
+
+                val listReplace = for (i <- 0 to (msPaths.length - 1)) yield {
+                    // Evaluate the raw source document against the mixed-syntax path(s).
                     val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
                     valuesRaw.filter(_ != null).map(v => encodeResvdCharsIfUri(v, memberTermType))
                 }

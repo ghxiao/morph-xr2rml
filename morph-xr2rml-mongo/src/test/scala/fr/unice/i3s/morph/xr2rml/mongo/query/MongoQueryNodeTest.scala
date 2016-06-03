@@ -15,6 +15,36 @@ class MongoQueryNodeTest {
 
     private def cleanString(str: String) = str.trim.replaceAll("\\s", "")
 
+    @Test def test_basics_equals() {
+        println("------------------------------------------------- test_basics_equals")
+        var node: MongoQueryNode = new MongoQueryNodeField("_p/b", new MongoQueryNodeCondEquals(new Integer(3)))
+        println(node.toString)
+        assertEquals("""'_p/b': {$eq: 3}""", node.toString)
+
+        node = new MongoQueryNodeField("p&#$", new MongoQueryNodeCondEquals("foo"))
+        println(node.toString)
+        assertEquals("""'p&#$': {$eq: 'foo'}""", node.toString)
+
+        node = new MongoQueryNodeField("_id", new MongoQueryNodeCondEquals("someMongoDBid"))
+        println(node.toString)
+        assertEquals("""'_id': {$oid: 'someMongoDBid'}""", node.toString)
+    }
+
+    @Test def test_basics_notnull() {
+        println("------------------------------------------------- test_basics_notnull")
+        var node: MongoQueryNode = new MongoQueryNodeField("_p/b", new MongoQueryNodeCondNotNull)
+        println(node.toString)
+        assertEquals("""'_p/b': {$exists: true, $ne: null}""", node.toString)
+
+        node = new MongoQueryNodeField("p&#$", new MongoQueryNodeCondNotNull)
+        println(node.toString)
+        assertEquals("""'p&#$': {$exists: true, $ne: null}""", node.toString)
+
+        node = new MongoQueryNodeField("_id", new MongoQueryNodeCondNotNull)
+        println(node.toString)
+        assertEquals("""'_id': {$exists: true, $ne: null}""", node.toString)
+    }
+
     @Test def test() {
         println("------------------------------------------------- test")
         val node: MongoQueryNode =
@@ -248,7 +278,7 @@ class MongoQueryNodeTest {
         println(res(0))
         println(res(0).toTopLevelProjection)
         assertEquals(res.size, 1)
-       
+
         assertEquals(cleanString(res(0).toString), cleanString("'a.b': {$elemMatch: {$eq: 'aaaa', $eq: 'bbbb'}}"))
         // This example is a bit stupid since the projection string is invalid, it has 2 times the same field 'a.b'
         // but so far the only projection operator is the array $slice. Later on we may need for than this,

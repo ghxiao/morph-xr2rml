@@ -258,10 +258,11 @@ class JsonPathToMongoTranslatorTest {
         println(query.toString)
         assertEquals(cleanString("'p': {$eq: 1}"), cleanString(query.toString))
 
+        // Specific treatment of the _id MongoDB field with ObjectId
         jpExpr = """$._id"""
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)
         println(query.toString)
-        assertEquals(cleanString("'_id': {$eq: 1}"), cleanString(query.toString))
+        assertEquals(cleanString("'_id': {$oid: 1}"), cleanString(query.toString))
 
         jpExpr = """$._pp.qq.r_r"""
         query = JsonPathToMongoTranslator.trans(new AbstractQueryConditionEquals(jpExpr, new Integer(1)), None)

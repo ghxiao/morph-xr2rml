@@ -20,4 +20,14 @@ class MongoQueryNodeCondEquals(val value: Object) extends MongoQueryNodeCond {
         else
             "$eq: " + value
     }
+
+    /**
+     * Specific case of the MongoDB _id field that is an ObjectId
+     */
+    def toStringId() = {
+        if (value.isInstanceOf[String])
+            "$oid: '" + value + "'"
+        else
+            "$oid: " + value
+    }
 }
