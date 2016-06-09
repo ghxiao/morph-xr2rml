@@ -147,8 +147,8 @@ object JsonPathToMongoTranslator {
      * Entry point of the translation of an abstract query condition on a JSONPath expression
      * into an abstract MongoDB query. The resulting abstract MongoDB query is not optimized.
      *
-     * @param cond and condition on a JSONPath expression to translate, must  be empty or null
-     * @param iter the iterator from the logical source, i.e. the From part of the anstract atomic query
+     * @param cond a condition on a JSONPath expression to translate, must not be empty or null
+     * @param iter the iterator from the logical source, i.e. the From part of the abstract atomic query
      * @param projection set of projections to push in the MongoDB query
      *
      * @return a MongoQueryNode instance representing the top-level MongoDB query.

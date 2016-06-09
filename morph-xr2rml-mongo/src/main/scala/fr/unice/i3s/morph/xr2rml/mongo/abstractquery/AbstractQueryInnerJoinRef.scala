@@ -35,9 +35,9 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 class AbstractQueryInnerJoinRef(
 
     tpBindings: Set[TPBinding],
-    val child: AbstractAtomicQuery,
+    val child: AbstractAtomicQueryMongo,
     val childRef: String,
-    val parent: AbstractAtomicQuery,
+    val parent: AbstractAtomicQueryMongo,
     val parentRef: String)
 
         extends AbstractQuery(tpBindings) {

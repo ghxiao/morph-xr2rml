@@ -174,11 +174,11 @@ class AbstractQueryLeftJoin(
 
         val leftOpt = left.optimizeQuery(optimizer)
         val rightOpt = right.optimizeQuery(optimizer)
-        if (leftOpt.isInstanceOf[AbstractAtomicQuery] && rightOpt.isInstanceOf[AbstractAtomicQuery]) {
+        if (leftOpt.isInstanceOf[AbstractAtomicQueryMongo] && rightOpt.isInstanceOf[AbstractAtomicQueryMongo]) {
 
             // Try to narrow down right atomic query by propagating conditions from the left query
             if (optimizer.propagateConditionFromJoin) {
-                var rightAtom = rightOpt.asInstanceOf[AbstractAtomicQuery]
+                var rightAtom = rightOpt.asInstanceOf[AbstractAtomicQueryMongo]
                 rightAtom = rightAtom.propagateConditionFromJoinedQuery(leftOpt)
                 if (logger.isDebugEnabled)
                     if (rightAtom != right)

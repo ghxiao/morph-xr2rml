@@ -227,10 +227,10 @@ class AbstractQueryInnerJoin(
                     val right = membersV(j)
 
                     // Inner-join of 2 atomic queries
-                    if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {
+                    if (left.isInstanceOf[AbstractAtomicQueryMongo] && right.isInstanceOf[AbstractAtomicQueryMongo]) {
 
-                        var leftAtom = left.asInstanceOf[AbstractAtomicQuery]
-                        var rightAtom = right.asInstanceOf[AbstractAtomicQuery]
+                        var leftAtom = left.asInstanceOf[AbstractAtomicQueryMongo]
+                        var rightAtom = right.asInstanceOf[AbstractAtomicQueryMongo]
 
                         // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
                         if (optimizer.propagateConditionFromJoin) {

@@ -141,8 +141,8 @@ class AbstractQueryUnion(
                     val right = membersV(j)
 
                     // Union of 2 atomic queries
-                    if (left.isInstanceOf[AbstractAtomicQuery] && right.isInstanceOf[AbstractAtomicQuery]) {
-                        val opt = left.asInstanceOf[AbstractAtomicQuery].mergeForUnion(right)
+                    if (left.isInstanceOf[AbstractAtomicQueryMongo] && right.isInstanceOf[AbstractAtomicQueryMongo]) {
+                        val opt = left.asInstanceOf[AbstractAtomicQueryMongo].mergeForUnion(right)
                         if (opt.isDefined) {
                             //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
                             // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4

@@ -25,7 +25,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQuery
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQueryMongo
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
@@ -220,8 +220,8 @@ class MorphMongoQueryTranslatorTest {
         val tp = Triple.create(s, p, o)
 
         val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmMovies)))
-        assertTrue(Q.isInstanceOf[AbstractAtomicQuery])
-        val q = Q.asInstanceOf[AbstractAtomicQuery]
+        assertTrue(Q.isInstanceOf[AbstractAtomicQueryMongo])
+        val q = Q.asInstanceOf[AbstractAtomicQueryMongo]
         assertEquals(q.from.getValue, "db.movies.find({decade:{$exists:true}})")
         assertTrue(q.project.head.references.contains("$.code"))
         assertEquals("?x", q.project.head.as.get)

@@ -36,7 +36,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQuery
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQueryMongo
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoin
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryLeftJoin
@@ -397,10 +397,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             val Q =
                 if (!pom.hasRefObjectMap)
                     // If there is no parent triples map, simply return this atomic abstract query
-                    new AbstractAtomicQuery(Set(new TPBinding(tp, tm)), from, project, where)
+                    new AbstractAtomicQueryMongo(Set(new TPBinding(tp, tm)), from, project, where)
                 else {
                     // If there is a parent triples map, create an INNER JOIN ON childRef = parentRef
-                    val q1 = new AbstractAtomicQuery(Set.empty, from, project, where) // no tp nor TM in case of a RefObjectMap
+                    val q1 = new AbstractAtomicQueryMongo(Set.empty, from, project, where) // no tp nor TM in case of a RefObjectMap
 
                     val rom = pom.getRefObjectMap(0)
                     val Pfrom = factory.getMappingDocument.getParentTriplesMap(rom).logicalSource
@@ -419,7 +419,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                         if (logger.isDebugEnabled) logger.debug("Copying equality condition on child ref to parent ref: " + eqParent)
                         Pwhere = Pwhere + eqParent
                     }
-                    val q2 = new AbstractAtomicQuery(Set.empty, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
+                    val q2 = new AbstractAtomicQueryMongo(Set.empty, Pfrom, Pproject, Pwhere) // no tp nor TM in case of a RefObjectMap 
                     new AbstractQueryInnerJoinRef(Set(new TPBinding(tp, tm)), q1, jc.childRef, q2, jc.parentRef)
                 }
             Q // yield query Q for triples map tm
