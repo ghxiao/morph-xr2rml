@@ -17,14 +17,24 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
  * the translation of this abstract query into the target database language.
  *
  * @param tpBindings a set of couples (triple pattern, List(triples map)) for which we create this atomic query.
- * This is not empty only for atomic queries. Initially each atomic query should have exactly a binding
- * for exactly one triple pattern.
+ * This member is not empty for atomic queries only. Initially each atomic query should have exactly a binding.
  * After the abstract query optimization (e.g. self-join elimination) there may be more than one binding.
- * 
+ *
+ * @param limit the value of the LIMIT keyword in the SPARQL query
+ *
  * @author Franck Michel, I3S laboratory
  */
 abstract class AbstractQuery(
-        val tpBindings: Set[TPBinding]) {
+        val tpBindings: Set[TPBinding],
+        var limit: Option[Long]) {
+
+    // String version of the limit, to be used in toString() methods
+    def limitStr = { if (limit.isDefined) ("\nLIMIT " + limit.get) else "" }
+
+    def setLimit(lim: Option[Long]): AbstractQuery = {
+        this.limit = lim
+        this
+    }
 
     /**
      * Result of translating this abstract query into a target database query.
@@ -46,7 +56,7 @@ abstract class AbstractQuery(
     //---- Abstract methods ----
 
     /**
-     *  Produce a string representation of this abstract query using the concrete query string
+     *  Produce a string representation of this abstract query using the concrete (target) query string
      *  associated to each atomic query.
      */
     def toStringConcrete: String
@@ -58,10 +68,10 @@ abstract class AbstractQuery(
     def isTargetQuerySet: Boolean
 
     /**
-     * Translate all atomic abstract queries within this abstract query into concrete queries.
+     * Translate all abstract queries within this abstract query into concrete queries.
      * @param translator the query translator
      */
-    def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit
+    def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit
 
     /**
      * Return the set of SPARQL variables projected by this abstract query.

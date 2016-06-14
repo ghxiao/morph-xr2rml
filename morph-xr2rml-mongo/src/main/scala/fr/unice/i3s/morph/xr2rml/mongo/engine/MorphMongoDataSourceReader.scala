@@ -1,32 +1,35 @@
 package fr.unice.i3s.morph.xr2rml.mongo.engine
 
 import java.net.URI
+
 import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.JavaConversions.seqAsJavaList
+
 import org.apache.log4j.Logger
 import org.jongo.Jongo
 import org.jongo.MongoCollection
 import org.jongo.MongoCursor
+
 import com.mongodb.DB
 import com.mongodb.MongoClient
 import com.mongodb.MongoCredential
 import com.mongodb.ServerAddress
+
 import es.upm.fi.dia.oeg.morph.base.Constants
+import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.GenericConnection
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.path.JSONPath_PathExpression
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import fr.unice.i3s.morph.xr2rml.mongo.JongoResultHandler
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
 /**
  * Utility class to handle the execution of MongoDB queries
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSourceReader(factory) {
@@ -38,11 +41,12 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
 
     /**
      * Execute a MongoDB query against the database connection.
-     * 
-     * @return a MorphMongoResultSet containing a list strings representing the result JSON documents.
-     * May return an empty result set but not null.
+     *
+     * @param query the GenericQuery that encapsulates a target database query
+     * @param limit optional maximum number of results to retrieve
+     * @return a concrete instance of MorphBaseResultSet. Must NOT return null, may return an empty result.
      */
-    override def execute(query: GenericQuery): MorphBaseResultSet = {
+    override def execute(query: GenericQuery, limit: Option[Long]): MorphBaseResultSet = {
         val mongoQ = query.concreteQuery.asInstanceOf[MongoDBQuery]
         val jongoCnx = factory.getConnection.concreteCnx.asInstanceOf[Jongo]
 
@@ -54,7 +58,11 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
             else
                 "{" + mongoQ.query + "}"
 
-        val results: MongoCursor[String] = collec.find(queryStr).map[String](MorphMongoDataSourceReader.jongoHandler)
+        val results: MongoCursor[String] =
+            if (limit.isDefined)
+                collec.find(queryStr).limit(limit.get.toInt).map[String](MorphMongoDataSourceReader.jongoHandler)
+            else
+                collec.find(queryStr).map[String](MorphMongoDataSourceReader.jongoHandler)
         new MorphMongoResultSet(results.toList)
     }
 
@@ -62,22 +70,27 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
      * Execute a query against the database and apply an rml:iterator on the results.
      *
      * Results of the query are saved to a cache to avoid doing the same query several times
-     * in case we need it again later (in case of reference object map).
+     * in case we need it again later (in case of referencing object map).
      * Major drawback: memory consumption, this is not appropriate for very big databases.
+     *
+     * @param query the GenericQuery that encapsulates a target database query
+     * @param logSrcIterator optional xR2RML logical source rml:iterator
+     * @param limit optional maximum number of results to retrieve
+     * @return a concrete instance of MorphBaseResultSet. Must NOT return null, may return an empty result.
      */
-    override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String]): MorphBaseResultSet = {
+    override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String], limit: Option[Long]): MorphBaseResultSet = {
 
         // A query is simply and uniquely identified by its concrete string value
-        val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, logSrcIterator)
+        val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, logSrcIterator, limit)
         val start = System.currentTimeMillis
         val queryResult =
             if (executedQueries.contains(queryMapId)) {
-                if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache: " + query)
+                if (logger.isTraceEnabled()) logger.trace("Query retrieved from cache, queryId: " + queryMapId)
                 logger.info("Returning query results from cache.")
                 executedQueries(queryMapId)
             } else {
                 // Execute the query against the database, choose the execution method depending on the db type
-                val resultSet = this.execute(query).asInstanceOf[MorphMongoResultSet].resultSet.toList
+                val resultSet = this.execute(query, limit).asInstanceOf[MorphMongoResultSet].resultSet.toList
 
                 // Save the result of this query in case it is asked again later (in a join)
                 // @todo USE WITH CARE: this would need to be strongly improved with the use of a real cache library,
@@ -97,7 +110,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
             } else queryResult
 
         if (logger.isInfoEnabled) {
-            logger.info("Executing query: " + query.concreteQuery)
+            logger.info("Executing query: " + query.concreteQuery + " with limit " + limit)
             logger.info("Query returned " + queryResult.size + " result(s), " + queryResultIter.size + " result(s) after applying the iterator.")
             logger.info("Query execution time was " + (System.currentTimeMillis - start) + " ms.");
         }
@@ -153,10 +166,12 @@ object MorphMongoDataSourceReader {
         }
     }
 
-    def makeQueryMapId(query: GenericQuery, iter: Option[String]): String = {
+    def makeQueryMapId(query: GenericQuery, iter: Option[String], limit: Option[Long]): String = {
+        var str = GeneralUtility.cleanString(query.concreteQuery.toString)
+        if (limit.isDefined)
+            str += ", Limit: " + limit.get
         if (iter.isDefined)
-            GeneralUtility.cleanString(query.concreteQuery.toString) + ", Iterator: " + GeneralUtility.cleanString(iter.get)
-        else
-            GeneralUtility.cleanString(query.concreteQuery.toString)
+            str += ", Iterator: " + GeneralUtility.cleanString(iter.get)
+        str
     }
 }

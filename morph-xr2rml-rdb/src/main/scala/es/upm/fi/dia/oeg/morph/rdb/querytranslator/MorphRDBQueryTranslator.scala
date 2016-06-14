@@ -120,7 +120,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
      * the query translation method is still the one defined in Morph-RDB, it has not been upgrade
      * to support the abstract query mechanism used in the MongoDB case.
      */
-    override def transTPm(tpBindingds: TPBindings): AbstractQuery = {
+    override def transTPm(tpBindingds: TPBindings, limit: Option[Long]): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 

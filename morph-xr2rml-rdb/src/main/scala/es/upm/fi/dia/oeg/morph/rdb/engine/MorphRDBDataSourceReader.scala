@@ -21,14 +21,14 @@ class MorphRDBDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSour
 
     var timeout: Int = factory.getProperties.databaseTimeout
 
-    override def execute(query: GenericQuery): MorphBaseResultSet = {
+    override def execute(query: GenericQuery, limit: Option[Long]): MorphBaseResultSet = {
         val sqlCnx: Connection = factory.getConnection.concreteCnx.asInstanceOf[Connection]
         val rs = DBUtility.execute(sqlCnx, query.concreteQuery.asInstanceOf[ISqlQuery].toString(), this.timeout);
         val resultSet = new MorphRDBResultSet(rs);
         resultSet;
     }
 
-    override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String]): MorphBaseResultSet = {
+    override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String], limit: Option[Long]): MorphBaseResultSet = {
         throw new MorphException("Unsupported method.")
     }
 

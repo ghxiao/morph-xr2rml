@@ -29,7 +29,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * @param childRef the xR2RML child reference of the join condition: rr:joinCondition [ ... rr:child ... ]
  * @param parent the query representing the parent triples map
  * @param parentRef the xR2RML parent reference of the join condition: rr:joinCondition [ ... rr:parent ... ]
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryInnerJoinRef(
@@ -38,9 +38,10 @@ class AbstractQueryInnerJoinRef(
     val child: AbstractAtomicQueryMongo,
     val childRef: String,
     val parent: AbstractAtomicQueryMongo,
-    val parentRef: String)
+    val parentRef: String,
+    lim: Option[Long])
 
-        extends AbstractQuery(tpBindings) {
+        extends AbstractQuery(tpBindings, lim) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -57,23 +58,23 @@ class AbstractQueryInnerJoinRef(
             child.toString + " AS child\n" +
             "INNER JOIN\n" +
             parent.toString + " AS parent\n" +
-            "ON child/" + childRef + " = parent/" + parentRef
+            "ON child/" + childRef + " = parent/" + parentRef + limitStr
     }
 
     override def toStringConcrete: String = {
         child.toStringConcrete + " AS child\n" +
             "INNER JOIN\n" +
             parent.toStringConcrete + " AS parent\n" +
-            "ON child/" + childRef + " = parent/" + parentRef
+            "ON child/" + childRef + " = parent/" + parentRef + limitStr
     }
 
     /**
      * Translate all atomic abstract queries of this abstract query into concrete queries.
      * @param translator the query translator
      */
-    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
-        child.translateAtomicAbstactQueriesToConcrete(translator)
-        parent.translateAtomicAbstactQueriesToConcrete(translator)
+    override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+        child.translateAbstactQueriesToConcrete(translator)        
+        parent.translateAbstactQueriesToConcrete(translator)
     }
 
     /**
@@ -154,12 +155,12 @@ class AbstractQueryInnerJoinRef(
 
             // Execute the child queries
             val childResSets = child.targetQuery.map(query => {
-                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter)
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, None)
                 if (executedQueries.contains(queryMapId)) {
                     logger.info("Returning query results from cache.")
                     executedQueries(queryMapId)
                 } else {
-                    val resultSet = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
+                    val resultSet = dataSourceReader.executeQueryAndIterator(query, iter, None).asInstanceOf[MorphMongoResultSet].resultSet
                     executedQueries += (queryMapId -> resultSet.toSet)
                     resultSet
                 }
@@ -176,12 +177,12 @@ class AbstractQueryInnerJoinRef(
 
                     // Execute the parent queries 
                     val parentResSets = parent.targetQuery.map(query => {
-                        val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, parentTM.logicalSource.docIterator)
+                        val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, parentTM.logicalSource.docIterator, None)
                         if (executedQueries.contains(queryMapId)) {
                             logger.info("Returning query results from cache.")
                             executedQueries(queryMapId)
                         } else {
-                            val resultSet = dataSourceReader.executeQueryAndIterator(query, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
+                            val resultSet = dataSourceReader.executeQueryAndIterator(query, parentTM.logicalSource.docIterator, None).asInstanceOf[MorphMongoResultSet].resultSet
                             executedQueries += (queryMapId -> resultSet.toSet)
                             resultSet
                         }
@@ -195,8 +196,9 @@ class AbstractQueryInnerJoinRef(
             }
 
             // Main loop: iterate and process each result document of the result set
+            var nbTriples = 0
             var i = 0;
-            val terms = for (document <- childResultSet) yield {
+            val terms = for (document <- childResultSet if (!limit.isDefined || (limit.isDefined && nbTriples < limit.get))) yield {
                 try {
                     i = i + 1;
                     if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for child document " + i + "/" + childResultSet.size + ": " + document)
@@ -266,11 +268,13 @@ class AbstractQueryInnerJoinRef(
                     if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                     // Result 
-                    Some(new MorphBaseResultRdfTerms(
+                    val rslt = new MorphBaseResultRdfTerms(
                         subjects, subjectAsVariable,
                         predicates, predicateAsVariable,
                         refObjects, objectAsVariable,
-                        (subjectGraphs ++ predicateObjectGraphs).toList))
+                        (subjectGraphs ++ predicateObjectGraphs).toList)
+                    nbTriples += 1
+                    Some(rslt)
                 } catch {
                     case e: MorphException => {
                         logger.error("Error while translating data of document " + i + ": " + e.getMessage);
@@ -304,7 +308,7 @@ class AbstractQueryInnerJoinRef(
         var newThis: AbstractQuery =
             if (optimizer.propagateConditionFromJoin) {
                 // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
-                // In the case on an inner join for a referencing triples map, this may happen only if the same 
+                // In the case of an inner join for a referencing triples map, this may happen only if the same 
                 // variable is used several times in the triple pattern e.g. ?x ex:pred ?x
                 childQ = childQ.propagateConditionFromJoinedQuery(parentQ)
                 if (logger.isDebugEnabled && childQ != child)
@@ -314,7 +318,7 @@ class AbstractQueryInnerJoinRef(
                 if (logger.isDebugEnabled && parentQ != parent)
                     logger.debug("Propagated condition of child into parent")
 
-                new AbstractQueryInnerJoinRef(this.tpBindings, childQ, this.childRef, parentQ, this.parentRef)
+                new AbstractQueryInnerJoinRef(this.tpBindings, childQ, this.childRef, parentQ, this.parentRef, limit)
             } else
                 this
 

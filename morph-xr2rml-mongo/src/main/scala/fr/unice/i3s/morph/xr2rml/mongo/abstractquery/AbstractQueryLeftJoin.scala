@@ -15,15 +15,17 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  *
  * @param left the query representing the left basic graph pattern of the join
  * @param right the query representing the right basic graph pattern of the join
- * 
+ * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
+ *
  * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryLeftJoin(
 
     val left: AbstractQuery,
-    val right: AbstractQuery)
+    val right: AbstractQuery,
+    lim: Option[Long])
 
-        extends AbstractQuery(Set.empty) {
+        extends AbstractQuery(Set.empty, lim) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -38,23 +40,23 @@ class AbstractQueryLeftJoin(
         "[" + left.toString + "\n" +
             "] LEFt JOIN [\n" +
             right.toString + "\n" +
-            "] ON " + getSharedVariables
+            "] ON " + getSharedVariables + limitStr
     }
 
     override def toStringConcrete: String = {
         "[" + left.toStringConcrete + "\n" +
             "] LEFT JOIN [\n" +
             right.toStringConcrete + "\n" +
-            "] ON " + getSharedVariables
+            "] ON " + getSharedVariables + limitStr
     }
 
     /**
      * Translate all atomic abstract queries of this abstract query into concrete queries.
      * @param translator the query translator
      */
-    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
-        left.translateAtomicAbstactQueriesToConcrete(translator)
-        right.translateAtomicAbstactQueriesToConcrete(translator)
+    override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+        left.translateAbstactQueriesToConcrete(translator)
+        right.translateAbstactQueriesToConcrete(translator)
     }
 
     /**
@@ -100,7 +102,7 @@ class AbstractQueryLeftJoin(
             logger.info("===============================================================================");
             logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
         }
-        val joinResult: scala.collection.mutable.Map[String, MorphBaseResultRdfTerms] = new scala.collection.mutable.HashMap
+        var joinResult = Map[String, MorphBaseResultRdfTerms]()
 
         // First, generate the triples for both left and right graph patterns of the join
         val leftTriples = left.generateRdfTerms(dataSourceReader, dataTranslator)
@@ -118,20 +120,28 @@ class AbstractQueryLeftJoin(
         val sharedVars = this.getSharedVariables
 
         if (sharedVars.isEmpty) {
-            val res = leftTriples ++ rightTriples // no filtering if no common variable
+            val res =
+                if (limit.isDefined) {
+                    val lim = limit.get
+                    val fromLeft = leftTriples.take(lim.toInt)
+                    val fromRight = if (fromLeft.size < lim.toInt) rightTriples.take(lim.toInt - fromLeft.size) else Set.empty
+                    fromLeft ++ fromRight
+                } else {
+                    leftTriples ++ rightTriples
+                }
             logger.info("Left join on empty set of variables computed " + res.size + " triples.")
             res
         } else {
             // For each variable x shared by both graph patterns, select the left and right triples
             // in which at least one term is bound to x, then join the documents on these terms.
-            for (x <- sharedVars) {
+            for (x <- sharedVars if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
 
                 val leftTripleX = leftTriples.filter(_.hasVariable(x))
                 val rightTripleX = rightTriples.filter(_.hasVariable(x))
 
-                for (leftTriple <- leftTripleX) {
+                for (leftTriple <- leftTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
                     val leftTerm = leftTriple.getTermsForVariable(x)
-                    for (rightTriple <- rightTripleX) {
+                    for (rightTriple <- rightTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
                         val rightTerm = rightTriple.getTermsForVariable(x)
                         if (leftTerm.intersect(rightTerm).isEmpty) {
                             // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
@@ -153,7 +163,19 @@ class AbstractQueryLeftJoin(
             }
 
             val res = joinResult.values.toList
-            val resNonJoined = nonJoinedLeft ++ nonJoinedLeft
+
+            val resNonJoined =
+                if (limit.isDefined) {
+                    if (joinResult.size < limit.get) {
+                        val lim = limit.get - joinResult.size
+                        val fromLeft = nonJoinedLeft.take(lim.toInt)
+                        val fromRight = if (fromLeft.size < lim.toInt) nonJoinedRight.take(lim.toInt - fromLeft.size) else Set.empty
+                        fromLeft ++ fromRight
+                    } else
+                        Set.empty
+                } else
+                    nonJoinedLeft ++ nonJoinedRight
+
             logger.info("Left join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
             res.toSet ++ resNonJoined
         }
@@ -184,7 +206,7 @@ class AbstractQueryLeftJoin(
                     if (rightAtom != right)
                         logger.debug("Propagated condition of from left to right query")
 
-                val res = new AbstractQueryLeftJoin(leftOpt, rightAtom)
+                val res = new AbstractQueryLeftJoin(leftOpt, rightAtom, limit)
                 if (logger.isDebugEnabled) logger.debug("\n------------------ Query optimized into ------------------\n" + res)
                 res
             }

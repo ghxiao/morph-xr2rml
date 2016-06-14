@@ -45,16 +45,16 @@ WHERE {
     #  FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
     #}
     
-	## Big optional Join - no optimization possible
+	# Big optional Join - no optimization possible
     #?t skosxl:altLabel ?a .
     #OPTIONAL { ?t skosxl:altLabel ?b . FILTER (?a != ?b)
     #}
 
 	## Self-Join and Self-Union elimination using unique reference
-    ?t skosxl:prefLabel ?p .
-    ?t taxrefprop:bioGeoStatusIn ?bgs . 
-    ?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
-    { ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
-    UNION
-    { ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
-}
+    #?t skosxl:prefLabel ?p .
+    #?t taxrefprop:bioGeoStatusIn ?bgs . 
+    #?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
+    #UNION
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
+} LIMIT 10

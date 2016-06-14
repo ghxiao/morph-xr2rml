@@ -21,7 +21,7 @@ class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQ
 
     override def translate(op: Op): Option[AbstractQuery] = { None }
 
-    override def transTPm(tpBindings: TPBindings): AbstractQuery = {
+    override def transTPm(tpBindings: TPBindings, limit: Option[Long]): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 }

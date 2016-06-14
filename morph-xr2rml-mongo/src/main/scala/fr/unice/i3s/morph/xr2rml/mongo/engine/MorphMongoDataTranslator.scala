@@ -31,10 +31,11 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
     override val logger = Logger.getLogger(this.getClass().getName());
 
     /**
-     * Query the database and build triples from the result.
+     * Query the database using the triples map logical source, and build triples from the result.
      * Triples are stored in the Jena model of the data materializer.
+     * This method applies to the data materialization approach, not to the query reweriting.
      *
-     *  For each document of the result set:
+     * For each document of the result set:
      * <ol>
      * <li>create a subject resource and an optional graph resource if the subject map contains a rr:graph/rr:graphMap property,</li>
      * <li>loop on each predicate-object map: create a list of resources for the predicates, a list of resources for the objects,
@@ -53,7 +54,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
         val query = factory.getUnfolder.unfoldTriplesMap(tm)
 
         // Execute the query against the database and apply the iterator
-        val childResultSet = factory.getDataSourceReader.executeQueryAndIterator(query, ls.docIterator).asInstanceOf[MorphMongoResultSet].resultSet.toList
+        val childResultSet = factory.getDataSourceReader.executeQueryAndIterator(query, ls.docIterator, None).asInstanceOf[MorphMongoResultSet].resultSet.toList
 
         // Execute the queries of all the parent triples maps (in the join conditions) against the database 
         // and apply their iterators. There queries will serve in computing the joins.
@@ -66,9 +67,9 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
             pom.refObjectMaps.foreach(rom => {
                 val parentTM = factory.getMappingDocument.getParentTriplesMap(rom)
                 val parentQuery = factory.getUnfolder.unfoldTriplesMap(parentTM)
-                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator)
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(parentQuery, parentTM.logicalSource.docIterator, None)
                 if (!parentResultSets.contains(queryMapId)) {
-                    val resultSet = factory.getDataSourceReader.executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator).asInstanceOf[MorphMongoResultSet].resultSet
+                    val resultSet = factory.getDataSourceReader.executeQueryAndIterator(parentQuery, parentTM.logicalSource.docIterator, None).asInstanceOf[MorphMongoResultSet].resultSet
                     parentResultSets += (queryMapId -> resultSet.toList)
                 }
             })
@@ -136,7 +137,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                             val parentMsp = MixedSyntaxPath(joinCond.parentRef, parentTM.logicalSource.refFormulation)
 
                             // Get the results of the parent query
-                            val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(factory.getUnfolder.unfoldTriplesMap(parentTM), parentTM.logicalSource.docIterator)
+                            val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(factory.getUnfolder.unfoldTriplesMap(parentTM), parentTM.logicalSource.docIterator, None)
                             val parentRes = parentResultSets.get(queryMapId).get
 
                             // Evaluate the mixed syntax path on each parent query result. The result is stored as pairs:

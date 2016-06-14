@@ -43,9 +43,10 @@ class AbstractAtomicQueryMongo(
     tpBindings: Set[TPBinding],
     from: xR2RMLLogicalSource,
     project: Set[AbstractQueryProjection],
-    where: Set[AbstractQueryCondition])
+    where: Set[AbstractQueryCondition],
+    lim: Option[Long])
 
-        extends AbstractAtomicQuery(tpBindings, from, project, where) {
+        extends AbstractAtomicQuery(tpBindings, from, project, where, lim) {
 
     /**
      * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed:<br>
@@ -57,7 +58,7 @@ class AbstractAtomicQueryMongo(
      *
      * @param translator the query translator
      */
-    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+    override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         val mongQTranslator = translator.asInstanceOf[MorphMongoQueryTranslator]
 
         val whereConds = this.where.filter(c => c.condType != ConditionType.SparqlFilter)
@@ -75,11 +76,11 @@ class AbstractAtomicQueryMongo(
         if (logger.isDebugEnabled())
             logger.debug("Conditions translated to abstract MongoDB query:\n" + mongAbsQ)
 
-        // Create the concrete query/queries from the set of abstract MongoDB queries
+        // Translate the non-optimized MongoQueryNode instance into one or more optimized concrete MongoDB queries
         val from: MongoDBQuery = MongoDBQuery.parseQueryString(this.from.getValue, this.from.docIterator, true)
         val queries: List[MongoDBQuery] = mongQTranslator.mongoAbstractQuerytoConcrete(from, this.project, mongAbsQ)
 
-        // Generate one GenericQuery for each concrete MongoDB query and assign the result as the target query
+        // Generate one GenericQuery for each concrete MongoDB query and assign the result to targetQuery
         this.targetQuery = queries.map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, this.from.docIterator))
     }
 
@@ -97,7 +98,9 @@ class AbstractAtomicQueryMongo(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
-        // Cache queries in case we have several bindings for this query
+        // Cache queries in case we have several bindings for this query. This is different from the cache in the 
+        // data source reader: this one is local to the processing of the abstract query, whereas in the data source reader
+        // it is global to the application (and thus much more dangerous)
         var executedQueries = Map[String, List[String]]()
 
         if (tpBindings.isEmpty) {
@@ -108,7 +111,7 @@ class AbstractAtomicQueryMongo(
             throw new MorphException(errMsg)
         }
 
-        val resultSetAll: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
+        val resultTriplesSet: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
             val tp = tpb.tp
             val subjectAsVariable =
                 if (tp.getSubject.isVariable)
@@ -132,29 +135,35 @@ class AbstractAtomicQueryMongo(
 
             // Execute the queries of tagetQuery
             var start = System.currentTimeMillis()
-            var resultSet = List[String]()
-            this.targetQuery.foreach(query => {
-                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter)
+            var mongoRsltSet = List[String]()
+
+            // We want to produce 'limit' triples, but we don't know exactly how many documents we must retrieve.
+            // We assume that at least one triple is generated from each document (which may not always be true),
+            // an approximation is to retrieve 'limit' documents to produce at least 'limit' triples.
+            var nbDocuments = 0
+            for (query <- targetQuery if (!limit.isDefined || (limit.isDefined && mongoRsltSet.size < limit.get))) {
+                val lim = if (limit.isDefined) Some(limit.get - mongoRsltSet.size) else None
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
                 if (executedQueries.contains(queryMapId)) {
-                    logger.info("Returning query results from cache.")
-                    resultSet ++= executedQueries(queryMapId)
+                    logger.info("Returning query results from cache, queryId: " + queryMapId)
+                    mongoRsltSet ++= executedQueries(queryMapId)
                 } else {
-                    val res = dataSourceReader.executeQueryAndIterator(query, iter).asInstanceOf[MorphMongoResultSet].resultSet
+                    val res = dataSourceReader.executeQueryAndIterator(query, iter, lim).asInstanceOf[MorphMongoResultSet].resultSet
                     executedQueries = executedQueries + (queryMapId -> res)
                     // Make a UNION of all the results
-                    resultSet ++= res
+                    mongoRsltSet ++= res
                 }
-            })
+            }
             var end = System.currentTimeMillis()
-            logger.info("Atomic query returned " + resultSet.size + " results in " + (end - start) + "ms.")
+            logger.info("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
 
             // Main loop: iterate and process each result document of the result set
             start = System.currentTimeMillis()
             var i = 0;
-            val terms = for (document: String <- resultSet) yield {
+            val terms = for (document: String <- mongoRsltSet) yield {
                 try {
                     i = i + 1;
-                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + resultSet.size + ": " + document)
+                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
 
                     //---- Create the subject resource
                     val subjects = dataTranslator.translateData(sm, document)
@@ -208,7 +217,7 @@ class AbstractAtomicQueryMongo(
             logger.info("Atomic query generated " + result.size + " RDF triples in " + (end - start) + "ms.")
             result.toSet
         })
-        resultSetAll
+        resultTriplesSet
     }
 
     /**
@@ -237,7 +246,7 @@ class AbstractAtomicQueryMongo(
      * the shared variables are projected from the same xR2RML reference(s) in both queries (see example 1);<br>
      * (iv) if there are non-shared variables then this is not a self-join (see example 2).
      * However, if each non-shared variable is projected from an xR2RML reference that is also projected
-     * as a shared variable (4th example), then this is a proper self-join.<br>
+     * as a shared variable (example 4), then this is a proper self-join.<br>
      * Note: even if all non-shared variable belong to the same query then there are cases of
      * query that are not a self-join (see example 3).
      *
@@ -248,15 +257,15 @@ class AbstractAtomicQueryMongo(
      *
      * <b>Example 2</b>:  In a graph pattern like:
      * <code>?x prop ?y. ?x prop ?z. FILTER (?y != ?z)</code>,<br>
-     * if Q1 and Q2 with the same logical source and Where part, and<br>
+     * if Q1 and Q2 have the same logical source and Where part, and<br>
      * Q1 has projections "$.x AS ?x", "$.a AS ?y",<br>
      * Q2 has projections "$.x AS ?x", "$.b AS ?z".<br>
-     * then this is not a self-join because there are non-shared variables whose reference
-     * is not the reference of a shared variable (as in example 4).<br>
+     * then this is not a self-join because there are non-shared variables (?y and ?z) whose reference
+     * is not the reference of a shared variable (contrary to example 4).<br>
      *
      * <b>Example 3</b>: In a graph pattern like:
      * <code>?x prop ex:blabla. ?x prop ?z. FILTER (?z != ex:blabla)</code>,<br>
-     * if Q1 and Q2 with the same logical source and Where part, and<br>
+     * if Q1 and Q2 have the same logical source and Where part, and<br>
      * Q1 has projections "$.a AS ?x"<br>
      * Q2 has projections "$.a AS ?x", "$.b AS ?z"<br>
      * then this is not a self-join, as illustrated by the filter.<br>
@@ -305,8 +314,8 @@ class AbstractAtomicQueryMongo(
                 if (leftRefs == rightRefs) {
                     val joinedUniqueRefs = sharedUniqueRefs intersect leftRefs
                     if (joinedUniqueRefs.nonEmpty) {
-                        if (logger.isTraceEnabled)
-                            logger.trace("Detected join on unique reference(s) " + joinedUniqueRefs)
+                        if (logger.isDebugEnabled)
+                            logger.debug("Detected join on unique reference(s) " + joinedUniqueRefs)
                         isJoinOnUniqueRefs = true
                     }
                 }
@@ -318,7 +327,7 @@ class AbstractAtomicQueryMongo(
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
             val mergedWhere = left.where ++ right.where
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
+            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
             result
         } else {
 
@@ -398,7 +407,7 @@ class AbstractAtomicQueryMongo(
             // Build the result query. Both queries have the same From and Where, we can use any of them, here the left ones
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, left.from, mergedProj, left.where))
+            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, left.from, mergedProj, left.where, limit))
             result
         }
     }
@@ -452,7 +461,7 @@ class AbstractAtomicQueryMongo(
             val mergedBindings = child.tpBindings ++ parent.tpBindings
             val mergedProj = child.project ++ parent.project
             val mergedWhere = child.where ++ parent.where
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere))
+            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
             result
         } else {
 
@@ -475,7 +484,7 @@ class AbstractAtomicQueryMongo(
             // Build the result query. Both queries have the same From and Where, we can use any of them, here the left ones
             val mergedBindings = child.tpBindings ++ parent.tpBindings
             val mergedProj = child.project ++ parent.project
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, child.from, mergedProj, child.where))
+            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, child.from, mergedProj, child.where, limit))
             result
         }
     }
@@ -534,7 +543,7 @@ class AbstractAtomicQueryMongo(
         })
 
         if (condsToReport.nonEmpty) {
-            val newLeft = new AbstractAtomicQueryMongo(left.tpBindings, left.from, left.project, left.where ++ condsToReport)
+            val newLeft = new AbstractAtomicQueryMongo(left.tpBindings, left.from, left.project, left.where ++ condsToReport, limit)
             if (logger.isDebugEnabled) {
                 if (newLeft != left)
                     logger.debug("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
@@ -572,7 +581,7 @@ class AbstractAtomicQueryMongo(
             val leftOr = if (left.where.size > 1) AbstractQueryConditionAnd.create(left.where) else left.where.head
             val rightOr = if (right.where.size > 1) AbstractQueryConditionAnd.create(right.where) else right.where.head
             val mergedWhere = AbstractQueryConditionOr.create(Set(leftOr, rightOr))
-            result = Some(new AbstractAtomicQueryMongo(mergedBindings, left.from, mergedProj, Set(mergedWhere)))
+            result = Some(new AbstractAtomicQueryMongo(mergedBindings, left.from, mergedProj, Set(mergedWhere), limit))
         }
         result
     }

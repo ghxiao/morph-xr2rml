@@ -21,7 +21,7 @@ class MongoDBQuery(
         val query: String,
         val projection: String) {
 
-    /** Constructor without projection */
+    /** Constructor without projection nor limit */
     def this(collection: String, query: String) = this(collection, query, "")
 
     var iterator: Option[String] = None
@@ -60,7 +60,8 @@ object MongoDBQuery {
      * Create a MongoDBQuery with no iterator.
      *
      * A query string looks like this: <code>db.myCollection.find({ 'a': { \$exists: true} })</code>.
-     * This method return a MongoDBQuery instance where collection = myCollection
+     * 
+     * This method returns a MongoDBQuery instance where collection = myCollection
      * and query string = <code>{ 'a': { \$exists: true} }</code>
      */
     def parseQueryString(q: String, stripCurlyBracket: Boolean): MongoDBQuery = {
@@ -99,7 +100,7 @@ object MongoDBQuery {
      * @example
      * <code>q1 = db.collection.find({field1: 10})</code> and
      * <code>q2 = db.collection.find({field1: 10, field2: 20})</code>.<br>
-     * q2 is more specific than q1 =&gt; return an xR2RMLQuet with query string q2
+     * q2 is more specific than q1 =&gt; return an xR2RMLQuery with query string q2
      *
      * @param q1 an xR2RMLQuery with a MongoDB query string
      * @param q2 an xR2RMLQuery with a MongoDB query string

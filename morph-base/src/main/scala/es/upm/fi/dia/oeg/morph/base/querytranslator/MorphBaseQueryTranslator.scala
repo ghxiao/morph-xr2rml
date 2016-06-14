@@ -11,6 +11,7 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
 import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
+import com.hp.hpl.jena.sparql.algebra.OpAsQuery
 import com.hp.hpl.jena.sparql.algebra.TableFactory
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
 import com.hp.hpl.jena.sparql.algebra.op.OpNull
@@ -35,7 +36,6 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import com.hp.hpl.jena.sparql.algebra.OpAsQuery
 
 /**
  * Abstract class for the engine that shall translate a SPARQL query into a concrete database query
@@ -67,25 +67,22 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      *
      * 1. A query that simply contains <code>DESCRIBE &lt;uri&gt;</code> is expanded to the following
      * before it is translated:
-     * {{{DESCRIBE <uri> WHERE {
+     * <code>DESCRIBE <uri> WHERE {
      *   { <uri> ?p ?x. } UNION { ?y ?q <uri> . }
-     * } }}}
+     * } </code>
      *
-     * 2. SPARQL query simplification: a query like this
-     * {{{SELECT DISTINCT ?p WHERE { ?s ?o ?p } }}}
-     *
-     * is transformed into the SPARQL 1.1. query:
-     * {{{SELECT DISTINCT ?p WHERE { VALUES ?p { :abc :def ... } } }}}
+     * 2. SPARQL query simplification: a query like this<br>
+     * <code>SELECT DISTINCT ?p WHERE { ?s ?o ?p } </code><br>
+     * is transformed into the SPARQL 1.1. query:<br>
+     * <code>SELECT DISTINCT ?p WHERE { VALUES ?p { :abc :def ... } } </code><br>
      * and the abstract query is not executed at all.
      *
      * @param sparqlQuery the SPARQL query to translate
      * @return a couple in which one is None and the other is set:<br>
-     *
-     * - Case (None, AbstractQuery): the AbstractQuery instance, the targetQuery parameter has been set with
+     * - Case (None, AbstractQuery): in the AbstractQuery instance, the targetQuery parameter has been set with
      * a set of concrete queries. In the RDB case there is only one query;
      * in the MongoDB case there may be several queries, which means a union of the results of all queries.
      * The result is None in case an error occurred.<br>
-     *
      * - Case (SPARQL query, None): no abstract query will be executed, only the SPARQL query will be
      * (see point 2 above)
      */
@@ -175,12 +172,13 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * Translation of a triple pattern into an abstract query under a set of xR2RML triples maps
      *
      * @param tpBindings a SPARQL triple pattern and the triples maps bound to it
+	 * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    def transTPm(tpBindings: TPBindings): AbstractQuery
+    def transTPm(tpBindings: TPBindings, limit: Option[Long]): AbstractQuery
 
     /**
      * Generate the set of xR2RML references that are evaluated when generating the triples that match tp.
@@ -439,14 +437,12 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     }
 
     /**
-     * Deal with queries prototypical of schema exploration, like:
-     * {{{SELECT DISTINCT ?p
-     * WHERE { ?s ?o ?p }
-     * LIMIT 100 }}}
+     * Deal with queries prototypical of schema exploration, like:<br>
+     * <code>SELECT DISTINCT ?p WHERE { ?s ?o ?p } LIMIT 100</code>
      *
      * In a the naive approach, this will entail a massive UNION of all triples maps.
      *
-     * If all triples maps have a constant predicate map in this case, then in the abstract query variable "?p"
+     * If all triples maps have a constant predicate map then the abstract query variable "?p"
      * will always be projected with constant URIs. Thx to the DISTINCT keyword, we don't need to perform
      * the abstract query, it is sufficient to transform the SPARQL query into the SPARQL 1.1. query:
      * {{{SELECT DISTINCT ?p WHERE

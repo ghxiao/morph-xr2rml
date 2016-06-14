@@ -16,7 +16,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * 
  * @author Franck Michel, I3S laboratory
  */
-class AbstractQuerySql extends AbstractQuery(Set.empty) {
+class AbstractQuerySql extends AbstractQuery(Set.empty, None) {
 
     override def toStringConcrete: String = {
         this.targetQuery.toString
@@ -26,7 +26,7 @@ class AbstractQuerySql extends AbstractQuery(Set.empty) {
      * Translate all atomic abstract queries within this abstract query into concrete queries.
      * @param translator the query translator
      */
-    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+    override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         throw new MorphException("Not supported")
     }
 

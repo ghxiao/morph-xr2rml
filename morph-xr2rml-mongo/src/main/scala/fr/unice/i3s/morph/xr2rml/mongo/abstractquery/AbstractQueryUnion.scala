@@ -17,12 +17,14 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
  * from which we have derived this query
  * @param lstMembers the abstract query members of the union, flattened if there are embedded unions
- * 
+ * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
+ *
  * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryUnion(
-    lstMembers: List[AbstractQuery])
-        extends AbstractQuery(Set.empty) {
+    lstMembers: List[AbstractQuery],
+    lim: Option[Long])
+        extends AbstractQuery(Set.empty, lim) {
 
     val members: List[AbstractQuery] = lstMembers.flatMap { m =>
         if (m.isInstanceOf[AbstractQueryUnion])
@@ -49,9 +51,9 @@ class AbstractQueryUnion(
      * Translate all atomic abstract queries of this abstract query into concrete queries.
      * @param translator the query translator
      */
-    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+    override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         for (q <- members)
-            q.translateAtomicAbstactQueriesToConcrete(translator)
+            q.translateAbstactQueriesToConcrete(translator)
     }
 
     /**
@@ -103,7 +105,18 @@ class AbstractQueryUnion(
         }
 
         var res = Set[MorphBaseResultRdfTerms]()
-        members.foreach(m => { res = res ++ m.generateRdfTerms(dataSourceReader, dataTranslator) })
+
+        for (m <- members if (!limit.isDefined || (limit.isDefined && res.size < limit.get))) {
+            val resultsM = m.generateRdfTerms(dataSourceReader, dataTranslator)
+            if (limit.isDefined) {
+                if (res.size < limit.get) {
+                    val lim = limit.get - res.size
+                    res = res ++ resultsM.take(lim.toInt)
+                }
+            } else
+                res = res ++ resultsM
+        }
+
         logger.info("Union computed " + res.size + " triples.")
         res
     }
@@ -126,7 +139,7 @@ class AbstractQueryUnion(
         // First, optimize all members individually
         var membersV = members.map(_.optimizeQuery(optimizer))
         if (logger.isDebugEnabled) {
-            val res = if (membersV.size == 1) membersV.head else new AbstractQueryUnion(membersV)
+            val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryUnion(membersV, limit)
             if (this != res)
                 logger.debug("\n------------------ Members optimized individually giving new query ------------------\n" + res)
         }
@@ -156,14 +169,14 @@ class AbstractQueryUnion(
             if (continue) {
                 // There was no change in the last run, we cannot do anymore optimization
                 if (membersV.size == 1)
-                    return membersV.head
+                    return membersV.head.setLimit(limit)
                 else
-                    return new AbstractQueryUnion(membersV)
+                    return new AbstractQueryUnion(membersV, limit)
             } else {
                 // There was a change in this run, let's rerun the optimization with the new list of members
                 continue = true
                 if (logger.isDebugEnabled) {
-                    val res = if (membersV.size == 1) membersV.head else new AbstractQueryUnion(membersV)
+                    val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryUnion(membersV, limit)
                     logger.debug("\n------------------ Query optimized into ------------------\n" + res)
                 }
             }

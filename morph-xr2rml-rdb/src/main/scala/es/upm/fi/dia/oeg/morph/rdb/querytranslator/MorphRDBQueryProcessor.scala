@@ -64,7 +64,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
             val iQuery = genQuery.concreteQuery.asInstanceOf[ISqlQuery]
 
             // Execution of the concrete SQL query against the database
-            val resultSet = factory.getDataSourceReader.execute(genQuery).asInstanceOf[MorphRDBResultSet];
+            val resultSet = factory.getDataSourceReader.execute(genQuery, None).asInstanceOf[MorphRDBResultSet];
             val columnNames = iQuery.getSelectItemAliases();
             resultSet.setColumnNames(columnNames);
 

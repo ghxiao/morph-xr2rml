@@ -199,13 +199,13 @@ class MorphMongoQueryTranslatorTest {
 
         try {
             var tm = mappingDocument.getClassMappingsByName("TM_NoPOM")
-            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)))
+            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)), None)
             fail()
         } catch { case e: Exception => {} }
 
         try {
             var tm = mappingDocument.getClassMappingsByName("TM_MultiplePOM")
-            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)))
+            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)), None)
             fail()
         } catch { case e: Exception => {} }
     }
@@ -219,7 +219,7 @@ class MorphMongoQueryTranslatorTest {
         val o = NodeFactory.createLiteral("T. Leung")
         val tp = Triple.create(s, p, o)
 
-        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmMovies)))
+        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmMovies)), None)
         assertTrue(Q.isInstanceOf[AbstractAtomicQueryMongo])
         val q = Q.asInstanceOf[AbstractAtomicQueryMongo]
         assertEquals(q.from.getValue, "db.movies.find({decade:{$exists:true}})")
@@ -236,7 +236,7 @@ class MorphMongoQueryTranslatorTest {
         val o = NodeFactory.createURI("http://example.org/movie/Manh")
         val tp = Triple.create(s, p, o)
 
-        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmDirectors)))
+        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmDirectors)), None)
         assertTrue(Q.isInstanceOf[AbstractQueryInnerJoinRef])
         val q = Q.asInstanceOf[AbstractQueryInnerJoinRef]
         assertEquals("$.directed.*", q.childRef)

@@ -52,7 +52,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
         val query = factory.getUnfolder.unfoldTriplesMap(tm)
 
         // Run the query against the database
-        val rows = factory.getDataSourceReader.execute(query).asInstanceOf[MorphRDBResultSet].resultSet
+        val rows = factory.getDataSourceReader.execute(query, None).asInstanceOf[MorphRDBResultSet].resultSet
 
         // Make mappings of each column in the result set and its data type and equivalent XML data type
         var mapXMLDatatype: Map[String, String] = Map.empty;

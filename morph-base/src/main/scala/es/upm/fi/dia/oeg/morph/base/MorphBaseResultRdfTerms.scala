@@ -5,9 +5,13 @@ import com.hp.hpl.jena.rdf.model.RDFNode
 /**
  * Set of RDF terms translated from database query results.
  *
+ * When an xR2RML reference produces several terms from a database document, then the values are stored as multiple
+ * terms, either subject, predicate or object.
+ * Thus, the corresponding triples are a product of all subjects, predicates and objects.
+ *
  * Attributes subjectAsVariable, predicateAsVariable and objectAsVariable
  * keep track of the SPARQL variable to which each term is attached, if any.
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class MorphBaseResultRdfTerms(
@@ -16,8 +20,11 @@ class MorphBaseResultRdfTerms(
         val objects: List[RDFNode], val objectAsVariable: Option[String],
         val graphs: List[RDFNode]) {
 
+    /**
+     * Simple triple id that helps keep track of which triples have already been materialized, to avoid duplicates
+     */
     val id = subjects.toString + predicates.toString + objects.toString + graphs.toString
-        
+
     def hasVariable(variable: String): Boolean = {
         (subjectAsVariable.isDefined && subjectAsVariable.get == variable) ||
             (predicateAsVariable.isDefined && predicateAsVariable.get == variable) ||

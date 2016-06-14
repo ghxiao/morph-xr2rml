@@ -9,8 +9,8 @@ package es.upm.fi.dia.oeg.morph.base.query
  * Possibly multiple expressions in case of a rr:template property, e.g. : for template http://foo.com/{ref1}/{ref2}
  * we shall have the projection: Set(ref1,ref2) AS ?x
  *
- * @param as name of the SPARQL variable this reference stands for. Optional since a projection for a joined reference
- * does not stand for any variable
+ * @param as name of the SPARQL variable this reference stands for. The name includes the '?' e.g. "?x".
+ * Optional since a projection for a joined reference does not stand for any variable
  *
  * @author Franck Michel, I3S laboratory
  */
@@ -41,5 +41,4 @@ class AbstractQueryProjection(
     override def hashCode(): Int = {
         this.getClass.hashCode + this.as.hashCode() + this.references.map(_.hashCode).reduceLeft((x, y) => x + y)
     }
-
 }

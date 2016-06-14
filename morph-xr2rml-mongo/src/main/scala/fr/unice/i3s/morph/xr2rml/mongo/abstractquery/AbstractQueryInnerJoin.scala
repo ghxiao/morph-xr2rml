@@ -19,12 +19,14 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * It is not allowed to create an inner join instance with nested inner joins.
  *
  * @param lstMembers the abstract query members of the inner join, flattened if there are embedded inner joins
+ * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
  *
  * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryInnerJoin(
-    lstMembers: List[AbstractQuery])
-        extends AbstractQuery(Set.empty) {
+    lstMembers: List[AbstractQuery],
+    lim: Option[Long])
+        extends AbstractQuery(Set.empty, lim) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -53,38 +55,38 @@ class AbstractQueryInnerJoin(
      *   q2 INNER JOIN [
      *     q3 INNER JOIN q4 on set
      *   ] ON set
-     * ] ON set
+     * ] ON set LIMIT 10
      * </code>
      */
     override def toString = {
         val subq =
-            if (members.size >= 3) new AbstractQueryInnerJoin(members.tail)
+            if (members.size >= 3) new AbstractQueryInnerJoin(members.tail, None)
             else members.tail.head
 
         "[" + members.head.toString + "\n" +
             "] INNER JOIN [\n" +
             subq.toString + "\n" +
-            "] ON " + AbstractQuery.getSharedVariables(members.head, subq)
+            "] ON " + AbstractQuery.getSharedVariables(members.head, subq) + limitStr
     }
 
     override def toStringConcrete: String = {
         val subq =
-            if (members.size >= 3) new AbstractQueryInnerJoin(members.tail)
+            if (members.size >= 3) new AbstractQueryInnerJoin(members.tail, None)
             else members.tail.head
 
         "[" + members.head.toStringConcrete + "\n" +
             "] INNER JOIN [\n" +
             subq.toStringConcrete + "\n" +
-            "] ON " + AbstractQuery.getSharedVariables(members.head, subq)
+            "] ON " + AbstractQuery.getSharedVariables(members.head, subq) + limitStr
     }
 
     /**
      * Translate all atomic abstract queries of this abstract query into concrete queries.
      * @param translator the query translator
      */
-    override def translateAtomicAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
+    override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
         for (q <- members)
-            q.translateAtomicAbstactQueriesToConcrete(translator)
+            q.translateAbstactQueriesToConcrete(translator)
     }
 
     /**
@@ -140,7 +142,7 @@ class AbstractQueryInnerJoin(
 
         // First, generate the triples for both left and right graph patterns of the join
         val subq =
-            if (members.size >= 3) new AbstractQueryInnerJoin(members.tail)
+            if (members.size >= 3) new AbstractQueryInnerJoin(members.tail, None)
             else members.tail.head
         val leftTriples = members.head.generateRdfTerms(dataSourceReader, dataTranslator)
         val rightTriples = subq.generateRdfTerms(dataSourceReader, dataTranslator)
@@ -156,20 +158,29 @@ class AbstractQueryInnerJoin(
 
         val sharedVars = AbstractQuery.getSharedVariables(members.head, subq)
         if (sharedVars.isEmpty) {
-            val res = leftTriples ++ rightTriples // no filtering if no common variable
+            // No filtering if case there is no common variable
+            val res =
+                if (limit.isDefined) {
+                    val lim = limit.get
+                    val fromLeft = leftTriples.take(lim.toInt)
+                    val fromRight = if (fromLeft.size < lim) rightTriples.take(lim.toInt - fromLeft.size) else Set.empty
+                    fromLeft ++ fromRight
+                } else {
+                    leftTriples ++ rightTriples
+                }
             logger.info("Inner join on empty set of variables computed " + res.size + " triples.")
             res
         } else {
             // For each variable x shared by both graph patterns, select the left and right triples
             // in which at least one term is bound to x, then join the documents on these terms.
-            for (x <- sharedVars) {
+            for (x <- sharedVars if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
 
                 val leftTripleX = leftTriples.filter(_.hasVariable(x))
                 val rightTripleX = rightTriples.filter(_.hasVariable(x))
 
-                for (leftTriple <- leftTripleX) {
+                for (leftTriple <- leftTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
                     val leftTerm = leftTriple.getTermsForVariable(x)
-                    for (rightTriple <- rightTripleX) {
+                    for (rightTriple <- rightTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
                         val rightTerm = rightTriple.getTermsForVariable(x)
                         if (!leftTerm.intersect(rightTerm).isEmpty) {
                             // If there is a match, keep the two MorphBaseResultRdfTerms instances 
@@ -187,7 +198,19 @@ class AbstractQueryInnerJoin(
             }
 
             val res = joinResult.values.toSet
-            val resNonJoined = nonJoinedLeft ++ nonJoinedRight
+
+            val resNonJoined =
+                if (limit.isDefined) {
+                    if (joinResult.size < limit.get) {
+                        val lim = limit.get - joinResult.size // how many more triples to get
+                        val fromLeft = nonJoinedLeft.take(lim.toInt)
+                        val fromRight = if (fromLeft.size < lim) nonJoinedRight.take(lim.toInt - fromLeft.size) else Set.empty
+                        fromLeft ++ fromRight
+                    } else
+                        Set.empty
+                } else
+                    nonJoinedLeft ++ nonJoinedRight
+
             logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
             res ++ resNonJoined
         }
@@ -203,7 +226,7 @@ class AbstractQueryInnerJoin(
 
         if (members.size == 1) { // security test but abnormal case, should never happen
             logger.warn("Unexpected case: inner join with only one member: " + this.toString)
-            return members.head
+            return members.head.setLimit(limit)
         }
 
         if (logger.isDebugEnabled)
@@ -212,7 +235,7 @@ class AbstractQueryInnerJoin(
         // First, optimize all members individually
         var membersV = members.map(_.optimizeQuery(optimizer))
         if (logger.isDebugEnabled) {
-            val res = if (membersV.size == 1) membersV.head else new AbstractQueryInnerJoin(membersV)
+            val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryInnerJoin(membersV, limit)
             if (this != res)
                 logger.debug("\n------------------ Members optimized individually giving new query ------------------\n" + res)
         }
@@ -268,15 +291,15 @@ class AbstractQueryInnerJoin(
             if (continue) {
                 // There was no change in the last run, we cannot do anymore optimization
                 if (membersV.size == 1)
-                    // If we merged 2 atomic queries we may only have one remaining
-                    return membersV.head
+                    // If we merged 2 atomic queries we may only have one remaining query
+                    return membersV.head.setLimit(limit)
                 else
-                    return new AbstractQueryInnerJoin(membersV)
+                    return new AbstractQueryInnerJoin(membersV, limit)
             } else {
                 // There was a change in this run, let's rerun the optimization with the new list of members
                 continue = true
                 if (logger.isDebugEnabled) {
-                    val res = if (membersV.size == 1) membersV.head else new AbstractQueryInnerJoin(membersV)
+                    val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryInnerJoin(membersV, limit)
                     logger.debug("\n------------------ Query optimized into ------------------\n" + res)
                 }
             }
