@@ -35,12 +35,12 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
  *
  * @author Franck Michel, I3S laboratory
  */
-abstract class AbstractAtomicQuery(
+abstract class AbstractQueryAtomic(
 
     tpBindings: Set[TPBinding],
     val from: xR2RMLLogicalSource,
     val project: Set[AbstractQueryProjection],
-    val where: Set[AbstractQueryCondition],
+    val where: Set[AbstractCondition],
     lim: Option[Long])
 
         extends AbstractQuery(tpBindings, lim) {
@@ -48,8 +48,8 @@ abstract class AbstractAtomicQuery(
     val logger = Logger.getLogger(this.getClass().getName())
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[AbstractAtomicQuery] && {
-            val p = a.asInstanceOf[AbstractAtomicQuery]
+        a.isInstanceOf[AbstractQueryAtomic] && {
+            val p = a.asInstanceOf[AbstractQueryAtomic]
             this.from == p.from && this.project == p.project && this.where == p.where
         }
     }

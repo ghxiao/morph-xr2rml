@@ -47,7 +47,7 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
                 case _ => throw new Exception("Unsupported type of Logical Source: " + tm.getLogicalSource)
             }
             rdbLS.buildMetaData(optMetaData)
-            
+
             val rdbTM = new RDBR2RMLTriplesMap(tm.resource, rdbLS, tm.refFormulation, tm.subjectMap, tm.predicateObjectMaps)
             rdbTM
         }

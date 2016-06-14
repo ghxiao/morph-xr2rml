@@ -23,7 +23,7 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
  * 
  * @author Franck Michel, I3S laboratory
  */
-abstract class AbstractQueryCondition(val condType: ConditionType.Value) {
+abstract class AbstractCondition(val condType: ConditionType.Value) {
 
     /**
      * Return true for a condition that has a reference, that is Equals, IsNotNull and IsNull

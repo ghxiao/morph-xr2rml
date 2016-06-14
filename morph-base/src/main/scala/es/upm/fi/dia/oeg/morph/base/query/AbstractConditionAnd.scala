@@ -10,8 +10,8 @@ import scala.annotation.migration
  * 
  * @author Franck Michel, I3S laboratory
  */
-class AbstractQueryConditionAnd(
-        val members: Set[AbstractQueryCondition]) extends AbstractQueryCondition(ConditionType.And) {
+class AbstractConditionAnd(
+        val members: Set[AbstractCondition]) extends AbstractCondition(ConditionType.And) {
 
     override def hasReference = false
 
@@ -20,8 +20,8 @@ class AbstractQueryConditionAnd(
     }
 
     override def equals(c: Any): Boolean = {
-        c.isInstanceOf[AbstractQueryConditionAnd] &&
-            this.members == c.asInstanceOf[AbstractQueryConditionAnd].members
+        c.isInstanceOf[AbstractConditionAnd] &&
+            this.members == c.asInstanceOf[AbstractConditionAnd].members
     }
 
     override def hashCode(): Int = {
@@ -29,7 +29,7 @@ class AbstractQueryConditionAnd(
     }
 }
 
-object AbstractQueryConditionAnd {
+object AbstractConditionAnd {
 
     /**
      * Constructor that avoids to create an equality and not-null condition on the same reference like
@@ -38,13 +38,13 @@ object AbstractQueryConditionAnd {
      * Nested Ands are flattened, and in case only one element remains it is returned instead of creating an
      * And of one member.
      */
-    def create(lstMembers: Set[AbstractQueryCondition]): AbstractQueryCondition = {
+    def create(lstMembers: Set[AbstractCondition]): AbstractCondition = {
 
         // Flatten ANDs
-        var flatMembers = Set[AbstractQueryCondition]()
+        var flatMembers = Set[AbstractCondition]()
         lstMembers.foreach { c =>
             if (c.condType == ConditionType.And)
-                flatMembers ++= c.asInstanceOf[AbstractQueryConditionAnd].members
+                flatMembers ++= c.asInstanceOf[AbstractConditionAnd].members
             else
                 flatMembers += c
         }
@@ -58,9 +58,9 @@ object AbstractQueryConditionAnd {
                 val elem1Ref = elem1.asInstanceOf[IReference]
                 val elem2Ref = elem2.asInstanceOf[IReference]
                 if (elem1Ref.reference == elem2Ref.reference) {
-                    if (elem1Ref.isInstanceOf[AbstractQueryConditionEquals] && elem2Ref.isInstanceOf[AbstractQueryConditionNotNull])
+                    if (elem1Ref.isInstanceOf[AbstractConditionEquals] && elem2Ref.isInstanceOf[AbstractConditionNotNull])
                         _lstMmbrs = Set(elem1)
-                    else if (elem1Ref.isInstanceOf[AbstractQueryConditionNotNull] && elem2Ref.isInstanceOf[AbstractQueryConditionEquals])
+                    else if (elem1Ref.isInstanceOf[AbstractConditionNotNull] && elem2Ref.isInstanceOf[AbstractConditionEquals])
                         _lstMmbrs = Set(elem2)
                 }
             }
@@ -69,6 +69,6 @@ object AbstractQueryConditionAnd {
         if (_lstMmbrs.size == 1)
             _lstMmbrs.head
         else
-            new AbstractQueryConditionAnd(flatMembers)
+            new AbstractConditionAnd(flatMembers)
     }
 }

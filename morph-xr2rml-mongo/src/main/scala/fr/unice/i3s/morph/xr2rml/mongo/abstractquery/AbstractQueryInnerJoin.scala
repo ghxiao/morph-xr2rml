@@ -120,6 +120,97 @@ class AbstractQueryInnerJoin(
     }
 
     /**
+     * Try to merge atomic queries among the members of the inner join
+     *
+     * @note in this function we use the slice method:
+     * list.slice(start, end) : from start (included) until end (excluded), i.e. slice(n,n) returns an empty list
+     */
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
+
+        if (members.size == 1) { // security test but abnormal case, should never happen
+            logger.warn("Unexpected case: inner join with only one member: " + this.toString)
+            return members.head.setLimit(limit)
+        }
+
+        if (logger.isDebugEnabled)
+            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
+
+        // First, optimize all members individually
+        var membersV = members.map(_.optimizeQuery(optimizer))
+        if (logger.isDebugEnabled) {
+            val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryInnerJoin(membersV, limit)
+            if (this != res)
+                logger.debug("\n------------------ Members optimized individually giving new query ------------------\n" + res)
+        }
+
+        var continue = true
+        while (continue) {
+
+            for (i: Int <- 0 to (membersV.size - 2) if continue) { // from first until second to last (avant-dernier)
+                for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
+
+                    val left = membersV(i)
+                    val right = membersV(j)
+
+                    // Inner-join of 2 atomic queries
+                    if (left.isInstanceOf[AbstractQueryAtomicMongo] && right.isInstanceOf[AbstractQueryAtomicMongo]) {
+
+                        var leftAtom = left.asInstanceOf[AbstractQueryAtomicMongo]
+                        var rightAtom = right.asInstanceOf[AbstractQueryAtomicMongo]
+
+                        // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
+                        if (optimizer.propagateConditionFromJoin) {
+                            leftAtom = leftAtom.propagateConditionFromJoinedQuery(rightAtom)
+                            if (logger.isDebugEnabled && leftAtom != left)
+                                logger.debug("Propagated condition of query " + j + " into query " + i)
+
+                            rightAtom = rightAtom.propagateConditionFromJoinedQuery(leftAtom)
+                            if (logger.isDebugEnabled && rightAtom != right)
+                                logger.debug("Propagated condition of query " + i + " into query " + j)
+
+                            if (leftAtom != left || rightAtom != right) {
+                                membersV = membersV.slice(0, i) ++ List(leftAtom) ++ membersV.slice(i + 1, j) ++ List(rightAtom) ++ membersV.slice(j + 1, membersV.size)
+                                continue = false
+                            } else if (logger.isDebugEnabled)
+                                logger.debug("No condition propagated between queries " + i + " and " + j)
+                        }
+
+                        // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
+                        if (optimizer.selfJoinElimination) {
+                            val merged = leftAtom.mergeForInnerJoin(rightAtom)
+                            if (merged.isDefined) {
+                                //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
+                                // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
+                                membersV = membersV.slice(0, i) ++ List(merged.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
+                                continue = false
+                                if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
+                            } else if (logger.isDebugEnabled)
+                                logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
+                        }
+                    }
+                } // end for j
+            } // end for i
+
+            if (continue) {
+                // There was no change in the last run, we cannot do anymore optimization
+                if (membersV.size == 1)
+                    // If we merged 2 atomic queries we may only have one remaining query
+                    return membersV.head.setLimit(limit)
+                else
+                    return new AbstractQueryInnerJoin(membersV, limit)
+            } else {
+                // There was a change in this run, let's rerun the optimization with the new list of members
+                continue = true
+                if (logger.isDebugEnabled) {
+                    val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryInnerJoin(membersV, limit)
+                    logger.debug("\n------------------ Query optimized into ------------------\n" + res)
+                }
+            }
+        }
+        throw new MorphException("We should not quit the function this way.")
+    }
+
+    /**
      * Execute the left and right queries, generate the RDF terms for each of the result documents,
      * then make a JOIN of all the results
      *
@@ -198,7 +289,6 @@ class AbstractQueryInnerJoin(
             }
 
             val res = joinResult.values.toSet
-
             val resNonJoined =
                 if (limit.isDefined) {
                     if (joinResult.size < limit.get) {
@@ -214,96 +304,5 @@ class AbstractQueryInnerJoin(
             logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
             res ++ resNonJoined
         }
-    }
-
-    /**
-     * Try to merge atomic queries among the members of the inner join
-     *
-     * @note in this function we use the slice method:
-     * list.slice(start, end) : from start (included) until end (excluded), i.e. slice(n,n) returns an empty list
-     */
-    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
-
-        if (members.size == 1) { // security test but abnormal case, should never happen
-            logger.warn("Unexpected case: inner join with only one member: " + this.toString)
-            return members.head.setLimit(limit)
-        }
-
-        if (logger.isDebugEnabled)
-            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
-
-        // First, optimize all members individually
-        var membersV = members.map(_.optimizeQuery(optimizer))
-        if (logger.isDebugEnabled) {
-            val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryInnerJoin(membersV, limit)
-            if (this != res)
-                logger.debug("\n------------------ Members optimized individually giving new query ------------------\n" + res)
-        }
-
-        var continue = true
-        while (continue) {
-
-            for (i: Int <- 0 to (membersV.size - 2) if continue) { // from first until second to last (avant-dernier)
-                for (j: Int <- (i + 1) to (membersV.size - 1) if continue) { // from i+1 until last
-
-                    val left = membersV(i)
-                    val right = membersV(j)
-
-                    // Inner-join of 2 atomic queries
-                    if (left.isInstanceOf[AbstractAtomicQueryMongo] && right.isInstanceOf[AbstractAtomicQueryMongo]) {
-
-                        var leftAtom = left.asInstanceOf[AbstractAtomicQueryMongo]
-                        var rightAtom = right.asInstanceOf[AbstractAtomicQueryMongo]
-
-                        // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
-                        if (optimizer.propagateConditionFromJoin) {
-                            leftAtom = leftAtom.propagateConditionFromJoinedQuery(rightAtom)
-                            if (logger.isDebugEnabled && leftAtom != left)
-                                logger.debug("Propagated condition of query " + j + " into query " + i)
-
-                            rightAtom = rightAtom.propagateConditionFromJoinedQuery(leftAtom)
-                            if (logger.isDebugEnabled && rightAtom != right)
-                                logger.debug("Propagated condition of query " + i + " into query " + j)
-
-                            if (leftAtom != left || rightAtom != right) {
-                                membersV = membersV.slice(0, i) ++ List(leftAtom) ++ membersV.slice(i + 1, j) ++ List(rightAtom) ++ membersV.slice(j + 1, membersV.size)
-                                continue = false
-                            } else if (logger.isDebugEnabled)
-                                logger.debug("No condition propagated between queries " + i + " and " + j)
-                        }
-
-                        // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
-                        if (optimizer.selfJoinElimination) {
-                            val merged = leftAtom.mergeForInnerJoin(rightAtom)
-                            if (merged.isDefined) {
-                                //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
-                                // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
-                                membersV = membersV.slice(0, i) ++ List(merged.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
-                                continue = false
-                                if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
-                            } else if (logger.isDebugEnabled)
-                                logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
-                        }
-                    }
-                } // end for j
-            } // end for i
-
-            if (continue) {
-                // There was no change in the last run, we cannot do anymore optimization
-                if (membersV.size == 1)
-                    // If we merged 2 atomic queries we may only have one remaining query
-                    return membersV.head.setLimit(limit)
-                else
-                    return new AbstractQueryInnerJoin(membersV, limit)
-            } else {
-                // There was a change in this run, let's rerun the optimization with the new list of members
-                continue = true
-                if (logger.isDebugEnabled) {
-                    val res = if (membersV.size == 1) membersV.head.setLimit(limit) else new AbstractQueryInnerJoin(membersV, limit)
-                    logger.debug("\n------------------ Query optimized into ------------------\n" + res)
-                }
-            }
-        }
-        throw new MorphException("We should not quit the function this way.")
     }
 }

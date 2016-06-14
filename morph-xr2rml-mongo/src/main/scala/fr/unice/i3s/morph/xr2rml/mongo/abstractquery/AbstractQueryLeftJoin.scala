@@ -85,6 +85,35 @@ class AbstractQueryLeftJoin(
     }
 
     /**
+     * Optimize left and right members and, if they are atomic queries,
+     * try to propagate conditions of the left query to the right query.
+     */
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
+
+        if (logger.isDebugEnabled)
+            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
+
+        val leftOpt = left.optimizeQuery(optimizer)
+        val rightOpt = right.optimizeQuery(optimizer)
+        if (leftOpt.isInstanceOf[AbstractQueryAtomicMongo] && rightOpt.isInstanceOf[AbstractQueryAtomicMongo]) {
+
+            // Try to narrow down right atomic query by propagating conditions from the left query
+            if (optimizer.propagateConditionFromJoin) {
+                var rightAtom = rightOpt.asInstanceOf[AbstractQueryAtomicMongo]
+                rightAtom = rightAtom.propagateConditionFromJoinedQuery(leftOpt)
+                if (logger.isDebugEnabled)
+                    if (rightAtom != right)
+                        logger.debug("Propagated condition of from left to right query")
+
+                val res = new AbstractQueryLeftJoin(leftOpt, rightAtom, limit)
+                if (logger.isDebugEnabled) logger.debug("\n------------------ Query optimized into ------------------\n" + res)
+                res
+            }
+        }
+        this
+    }
+
+    /**
      * Execute the left and right queries, generate the RDF terms for each of the result documents,
      * then make a LEFT JOIN of all the results
      *
@@ -118,7 +147,6 @@ class AbstractQueryLeftJoin(
         }
 
         val sharedVars = this.getSharedVariables
-
         if (sharedVars.isEmpty) {
             val res =
                 if (limit.isDefined) {
@@ -162,8 +190,7 @@ class AbstractQueryLeftJoin(
                 nonJoinedRight = nonJoinedRight.filter(!_.hasVariable(x))
             }
 
-            val res = joinResult.values.toList
-
+            val res = joinResult.values.toSet
             val resNonJoined =
                 if (limit.isDefined) {
                     if (joinResult.size < limit.get) {
@@ -177,40 +204,11 @@ class AbstractQueryLeftJoin(
                     nonJoinedLeft ++ nonJoinedRight
 
             logger.info("Left join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
-            res.toSet ++ resNonJoined
+            res ++ resNonJoined
         }
     }
 
     private def getSharedVariables: Set[String] = {
         left.getVariables.intersect(right.getVariables)
-    }
-
-    /**
-     * Optimize left and right members and, if they are atomic queries,
-     * try to propagate conditions of the left query to the right query.
-     */
-    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
-
-        if (logger.isDebugEnabled)
-            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
-
-        val leftOpt = left.optimizeQuery(optimizer)
-        val rightOpt = right.optimizeQuery(optimizer)
-        if (leftOpt.isInstanceOf[AbstractAtomicQueryMongo] && rightOpt.isInstanceOf[AbstractAtomicQueryMongo]) {
-
-            // Try to narrow down right atomic query by propagating conditions from the left query
-            if (optimizer.propagateConditionFromJoin) {
-                var rightAtom = rightOpt.asInstanceOf[AbstractAtomicQueryMongo]
-                rightAtom = rightAtom.propagateConditionFromJoinedQuery(leftOpt)
-                if (logger.isDebugEnabled)
-                    if (rightAtom != right)
-                        logger.debug("Propagated condition of from left to right query")
-
-                val res = new AbstractQueryLeftJoin(leftOpt, rightAtom, limit)
-                if (logger.isDebugEnabled) logger.debug("\n------------------ Query optimized into ------------------\n" + res)
-                res
-            }
-        }
-        this
     }
 }

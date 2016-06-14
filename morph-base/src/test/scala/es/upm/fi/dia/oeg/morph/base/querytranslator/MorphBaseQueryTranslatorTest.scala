@@ -13,8 +13,8 @@ import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
@@ -141,8 +141,8 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCond(tp, tmMovies)
         println(cond)
 
-        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.code")))
-        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.actors.*", "T. Leung")))
+        assertTrue(cond.contains(new AbstractConditionNotNull("$.code")))
+        assertTrue(cond.contains(new AbstractConditionEquals("$.actors.*", "T. Leung")))
     }
 
     @Test def test_genCond_equalsUri() {
@@ -157,8 +157,8 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCond(tp, tmMovies)
         println(cond)
 
-        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.code", "MovieY")))
-        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.actors.*")))
+        assertTrue(cond.contains(new AbstractConditionEquals("$.code", "MovieY")))
+        assertTrue(cond.contains(new AbstractConditionNotNull("$.actors.*")))
     }
 
     @Test def test_genCond_equalsUriPred() {
@@ -173,9 +173,9 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCond(tp, tmOther)
         println(cond)
 
-        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.code", "MovieY")))
-        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.relation.prop", "starring")))
-        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.relation.actors.*")))
+        assertTrue(cond.contains(new AbstractConditionEquals("$.code", "MovieY")))
+        assertTrue(cond.contains(new AbstractConditionEquals("$.relation.prop", "starring")))
+        assertTrue(cond.contains(new AbstractConditionNotNull("$.relation.actors.*")))
     }
 
     @Test def test_genCondParent_Uri() {
@@ -190,10 +190,10 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCondParent(tp, tmDirectors)
         println(cond)
 
-        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.dirname")))
-        assertTrue(cond.contains(new AbstractQueryConditionEquals("$.code", "Manh")))
-        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.directed.*")))
-        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.name")))
+        assertTrue(cond.contains(new AbstractConditionNotNull("$.dirname")))
+        assertTrue(cond.contains(new AbstractConditionEquals("$.code", "Manh")))
+        assertFalse(cond.contains(new AbstractConditionNotNull("$.directed.*")))
+        assertFalse(cond.contains(new AbstractConditionNotNull("$.name")))
     }
 
     @Test def test_genCondParent_Variable() {
@@ -208,10 +208,10 @@ class MorphBaseQueryTranslatorTest {
         var cond = queryTranslator.genCondParent(tp, tmDirectors)
         println(cond)
 
-        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.dirname"))) // join parent reference
-        assertTrue(cond.contains(new AbstractQueryConditionNotNull("$.code"))) // parent subject
-        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.directed.*")))
-        assertFalse(cond.contains(new AbstractQueryConditionNotNull("$.name")))
+        assertTrue(cond.contains(new AbstractConditionNotNull("$.dirname"))) // join parent reference
+        assertTrue(cond.contains(new AbstractConditionNotNull("$.code"))) // parent subject
+        assertFalse(cond.contains(new AbstractConditionNotNull("$.directed.*")))
+        assertFalse(cond.contains(new AbstractConditionNotNull("$.name")))
     }
 
     @Test def test() {

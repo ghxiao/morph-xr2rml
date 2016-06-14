@@ -10,8 +10,8 @@ import scala.annotation.migration
  * 
  * @author Franck Michel, I3S laboratory
  */
-class AbstractQueryConditionOr(
-        val members: Set[AbstractQueryCondition]) extends AbstractQueryCondition(ConditionType.Or) {
+class AbstractConditionOr(
+        val members: Set[AbstractCondition]) extends AbstractCondition(ConditionType.Or) {
 
     override def hasReference = false
 
@@ -20,8 +20,8 @@ class AbstractQueryConditionOr(
     }
 
     override def equals(c: Any): Boolean = {
-        c.isInstanceOf[AbstractQueryConditionOr] &&
-            this.members == c.asInstanceOf[AbstractQueryConditionOr].members
+        c.isInstanceOf[AbstractConditionOr] &&
+            this.members == c.asInstanceOf[AbstractConditionOr].members
     }
 
     override def hashCode(): Int = {
@@ -29,20 +29,20 @@ class AbstractQueryConditionOr(
     }
 }
 
-object AbstractQueryConditionOr {
+object AbstractConditionOr {
 
     /**
      * Constructor that flattens nested ORs, and in case only one element remains
      * it is returned instead of creating an Or of one member.
      *
      */
-    def create(lstMembers: Set[AbstractQueryCondition]): AbstractQueryCondition = {
+    def create(lstMembers: Set[AbstractCondition]): AbstractCondition = {
 
         // Flatten nested ORs
-        var flatMembers = Set[AbstractQueryCondition]()
+        var flatMembers = Set[AbstractCondition]()
         lstMembers.foreach { c =>
             if (c.condType == ConditionType.Or)
-                flatMembers ++= (c.asInstanceOf[AbstractQueryConditionOr].members)
+                flatMembers ++= (c.asInstanceOf[AbstractConditionOr].members)
             else
                 flatMembers += c
         }
@@ -50,6 +50,6 @@ object AbstractQueryConditionOr {
         if (flatMembers.size == 1)
             flatMembers.head
         else
-            new AbstractQueryConditionOr(flatMembers)
+            new AbstractConditionOr(flatMembers)
     }
 }

@@ -25,7 +25,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQueryMongo
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryAtomicMongo
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeCompare
@@ -36,8 +36,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeField
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
-import es.upm.fi.dia.oeg.morph.base.Constants
-import java.net.URI
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
@@ -47,7 +45,7 @@ class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
     override def createQueryProcessor: MorphBaseQueryProcessor = null
-
+    
     override def postCreateFactory = {}
 }
 
@@ -220,8 +218,8 @@ class MorphMongoQueryTranslatorTest {
         val tp = Triple.create(s, p, o)
 
         val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmMovies)), None)
-        assertTrue(Q.isInstanceOf[AbstractAtomicQueryMongo])
-        val q = Q.asInstanceOf[AbstractAtomicQueryMongo]
+        assertTrue(Q.isInstanceOf[AbstractQueryAtomicMongo])
+        val q = Q.asInstanceOf[AbstractQueryAtomicMongo]
         assertEquals(q.from.getValue, "db.movies.find({decade:{$exists:true}})")
         assertTrue(q.project.head.references.contains("$.code"))
         assertEquals("?x", q.project.head.as.get)

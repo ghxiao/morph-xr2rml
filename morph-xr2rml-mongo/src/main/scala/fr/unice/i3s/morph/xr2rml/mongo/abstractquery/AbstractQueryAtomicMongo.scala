@@ -8,11 +8,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryAtomic
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
@@ -30,7 +26,11 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.JsonPathToMongoTranslator
 import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.query.AbstractAtomicQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionAnd
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionOr
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -39,15 +39,15 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractAtomicQuery
  *
  * @author Franck Michel, I3S laboratory
  */
-class AbstractAtomicQueryMongo(
+class AbstractQueryAtomicMongo(
 
     tpBindings: Set[TPBinding],
     from: xR2RMLLogicalSource,
     project: Set[AbstractQueryProjection],
-    where: Set[AbstractQueryCondition],
+    where: Set[AbstractCondition],
     lim: Option[Long])
 
-        extends AbstractAtomicQuery(tpBindings, from, project, where, lim) {
+        extends AbstractQueryAtomic(tpBindings, from, project, where, lim) {
 
     /**
      * Translate an atomic abstract query into one or several concrete queries whose results must be UNIONed:<br>
@@ -83,142 +83,6 @@ class AbstractAtomicQueryMongo(
 
         // Generate one GenericQuery for each concrete MongoDB query and assign the result to targetQuery
         this.targetQuery = queries.map(q => new GenericQuery(Constants.DatabaseType.MongoDB, q, this.from.docIterator))
-    }
-
-    /**
-     * Execute the query and produce the RDF terms for each of the result documents
-     * by applying the triples map bound to this query.
-     * If targetQuery contains several queries their result is UNIONed.
-     *
-     * @param dataSourceReader the data source reader to query the database
-     * @param dataTrans the data translator to create RDF terms
-     * @return a set of MorphBaseResultRdfTerms instances, one for each result document
-     * May return an empty result but NOT null.
-     */
-    override def generateRdfTerms(
-        dataSourceReader: MorphBaseDataSourceReader,
-        dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
-
-        // Cache queries in case we have several bindings for this query. This is different from the cache in the 
-        // data source reader: this one is local to the processing of the abstract query, whereas in the data source reader
-        // it is global to the application (and thus much more dangerous)
-        var executedQueries = Map[String, List[String]]()
-
-        if (tpBindings.isEmpty) {
-            val errMsg = "Atomic abstract query with no triple pattern binding " +
-                " => this is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
-            logger.error(errMsg)
-            logger.error("Query: " + this.toString)
-            throw new MorphException(errMsg)
-        }
-
-        val resultTriplesSet: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
-            val tp = tpb.tp
-            val subjectAsVariable =
-                if (tp.getSubject.isVariable)
-                    Some(tp.getSubject.toString)
-                else None
-            val predicateAsVariable =
-                if (tp.getPredicate.isVariable)
-                    Some(tp.getPredicate.toString)
-                else None
-            val objectAsVariable =
-                if (tp.getObject.isVariable)
-                    Some(tp.getObject.toString)
-                else None
-
-            val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
-            val tm = tpb.bound
-            val sm = tm.subjectMap;
-            val pom = tm.predicateObjectMaps.head
-            val iter: Option[String] = tm.logicalSource.docIterator
-            logger.info("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
-
-            // Execute the queries of tagetQuery
-            var start = System.currentTimeMillis()
-            var mongoRsltSet = List[String]()
-
-            // We want to produce 'limit' triples, but we don't know exactly how many documents we must retrieve.
-            // We assume that at least one triple is generated from each document (which may not always be true),
-            // an approximation is to retrieve 'limit' documents to produce at least 'limit' triples.
-            var nbDocuments = 0
-            for (query <- targetQuery if (!limit.isDefined || (limit.isDefined && mongoRsltSet.size < limit.get))) {
-                val lim = if (limit.isDefined) Some(limit.get - mongoRsltSet.size) else None
-                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
-                if (executedQueries.contains(queryMapId)) {
-                    logger.info("Returning query results from cache, queryId: " + queryMapId)
-                    mongoRsltSet ++= executedQueries(queryMapId)
-                } else {
-                    val res = dataSourceReader.executeQueryAndIterator(query, iter, lim).asInstanceOf[MorphMongoResultSet].resultSet
-                    executedQueries = executedQueries + (queryMapId -> res)
-                    // Make a UNION of all the results
-                    mongoRsltSet ++= res
-                }
-            }
-            var end = System.currentTimeMillis()
-            logger.info("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
-
-            // Main loop: iterate and process each result document of the result set
-            start = System.currentTimeMillis()
-            var i = 0;
-            val terms = for (document: String <- mongoRsltSet) yield {
-                try {
-                    i = i + 1;
-                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
-
-                    //---- Create the subject resource
-                    val subjects = dataTranslator.translateData(sm, document)
-                    if (subjects == null) { throw new Exception("null value in the subject triple") }
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
-
-                    //---- Create the list of resources representing subject target graphs
-                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
-                        dataTranslator.translateData(sgmElement, document)
-                    })
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
-
-                    // ----- Make a list of resources for the predicate map of the predicate-object map
-                    val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
-
-                    // ------ Make a list of resources for the object map of the predicate-object map
-                    val objects =
-                        if (!pom.objectMaps.isEmpty)
-                            dataTranslator.translateData(pom.objectMaps.head, document)
-                        else List.empty
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
-
-                    // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
-                        dataTranslator.translateData(pogmElement, document)
-                    });
-                    if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
-
-                    // Result 
-                    Some(new MorphBaseResultRdfTerms(
-                        subjects, subjectAsVariable,
-                        predicates, predicateAsVariable,
-                        objects, objectAsVariable,
-                        (subjectGraphs ++ predicateObjectGraphs).toList))
-                } catch {
-                    case e: MorphException => {
-                        logger.error("Error while translating data of document " + i + ": " + e.getMessage);
-                        e.printStackTrace()
-                        None
-                    }
-                    case e: Exception => {
-                        logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
-                        e.printStackTrace()
-                        None
-                    }
-                }
-            }
-            val result = terms.flatten // get rid of the None's (in case there was an exception)
-            end = System.currentTimeMillis()
-            logger.info("Atomic query generated " + result.size + " RDF triples in " + (end - start) + "ms.")
-            result.toSet
-        })
-        resultTriplesSet
     }
 
     /**
@@ -289,13 +153,13 @@ class AbstractAtomicQueryMongo(
      * @param q the right query of the join
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForInnerJoin(q: AbstractQuery): Option[AbstractAtomicQueryMongo] = {
+    def mergeForInnerJoin(q: AbstractQuery): Option[AbstractQueryAtomicMongo] = {
 
-        if (!q.isInstanceOf[AbstractAtomicQueryMongo])
+        if (!q.isInstanceOf[AbstractQueryAtomicMongo])
             return None
 
         val left = this
-        val right = q.asInstanceOf[AbstractAtomicQueryMongo]
+        val right = q.asInstanceOf[AbstractQueryAtomicMongo]
 
         val sharedVars = left.getVariables intersect right.getVariables
         val sharedVarsLeftProjections = sharedVars.flatMap(v => left.getProjectionsForVariable(v)).map(_.references)
@@ -328,7 +192,7 @@ class AbstractAtomicQueryMongo(
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
             val mergedWhere = left.where ++ right.where
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
+            val result = Some(new AbstractQueryAtomicMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
             result
         } else {
 
@@ -408,7 +272,7 @@ class AbstractAtomicQueryMongo(
             // Build the result query. Both queries have the same From and Where, we can use any of them, here the left ones
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, left.from, mergedProj, left.where, limit))
+            val result = Some(new AbstractQueryAtomicMongo(mergedBindings, left.from, mergedProj, left.where, limit))
             result
         }
     }
@@ -438,8 +302,8 @@ class AbstractAtomicQueryMongo(
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
     def mergeForInnerJoinRef(childRef: String,
-                             parent: AbstractAtomicQueryMongo,
-                             parentRef: String): Option[AbstractAtomicQueryMongo] = {
+                             parent: AbstractQueryAtomicMongo,
+                             parentRef: String): Option[AbstractQueryAtomicMongo] = {
 
         val child = this
 
@@ -462,7 +326,7 @@ class AbstractAtomicQueryMongo(
             val mergedBindings = child.tpBindings ++ parent.tpBindings
             val mergedProj = child.project ++ parent.project
             val mergedWhere = child.where ++ parent.where
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
+            val result = Some(new AbstractQueryAtomicMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
             result
         } else {
 
@@ -485,7 +349,7 @@ class AbstractAtomicQueryMongo(
             // Build the result query. Both queries have the same From and Where, we can use any of them, here the left ones
             val mergedBindings = child.tpBindings ++ parent.tpBindings
             val mergedProj = child.project ++ parent.project
-            val result = Some(new AbstractAtomicQueryMongo(mergedBindings, child.from, mergedProj, child.where, limit))
+            val result = Some(new AbstractQueryAtomicMongo(mergedBindings, child.from, mergedProj, child.where, limit))
             result
         }
     }
@@ -505,17 +369,17 @@ class AbstractAtomicQueryMongo(
      * @param q the right query of the join
      * @return an optimized version of 'this', based on the query in parameter, or 'this' is no optimization was possible.
      */
-    def propagateConditionFromJoinedQuery(q: AbstractQuery): AbstractAtomicQueryMongo = {
+    def propagateConditionFromJoinedQuery(q: AbstractQuery): AbstractQueryAtomicMongo = {
 
-        if (!q.isInstanceOf[AbstractAtomicQueryMongo])
+        if (!q.isInstanceOf[AbstractQueryAtomicMongo])
             return this
 
         val left = this
-        val right = q.asInstanceOf[AbstractAtomicQueryMongo]
+        val right = q.asInstanceOf[AbstractQueryAtomicMongo]
         val sharedVars = left.getVariables intersect right.getVariables
 
         // Check if some Where conditions of the right query can be added to the Where conditions of the left query to narrow it down
-        var condsToReport = Set[AbstractQueryCondition]()
+        var condsToReport = Set[AbstractCondition]()
         sharedVars.foreach(x => {
             // Get all the references associated with variable ?x in the left and right queries.
             // Restriction: we deal only with single reference i.e. "ref AS ?x", but not references such as "(ref1, ref2) AS ?x"
@@ -528,14 +392,14 @@ class AbstractAtomicQueryMongo(
                 val rightConds = right.where.filter(w => w.hasReference && w.asInstanceOf[IReference].reference == ref)
                 rightConds.foreach(rightCond => {
                     rightCond match {
-                        case eq: AbstractQueryConditionEquals => {
+                        case eq: AbstractConditionEquals => {
                             leftRefs.foreach(leftRef => {
-                                condsToReport += new AbstractQueryConditionEquals(leftRef, eq.eqValue)
+                                condsToReport += new AbstractConditionEquals(leftRef, eq.eqValue)
                             })
                         }
-                        case nn: AbstractQueryConditionNotNull => {
+                        case nn: AbstractConditionNotNull => {
                             leftRefs.foreach(leftRef => {
-                                condsToReport += new AbstractQueryConditionNotNull(leftRef)
+                                condsToReport += new AbstractConditionNotNull(leftRef)
                             })
                         }
                     }
@@ -544,7 +408,7 @@ class AbstractAtomicQueryMongo(
         })
 
         if (condsToReport.nonEmpty) {
-            val newLeft = new AbstractAtomicQueryMongo(left.tpBindings, left.from, left.project, left.where ++ condsToReport, limit)
+            val newLeft = new AbstractQueryAtomicMongo(left.tpBindings, left.from, left.project, left.where ++ condsToReport, limit)
             if (logger.isDebugEnabled) {
                 if (newLeft != left)
                     logger.debug("Propagated condition from \n" + right + "\nto\n" + left + "\n producing new optimized query:\n" + newLeft)
@@ -567,23 +431,152 @@ class AbstractAtomicQueryMongo(
      * @param q the right query of the union
      * @return an AbstractAtomicQuery if the merge is possible, None otherwise
      */
-    def mergeForUnion(q: AbstractQuery): Option[AbstractAtomicQueryMongo] = {
+    def mergeForUnion(q: AbstractQuery): Option[AbstractQueryAtomicMongo] = {
 
-        if (!q.isInstanceOf[AbstractAtomicQueryMongo])
+        if (!q.isInstanceOf[AbstractQueryAtomicMongo])
             return None
 
-        val right = q.asInstanceOf[AbstractAtomicQueryMongo]
-        var result: Option[AbstractAtomicQueryMongo] = None
+        val right = q.asInstanceOf[AbstractQueryAtomicMongo]
+        var result: Option[AbstractQueryAtomicMongo] = None
         val left = this
 
         if (MongoDBQuery.sameQueries(left.from, right.from)) {
             val mergedBindings = left.tpBindings ++ right.tpBindings
             val mergedProj = left.project ++ right.project
-            val leftOr = if (left.where.size > 1) AbstractQueryConditionAnd.create(left.where) else left.where.head
-            val rightOr = if (right.where.size > 1) AbstractQueryConditionAnd.create(right.where) else right.where.head
-            val mergedWhere = AbstractQueryConditionOr.create(Set(leftOr, rightOr))
-            result = Some(new AbstractAtomicQueryMongo(mergedBindings, left.from, mergedProj, Set(mergedWhere), limit))
+            val leftOr = if (left.where.size > 1) AbstractConditionAnd.create(left.where) else left.where.head
+            val rightOr = if (right.where.size > 1) AbstractConditionAnd.create(right.where) else right.where.head
+            val mergedWhere = AbstractConditionOr.create(Set(leftOr, rightOr))
+            result = Some(new AbstractQueryAtomicMongo(mergedBindings, left.from, mergedProj, Set(mergedWhere), limit))
         }
         result
+    }
+
+    /**
+     * Execute the query and produce the RDF terms for each of the result documents
+     * by applying the triples map bound to this query.
+     * If targetQuery contains several queries their result is UNIONed.
+     *
+     * @param dataSourceReader the data source reader to query the database
+     * @param dataTrans the data translator to create RDF terms
+     * @return a set of MorphBaseResultRdfTerms instances, one for each result document
+     * May return an empty result but NOT null.
+     */
+    override def generateRdfTerms(
+        dataSourceReader: MorphBaseDataSourceReader,
+        dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
+
+        val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
+
+        // Cache queries in case we have several bindings for this query. This is different from the cache in the 
+        // data source reader: this one is local to the processing of the abstract query, whereas in the data source reader
+        // it is global to the application (and thus much more dangerous)
+        var executedQueries = Map[String, List[String]]()
+
+        if (tpBindings.isEmpty) {
+            val errMsg = "Atomic abstract query with no triple pattern binding " +
+                " => this is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
+            logger.error(errMsg)
+            logger.error("Query: " + this.toString)
+            throw new MorphException(errMsg)
+        }
+
+        //--- Loop on all bindings
+        val resultTriplesSet: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
+            val tp = tpb.tp
+            val subjectAsVariable = if (tp.getSubject.isVariable) Some(tp.getSubject.toString) else None
+            val predicateAsVariable = if (tp.getPredicate.isVariable) Some(tp.getPredicate.toString) else None
+            val objectAsVariable = if (tp.getObject.isVariable) Some(tp.getObject.toString) else None
+
+            val tm = tpb.bound
+            val sm = tm.subjectMap;
+            val pom = tm.predicateObjectMaps.head
+            val iter: Option[String] = tm.logicalSource.docIterator
+            logger.info("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
+
+            // --- Execute the queries of the tagetQuery of this abstract atomic query
+            // We want to produce 'limit' solutions, but we don't know exactly how many documents we must retrieve.
+            // We assume that at least one solution is generated from each document (which may not always be true, e.g. if
+            // a SPARQL FILTER filters out some triples), an approximation is to retrieve 'limit' documents 
+            // to produce at least 'limit' triples for each binding, and in turn 'limit' solutions.
+            var start = System.currentTimeMillis()
+            var mongoRsltSet = List[String]()
+            var nbDocuments = 0
+            for (query <- targetQuery if (!limit.isDefined || (limit.isDefined && mongoRsltSet.size < limit.get))) {
+                val lim = if (limit.isDefined) Some(limit.get - mongoRsltSet.size) else None
+                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
+                if (executedQueries.contains(queryMapId)) {
+                    logger.info("Returning query results from cache, queryId: " + queryMapId)
+                    mongoRsltSet ++= executedQueries(queryMapId)
+                } else {
+                    val res = dataSourceReader.executeQueryAndIterator(query, iter, lim).asInstanceOf[MorphMongoResultSet].resultSet
+                    executedQueries = executedQueries + (queryMapId -> res)
+                    // Make a UNION of all the results
+                    mongoRsltSet ++= res
+                }
+            }
+            var end = System.currentTimeMillis()
+            logger.info("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
+
+            // --- Main loop: iterate and process each result document of the result set
+            start = System.currentTimeMillis()
+            var i = 0;
+            val terms = mongoRsltSet.map(document => {
+                try {
+                    i = i + 1;
+                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
+
+                    //---- Create the subject resource
+                    val subjects = dataTranslator.translateData(sm, document)
+                    if (subjects == null) { throw new Exception("null value in the subject triple") }
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
+
+                    //---- Create the list of resources representing subject target graphs
+                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
+                        dataTranslator.translateData(sgmElement, document)
+                    })
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
+
+                    // ----- Make a list of resources for the predicate map of the predicate-object map
+                    val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
+
+                    // ------ Make a list of resources for the object map of the predicate-object map
+                    val objects =
+                        if (!pom.objectMaps.isEmpty)
+                            dataTranslator.translateData(pom.objectMaps.head, document)
+                        else List.empty
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
+
+                    // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
+                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
+                        dataTranslator.translateData(pogmElement, document)
+                    });
+                    if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+
+                    // Result 
+                    Some(new MorphBaseResultRdfTerms(
+                        subjects, subjectAsVariable,
+                        predicates, predicateAsVariable,
+                        objects, objectAsVariable,
+                        (subjectGraphs ++ predicateObjectGraphs).toList))
+                } catch {
+                    case e: MorphException => {
+                        logger.error("Error while translating data of document " + i + ": " + e.getMessage);
+                        e.printStackTrace()
+                        None
+                    }
+                    case e: Exception => {
+                        logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
+                        e.printStackTrace()
+                        None
+                    }
+                }
+            })
+            val result = terms.flatten // get rid of the None's (in case there was an exception)
+            end = System.currentTimeMillis()
+            logger.info("Atomic query generated " + result.size + " RDF triples in " + (end - start) + "ms.")
+            result.toSet
+        })
+        resultTriplesSet
     }
 }

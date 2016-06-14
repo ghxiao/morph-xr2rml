@@ -1,10 +1,11 @@
 package fr.unice.i3s.morph.xr2rml.mongo.querytranslator
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionIsNull
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionOr
+import es.upm.fi.dia.oeg.morph.base.query.AbstractCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionAnd
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionOr
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.IReference
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
@@ -23,7 +24,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeOr
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeWhere
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjection
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionAnd
 
 /**
  * This object implements the algorithm that translates a condition on a JSONPath expression
@@ -139,7 +139,7 @@ object JsonPathToMongoTranslator {
      * @return a MongoQueryNode instance representing the top-level MongoDB query.
      * The result CANNOT be null, but a MongoQueryNodeNotSupported is returned in case no rule matched.
      */
-    def trans(cond: AbstractQueryCondition, iter: Option[String]): MongoQueryNode = {
+    def trans(cond: AbstractCondition, iter: Option[String]): MongoQueryNode = {
         trans(cond, iter, List.empty)
     }
 
@@ -156,7 +156,7 @@ object JsonPathToMongoTranslator {
      *
      * @todo the translation of 'projection' into actual MongoDB projections is not managed.
      */
-    def trans(cond: AbstractQueryCondition, iter: Option[String], projection: List[MongoQueryProjection]): MongoQueryNode = {
+    def trans(cond: AbstractCondition, iter: Option[String], projection: List[MongoQueryProjection]): MongoQueryNode = {
 
         val path =
             if (cond.hasReference) {
@@ -181,13 +181,13 @@ object JsonPathToMongoTranslator {
 
             case ConditionType.Or => {
                 // AbstractQueryConditionOr => MongoQueryNodeOr
-                val condOr = cond.asInstanceOf[AbstractQueryConditionOr]
+                val condOr = cond.asInstanceOf[AbstractConditionOr]
                 new MongoQueryNodeOr(condOr.members.toList.map(c => trans(c, iter, projection)))
             }
 
             case ConditionType.And => {
                 // AbstractQueryConditionAnd => MongoQueryNodeAnd
-                val condAnd = cond.asInstanceOf[AbstractQueryConditionAnd]
+                val condAnd = cond.asInstanceOf[AbstractConditionAnd]
                 new MongoQueryNodeAnd(condAnd.members.toList.map(c => trans(c, iter, projection)))
             }
 

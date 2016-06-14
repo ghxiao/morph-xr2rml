@@ -35,9 +35,9 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 class AbstractQueryInnerJoinRef(
 
     tpBindings: Set[TPBinding],
-    val child: AbstractAtomicQueryMongo,
+    val child: AbstractQueryAtomicMongo,
     val childRef: String,
-    val parent: AbstractAtomicQueryMongo,
+    val parent: AbstractQueryAtomicMongo,
     val parentRef: String,
     lim: Option[Long])
 
@@ -73,7 +73,7 @@ class AbstractQueryInnerJoinRef(
      * @param translator the query translator
      */
     override def translateAbstactQueriesToConcrete(translator: MorphBaseQueryTranslator): Unit = {
-        child.translateAbstactQueriesToConcrete(translator)        
+        child.translateAbstactQueriesToConcrete(translator)
         parent.translateAbstactQueriesToConcrete(translator)
     }
 
@@ -103,6 +103,47 @@ class AbstractQueryInnerJoinRef(
     }
 
     /**
+     * Try to propagate conditions from one to the other or to merge the child and parent queries
+     */
+    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
+
+        var childQ = child
+        var parentQ = parent
+
+        if (logger.isDebugEnabled)
+            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
+
+        var newThis: AbstractQuery =
+            if (optimizer.propagateConditionFromJoin) {
+                // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
+                // In the case of an inner join for a referencing triples map, this may happen only if the same 
+                // variable is used several times in the triple pattern e.g. ?x ex:pred ?x
+                childQ = childQ.propagateConditionFromJoinedQuery(parentQ)
+                if (logger.isDebugEnabled && childQ != child)
+                    logger.debug("Propagated condition of parent into child")
+
+                parentQ = parentQ.propagateConditionFromJoinedQuery(childQ)
+                if (logger.isDebugEnabled && parentQ != parent)
+                    logger.debug("Propagated condition of child into parent")
+
+                new AbstractQueryInnerJoinRef(this.tpBindings, childQ, this.childRef, parentQ, this.parentRef, limit)
+            } else
+                this
+
+        if (optimizer.selfJoinElimination) {
+            // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
+            val opt = childQ.mergeForInnerJoinRef(this.childRef, parentQ, this.parentRef)
+            newThis = opt.getOrElse(newThis)
+        }
+
+        if (logger.isDebugEnabled) {
+            if (newThis != this)
+                logger.debug("\n------------------ Query optimized into ------------------\n" + newThis)
+        }
+        newThis
+    }
+
+    /**
      * Execute the query and produce the RDF terms for each of the result documents
      * by applying the triples map bound to this query.
      *
@@ -119,6 +160,8 @@ class AbstractQueryInnerJoinRef(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
+        val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
+
         if (logger.isInfoEnabled) {
             logger.info("===============================================================================");
             logger.info("Generating RDF triples from the inner join Ref query:\n" + this.toStringConcrete)
@@ -131,27 +174,15 @@ class AbstractQueryInnerJoinRef(
             val triple = tpb.tp
             val tm = tpb.bound
 
-            val subjectAsVariable =
-                if (triple.getSubject.isVariable)
-                    Some(triple.getSubject.toString)
-                else None
-            val predicateAsVariable =
-                if (triple.getPredicate.isVariable)
-                    Some(triple.getPredicate.toString)
-                else None
-            val objectAsVariable =
-                if (triple.getObject.isVariable)
-                    Some(triple.getObject.toString)
-                else None
+            val subjectAsVariable = if (triple.getSubject.isVariable) Some(triple.getSubject.toString) else None
+            val predicateAsVariable = if (triple.getPredicate.isVariable) Some(triple.getPredicate.toString) else None
+            val objectAsVariable = if (triple.getObject.isVariable) Some(triple.getObject.toString) else None
 
-            val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
             val iter: Option[String] = tm.logicalSource.docIterator
-            if (logger.isInfoEnabled) {
-
+            if (logger.isInfoEnabled)
                 logger.info("Generating RDF triples from inner join Ref query under triples map " + tm.toString + ": \n" + this.toStringConcrete);
-            }
 
             // Execute the child queries
             val childResSets = child.targetQuery.map(query => {
@@ -292,46 +323,5 @@ class AbstractQueryInnerJoinRef(
         })
         logger.info("Inner join Ref computed " + total.size + " triples.")
         total
-    }
-
-    /**
-     * Try to propagate conditions from one to the other or to merge the child and parent queries
-     */
-    override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
-
-        var childQ = child
-        var parentQ = parent
-
-        if (logger.isDebugEnabled)
-            logger.debug("\n------------------ Optimizing query ------------------\n" + this)
-
-        var newThis: AbstractQuery =
-            if (optimizer.propagateConditionFromJoin) {
-                // ----- Try to narrow down joined atomic queries by propagating conditions from one to the other -----
-                // In the case of an inner join for a referencing triples map, this may happen only if the same 
-                // variable is used several times in the triple pattern e.g. ?x ex:pred ?x
-                childQ = childQ.propagateConditionFromJoinedQuery(parentQ)
-                if (logger.isDebugEnabled && childQ != child)
-                    logger.debug("Propagated condition of parent into child")
-
-                parentQ = parentQ.propagateConditionFromJoinedQuery(childQ)
-                if (logger.isDebugEnabled && parentQ != parent)
-                    logger.debug("Propagated condition of child into parent")
-
-                new AbstractQueryInnerJoinRef(this.tpBindings, childQ, this.childRef, parentQ, this.parentRef, limit)
-            } else
-                this
-
-        if (optimizer.selfJoinElimination) {
-            // ----- Try to eliminate a Self-Join by merging the 2 atomic queries -----
-            val opt = childQ.mergeForInnerJoinRef(this.childRef, parentQ, this.parentRef)
-            newThis = opt.getOrElse(newThis)
-        }
-
-        if (logger.isDebugEnabled) {
-            if (newThis != this)
-                logger.debug("\n------------------ Query optimized into ------------------\n" + newThis)
-        }
-        newThis
     }
 }

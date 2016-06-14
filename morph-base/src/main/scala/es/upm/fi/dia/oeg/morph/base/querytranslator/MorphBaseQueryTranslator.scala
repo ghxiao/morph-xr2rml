@@ -30,9 +30,9 @@ import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionNotNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
@@ -266,9 +266,9 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @return set of conditions, either non-null or equality
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map has no object map
      */
-    def genCond(tp: Triple, tm: R2RMLTriplesMap): Set[AbstractQueryCondition] = {
+    def genCond(tp: Triple, tm: R2RMLTriplesMap): Set[AbstractCondition] = {
 
-        var conditions: Set[AbstractQueryCondition] = Set.empty
+        var conditions: Set[AbstractCondition] = Set.empty
 
         { // === Subject map ===
             val tpTerm = tp.getSubject
@@ -277,7 +277,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             if (termMap.isReferenceOrTemplateValued)
                 if (tpTerm.isVariable)
                     // Add a not-null condition for each reference in the term map
-                    conditions = termMap.getReferences.map(ref => new AbstractQueryConditionNotNull(ref)).toSet
+                    conditions = termMap.getReferences.map(ref => new AbstractConditionNotNull(ref)).toSet
                 else if (tpTerm.isURI) {
                     // Add an equality condition for each reference in the term map
                     conditions = genEqualityConditions(termMap, tpTerm)
@@ -290,7 +290,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             if (termMap.isReferenceOrTemplateValued)
                 if (tpTerm.isVariable) {
                     // Add a not-null condition for each reference in the term map
-                    conditions = conditions ++ termMap.getReferences.map(ref => new AbstractQueryConditionNotNull(ref)).toSet
+                    conditions = conditions ++ termMap.getReferences.map(ref => new AbstractConditionNotNull(ref)).toSet
                 } else if (tpTerm.isURI) {
                     // Add an equality condition for each reference in the term map
                     conditions = conditions ++ genEqualityConditions(termMap, tpTerm)
@@ -315,7 +315,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                     val rom = pom.getRefObjectMap(0)
                     // Add non-null condition on the child reference 
                     for (jc <- rom.joinConditions) {
-                        conditions = conditions + new AbstractQueryConditionNotNull(jc.childRef)
+                        conditions = conditions + new AbstractConditionNotNull(jc.childRef)
                     }
                 } else {
                     // tp.obj is a constant IRI and there is no RefObjectMap: add an equality condition for each reference in the term map
@@ -331,12 +331,12 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                     val rom = pom.getRefObjectMap(0)
                     // Add non-null condition on the child reference 
                     for (jc <- rom.joinConditions)
-                        conditions = conditions + new AbstractQueryConditionNotNull(jc.childRef)
+                        conditions = conditions + new AbstractConditionNotNull(jc.childRef)
                 } else {
                     // tp.obj is a Variable and there is no RefObjectMap: add a non-null condition for each reference in the term map
                     val termMap = pom.objectMaps.head
                     if (termMap.isReferenceOrTemplateValued) {
-                        conditions = conditions ++ termMap.getReferences.map(ref => new AbstractQueryConditionNotNull(ref)).toSet
+                        conditions = conditions ++ termMap.getReferences.map(ref => new AbstractConditionNotNull(ref)).toSet
                     }
                 }
             }
@@ -356,9 +356,9 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @return set of conditions, either non-null or equality
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException if the triples map has no referencing object map
      */
-    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): Set[AbstractQueryCondition] = {
+    def genCondParent(tp: Triple, tm: R2RMLTriplesMap): Set[AbstractCondition] = {
 
-        var conditions: Set[AbstractQueryCondition] = Set.empty
+        var conditions: Set[AbstractCondition] = Set.empty
 
         // === Object map ===
         val tpTerm = tp.getObject
@@ -377,7 +377,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
             // Add non-null condition on the parent reference
             for (jc <- rom.joinConditions) {
-                conditions = conditions + new AbstractQueryConditionNotNull(jc.parentRef)
+                conditions = conditions + new AbstractConditionNotNull(jc.parentRef)
             }
 
         } else if (tpTerm.isVariable) {
@@ -385,11 +385,11 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             val rom = pom.getRefObjectMap(0)
             val parentSM = factory.getMappingDocument.getParentTriplesMap(rom).subjectMap
             if (parentSM.isReferenceOrTemplateValued)
-                conditions = conditions ++ parentSM.getReferences.map(ref => new AbstractQueryConditionNotNull(ref)).toSet
+                conditions = conditions ++ parentSM.getReferences.map(ref => new AbstractConditionNotNull(ref)).toSet
 
             // Add non-null condition on the parent reference
             for (jc <- rom.joinConditions)
-                conditions = conditions + new AbstractQueryConditionNotNull(jc.parentRef)
+                conditions = conditions + new AbstractConditionNotNull(jc.parentRef)
         }
 
         if (logger.isDebugEnabled()) logger.debug("Translation returns Parent conditions: " + conditions)
@@ -412,14 +412,14 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * @return a set of one equality condition for a reference-value term map, possibly several conditions
      * for a template-valued term map
      */
-    private def genEqualityConditions(termMap: R2RMLTermMap, tpTerm: Node): Set[AbstractQueryCondition] = {
+    private def genEqualityConditions(termMap: R2RMLTermMap, tpTerm: Node): Set[AbstractCondition] = {
 
         if (termMap.isReferenceValued) {
             // Make a new equality condition between the reference in the term map and the value in the triple pattern term
             if (tpTerm.isLiteral)
-                Set(new AbstractQueryConditionEquals(termMap.getOriginalValue, tpTerm.getLiteralValue.toString))
+                Set(new AbstractConditionEquals(termMap.getOriginalValue, tpTerm.getLiteralValue.toString))
             else
-                Set(new AbstractQueryConditionEquals(termMap.getOriginalValue, tpTerm.toString(false)))
+                Set(new AbstractConditionEquals(termMap.getOriginalValue, tpTerm.toString(false)))
         } else if (termMap.isTemplateValued) {
             // Get the references of the template string and the associated values in the triple pattern term
             val refValueCouples = TemplateUtility.getTemplateMatching(termMap.getOriginalValue, tpTerm.toString(false))
@@ -427,9 +427,9 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             // For each reference and associated value, build a new equality condition
             val refValueConds = refValueCouples.map(m => {
                 if (termMap.inferTermType == Constants.R2RML_IRI_URI)
-                    new AbstractQueryConditionEquals(m._1, GeneralUtility.decodeURI(m._2))
+                    new AbstractConditionEquals(m._1, GeneralUtility.decodeURI(m._2))
                 else
-                    new AbstractQueryConditionEquals(m._1, m._2)
+                    new AbstractConditionEquals(m._1, m._2)
             })
             refValueConds.toSet
         } else

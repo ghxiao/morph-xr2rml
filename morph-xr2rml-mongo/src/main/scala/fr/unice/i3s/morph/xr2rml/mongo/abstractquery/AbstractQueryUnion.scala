@@ -87,41 +87,6 @@ class AbstractQueryUnion(
     }
 
     /**
-     * Execute each query of the union, generate the RDF terms for each of the result documents,
-     * then make a UNION of all the results
-     *
-     * @param dataSourceReader the data source reader to query the database
-     * @param dataTrans the data translator to create RDF terms
-     * @return a list of MorphBaseResultRdfTerms instances, one for each result document of each member
-     * of the union query. May return an empty result but NOT null.
-     */
-    override def generateRdfTerms(
-        dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
-
-        if (logger.isInfoEnabled) {
-            logger.info("===============================================================================");
-            logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
-        }
-
-        var res = Set[MorphBaseResultRdfTerms]()
-
-        for (m <- members if (!limit.isDefined || (limit.isDefined && res.size < limit.get))) {
-            val resultsM = m.generateRdfTerms(dataSourceReader, dataTranslator)
-            if (limit.isDefined) {
-                if (res.size < limit.get) {
-                    val lim = limit.get - res.size
-                    res = res ++ resultsM.take(lim.toInt)
-                }
-            } else
-                res = res ++ resultsM
-        }
-
-        logger.info("Union computed " + res.size + " triples.")
-        res
-    }
-
-    /**
      * Optimize the members of the union
      */
     override def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery = {
@@ -154,8 +119,8 @@ class AbstractQueryUnion(
                     val right = membersV(j)
 
                     // Union of 2 atomic queries
-                    if (left.isInstanceOf[AbstractAtomicQueryMongo] && right.isInstanceOf[AbstractAtomicQueryMongo]) {
-                        val opt = left.asInstanceOf[AbstractAtomicQueryMongo].mergeForUnion(right)
+                    if (left.isInstanceOf[AbstractQueryAtomicMongo] && right.isInstanceOf[AbstractQueryAtomicMongo]) {
+                        val opt = left.asInstanceOf[AbstractQueryAtomicMongo].mergeForUnion(right)
                         if (opt.isDefined) {
                             //     i     j     =>   slice(0,i),  merged(i,j),  slice(i+1,j),  slice(j+1, size)
                             // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
@@ -183,5 +148,40 @@ class AbstractQueryUnion(
         }
 
         throw new MorphException("We should not quit the function this way.")
+    }
+
+    /**
+     * Execute each query of the union, generate the RDF terms for each of the result documents,
+     * then make a UNION of all the results
+     *
+     * @param dataSourceReader the data source reader to query the database
+     * @param dataTrans the data translator to create RDF terms
+     * @return a list of MorphBaseResultRdfTerms instances, one for each result document of each member
+     * of the union query. May return an empty result but NOT null.
+     */
+    override def generateRdfTerms(
+        dataSourceReader: MorphBaseDataSourceReader,
+        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
+
+        if (logger.isInfoEnabled) {
+            logger.info("===============================================================================");
+            logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
+        }
+
+        var res = Set[MorphBaseResultRdfTerms]()
+
+        for (m <- members if (!limit.isDefined || (limit.isDefined && res.size < limit.get))) {
+            val resultsM = m.generateRdfTerms(dataSourceReader, dataTranslator)
+            if (limit.isDefined) {
+                if (res.size < limit.get) {
+                    val lim = limit.get - res.size
+                    res = res ++ resultsM.take(lim.toInt)
+                }
+            } else
+                res = res ++ resultsM
+        }
+
+        logger.info("Union computed " + res.size + " triples.")
+        res
     }
 }

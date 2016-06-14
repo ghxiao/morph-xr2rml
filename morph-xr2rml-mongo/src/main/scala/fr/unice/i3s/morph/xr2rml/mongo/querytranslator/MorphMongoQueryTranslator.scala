@@ -22,8 +22,8 @@ import com.hp.hpl.jena.sparql.core.BasicPattern
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.IReference
@@ -32,7 +32,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
-import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractAtomicQueryMongo
+import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryAtomicMongo
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoin
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryInnerJoinRef
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryLeftJoin
@@ -40,7 +40,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
-import es.upm.fi.dia.oeg.morph.base.query.AbstractAtomicQuery
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -401,10 +400,10 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             val Q =
                 if (!pom.hasRefObjectMap)
                     // If there is no parent triples map, simply return this atomic abstract query
-                    new AbstractAtomicQueryMongo(Set(new TPBinding(tp, tm)), from, project, where, limit)
+                    new AbstractQueryAtomicMongo(Set(new TPBinding(tp, tm)), from, project, where, limit)
                 else {
                     // If there is a parent triples map, create an INNER JOIN ON childRef = parentRef
-                    val q1 = new AbstractAtomicQueryMongo(Set.empty, from, project, where, None) // no tp nor TM in case of a RefObjectMap
+                    val q1 = new AbstractQueryAtomicMongo(Set.empty, from, project, where, None) // no tp nor TM in case of a RefObjectMap
 
                     val rom = pom.getRefObjectMap(0)
                     val Pfrom = factory.getMappingDocument.getParentTriplesMap(rom).logicalSource
@@ -419,11 +418,11 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     // then we can set the same equality condition on the parent reference in the parent query since child/childRef == parent/parentRef
                     val eqChild = where.filter(w => (w.condType == ConditionType.Equals) && (w.asInstanceOf[IReference].reference == jc.childRef))
                     if (!eqChild.isEmpty) {
-                        val eqParent = new AbstractQueryConditionEquals(jc.parentRef, eqChild.head.asInstanceOf[AbstractQueryConditionEquals].eqValue.toString)
+                        val eqParent = new AbstractConditionEquals(jc.parentRef, eqChild.head.asInstanceOf[AbstractConditionEquals].eqValue.toString)
                         if (logger.isDebugEnabled) logger.debug("Copying equality condition on child ref to parent ref: " + eqParent)
                         Pwhere = Pwhere + eqParent
                     }
-                    val q2 = new AbstractAtomicQueryMongo(Set.empty, Pfrom, Pproject, Pwhere, None) // no tp nor TM in case of a RefObjectMap 
+                    val q2 = new AbstractQueryAtomicMongo(Set.empty, Pfrom, Pproject, Pwhere, None) // no tp nor TM in case of a RefObjectMap 
                     new AbstractQueryInnerJoinRef(Set(new TPBinding(tp, tm)), q1, jc.childRef, q2, jc.parentRef, limit)
                 }
             Q // yield query Q for triples map tm

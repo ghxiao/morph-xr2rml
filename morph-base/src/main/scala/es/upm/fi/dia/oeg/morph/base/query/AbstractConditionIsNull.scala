@@ -8,16 +8,16 @@ package es.upm.fi.dia.oeg.morph.base.query
  * 
  * @author Franck Michel, I3S laboratory
  */
-class AbstractQueryConditionIsNull(
-        var reference: String) extends AbstractQueryCondition(ConditionType.IsNull) with IReference {
+class AbstractConditionIsNull(
+        var reference: String) extends AbstractCondition(ConditionType.IsNull) with IReference {
 
     override def toString: String = {
         "IsNull(" + reference + ")"
     }
 
     override def equals(c: Any): Boolean = {
-        c.isInstanceOf[AbstractQueryConditionIsNull] &&
-            this.reference == c.asInstanceOf[AbstractQueryConditionIsNull].reference
+        c.isInstanceOf[AbstractConditionIsNull] &&
+            this.reference == c.asInstanceOf[AbstractConditionIsNull].reference
     }
 
     override def hashCode(): Int = {

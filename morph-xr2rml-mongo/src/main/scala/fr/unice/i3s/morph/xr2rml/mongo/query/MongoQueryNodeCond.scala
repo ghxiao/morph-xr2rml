@@ -1,8 +1,8 @@
 package fr.unice.i3s.morph.xr2rml.mongo.query
 
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryConditionEquals
+import es.upm.fi.dia.oeg.morph.base.query.AbstractCondition
+import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 
 /**
@@ -37,11 +37,11 @@ object MongoQueryNodeCondFactory {
      * 
      * @todo Condition type SparqlFilter is not managed.
      */
-    def apply(cond: AbstractQueryCondition): MongoQueryNodeCond = {
+    def apply(cond: AbstractCondition): MongoQueryNodeCond = {
         cond.condType match {
             case ConditionType.IsNotNull => new MongoQueryNodeCondNotNull
 
-            case ConditionType.Equals => new MongoQueryNodeCondEquals(cond.asInstanceOf[AbstractQueryConditionEquals].eqValue)
+            case ConditionType.Equals => new MongoQueryNodeCondEquals(cond.asInstanceOf[AbstractConditionEquals].eqValue)
 
             case _ => throw new MorphException("Condition type not supported: " + cond)
         }

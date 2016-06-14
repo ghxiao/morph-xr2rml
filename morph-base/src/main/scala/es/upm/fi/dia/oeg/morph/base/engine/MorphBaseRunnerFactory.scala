@@ -89,7 +89,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
     def createRunner: MorphBaseRunner = {
         new MorphBaseRunner(this)
     }
-
 }
 
 object MorphBaseRunnerFactory {
@@ -102,7 +101,7 @@ object MorphBaseRunnerFactory {
      * Initialize the factory: create global objects that can be shared by parallel executions
      * of a runner, i.e. properties and mapping document.
      *
-     * This method must be called before create any factory.
+     * This method must be called before creating any factory.
      */
     def initFactory(props: MorphProperties) = {
         MorphBaseRunnerFactory.properties = props
@@ -112,7 +111,7 @@ object MorphBaseRunnerFactory {
     /**
      * Create all instances needed to safely execute several runners in parallel
      *
-     * @Note initFactory() method must have been called before calling createFactory()
+     * @Note the initFactory() method must have been called before calling createFactory()
      */
     def createFactory: MorphBaseRunnerFactory = {
 
@@ -121,7 +120,7 @@ object MorphBaseRunnerFactory {
         factory.properties = MorphBaseRunnerFactory.properties
         factory.mappingDocument = MorphBaseRunnerFactory.mappingDocument
         factory.connection = factory.createConnection
-        
+
         factory.postCreateFactory // optionally perform any other database-specific step of the creation
 
         factory.unfolder = factory.createUnfolder

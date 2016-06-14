@@ -10,17 +10,17 @@ package es.upm.fi.dia.oeg.morph.base.query
  * 
  * @author Franck Michel, I3S laboratory
  */
-class AbstractQueryConditionEquals(
+class AbstractConditionEquals(
         var reference: String,
-        val eqValue: Object) extends AbstractQueryCondition(ConditionType.Equals) with IReference {
+        val eqValue: Object) extends AbstractCondition(ConditionType.Equals) with IReference {
 
     override def toString: String = {
         "Equals(" + reference + ", " + eqValue.toString + ")"
     }
 
     override def equals(a: Any): Boolean = {
-        a.isInstanceOf[AbstractQueryConditionEquals] && {
-            val c = a.asInstanceOf[AbstractQueryConditionEquals]
+        a.isInstanceOf[AbstractConditionEquals] && {
+            val c = a.asInstanceOf[AbstractConditionEquals]
             this.reference == c.reference && this.eqValue == c.eqValue
         }
     }

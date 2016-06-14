@@ -86,6 +86,11 @@ abstract class AbstractQuery(
     def getProjectionsForVariable(varName: String): Set[AbstractQueryProjection]
 
     /**
+     * Misc optimizations of the abstract query: self-join and self-union eliminations, propagate filters etc.
+     */
+    def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery
+
+    /**
      * Execute this query and produce the RDF terms for each of the result documents,
      * by applying the triples map bound to this query.
      *
@@ -95,11 +100,6 @@ abstract class AbstractQuery(
      * May return an empty result but NOT null.
      */
     def generateRdfTerms(dataSourceReader: MorphBaseDataSourceReader, dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms]
-
-    /**
-     * Misc optimizations of the abstract query: self-join and self-union eliminations, propagate filters etc.
-     */
-    def optimizeQuery(optimizer: MorphBaseQueryOptimizer): AbstractQuery
 }
 
 object AbstractQuery {
