@@ -1,10 +1,7 @@
-package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
+package es.upm.fi.dia.oeg.morph.base.query
 
 import org.apache.log4j.Logger
 
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryCondition
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
@@ -34,7 +31,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
  * @param where set of conditions applied to xR2RML references, entailed by matching the triples map
  * with the triple pattern. If there are more than one condition the semantics is a logical AND of all.
  *
- * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
+ * @param lim the value of the optional LIMIT keyword in the SPARQL graph pattern
  *
  * @author Franck Michel, I3S laboratory
  */

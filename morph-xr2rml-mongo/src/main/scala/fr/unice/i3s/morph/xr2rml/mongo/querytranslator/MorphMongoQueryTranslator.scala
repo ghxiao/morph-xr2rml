@@ -40,6 +40,7 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
+import es.upm.fi.dia.oeg.morph.base.query.AbstractAtomicQuery
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -73,12 +74,14 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         if (logger.isDebugEnabled) logger.debug("opSparqlQuery = " + op)
         val start = System.currentTimeMillis()
 
-        //--- Calculate the Triple Pattern Bindings
+        // Remove triple patterns that pertain to RDF lists or containers, to be able to compute bindings
         var opMod = excludeTriplesAboutCollecOrContainer(op)
         if (!opMod.isDefined) {
             logger.warn("Query cannot be processed due to collection/container related triples.")
             return None
         }
+
+        //--- Calculate the Triple Pattern Bindings
         val bindings = triplePatternBinder.bindm(opMod.get)
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
         logger.info("Triple pattern bindings:\n" + bindings.values.mkString("\n"))
@@ -92,7 +95,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
             logger.warn("Could not find bindings for triple patterns:\n" + emptyBindings.keys)
             None
         } else {
-            var abstractQuery = translateSparqlQueryToAbstract(bindings, opMod.get, None)
+            var abstractQuery = this.translateSparqlQueryToAbstract(bindings, opMod.get, None)
             if (abstractQuery.isDefined) {
 
                 // Optimize the abstract query
@@ -114,7 +117,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
     /**
      * Recursive translation of a SPARQL query into an abstract query
      *
-     * @param bindings bindings of the the SPARQL query triple patterns
+     * @param bindings bindings of triples maps to the the SPARQL query triple patterns
      * @param op SPARQL query or SPARQL query element
      * @return a AbstractQuery instance or None if the query element is not supported in the translation
      * @todo manage SPARQL filters
