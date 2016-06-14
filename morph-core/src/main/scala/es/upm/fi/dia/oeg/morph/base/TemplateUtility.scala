@@ -1,5 +1,9 @@
 package es.upm.fi.dia.oeg.morph.base
 
+/**
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
+ */ 
 import java.util.regex.Pattern
 
 import scala.collection.JavaConversions.seqAsJavaList

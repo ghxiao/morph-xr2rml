@@ -2,6 +2,9 @@ package es.upm.fi.dia.oeg.morph.r2rml.model
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 
+/**
+ * @author Franck Michel, I3S laboratory
+ */
 class xR2RMLTable(
     val tableName: String)
         extends xR2RMLLogicalSource(Constants.LogicalTableType.TABLE_NAME, Constants.xR2RML_REFFORMULATION_COLUMN, None, Set.empty) {

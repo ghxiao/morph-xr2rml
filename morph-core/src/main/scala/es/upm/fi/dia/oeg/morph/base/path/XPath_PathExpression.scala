@@ -16,6 +16,9 @@ import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathExpressionException
 import javax.xml.xpath.XPathFactory
 
+/**
+ * @author Franck Michel, I3S laboratory
+ */ 
 class XPath_PathExpression(pathExpression: String)
         extends PathExpression(pathExpression) {
 

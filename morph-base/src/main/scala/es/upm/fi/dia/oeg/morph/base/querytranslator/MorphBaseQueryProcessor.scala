@@ -1,13 +1,11 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
-import java.io.Writer
-import com.hp.hpl.jena.query.Query
-import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
-import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import java.io.File
+
+import com.hp.hpl.jena.query.Query
+
+import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 
 /**
  * Abstract class for the engine that shall execute a query and translate results into

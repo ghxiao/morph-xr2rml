@@ -19,6 +19,9 @@ import es.upm.fi.dia.oeg.morph.base.Constants
  * In an RDB, this is typically the primary key but it is possible to get this information using table metadata.
  * In MongoDB, the "_id" field is unique thus reference "$._id" is unique, but there is no way to know whether
  * some other fields are unique.
+ * 
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
  */
 abstract class xR2RMLLogicalSource(
         val logicalTableType: Constants.LogicalTableType.Value,

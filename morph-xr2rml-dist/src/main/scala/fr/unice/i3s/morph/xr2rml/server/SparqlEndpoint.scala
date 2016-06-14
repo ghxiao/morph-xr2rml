@@ -11,6 +11,8 @@ import fr.unice.i3s.morph.xr2rml.service.SparqlrestService
 
 /**
  * Servlet container based on Jetty embedded server to run the SPARQL endpoint
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 object SparqlEndpoint {
 

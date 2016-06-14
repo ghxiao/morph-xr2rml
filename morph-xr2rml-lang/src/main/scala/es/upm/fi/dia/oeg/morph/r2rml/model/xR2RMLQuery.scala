@@ -3,6 +3,9 @@ package es.upm.fi.dia.oeg.morph.r2rml.model
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
+/**
+ * @author Franck Michel, I3S laboratory
+ */
 class xR2RMLQuery(
     val query: String,
     refFormulation: String,

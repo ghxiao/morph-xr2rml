@@ -1,6 +1,7 @@
 package es.upm.fi.dia.oeg.morph.rdb.engine
 
 import java.sql.ResultSet
+
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
 
 /**

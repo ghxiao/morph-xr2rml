@@ -1,14 +1,12 @@
 package es.upm.fi.dia.oeg.morph.base.query
 
-import es.upm.fi.dia.oeg.morph.base.MorphBaseResultSet
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
-import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
+import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
+import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
 
 /**
  * Representation of an abstract query as defined in https://hal.archives-ouvertes.fr/hal-01245883.
@@ -44,13 +42,13 @@ abstract class AbstractQuery(
      */
     var targetQuery: List[GenericQuery] = List.empty
 
-    override def equals(a: Any): Boolean = {
-        throw new MorphException("Method not implemented")
-    }
-
     def setTargetQuery(tq: List[GenericQuery]): AbstractQuery = {
         this.targetQuery = tq
         this
+    }
+
+    override def equals(a: Any): Boolean = {
+        throw new MorphException("Method not implemented")
     }
 
     //---- Abstract methods ----
@@ -96,9 +94,7 @@ abstract class AbstractQuery(
      * @return a list of MorphBaseResultRdfTerms instances, one for each result document
      * May return an empty result but NOT null.
      */
-    def generateRdfTerms(
-        dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms]
+    def generateRdfTerms(dataSourceReader: MorphBaseDataSourceReader, dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms]
 
     /**
      * Misc optimizations of the abstract query: self-join and self-union eliminations, propagate filters etc.

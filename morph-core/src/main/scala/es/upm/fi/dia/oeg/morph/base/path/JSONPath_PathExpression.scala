@@ -13,6 +13,9 @@ import com.jayway.jsonpath.ReadContext
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 
+/**
+ * @author Franck Michel, I3S laboratory
+ */ 
 class JSONPath_PathExpression(
     pathExpression: String)
         extends PathExpression(pathExpression) {

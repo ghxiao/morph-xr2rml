@@ -21,6 +21,8 @@ import es.upm.fi.dia.oeg.morph.base.Constants
  * of the path. A simple expression with no path constructor, like a simple column name or an XPath expression
  * are considered as a mixed syntax path with only one implicit path constructor.
  * The implicit path constructor is figured out from the reference formulation of the logical source.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class MixedSyntaxPath(
         /**

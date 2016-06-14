@@ -25,6 +25,10 @@ import com.hp.hpl.jena.sparql.core.BasicPattern
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 
+/**
+ * @author Freddy Priyatna
+ * @author Franck Michel, I3S laboratory
+ */
 object SparqlUtility {
     val logger = Logger.getLogger(this.getClass().getName());
 

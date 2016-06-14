@@ -6,6 +6,8 @@ package es.upm.fi.dia.oeg.morph.base
  *
  * @param dbType type of target database
  * @param concreteCnx the concrete instance of connection object: java.sql.Connection, com.mongodb.MongoClient, etc.
+ * 
+ * @author Franck Michel, I3S laboratory
  */
 class GenericConnection(
         val dbType: Constants.DatabaseType.Value,

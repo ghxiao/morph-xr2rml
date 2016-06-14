@@ -2,7 +2,11 @@ package es.upm.fi.dia.oeg.morph.base.path
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 
-class Column_PathExpression(
+/**
+ * @author Franck Michel, I3S laboratory
+ */ 
+ class Column_PathExpression(
+ 
     pathExpression: String)
         extends PathExpression(pathExpression) {
 

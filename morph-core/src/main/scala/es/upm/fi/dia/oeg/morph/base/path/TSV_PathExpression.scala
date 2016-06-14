@@ -11,6 +11,9 @@ import org.apache.log4j.Logger
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 
+/**
+ * @author Franck Michel, I3S laboratory
+ */ 
 class TSV_PathExpression(
     pathExpression: String)
         extends PathExpression(pathExpression) {

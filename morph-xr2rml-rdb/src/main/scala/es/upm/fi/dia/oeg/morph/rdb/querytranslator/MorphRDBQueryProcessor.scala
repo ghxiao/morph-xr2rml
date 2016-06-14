@@ -1,5 +1,6 @@
 package es.upm.fi.dia.oeg.morph.rdb.querytranslator
 
+import java.io.File
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -24,7 +25,6 @@ import es.upm.fi.dia.oeg.morph.base.sql.ISqlQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLRefObjectMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBResultSet
-import java.io.File
 
 class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProcessor(factory) {
 
