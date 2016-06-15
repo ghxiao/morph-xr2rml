@@ -213,12 +213,11 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
             throw new MorphException("Target queries not set in " + query)
 
         var start = System.currentTimeMillis()
-        val listTerms = query.generateRdfTerms(factory.getDataSourceReader, this)
-        var nbTriples = 0
-        for (terms <- listTerms) {
-            nbTriples += factory.getMaterializer.materializeQuads(terms.subjects, terms.predicates, terms.objects, List.empty, terms.graphs)
-        }
-        if (logger.isDebugEnabled) logger.debug("Materialized " + nbTriples + " triples.")
+        val listTriples = query.generateRdfTerms(factory.getDataSourceReader, this)
+        for (triple <- listTriples) 
+            factory.getMaterializer.materializeQuad(triple.subject, triple.predicate, triple.objct, null)
+
+        if (logger.isDebugEnabled) logger.debug("Materialized " + listTriples.size + " triples.")
         logger.info("Duration of query execution and generation of triples = " + (System.currentTimeMillis - start) + "ms.");
     }
 

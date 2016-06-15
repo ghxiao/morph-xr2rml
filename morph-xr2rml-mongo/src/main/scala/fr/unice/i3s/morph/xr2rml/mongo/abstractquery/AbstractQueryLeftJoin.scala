@@ -131,7 +131,7 @@ class AbstractQueryLeftJoin(
             logger.info("===============================================================================");
             logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
         }
-        var joinResult = Map[String, MorphBaseResultRdfTerms]()
+        var joinResult = Map[Int, MorphBaseResultRdfTerms]()
 
         // First, generate the triples for both left and right graph patterns of the join
         val leftTriples = left.generateRdfTerms(dataSourceReader, dataTranslator)
@@ -168,10 +168,10 @@ class AbstractQueryLeftJoin(
                 val rightTripleX = rightTriples.filter(_.hasVariable(x))
 
                 for (leftTriple <- leftTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
-                    val leftTerm = leftTriple.getTermsForVariable(x)
                     for (rightTriple <- rightTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
-                        val rightTerm = rightTriple.getTermsForVariable(x)
-                        if (leftTerm.intersect(rightTerm).isEmpty) {
+                    val leftTerm = leftTriple.getTermForVariable(x)
+                        val rightTerm = rightTriple.getTermForVariable(x)
+                        if (leftTerm.get != rightTerm.get) {
                             // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
                             if (!joinResult.contains(leftTriple.id))
                                 joinResult += (leftTriple.id -> leftTriple)

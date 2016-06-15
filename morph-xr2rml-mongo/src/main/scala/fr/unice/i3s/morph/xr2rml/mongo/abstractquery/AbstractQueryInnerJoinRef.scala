@@ -229,7 +229,7 @@ class AbstractQueryInnerJoinRef(
             // Main loop: iterate and process each result document of the result set
             var nbTriples = 0
             var i = 0;
-            val terms = for (document <- childResultSet if (!limit.isDefined || (limit.isDefined && nbTriples < limit.get))) yield {
+            val triples = for (document <- childResultSet if (!limit.isDefined || (limit.isDefined && nbTriples < limit.get))) yield {
                 try {
                     i = i + 1;
                     if (logger.isDebugEnabled()) logger.debug("Generating RDF terms for child document " + i + "/" + childResultSet.size + ": " + document)
@@ -298,28 +298,31 @@ class AbstractQueryInnerJoinRef(
                     });
                     if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
-                    // Result 
-                    val rslt = new MorphBaseResultRdfTerms(
-                        subjects, subjectAsVariable,
-                        predicates, predicateAsVariable,
-                        refObjects, objectAsVariable,
-                        (subjectGraphs ++ predicateObjectGraphs).toList)
-                    nbTriples += 1
-                    Some(rslt)
+                    // Compute result triples for the current document
+                    val rslt =
+                        subjects.flatMap(subject => {
+                            predicates.flatMap(predicate => {
+                                refObjects.map(objct => {
+                                    new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
+                                })
+                            })
+                        })
+                    nbTriples += rslt.size
+                    rslt
                 } catch {
                     case e: MorphException => {
                         logger.error("Error while translating data of document " + i + ": " + e.getMessage);
                         e.printStackTrace()
-                        None
+                        List() // empty list will be removed by the flat map of results 
                     }
                     case e: Exception => {
                         logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
                         e.printStackTrace()
-                        None
+                        List() // empty list will be removed by the flat map of results 
                     }
                 }
             }
-            terms.flatten // get rid of the None's (in case there was an exception)
+            triples.flatten
         })
         logger.info("Inner join Ref computed " + total.size + " triples.")
         total

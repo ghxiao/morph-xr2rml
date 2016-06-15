@@ -520,7 +520,7 @@ class AbstractQueryAtomicMongo(
             // --- Main loop: iterate and process each result document of the result set
             start = System.currentTimeMillis()
             var i = 0;
-            val terms = mongoRsltSet.map(document => {
+            val terms = mongoRsltSet.flatMap(document => {
                 try {
                     i = i + 1;
                     if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
@@ -550,32 +550,34 @@ class AbstractQueryAtomicMongo(
                     // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
                     val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
                         dataTranslator.translateData(pogmElement, document)
-                    });
+                    })
                     if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
-                    // Result 
-                    Some(new MorphBaseResultRdfTerms(
-                        subjects, subjectAsVariable,
-                        predicates, predicateAsVariable,
-                        objects, objectAsVariable,
-                        (subjectGraphs ++ predicateObjectGraphs).toList))
+                    // Compute a list of result triples
+                    subjects.flatMap(subject => {
+                        predicates.flatMap(predicate => {
+                            objects.map(objct => {
+                                new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
+                            })
+                        })
+                    })
                 } catch {
                     case e: MorphException => {
                         logger.error("Error while translating data of document " + i + ": " + e.getMessage);
                         e.printStackTrace()
-                        None
+                        List() // empty list will be removed by the flat map of results 
                     }
                     case e: Exception => {
                         logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
                         e.printStackTrace()
-                        None
+                        List() // empty list will be removed by the flat map of results 
                     }
                 }
             })
-            val result = terms.flatten // get rid of the None's (in case there was an exception)
+
             end = System.currentTimeMillis()
-            logger.info("Atomic query generated " + result.size + " RDF triples in " + (end - start) + "ms.")
-            result.toSet
+            logger.info("Atomic query generated " + terms.size + " RDF triples in " + (end - start) + "ms.")
+            terms.toSet
         })
         resultTriplesSet
     }

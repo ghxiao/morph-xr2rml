@@ -3,27 +3,22 @@ package es.upm.fi.dia.oeg.morph.base
 import com.hp.hpl.jena.rdf.model.RDFNode
 
 /**
- * Set of RDF terms translated from database query results.
- *
- * When an xR2RML reference produces several terms from a database document, then the values are stored as multiple
- * terms, either subject, predicate or object.
- * Thus, the corresponding triples are a product of all subjects, predicates and objects.
+ * Representation of a triple as a set of RDF terms translated from database query results.
  *
  * Attributes subjectAsVariable, predicateAsVariable and objectAsVariable
- * keep track of the SPARQL variable to which each term is attached, if any.
+ * keep track of the SPARQL variable to which each term is bound, if any.
  *
  * @author Franck Michel, I3S laboratory
  */
 class MorphBaseResultRdfTerms(
-        val subjects: List[RDFNode], val subjectAsVariable: Option[String],
-        val predicates: List[RDFNode], val predicateAsVariable: Option[String],
-        val objects: List[RDFNode], val objectAsVariable: Option[String],
-        val graphs: List[RDFNode]) {
+        val subject: RDFNode, val subjectAsVariable: Option[String],
+        val predicate: RDFNode, val predicateAsVariable: Option[String],
+        val objct: RDFNode, val objectAsVariable: Option[String]) {
 
     /**
      * Simple triple id that helps keep track of which triples have already been materialized, to avoid duplicates
      */
-    val id = subjects.toString + predicates.toString + objects.toString + graphs.toString
+    val id = (subject.toString + predicate.toString + objct.toString).hashCode()
 
     def hasVariable(variable: String): Boolean = {
         (subjectAsVariable.isDefined && subjectAsVariable.get == variable) ||
@@ -31,23 +26,28 @@ class MorphBaseResultRdfTerms(
             (objectAsVariable.isDefined && objectAsVariable.get == variable)
     }
 
-    def getTermsForVariable(variable: String): List[RDFNode] = {
+    /**
+     * Retrieve an RDF term in the triple that is bound to a given variable.
+     * If several terms are bound to the same variable, like in triples matching pattern like 
+     * <code>?x :pred ?x</code>,
+     * both the subject and object will have the same value. So there is no need to return them all.
+     */
+    def getTermForVariable(variable: String): Option[RDFNode] = {
         if (subjectAsVariable.isDefined && subjectAsVariable.get == variable)
-            subjects
+            Some(subject)
         else if (predicateAsVariable.isDefined && predicateAsVariable.get == variable)
-            predicates
+            Some(predicate)
         else if (objectAsVariable.isDefined && objectAsVariable.get == variable)
-            objects
-        else List.empty
+            Some(objct)
+        else None
     }
 
     override def toString = {
-        "[" + subjects.toString +
+        "[" + subject.toString +
             { if (subjectAsVariable.isDefined) " AS " + subjectAsVariable.get else "" } + ",\n " +
-            predicates.toString +
+            predicate.toString +
             { if (predicateAsVariable.isDefined) " AS " + predicateAsVariable.get else "" } + ",\n" +
-            objects.toString +
-            { if (objectAsVariable.isDefined) " AS " + objectAsVariable.get else "" } + ",\n" +
-            graphs.toString + "]"
+            objct.toString +
+            { if (objectAsVariable.isDefined) " AS " + objectAsVariable.get else "" } + "]"
     }
 }

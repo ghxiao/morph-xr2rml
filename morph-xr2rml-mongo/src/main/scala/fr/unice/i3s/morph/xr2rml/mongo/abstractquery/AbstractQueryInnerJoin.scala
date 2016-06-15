@@ -229,7 +229,7 @@ class AbstractQueryInnerJoin(
             logger.info("Generating RDF triples from the inner join query:\n" + this.toStringConcrete)
         }
 
-        var joinResult = Map[String, MorphBaseResultRdfTerms]()
+        var joinResult = Map[Int, MorphBaseResultRdfTerms]()
 
         // First, generate the triples for both left and right graph patterns of the join
         val subq =
@@ -270,11 +270,11 @@ class AbstractQueryInnerJoin(
                 val rightTripleX = rightTriples.filter(_.hasVariable(x))
 
                 for (leftTriple <- leftTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
-                    val leftTerm = leftTriple.getTermsForVariable(x)
                     for (rightTriple <- rightTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
-                        val rightTerm = rightTriple.getTermsForVariable(x)
-                        if (!leftTerm.intersect(rightTerm).isEmpty) {
-                            // If there is a match, keep the two MorphBaseResultRdfTerms instances 
+                        val leftTerm = leftTriple.getTermForVariable(x)
+                        val rightTerm = rightTriple.getTermForVariable(x)
+                        if (leftTerm.get == rightTerm.get) {
+                            // If there is a match, keep the two triples 
                             if (!joinResult.contains(leftTriple.id))
                                 joinResult += (leftTriple.id -> leftTriple)
                             if (!joinResult.contains(rightTriple.id))
