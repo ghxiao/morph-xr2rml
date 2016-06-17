@@ -1,18 +1,15 @@
 package fr.unice.i3s.morph.xr2rml.mongo.abstractquery
 
 import org.apache.log4j.Logger
+
 import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataSourceReader
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
-import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
-import fr.unice.i3s.morph.xr2rml.mongo.querytranslator.MorphMongoQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
-import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
+import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 
 /**
  * Representation of the INNER JOIN abstract query generated from the join of several basic graph patterns.
@@ -28,7 +25,7 @@ class AbstractQueryInnerJoin(
     lim: Option[Long])
         extends AbstractQuery(Set.empty, lim) {
 
-    val logger = Logger.getLogger(this.getClass().getName());
+    val logger = Logger.getLogger(this.getClass().getName())
 
     val members: List[AbstractQuery] = lstMembers.flatMap { m =>
         if (m.isInstanceOf[AbstractQueryInnerJoin])

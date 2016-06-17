@@ -22,7 +22,7 @@ SELECT *
 WHERE {
     #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ?p ?x .
     
-    #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skos:broader ?u .
+    <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skos:broader ?u .
 
     #?y skos:broader ?u .
 
@@ -35,12 +35,12 @@ WHERE {
  	#?t skosxl:altLabel ?b . 
     #FILTER (?a != ?b)
     
-	## Big inner join: no self-join elimination nor condition propagation
+	## Big inner join: no self-join elimination nor condition propagation - 67s
     #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
  	#?t skosxl:altLabel ?b . 
     #FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
 
-	## Optional join
+	## Optional join - 66s
     #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
     #OPTIONAL { 
     #  ?t skosxl:altLabel ?b .
@@ -53,10 +53,10 @@ WHERE {
     #}
 
 	## Self-Join and Self-Union elimination using unique reference
-    ?t skosxl:prefLabel ?p .
-    ?t taxrefprop:bioGeoStatusIn ?bgs . 
-    ?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
-    { ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
-    UNION
-    { ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
-} LIMIT 10
+    #?t skosxl:prefLabel ?p .
+    #?t taxrefprop:bioGeoStatusIn ?bgs . 
+    #?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
+    #UNION
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
+} LIMIT 1000

@@ -1,5 +1,7 @@
 package fr.unice.i3s.morph.xr2rml.engine
 
+import java.net.URL
+
 import scala.io.Source
 
 import org.apache.commons.cli.BasicParser
@@ -9,11 +11,9 @@ import org.apache.log4j.Logger
 import org.apache.log4j.PropertyConfigurator
 
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
-import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunner
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import fr.unice.i3s.morph.xr2rml.server.SparqlEndpoint
-import java.net.URL
 
 /**
  * MorphRunner is the main entry point of the Morph-xR2RML application.

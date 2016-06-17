@@ -14,7 +14,8 @@ class R2RMLPredicateMap(
     termType: Option[String],
     refFormulation: String)
 
-        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulation) {
+        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulation)
+        with java.io.Serializable {
 
     var termtype = this.inferTermType
 }

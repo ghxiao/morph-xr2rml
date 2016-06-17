@@ -17,9 +17,9 @@ class R2RMLObjectMap(
     nestedTermMap: Option[xR2RMLNestedTermMap],
     refFormulation: String)
 
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation) {
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation)
+        with java.io.Serializable {
 
-    override val logger = Logger.getLogger(this.getClass().getName());
     var termtype = this.inferTermType
 }
 
@@ -55,7 +55,7 @@ object R2RMLObjectMap {
 
     /**
      * Create a set of ObjectMaps by checking the rr:objectMap properties of a PredicateObjectMap
-     * 
+     *
      * @param resource A Jena node representing a PredicateObjectMap instance
      * @param refFormulation the current reference formulation given in the configuration file
      * @return a possibly empty set of R2RMLRefObjectMap's

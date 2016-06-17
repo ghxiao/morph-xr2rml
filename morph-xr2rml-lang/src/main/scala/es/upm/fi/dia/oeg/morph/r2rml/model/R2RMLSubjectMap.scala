@@ -22,9 +22,9 @@ class R2RMLSubjectMap(
     /** Reference formulation from the logical source */
     refFormulaion: String)
 
-        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulaion) {
+        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulaion)
+        with java.io.Serializable {
 
-    override val logger = Logger.getLogger(this.getClass().getName());
     var termtype = this.inferTermType
 }
 

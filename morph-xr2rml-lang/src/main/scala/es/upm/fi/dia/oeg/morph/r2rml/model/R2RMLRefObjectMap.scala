@@ -12,9 +12,8 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 class R2RMLRefObjectMap(
         val parentTriplesMapResource: Resource,
         val joinConditions: Set[R2RMLJoinCondition],
-        val termType: Option[String]) {
+        val termType: Option[String]) extends java.io.Serializable {
 
-    val logger = Logger.getLogger(this.getClass().getName());
     var rdfNode: RDFNode = null;
 
     def getRelationName() = this.rdfNode.asResource().getLocalName();

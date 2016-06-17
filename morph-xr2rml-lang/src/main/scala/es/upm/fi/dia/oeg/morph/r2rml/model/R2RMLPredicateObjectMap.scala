@@ -9,14 +9,14 @@ import com.hp.hpl.jena.rdf.model.Resource
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class R2RMLPredicateObjectMap(
-        val predicateMaps: List[R2RMLPredicateMap],
-        val objectMaps: List[R2RMLObjectMap],
-        val refObjectMaps: List[R2RMLRefObjectMap],
-        val graphMaps: Set[R2RMLGraphMap]) {
+    val predicateMaps: List[R2RMLPredicateMap],
+    val objectMaps: List[R2RMLObjectMap],
+    val refObjectMaps: List[R2RMLRefObjectMap],
+    val graphMaps: Set[R2RMLGraphMap])
+
+        extends java.io.Serializable {
 
     var resource: Resource = null;
-
-    val logger = Logger.getLogger(this.getClass().getName());
 
     if (predicateMaps.isEmpty)
         throw new MorphException("Error: predicateObjectMap with no predicate map will be ignored.")

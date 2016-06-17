@@ -21,12 +21,11 @@ abstract class R2RMLTermMap(
     /** Reference formulation from the logical source */
     val refFormulaion: String)
 
-        extends IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap {
+        extends IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap
+        with java.io.Serializable {
 
     /** Jena resource corresponding to that term map */
     var rdfNode: RDFNode = null;
-
-    val logger = Logger.getLogger(this.getClass().getName());
 
     def this(rdfNode: RDFNode, refForm: String) = {
         this(R2RMLTermMap.extractTermMapType(rdfNode),
