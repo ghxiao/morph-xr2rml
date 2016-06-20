@@ -107,7 +107,7 @@
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
-			<version>2.11.8</version>
+			<version>2.10.6</version>
 		</dependency>
 
 		<dependency>
@@ -127,8 +127,20 @@
 			<artifactId>apache-jena-libs</artifactId>
 			<type>pom</type>
 			<version>2.13.0</version>
+			<exclusions>
+				<exclusion>
+					<!-- slf4j-log4j12 1.7.6 comes with Jena, whereas spark comes with 1.7.10 -->
+					<artifactId>slf4j-log4j12</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_2.10</artifactId>
+			<version>1.6.1</version>
+		</dependency>
 
 		<!-- <dependency> <groupId>rqr4r2o</groupId> <artifactId>rqr4r2o</artifactId> 
 			<version>0.1</version> </dependency> -->

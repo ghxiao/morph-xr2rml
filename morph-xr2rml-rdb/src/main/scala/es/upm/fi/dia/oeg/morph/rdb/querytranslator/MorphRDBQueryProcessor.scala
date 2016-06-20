@@ -239,7 +239,7 @@ class MorphRDBQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProce
                             if (resultAux != null) {
                                 if (termMapType != null) {
                                     if (termMapType.equals(Constants.R2RML_IRI_URI))
-                                        GeneralUtility.encodeURI(resultAux, factory.getProperties.mapURIEncodingChars, factory.getProperties.uriTransformationOperation);
+                                        GeneralUtility.encodeURI(resultAux, null) // factory.getProperties.mapURIEncodingChars
                                     else if (termMapType.equals(Constants.R2RML_LITERAL_URI))
                                         GeneralUtility.encodeLiteral(resultAux);
                                     else

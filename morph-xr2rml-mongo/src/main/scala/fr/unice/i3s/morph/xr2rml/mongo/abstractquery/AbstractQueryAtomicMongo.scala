@@ -31,6 +31,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionAnd
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionOr
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
+import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
@@ -517,63 +518,117 @@ class AbstractQueryAtomicMongo(
             var end = System.currentTimeMillis()
             logger.info("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
 
+            // ----------------------------------------------------------------
             // --- Main loop: iterate and process each result document of the result set
-            start = System.currentTimeMillis()
-            var i = 0;
-            val terms = mongoRsltSet.flatMap(document => {
-                try {
-                    i = i + 1;
-                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
+            // ----------------------------------------------------------------
 
+            start = System.currentTimeMillis()
+
+            var terms: List[MorphBaseResultRdfTerms] = List.empty
+            if (dataSourceReader.factory.getProperties.apacheSparks) {
+
+                // ----------------------------------------------------------------
+                // --- Run the generation of triples using Apache Sparks
+                // ----------------------------------------------------------------
+
+                val sc = dataTranslator.factory.getSparkContext
+                val encodeUnsafeCharsInUri = dataTranslator.factory.getProperties.encodeUnsafeCharsInUri
+                val encodeUnsafeCharsInDbValues = dataTranslator.factory.getProperties.encodeUnsafeCharsInDbValues
+
+                val rdd = sc.parallelize(mongoRsltSet)
+                if (logger.isDebugEnabled())
+                    logger.debug("Nb of partitions: " + rdd.getNumPartitions)
+                val rddTerms = rdd.flatMap(document => {
                     //---- Create the subject resource
-                    val subjects = dataTranslator.translateData(sm, document)
-                    if (subjects == null) { throw new Exception("null value in the subject triple") }
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
+                    val subjects = MorphMongoDataTranslator.translateData(sm, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
 
                     //---- Create the list of resources representing subject target graphs
-                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement => {
-                        dataTranslator.translateData(sgmElement, document)
-                    })
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
+                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement =>
+                        MorphMongoDataTranslator.translateData(sgmElement, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues))
 
                     // ----- Make a list of resources for the predicate map of the predicate-object map
-                    val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
+                    val predicates = MorphMongoDataTranslator.translateData(pom.predicateMaps.head, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
 
                     // ------ Make a list of resources for the object map of the predicate-object map
                     val objects =
                         if (!pom.objectMaps.isEmpty)
-                            dataTranslator.translateData(pom.objectMaps.head, document)
+                            MorphMongoDataTranslator.translateData(pom.objectMaps.head, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
                         else List.empty
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
 
                     // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => {
-                        dataTranslator.translateData(pogmElement, document)
-                    })
-                    if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement =>
+                        MorphMongoDataTranslator.translateData(pogmElement, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues))
 
                     // Compute a list of result triples
-                    subjects.flatMap(subject => {
+                    val res = subjects.flatMap(subject => {
                         predicates.flatMap(predicate => {
                             objects.map(objct => {
                                 new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
                             })
                         })
                     })
-                } catch {
-                    case e: MorphException => {
-                        logger.error("Error while translating data of document " + i + ": " + e.getMessage);
-                        e.printStackTrace()
-                        List() // empty list will be removed by the flat map of results 
+                    res
+                })
+
+                terms = rddTerms.collect().toList
+
+            } else {
+                // ----------------------------------------------------------------
+                // --- Run the generation of triples locally
+                // ----------------------------------------------------------------
+
+                var i = 0
+                terms = mongoRsltSet.flatMap(document => {
+                    try {
+                        i = i + 1;
+                        if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
+
+                        //---- Create the subject resource
+                        val subjects = dataTranslator.translateData(sm, document)
+                        if (subjects == null) { throw new Exception("null value in the subject triple") }
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
+
+                        //---- Create the list of resources representing subject target graphs
+                        val subjectGraphs = sm.graphMaps.flatMap(sgmElement => dataTranslator.translateData(sgmElement, document))
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
+
+                        // ----- Make a list of resources for the predicate map of the predicate-object map
+                        val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
+
+                        // ------ Make a list of resources for the object map of the predicate-object map
+                        val objects =
+                            if (!pom.objectMaps.isEmpty)
+                                dataTranslator.translateData(pom.objectMaps.head, document)
+                            else List.empty
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
+
+                        // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
+                        val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => dataTranslator.translateData(pogmElement, document))
+                        if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+
+                        // Compute a list of result triples
+                        subjects.flatMap(subject => {
+                            predicates.flatMap(predicate => {
+                                objects.map(objct => {
+                                    new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
+                                })
+                            })
+                        })
+                    } catch {
+                        case e: MorphException => {
+                            logger.error("Error while translating data of document " + i + ": " + e.getMessage);
+                            e.printStackTrace()
+                            List() // empty list will be removed by the flat map of results 
+                        }
+                        case e: Exception => {
+                            logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
+                            e.printStackTrace()
+                            List() // empty list will be removed by the flat map of results 
+                        }
                     }
-                    case e: Exception => {
-                        logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
-                        e.printStackTrace()
-                        List() // empty list will be removed by the flat map of results 
-                    }
-                }
-            })
+                })
+            }
 
             end = System.currentTimeMillis()
             logger.info("Atomic query generated " + terms.size + " RDF triples in " + (end - start) + "ms.")

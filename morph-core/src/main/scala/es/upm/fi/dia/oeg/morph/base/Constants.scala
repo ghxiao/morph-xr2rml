@@ -147,6 +147,9 @@ object Constants {
 
     val URI_ENCODE = "uri.encode";
 
+    val SPARKS = "apache.sparks"
+    val SPARKS_MASTER = "apache.sparks.master"
+
     //aliases
     val URI_AS_ALIAS = "uri_";
     val RANGE_TABLE_ALIAS = "rt_";

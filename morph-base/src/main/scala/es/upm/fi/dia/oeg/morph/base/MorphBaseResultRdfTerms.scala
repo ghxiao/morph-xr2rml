@@ -11,7 +11,7 @@ package es.upm.fi.dia.oeg.morph.base
 class MorphBaseResultRdfTerms(
         val subject: RDFTerm, val subjectAsVariable: Option[String],
         val predicate: RDFTerm, val predicateAsVariable: Option[String],
-        val objct: RDFTerm, val objectAsVariable: Option[String]) {
+        val objct: RDFTerm, val objectAsVariable: Option[String]) extends java.io.Serializable {
 
     /**
      * Simple triple id that helps keep track of which triples have already been materialized, to avoid duplicates
@@ -26,7 +26,7 @@ class MorphBaseResultRdfTerms(
 
     /**
      * Retrieve an RDF term in the triple that is bound to a given variable.
-     * If several terms are bound to the same variable, like in triples matching pattern like 
+     * If several terms are bound to the same variable, like in triples matching pattern like
      * <code>?x :pred ?x</code>,
      * both the subject and object will have the same value. So there is no need to return them all.
      */

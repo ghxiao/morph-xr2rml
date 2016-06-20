@@ -11,8 +11,15 @@ import es.upm.fi.dia.oeg.morph.base.materializer.MorphBaseMaterializer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkConf
 
 /**
+ * This factory initalizes oall the main objects needed to run the application.
+ *
+ * There may exist several instances of it: one for each query executed when running as a SPARQL endpoint.
+ * Only the instances of MorphProperties and R2RMLMappingDocument will be shared by all executions.
+ *
  * @author Freddy Priyatna
  * @author Franck Michel, I3S laboratory
  */
@@ -36,6 +43,8 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     var queryProcessor: MorphBaseQueryProcessor = null
 
+    var sparkContext: SparkContext = null
+
     override def getProperties: MorphProperties = properties
 
     override def getConnection: GenericConnection = connection
@@ -53,6 +62,8 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
     override def getQueryTranslator: MorphBaseQueryTranslator = queryTranslator
 
     override def getQueryProcessor: MorphBaseQueryProcessor = queryProcessor
+
+    override def getSparkContext: SparkContext = sparkContext
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -79,6 +90,15 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
         if (prefix != null)
             materializer.setModelPrefixMap(prefix);
         materializer
+    }
+
+    private def createSparkContext(masterUrl: String): SparkContext = {
+        val conf = new SparkConf().setAppName("Morph-xR2RML").setMaster(masterUrl)
+        //conf.setJars(List("file://C:/Users/fmichel/Documents/Development/eclipse-ws-xr2rml/morph-xr2rml/morph-xr2rml-dist/target/morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar"))
+        //conf.set("spark.driver.memory", "4g")
+        val sc = new SparkContext(conf)
+        sc.getConf.getAll.foreach(println)
+        sc
     }
 
     /**
@@ -129,6 +149,9 @@ object MorphBaseRunnerFactory {
         factory.dataTranslator = factory.createDataTranslator
         factory.queryTranslator = factory.createQueryTranslator
         factory.queryProcessor = factory.createQueryProcessor
+
+        if (properties.apacheSparks)
+            factory.sparkContext = factory.createSparkContext(properties.apacheSparksMaster)
 
         factory
     }

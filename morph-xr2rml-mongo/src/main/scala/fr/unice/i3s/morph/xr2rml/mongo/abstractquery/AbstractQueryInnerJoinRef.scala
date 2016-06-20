@@ -286,7 +286,7 @@ class AbstractQueryInnerJoinRef(
                             if (rom.isR2RMLTermType)
                                 parentSubjects
                             else
-                                dataTranslator.createCollection(rom.termType.get, parentSubjects)
+                                MorphBaseDataTranslator.createCollection(rom.termType.get, parentSubjects)
                         } else
                             List.empty
                     }

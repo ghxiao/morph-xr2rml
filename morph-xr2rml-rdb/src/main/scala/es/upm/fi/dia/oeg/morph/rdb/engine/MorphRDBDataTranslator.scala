@@ -278,7 +278,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                this.translateSingleValue(termMap.constantValue, collecTermType, memberTermType, datatype, languageTag)
+                MorphBaseDataTranslator.translateSingleValue(termMap.constantValue, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
             }
 
             // --- Column-valued term map
@@ -296,7 +296,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                     }
 
                 // Generate the RDF terms
-                this.translateSingleValue(dbValue, collecTermType, memberTermType, datatype, languageTag)
+                MorphBaseDataTranslator.translateSingleValue(dbValue, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
             }
 
             // --- Reference-valued term map
@@ -324,7 +324,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                             None
                         else dt
                     }
-                this.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag)
+                MorphBaseDataTranslator.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
             }
 
             // --- Template-valued term map
@@ -349,7 +349,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                     // If the reference is not a mixed-syntax path, then the value is simply returned in a list.
                     // If the db value is null, then return an empty list.
                     val valuesRaw: List[Object] = msPaths(i).evaluate(dbValueRaw)
-                    valuesRaw.filter(_ != null).map(v => encodeResvdCharsIfUri(v, memberTermType))
+                    valuesRaw.filter(_ != null).map(v => MorphBaseDataTranslator.encodeResvdCharsIfUri(v, memberTermType, encodeUnsafeCharsInDbValues))
                 }
                 val lstRep = listReplace.toList
                 logger.trace("Template replacements: " + lstRep)
@@ -368,7 +368,7 @@ class MorphRDBDataTranslator(factory: IMorphFactory) extends MorphBaseDataTransl
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, lstRep)
-                    this.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag)
+                    MorphBaseDataTranslator.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
                 }
             }
 

@@ -24,12 +24,12 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
  *
  * @author Franck Michel, I3S laboratory
  */
-class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTranslator(factory) with java.io.Serializable {
+class MorphMongoDataTranslator(val fact: IMorphFactory) extends MorphBaseDataTranslator(fact) with java.io.Serializable {
 
     if (!factory.getConnection.isMongoDB)
         throw new MorphException("Database connection type does not match MongoDB")
 
-    @transient override val logger = Logger.getLogger(this.getClass().getName());
+    override val logger = Logger.getLogger(this.getClass().getName());
 
     /**
      * Query the database using the triples map logical source, and build triples from the result.
@@ -169,7 +169,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                         if (refObjectMap.isR2RMLTermType)
                             finalParentSubjects
                         else
-                            this.createCollection(refObjectMap.termType.get, finalParentSubjects)
+                            MorphBaseDataTranslator.createCollection(refObjectMap.termType.get, finalParentSubjects)
                     })
                     if (!refObjects.isEmpty && logger.isDebugEnabled()) logger.debug("Document " + i + " refObjects: " + refObjects)
 
@@ -266,7 +266,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
 
             // --- Constant-valued term map
             case Constants.MorphTermMapType.ConstantTermMap => {
-                this.translateSingleValue(termMap.constantValue, collecTermType, memberTermType, datatype, languageTag)
+                MorphBaseDataTranslator.translateSingleValue(termMap.constantValue, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
             }
 
             // --- Reference-valued term map
@@ -282,7 +282,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                 val values: List[Object] = msPath.evaluate(jsonDoc)
 
                 // Generate RDF terms from the values resulting from the evaluation
-                this.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag)
+                MorphBaseDataTranslator.translateMultipleValues(values, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
             }
 
             // --- Template-valued term map
@@ -309,7 +309,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                 val listReplace = for (i <- 0 to (msPaths.length - 1)) yield {
                     // Evaluate the raw source document against the mixed-syntax path(s).
                     val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
-                    valuesRaw.filter(_ != null).map(v => encodeResvdCharsIfUri(v, memberTermType))
+                    valuesRaw.filter(_ != null).map(v => MorphBaseDataTranslator.encodeResvdCharsIfUri(v, memberTermType, encodeUnsafeCharsInDbValues))
                 }
 
                 val replacements: List[List[Object]] = listReplace.toList
@@ -329,7 +329,7 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
                 } else {
                     // Compute the list of template results by making all possible combinations of the replacement values
                     val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements)
-                    this.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag)
+                    MorphBaseDataTranslator.translateMultipleValues(tplResults, collecTermType, memberTermType, datatype, languageTag, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
                 }
             }
 
@@ -376,5 +376,121 @@ class MorphMongoDataTranslator(factory: IMorphFactory) extends MorphBaseDataTran
             else
                 factory.getMaterializer.model.createTypedLiteral(term.value, inferedDT);
         }
+    }
+}
+
+object MorphMongoDataTranslator extends java.io.Serializable {
+
+    /**
+     * Apply a term map to a JSON document, and generate a list of RDF terms:
+     * for each element reference in the term map (reference or template), read values from the document,
+     * then translate those values into RDF terms.
+     */
+    def translateData(termMap: R2RMLTermMap, jsonDoc: String, encodeUnsafeCharsInUri: Boolean, encodeUnsafeCharsInDbValues: Boolean): List[RDFTerm] = {
+        if (termMap == null) {
+            val errorMessage = "TermMap is null";
+            throw new MorphException(errorMessage);
+        }
+
+        var datatype = termMap.datatype
+        var languageTag = termMap.languageTag
+
+        // Term type of the collection/container to generate, or None if this is not the case 
+        var collecTermType: Option[String] = None
+
+        // Term type of the RDF terms to generate from database values
+        var memberTermType: String = Constants.R2RML_LITERAL_URI
+
+        // In case of a collection/container, a nested term map should give the details of term type, datatype and language or the terms 
+        if (R2RMLTermMap.isRdfCollectionTermType(termMap.inferTermType)) {
+            collecTermType = Some(termMap.inferTermType)
+            if (termMap.nestedTermMap.isDefined) { // a nested term type MUST be defined in a term map with collection/container term type
+                memberTermType = termMap.nestedTermMap.get.inferTermType
+                datatype = termMap.nestedTermMap.get.datatype
+                languageTag = termMap.nestedTermMap.get.languageTag
+            }
+        } else {
+            collecTermType = None
+            memberTermType = termMap.inferTermType
+        }
+
+        val result: List[RDFTerm] = termMap.termMapType match {
+
+            // --- Constant-valued term map
+            case Constants.MorphTermMapType.ConstantTermMap => {
+                MorphBaseDataTranslator.translateSingleValue(
+                    termMap.constantValue, collecTermType, memberTermType, datatype, languageTag,
+                    encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
+            }
+
+            // --- Reference-valued term map
+            case Constants.MorphTermMapType.ReferenceTermMap => {
+                val msPath =
+                    if (termMap.reference == "$._id")
+                        // The MongoDB "_id" field is an ObjectId: retrieve the $oid subfield to get the id value
+                        MixedSyntaxPath("$._id.$oid", termMap.refFormulaion)
+                    else
+                        termMap.getMixedSyntaxPaths()(0) // '(0)' because in a reference there is only one mixed syntax path
+
+                // Evaluate the value against the mixed syntax path
+                val values: List[Object] = msPath.evaluate(jsonDoc)
+
+                // Generate RDF terms from the values resulting from the evaluation
+                MorphBaseDataTranslator.translateMultipleValues(
+                    values, collecTermType, memberTermType, datatype, languageTag,
+                    encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
+            }
+
+            // --- Template-valued term map
+            case Constants.MorphTermMapType.TemplateTermMap => {
+
+                // For each group of the template, compute a list of replacement strings
+                // CHANGE 2016/06/02: Replaced this line: 
+                //     val msPaths = termMap.getMixedSyntaxPaths()
+                // with the following, in order to deal with the _id field:
+                val msPaths = {
+                    // Get the list of template strings
+                    val tplStrings = TemplateUtility.getTemplateGroups(termMap.templateString)
+
+                    // For each one, parse it as a mixed syntax path
+                    tplStrings.map(tplString => {
+                        if (tplString == "$._id")
+                            // The MongoDB "_id" field is an ObjectId: retrieve the $oid subfield to get the id value
+                            MixedSyntaxPath("$._id.$oid", termMap.refFormulaion)
+                        else
+                            MixedSyntaxPath(tplString, termMap.refFormulaion)
+                    })
+                }
+
+                val listReplace = for (i <- 0 to (msPaths.length - 1)) yield {
+                    // Evaluate the raw source document against the mixed-syntax path(s).
+                    val valuesRaw: List[Object] = msPaths(i).evaluate(jsonDoc)
+                    valuesRaw.filter(_ != null).map(v => MorphBaseDataTranslator.encodeResvdCharsIfUri(v, memberTermType, encodeUnsafeCharsInDbValues))
+                }
+
+                val replacements: List[List[Object]] = listReplace.toList
+
+                // Check if at least one of the replacements is not null.
+                var isEmptyReplacements: Boolean = true
+                for (repl <- listReplace) {
+                    if (!repl.isEmpty)
+                        isEmptyReplacements = false
+                }
+
+                // Replace "{...}" groups in the template string with corresponding values from the db
+                if (isEmptyReplacements) {
+                    List()
+                } else {
+                    // Compute the list of template results by making all possible combinations of the replacement values
+                    val tplResults = TemplateUtility.replaceTemplateGroups(termMap.templateString, replacements)
+                    MorphBaseDataTranslator.translateMultipleValues(
+                        tplResults, collecTermType, memberTermType, datatype, languageTag,
+                        encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
+                }
+            }
+
+            case _ => { throw new MorphException("Invalid term map type " + termMap.termMapType) }
+        }
+        result
     }
 }

@@ -38,7 +38,7 @@ object GeneralUtility {
         result;
     }
 
-    def encodeURI(originalURI: String, mapURIEncodingChars: Map[String, String], uriTransformationOperations: List[String]): String = {
+    def encodeURI(originalURI: String, mapURIEncodingChars: Map[String, String]): String = {
         val resultAux = originalURI.trim();
         var result = resultAux;
         try {
