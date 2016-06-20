@@ -1,7 +1,5 @@
 package es.upm.fi.dia.oeg.morph.base
 
-import com.hp.hpl.jena.rdf.model.RDFNode
-
 /**
  * Representation of a triple as a set of RDF terms translated from database query results.
  *
@@ -11,9 +9,9 @@ import com.hp.hpl.jena.rdf.model.RDFNode
  * @author Franck Michel, I3S laboratory
  */
 class MorphBaseResultRdfTerms(
-        val subject: RDFNode, val subjectAsVariable: Option[String],
-        val predicate: RDFNode, val predicateAsVariable: Option[String],
-        val objct: RDFNode, val objectAsVariable: Option[String]) {
+        val subject: RDFTerm, val subjectAsVariable: Option[String],
+        val predicate: RDFTerm, val predicateAsVariable: Option[String],
+        val objct: RDFTerm, val objectAsVariable: Option[String]) {
 
     /**
      * Simple triple id that helps keep track of which triples have already been materialized, to avoid duplicates
@@ -32,7 +30,7 @@ class MorphBaseResultRdfTerms(
      * <code>?x :pred ?x</code>,
      * both the subject and object will have the same value. So there is no need to return them all.
      */
-    def getTermForVariable(variable: String): Option[RDFNode] = {
+    def getTermForVariable(variable: String): Option[RDFTerm] = {
         if (subjectAsVariable.isDefined && subjectAsVariable.get == variable)
             Some(subject)
         else if (predicateAsVariable.isDefined && predicateAsVariable.get == variable)

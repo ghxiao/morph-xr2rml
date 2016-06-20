@@ -16,6 +16,17 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
+import es.upm.fi.dia.oeg.morph.base.RDFTerm
+import es.upm.fi.dia.oeg.morph.base.RDFTermLiteral
+import es.upm.fi.dia.oeg.morph.base.RDFTermIRI
+import arq.iri
+import es.upm.fi.dia.oeg.morph.base.RDFTermBlankNode
+import es.upm.fi.dia.oeg.morph.base.RDFTermList
+import es.upm.fi.dia.oeg.morph.base.RDFTermBag
+import es.upm.fi.dia.oeg.morph.base.RDFTermSeq
+import es.upm.fi.dia.oeg.morph.base.RDFTermAlt
+import es.upm.fi.dia.oeg.morph.base.RDFTermSeq
+import es.upm.fi.dia.oeg.morph.base.RDFTermAlt
 
 /**
  * @author Freddy Priyatna
@@ -76,7 +87,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
      * @param language language tag
      * @return a list of one RDF node (cannot be empty)
      */
-    protected def translateSingleValue(dbValue: Object, collecTermType: Option[String], memberTermType: String, datatype: Option[String], language: Option[String]): List[RDFNode] = {
+    protected def translateSingleValue(dbValue: Object, collecTermType: Option[String], memberTermType: String, datatype: Option[String], language: Option[String]): List[RDFTerm] = {
         translateMultipleValues(List(dbValue), collecTermType, memberTermType, datatype, language)
     }
 
@@ -94,119 +105,90 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
      * @param language language tag
      * @return a list of one RDF node, possibly empty
      */
-    protected def translateMultipleValues(values: List[Object], collecTermType: Option[String], memberTermType: String, datatype: Option[String], languageTag: Option[String]): List[RDFNode] = {
+    protected def translateMultipleValues(
+        values: List[Object], collecTermType: Option[String], memberTermType: String, datatype: Option[String], languageTag: Option[String]): List[RDFTerm] = {
 
-        if (values.isEmpty)
-            return List()
+        if (values.isEmpty) return List()
 
         // Convert values into RDF nodes
-        val valuesAsRdfNodes = translateMultipleValues(values, memberTermType, datatype, languageTag)
+        val valuesAsRdfTerms = translateMultipleValues(values, memberTermType, datatype, languageTag)
 
-        val result: List[RDFNode] =
+        val result: List[RDFTerm] =
             if (collecTermType.isDefined)
                 // Create the collection/container with that list of nodes
-                createCollection(collecTermType.get, valuesAsRdfNodes)
+                createCollection(collecTermType.get, valuesAsRdfTerms)
             else
-                valuesAsRdfNodes
+                valuesAsRdfTerms
 
         if (logger.isTraceEnabled()) logger.trace("    Translated values [" + values + "] into [" + result + "]")
         result
     }
 
     /**
-     * Create a list of RDF terms (as JENA resources) from a list of values
+     * Create a list of RDF terms from a list of values
      *
      * @param values list of values: these may be strings, integers, booleans etc.,
      * @param termType term type of the current term map
      * @param datatype URI of the data type
      * @param language language tag
-     * @return a list of RDF nodes, possibly empty
+     * @return a list of RDF terms, possibly empty
      */
-    private def translateMultipleValues(values: List[Object], termType: String, datatype: Option[String], languageTag: Option[String]): List[RDFNode] = {
+    private def translateMultipleValues(values: List[Object], termType: String, datatype: Option[String], languageTag: Option[String]): List[RDFTerm] = {
 
-        val result: List[RDFNode] =
+        val result: List[RDFTerm] =
             // Create one RDF term for each of the values: the flatMap eliminates None elements, thus the result can be empty
             values.flatMap(value => {
-                if (value == null) // case when the database returned NULL
-                    None
+                if (value == null) None // case when the database returned NULL
                 else {
                     val node = termType match {
-                        case Constants.R2RML_IRI_URI => this.createIRI(value.toString)
+                        case Constants.R2RML_IRI_URI => this.createIRI(value)
                         case Constants.R2RML_LITERAL_URI => this.createLiteral(value, datatype, languageTag)
-                        case Constants.R2RML_BLANKNODE_URI => {
-                            var rep = GeneralUtility.encodeUrl(value.toString)
-                            factory.getMaterializer.model.createResource(new AnonId(rep))
-                        }
+                        case Constants.R2RML_BLANKNODE_URI => new RDFTermBlankNode(GeneralUtility.encodeUrl(value.toString))
                     }
                     Some(node)
                 }
             })
-        //if (logger.isTraceEnabled()) logger.trace("    Translated values [" + values + "] into [" + result + "]")
         result
     }
 
     /**
-     *  Create a JENA resource with an IRI after URL-encoding the string
-     *
-     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
+     *  Create an IRI term after URL-encoding the string
      */
-    protected def createIRI(originalIRI: String) = {
+    protected def createIRI(iri: Object): RDFTerm = {
         val properties = factory.getProperties
-        var resultIRI = originalIRI;
-        try {
-            resultIRI = GeneralUtility.encodeURI(resultIRI, properties.mapURIEncodingChars, properties.uriTransformationOperation);
-            if (properties.encodeUnsafeCharsInUri)
-                resultIRI = GeneralUtility.encodeUrl(resultIRI);
-
-            factory.getMaterializer.model.createResource(resultIRI);
-        } catch {
-            case e: Exception => {
-                val msg = "Error translating object uri value : " + resultIRI
-                logger.error(msg);
-                throw new MorphException(msg, e)
-            }
-        }
+        var resultIRI = GeneralUtility.encodeURI(iri.toString, properties.mapURIEncodingChars, properties.uriTransformationOperation);
+        if (properties.encodeUnsafeCharsInUri)
+            resultIRI = GeneralUtility.encodeUrl(resultIRI);
+        new RDFTermIRI(resultIRI)
     }
 
     /**
-     * Create a JENA literal resource with optional datatype and language tag
+     * Create a literal term with optional datatype and language tag
      *
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): Literal = {
+    protected def createLiteral(value: Object, datatype: Option[String], language: Option[String]): RDFTerm = {
         try {
             val encodedValue =
-                if (value == null) // case when the database returned NULL
-                    ""
-                else
-                    GeneralUtility.encodeLiteral(value.toString())
+                if (value == null) "" // case when the database returned NULL
+                else GeneralUtility.encodeLiteral(value.toString())
 
             val dataT: String = datatype.getOrElse(null)
             val valueConverted =
                 if (dataT != null) { // the datatype may be Some(null), so keep this test here
-                    if (dataT.equals(XSDDatatype.XSDdateTime.getURI().toString()))
+                    if (dataT.equals(XSDDatatype.XSDdateTime.getURI.toString))
                         this.translateDateTime(encodedValue);
-                    else if (dataT.equals(XSDDatatype.XSDboolean.getURI().toString()))
+                    else if (dataT.equals(XSDDatatype.XSDboolean.getURI.toString))
                         this.translateBoolean(encodedValue);
                     else
                         encodedValue
                 } else
                     encodedValue
 
-            val result: Literal =
-                if (language.isDefined)
-                    factory.getMaterializer.model.createLiteral(valueConverted, language.get);
-                else {
-                    if (datatype.isDefined)
-                        factory.getMaterializer.model.createTypedLiteral(valueConverted, datatype.get);
-                    else
-                        factory.getMaterializer.model.createLiteral(valueConverted);
-                }
-
-            result
+            new RDFTermLiteral(value, datatype, language)
         } catch {
-            case e: Exception => {
-                val msg = "Error translating object uri value : " + value
+            case e: MorphException => {
+                val msg = "Error creating literal term: " + value
                 logger.error(msg);
                 throw new MorphException(msg, e)
             }
@@ -214,40 +196,23 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
     }
 
     /**
-     * Convert a list of RDFNodes into an RDF collection or container.
+     * Convert a list of RDF terms into an RDF term of type collection or container.
      * The result is returned as a list with one element.
      *
      * If the list of nodes is empty, return an empty list, but no empty collection/container is returned.
      *
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    def createCollection(collecTermType: String, values: List[RDFNode]): List[RDFNode] = {
+    def createCollection(collecTermType: String, values: List[RDFTerm]): List[RDFTerm] = {
 
-        // If values is empty, then do not return a list with one empty list inside, but just an empty list
-        if (values.isEmpty)
-            return List()
+        // If values is empty, then do not return a list with one empty RDF list, instead just return an empty list
+        if (values.isEmpty) return List()
 
-        val translated: RDFNode = collecTermType match {
-            case Constants.xR2RML_RDFLIST_URI => {
-                val node = factory.getMaterializer.model.createList(values.iterator)
-                factory.getMaterializer.model.add(node, RDF.`type`, RDF.List)
-                node
-            }
-            case Constants.xR2RML_RDFBAG_URI => {
-                var list = factory.getMaterializer.model.createBag()
-                for (value <- values) list.add(value)
-                list
-            }
-            case Constants.xR2RML_RDFALT_URI => {
-                val list = factory.getMaterializer.model.createAlt()
-                for (value <- values) list.add(value)
-                list
-            }
-            case Constants.xR2RML_RDFSEQ_URI => {
-                val list = factory.getMaterializer.model.createSeq()
-                for (value <- values) list.add(value)
-                list
-            }
+        val translated: RDFTerm = collecTermType match {
+            case Constants.xR2RML_RDFLIST_URI => new RDFTermList(values)
+            case Constants.xR2RML_RDFBAG_URI => new RDFTermBag(values)
+            case Constants.xR2RML_RDFALT_URI => new RDFTermAlt(values)
+            case Constants.xR2RML_RDFSEQ_URI => new RDFTermSeq(values)
             case _ => {
                 val msg = "Term type " + collecTermType + " is not an RDF collection/container term type"
                 logger.error(msg);
@@ -275,5 +240,70 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
         if (termType == Constants.R2RML_IRI_URI && value.isInstanceOf[String] && factory.getProperties.encodeUnsafeCharsInDbValues)
             GeneralUtility.encodeReservedChars(value.asInstanceOf[String])
         else value
+    }
+
+    /**
+     * Create a literal JENA resource with optional datatype and language tag
+     *
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
+     */
+    protected def createLiteralNode(term: RDFTermLiteral): Literal = {
+        try {
+            if (term.language.isDefined)
+                factory.getMaterializer.model.createLiteral(term.value.asInstanceOf[String], term.language.get);
+            else if (term.datatype.isDefined)
+                factory.getMaterializer.model.createTypedLiteral(term.value, term.datatype.get);
+            else
+                factory.getMaterializer.model.createLiteral(term.value.asInstanceOf[String]);
+        } catch {
+            case e: Exception => {
+                val msg = "Error translating literal term to RDFNode: " + term.value
+                logger.error(msg);
+                throw new MorphException(msg, e)
+            }
+        }
+    }
+
+    /**
+     *  Create a JENA resource from an RDFTerm
+     *
+     * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
+     */
+    protected def createRDFNode(term: RDFTerm): RDFNode = {
+        try {
+            term match {
+                case a: RDFTermLiteral => this.createLiteralNode(a)
+                case a: RDFTermIRI => factory.getMaterializer.model.createResource(a.getIRI)
+                case a: RDFTermBlankNode => factory.getMaterializer.model.createResource(new AnonId(a.value.asInstanceOf[String]))
+                case a: RDFTermList => {
+                    val members = a.getMembers.map(this.createRDFNode)
+                    val node = factory.getMaterializer.model.createList(members.iterator)
+                    factory.getMaterializer.model.add(node, RDF.`type`, RDF.List)
+                    node
+                }
+                case a: RDFTermBag => {
+                    val node = factory.getMaterializer.model.createBag()
+                    for (value <- term.asInstanceOf[RDFTermBag].getMembers) node.add(this.createRDFNode(value))
+                    node
+                }
+                case a: RDFTermSeq => {
+                    val node = factory.getMaterializer.model.createSeq()
+                    for (value <- term.asInstanceOf[RDFTermSeq].getMembers) node.add(this.createRDFNode(value))
+                    node
+                }
+                case a: RDFTermAlt => {
+                    val node = factory.getMaterializer.model.createAlt()
+                    for (value <- term.asInstanceOf[RDFTermAlt].getMembers) node.add(this.createRDFNode(value))
+                    node
+                }
+                case _ => throw new MorphException("Error: unexpected RDFTerm class: " + term)
+            }
+        } catch {
+            case e: Exception => {
+                val msg = "Error translating literal term to RDFNode: " + term.value
+                logger.error(msg);
+                throw new MorphException(msg, e)
+            }
+        }
     }
 }

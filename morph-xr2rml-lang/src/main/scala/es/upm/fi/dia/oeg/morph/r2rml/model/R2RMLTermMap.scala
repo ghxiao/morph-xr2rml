@@ -24,9 +24,6 @@ abstract class R2RMLTermMap(
         extends IConstantTermMap with IColumnTermMap with ITemplateTermMap with IReferenceTermMap
         with java.io.Serializable {
 
-    /** Jena resource corresponding to that term map */
-    var rdfNode: RDFNode = null;
-
     def this(rdfNode: RDFNode, refForm: String) = {
         this(R2RMLTermMap.extractTermMapType(rdfNode),
             R2RMLTermMap.extractTermType(rdfNode),
@@ -34,7 +31,6 @@ abstract class R2RMLTermMap(
             R2RMLTermMap.extractLanguageTag(rdfNode),
             R2RMLTermMap.extractNestedTermMap(R2RMLTermMap.extractTermMapType(rdfNode), rdfNode),
             refForm);
-        this.rdfNode = rdfNode;
         this.parse(rdfNode);
     }
 
@@ -51,7 +47,6 @@ abstract class R2RMLTermMap(
      * @param rdfNode the term map Jena resource
      */
     def parse(rdfNode: RDFNode) = {
-        this.rdfNode = rdfNode;
 
         if (rdfNode.isLiteral) {
             // We are in the case of a constant property with a literal object, like "[] rr:object 'NAME'",

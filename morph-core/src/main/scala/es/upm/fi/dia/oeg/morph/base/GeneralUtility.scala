@@ -176,11 +176,24 @@ object GeneralUtility {
      *
      * @return the intersection, possibly empty
      */
-    def intersectMultipleSets(sets: Set[List[RDFNode]]): List[RDFNode] = {
+    def intersectMultipleNodeSets(sets: Set[List[RDFNode]]): List[RDFNode] = {
         if (sets.size == 0)
             List()
         else if (sets.size > 1)
-            sets.head.intersect(intersectMultipleSets(sets.tail))
+            sets.head.intersect(intersectMultipleNodeSets(sets.tail))
+        else sets.head
+    }
+
+    /**
+     * Recursive method to compute the intersection of multiple sets of RDFTerm
+     *
+     * @return the intersection, possibly empty
+     */
+    def intersectMultipleTermSets(sets: Set[List[RDFTerm]]): List[RDFTerm] = {
+        if (sets.size == 0)
+            List()
+        else if (sets.size > 1)
+            sets.head.intersect(intersectMultipleTermSets(sets.tail))
         else sets.head
     }
 

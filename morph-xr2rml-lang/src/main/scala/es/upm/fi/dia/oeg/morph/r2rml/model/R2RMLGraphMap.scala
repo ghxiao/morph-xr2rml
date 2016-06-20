@@ -13,8 +13,7 @@ class R2RMLGraphMap(
     languageTag: Option[String],
     refFormulation: String)
 
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulation)
-        with java.io.Serializable {
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, None, refFormulation) {
 
     val inferredTermType = this.inferTermType;
     if (inferredTermType != null && !inferredTermType.equals(Constants.R2RML_IRI_URI)) {

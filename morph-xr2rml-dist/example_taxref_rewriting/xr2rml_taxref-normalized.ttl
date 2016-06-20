@@ -34,11 +34,11 @@
     
 <#LS_Taxon>
     a xrr:LogicalSource;
-    xrr:query """db.taxref3.find( { $where: 'this.codeTaxon == this.codeReference' } )""";
+    xrr:query """db.taxrefv8.find( { $where: 'this.codeTaxon == this.codeReference' } )""";
     xrr:uniqueRef "$.codeTaxon" .
 <#LS_AltLbl>
     a xrr:LogicalSource;
-    xrr:query """db.taxref3.find( { $where: 'this.codeTaxon != this.codeReference' } )""";
+    xrr:query """db.taxrefv8.find( { $where: 'this.codeTaxon != this.codeReference' } )""";
     xrr:uniqueRef "$.codeTaxon".
  
 # ----- Create a taxon (skos Concept) for each reference name
@@ -187,7 +187,7 @@
     
 <#TM_TaxonomicalRank_SuperKingdom>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPRG'} )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPRG'} )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -196,7 +196,7 @@
 
 <#TM_TaxonomicalRank_Kingdom>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'KD' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'KD' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -205,7 +205,7 @@
 
 <#TM_TaxonomicalRank_SubKingdom>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSRG' } )"""; xrr:uniqueRef "$.codeTaxon"];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSRG' } )"""; xrr:uniqueRef "$.codeTaxon"];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -214,7 +214,7 @@
 
 <#TM_TaxonomicalRank_InfraKingdom>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFRG' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFRG' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -223,7 +223,7 @@
 
 <#TM_TaxonomicalRank_Phylum>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'PH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'PH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -232,7 +232,7 @@
 
 <#TM_TaxonomicalRank_SubPhylum>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBPH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBPH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -241,7 +241,7 @@
 
 <#TM_TaxonomicalRank_InfraPhylum>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFPH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFPH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -250,7 +250,7 @@
 
 <#TM_TaxonomicalRank_Division>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'DV' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'DV' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -259,7 +259,7 @@
 
 <#TM_TaxonomicalRank_SubDivision>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBDV' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBDV' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -268,7 +268,7 @@
 
 <#TM_TaxonomicalRank_SuperClass>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPCL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPCL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -277,7 +277,7 @@
 
 <#TM_TaxonomicalRank_Cladus>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CLAD' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CLAD' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -286,7 +286,7 @@
 
 <#TM_TaxonomicalRank_Class>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -295,7 +295,7 @@
 
 <#TM_TaxonomicalRank_SubClass>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBCL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBCL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -304,7 +304,7 @@
 
 <#TM_TaxonomicalRank_InfraClass>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFCL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFCL' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -313,7 +313,7 @@
 
 <#TM_TaxonomicalRank_Legio>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'LEG' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'LEG' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -322,7 +322,7 @@
 
 <#TM_TaxonomicalRank_SuperOrder>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPOR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPOR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -331,7 +331,7 @@
 
 <#TM_TaxonomicalRank_Cohorte>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'COH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'COH' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -340,7 +340,7 @@
 
 <#TM_TaxonomicalRank_Order>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'OR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'OR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -349,7 +349,7 @@
 
 <#TM_TaxonomicalRank_SubOrder>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBOR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBOR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -358,7 +358,7 @@
 
 <#TM_TaxonomicalRank_InfraOrder>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFOR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'IFOR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -367,7 +367,7 @@
 
 <#TM_TaxonomicalRank_SuperFamily>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPFM' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SPFM' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -376,7 +376,7 @@
 
 <#TM_TaxonomicalRank_Family>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FM' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FM' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -385,7 +385,7 @@
 
 <#TM_TaxonomicalRank_SubFamily>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBFM' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBFM' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -394,7 +394,7 @@
 
 <#TM_TaxonomicalRank_Tribe>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'TR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'TR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -403,7 +403,7 @@
 
 <#TM_TaxonomicalRank_SubTribe>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSTR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSTR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -412,7 +412,7 @@
 
 <#TM_TaxonomicalRank_Genus>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'GN' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'GN' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -421,7 +421,7 @@
 
 <#TM_TaxonomicalRank_SubGenus>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSGN' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSGN' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -430,7 +430,7 @@
 
 <#TM_TaxonomicalRank_Section>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SC' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SC' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -439,7 +439,7 @@
 
 <#TM_TaxonomicalRank_SubSection>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBSC' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SBSC' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -448,7 +448,7 @@
 
 <#TM_TaxonomicalRank_Series>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -457,7 +457,7 @@
 
 <#TM_TaxonomicalRank_SubSeries>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSER' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSER' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -466,7 +466,7 @@
 
 <#TM_TaxonomicalRank_Agregate>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'AGES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'AGES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -476,7 +476,7 @@
 <#TM_TaxonomicalRank_Species>
     # 153576 results
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'ES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'ES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -485,7 +485,7 @@
 
 <#TM_TaxonomicalRank_SemiSpecies>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SMES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SMES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -494,7 +494,7 @@
 
 <#TM_TaxonomicalRank_MicroSpecies>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'MES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'MES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -503,7 +503,7 @@
 
 <#TM_TaxonomicalRank_SubSpecies>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -512,7 +512,7 @@
 
 <#TM_TaxonomicalRank_Natio>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'NAT' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'NAT' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -521,7 +521,7 @@
 
 <#TM_TaxonomicalRank_Varietas>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'VAR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'VAR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -530,7 +530,7 @@
 
 <#TM_TaxonomicalRank_SubVarietas>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SVAR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SVAR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -539,7 +539,7 @@
 
 <#TM_TaxonomicalRank_Forma>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -548,7 +548,7 @@
 
 <#TM_TaxonomicalRank_SubForma>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSFO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'SSFO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -557,7 +557,7 @@
 
 <#TM_TaxonomicalRank_FormaSpecies>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FOES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'FOES' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -566,7 +566,7 @@
 
 <#TM_TaxonomicalRank_Linea>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'LIN' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'LIN' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -575,7 +575,7 @@
 
 <#TM_TaxonomicalRank_Clone>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CLO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CLO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -584,7 +584,7 @@
 
 <#TM_TaxonomicalRank_Race>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'RACE' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'RACE' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -593,7 +593,7 @@
 
 <#TM_TaxonomicalRank_Cultivar>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CAR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'CAR' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -602,7 +602,7 @@
 
 <#TM_TaxonomicalRank_Morpha>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'MO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'MO' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -611,7 +611,7 @@
 
 <#TM_TaxonomicalRank_Abberation>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'AB' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'rang' : 'AB' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate nt:has_rank;
@@ -624,7 +624,7 @@
 
 <#TM_Habitat_Marine>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '1' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '1' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -633,7 +633,7 @@
 
 <#TM_Habitat_FreshWater>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '2' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '2' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -642,7 +642,7 @@
 
 <#TM_Habitat_BrackishWater>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '6' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '6' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -651,7 +651,7 @@
 
 <#TM_Habitat_Terrestrial>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '3' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '3' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -660,7 +660,7 @@
 
 <#TM_Habitat_MarineAndFreshWater_Marine>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '4' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '4' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -669,7 +669,7 @@
 
 <#TM_Habitat_MarineAndFreshWater_Fresh>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '4' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '4' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -678,7 +678,7 @@
 
 <#TM_Habitat_MarineAndTerrestrial_Marine>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '5' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '5' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -687,7 +687,7 @@
 
 <#TM_Habitat_MarineAndTerrestrial_Terrestr>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '5' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '5' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate taxrefprop:habitat;
@@ -696,7 +696,7 @@
 
 <#TM_Habitat_TerrestrialAndOrFreshWater_Terrestr>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '7' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '7' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate txn:habitat;
@@ -705,7 +705,7 @@
 
 <#TM_Habitat_TerrestrialAndOrFreshWater_Fresh>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '7' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '7' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate txn:habitat;
@@ -714,7 +714,7 @@
 
 <#TM_Habitat_TerrestrialAndFreshWater_Terrestr>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '8' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '8' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate txn:habitat;
@@ -723,7 +723,7 @@
 
 <#TM_Habitat_TerrestrialAndFreshWater_Fresh>
     a rr:TriplesMap;
-    xrr:logicalSource [ xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '8' } )"""; xrr:uniqueRef "$.codeTaxon" ];
+    xrr:logicalSource [ xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'habitat': '8' } )"""; xrr:uniqueRef "$.codeTaxon" ];
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [
         rr:predicate txn:habitat;
@@ -733,7 +733,7 @@
 # ---------------------------------------------------------------------------------
 # Biogeographical statuses
 # ---------------------------------------------------------------------------------
-<#LS_SBD_Metro> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'fr' : {$ne: ''}, 'fr': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Metro> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'fr' : {$ne: ''}, 'fr': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Metro_BN> rr:template "{$.codeTaxon}_FR"; rr:termType rr:BlankNode.
 <#TM_SBG_Metro>
     xrr:logicalSource <#LS_SBD_Metro>; rr:subjectMap <#SM_Taxon>;
@@ -761,7 +761,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Metropolitan France"; ].
 
 
-<#LS_SBD_Guyane> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'gf' : {$ne: ''}, 'gf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Guyane> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'gf' : {$ne: ''}, 'gf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Guyane_BN> rr:template "{$.codeTaxon}_GF"; rr:termType rr:BlankNode.
 <#TM_SBG_Guyane>
     xrr:logicalSource <#LS_SBD_Guyane>;
@@ -790,7 +790,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "French Guyana"; ].
 
 
-<#LS_SBD_Martinique> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'mar' : {$ne: ''}, 'mar': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Martinique> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'mar' : {$ne: ''}, 'mar': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Martinique_BN> rr:template "{$.codeTaxon}_MAR"; rr:termType rr:BlankNode.
 <#TM_SBG_Martinique>
     xrr:logicalSource <#LS_SBD_Martinique>; rr:subjectMap <#SM_Taxon>;
@@ -818,7 +818,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Martinique"; ].
 
 
-<#LS_SBD_Guadeloupe> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'gua' : {$ne: ''}, 'gua': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Guadeloupe> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'gua' : {$ne: ''}, 'gua': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Guadeloupe_BN> rr:template "{$.codeTaxon}_GUA"; rr:termType rr:BlankNode.
 <#TM_SBG_Guadeloupe>
     xrr:logicalSource <#LS_SBD_Guadeloupe>;
@@ -847,7 +847,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Guadeloupe"; ].
 
 
-<#LS_SBD_StMartin> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'sm' : {$ne: ''}, 'sm': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_StMartin> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'sm' : {$ne: ''}, 'sm': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_StMartin_BN> rr:template "{$.codeTaxon}_SM"; rr:termType rr:BlankNode.
 <#TM_SBG_StMartin>
     xrr:logicalSource <#LS_SBD_StMartin>;
@@ -876,7 +876,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Saint-Martin"; ].
 
 
-<#LS_SBD_StBarthelemy> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'sb' : {$ne: ''}, 'sb': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_StBarthelemy> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'sb' : {$ne: ''}, 'sb': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_StBarthelemy_BN> rr:template "{$.codeTaxon}_SB"; rr:termType rr:BlankNode.
 <#TM_SBG_StBarthelemy>
     xrr:logicalSource <#LS_SBD_StBarthelemy>;
@@ -905,7 +905,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Saint-Barthelemy"; ].
 
 
-<#LS_SBD_SPM> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'spm' : {$ne: ''}, 'spm': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_SPM> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'spm' : {$ne: ''}, 'spm': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_SPM_BN> rr:template "{$.codeTaxon}_SPM"; rr:termType rr:BlankNode.
 <#TM_SBG_SPM>
     xrr:logicalSource <#LS_SBD_SPM>;
@@ -934,7 +934,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Saint-Pierre-et-Miquelon"; ].
 
     
-<#LS_SBD_Mayotte> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'may' : {$ne: ''}, 'may': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Mayotte> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'may' : {$ne: ''}, 'may': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Mayotte_BN> rr:template "{$.codeTaxon}_MAY"; rr:termType rr:BlankNode.
 <#TM_SBG_Mayotte>
     xrr:logicalSource <#LS_SBD_Mayotte>;
@@ -963,7 +963,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Mayotte"; ].
 
 
-<#LS_SBD_Reunion> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'reu' : {$ne: ''}, 'reu': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Reunion> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'reu' : {$ne: ''}, 'reu': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Reunion_BN> rr:template "{$.codeTaxon}_REU"; rr:termType rr:BlankNode.
 <#TM_SBG_Reunion>
     xrr:logicalSource <#LS_SBD_Reunion>;
@@ -992,7 +992,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Reunion"; ].
 
 
-<#LS_SBD_Eparses> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'epa' : {$ne: ''}, 'epa': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Eparses> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'epa' : {$ne: ''}, 'epa': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Eparses_BN> rr:template "{$.codeTaxon}_EPA"; rr:termType rr:BlankNode.
 <#TM_SBG_Eparses>
     xrr:logicalSource <#LS_SBD_Eparses>;
@@ -1021,7 +1021,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Eparses Islands"; ].
 
 
-<#LS_SBD_TAAF> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'taaf' : {$ne: ''}, 'taaf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_TAAF> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'taaf' : {$ne: ''}, 'taaf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_TAAF_BN> rr:template "{$.codeTaxon}_TAAF"; rr:termType rr:BlankNode.
 <#TM_SBG_TAAF>
     xrr:logicalSource <#LS_SBD_TAAF>;
@@ -1052,7 +1052,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "French Southern and Antarctic Lands"; ].
 
 
-<#LS_SBD_Polyn> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'pf' : {$ne: ''}, 'pf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Polyn> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'pf' : {$ne: ''}, 'pf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Polyn_BN> rr:template "{$.codeTaxon}_PF"; rr:termType rr:BlankNode.
 <#TM_SBG_Polyn>
     xrr:logicalSource <#LS_SBD_Polyn>;
@@ -1080,7 +1080,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "French Polynesia"; ].
     
 
-<#LS_SBD_NouvCal> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'nc' : {$ne: ''}, 'nc': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_NouvCal> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'nc' : {$ne: ''}, 'nc': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_NouvCal_BN> rr:template "{$.codeTaxon}_NC"; rr:termType rr:BlankNode.
 <#TM_SBG_NouvCal>
     xrr:logicalSource <#LS_SBD_NouvCal>;
@@ -1109,7 +1109,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "New Caledonia"; ].
 
 
-<#LS_SBD_WallisFutuna> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'wf' : {$ne: ''}, 'wf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_WallisFutuna> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'wf' : {$ne: ''}, 'wf': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_WallisFutuna_BN> rr:template "{$.codeTaxon}_WF"; rr:termType rr:BlankNode.
 <#TM_SBG_WallisFutuna>
     xrr:logicalSource <#LS_SBD_WallisFutuna>;
@@ -1138,7 +1138,7 @@
     rr:predicateObjectMap [ rr:predicate rdfs:label; rr:object "Wallis-et-Futuna"; ].
 
 
-<#LS_SBD_Clipperton> xrr:query """db.taxref3.find( {$where: 'this.codeTaxon == this.codeReference', 'cli' : {$ne: ''}, 'cli': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
+<#LS_SBD_Clipperton> xrr:query """db.taxrefv8.find( {$where: 'this.codeTaxon == this.codeReference', 'cli' : {$ne: ''}, 'cli': {$ne: null} } )"""; xrr:uniqueRef "$.codeTaxon".
 <#SM_SBG_Clipperton_BN> rr:template "{$.codeTaxon}_CLI"; rr:termType rr:BlankNode.
 <#TM_SBG_Clipperton>
     xrr:logicalSource <#LS_SBD_Clipperton>;

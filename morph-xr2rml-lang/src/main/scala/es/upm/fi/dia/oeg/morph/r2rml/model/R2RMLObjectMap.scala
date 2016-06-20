@@ -17,8 +17,7 @@ class R2RMLObjectMap(
     nestedTermMap: Option[xR2RMLNestedTermMap],
     refFormulation: String)
 
-        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation)
-        with java.io.Serializable {
+        extends R2RMLTermMap(termMapType, termType, datatype, languageTag, nestedTermMap, refFormulation) {
 
     var termtype = this.inferTermType
 }

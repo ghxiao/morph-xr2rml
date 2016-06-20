@@ -22,8 +22,7 @@ class R2RMLSubjectMap(
     /** Reference formulation from the logical source */
     refFormulaion: String)
 
-        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulaion)
-        with java.io.Serializable {
+        extends R2RMLTermMap(termMapType, termType, None, None, None, refFormulaion) {
 
     var termtype = this.inferTermType
 }
@@ -65,7 +64,6 @@ object R2RMLSubjectMap {
         }
 
         val sm = new R2RMLSubjectMap(termMapType, termType, classURIs, graphMaps, refFormulation);
-        sm.rdfNode = rdfNode;
 
         sm.parse(rdfNode)
         sm
