@@ -525,15 +525,16 @@ class AbstractQueryAtomicMongo(
             start = System.currentTimeMillis()
 
             var terms: List[MorphBaseResultRdfTerms] = List.empty
-            if (dataSourceReader.factory.getProperties.apacheSparks) {
+            val properties = dataSourceReader.factory.getProperties
+            if (properties.apacheSpark && mongoRsltSet.size >= properties.apacheSparkThreshold) {
 
                 // ----------------------------------------------------------------
                 // --- Run the generation of triples using Apache Sparks
                 // ----------------------------------------------------------------
 
                 val sc = dataTranslator.factory.getSparkContext
-                val encodeUnsafeCharsInUri = dataTranslator.factory.getProperties.encodeUnsafeCharsInUri
-                val encodeUnsafeCharsInDbValues = dataTranslator.factory.getProperties.encodeUnsafeCharsInDbValues
+                val encodeUnsafeCharsInUri = properties.encodeUnsafeCharsInUri
+                val encodeUnsafeCharsInDbValues = properties.encodeUnsafeCharsInDbValues
 
                 val rdd = sc.parallelize(mongoRsltSet)
                 if (logger.isDebugEnabled())

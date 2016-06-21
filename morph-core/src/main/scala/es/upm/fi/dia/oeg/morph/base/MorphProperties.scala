@@ -60,8 +60,9 @@ class MorphProperties extends java.util.Properties {
     //uri encoding
     //var mapURIEncodingChars: Map[String, String] = Map.empty;
 
-    var apacheSparks: Boolean = false
-    var apacheSparksMaster: String = null
+    var apacheSpark: Boolean = false
+    var apacheSparkMaster: String = null
+    var apacheSparkThreshold: Int = 0
 
     def readConfigurationFile() = {
 
@@ -208,12 +209,15 @@ class MorphProperties extends java.util.Properties {
         this.mapDataTranslationLimits = this.readMapStringString(MorphProperties.DATATRANSLATION_LIMIT, Map.empty);
         this.mapDataTranslationOffsets = this.readMapStringString(MorphProperties.DATATRANSLATION_OFFSET, Map.empty);
 
-        this.apacheSparks = this.readBoolean(Constants.SPARKS, false)
-        logger.info("Use Apache Spark for parallel processing = " + this.apacheSparks)
+        this.apacheSpark = this.readBoolean(Constants.SPARK, false)
+        logger.info("Use Apache Spark for parallel processing = " + this.apacheSpark)
 
-        if (this.apacheSparks) {
-            this.apacheSparksMaster = this.readString(Constants.SPARKS_MASTER, "local[*]")
-            logger.info("Apache Spark master URL = " + this.apacheSparksMaster)
+        this.apacheSparkThreshold = this.readInteger(Constants.SPARK_THRESHOLD, 10000)
+        logger.info("Use Apache Spark only for processing over " + this.apacheSparkThreshold + " documents")
+
+        if (this.apacheSpark) {
+            this.apacheSparkMaster = this.readString(Constants.SPARK_MASTER, "local[*]")
+            logger.info("Apache Spark master URL = " + this.apacheSparkMaster)
         }
     }
 
