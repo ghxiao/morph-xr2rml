@@ -25,10 +25,6 @@ import org.apache.spark.SparkConf
  */
 abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
-    var properties: MorphProperties = null
-
-    var mappingDocument: R2RMLMappingDocument = null
-
     var connection: GenericConnection = null
 
     var unfolder: MorphBaseUnfolder = null
@@ -43,13 +39,13 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
 
     var queryProcessor: MorphBaseQueryProcessor = null
 
-    var sparkContext: SparkContext = null
+    override def getProperties: MorphProperties = MorphBaseRunnerFactory.properties
 
-    override def getProperties: MorphProperties = properties
+    override def getMappingDocument: R2RMLMappingDocument = MorphBaseRunnerFactory.mappingDocument
+
+    override def getSparkContext: SparkContext = MorphBaseRunnerFactory.sparkContext
 
     override def getConnection: GenericConnection = connection
-
-    override def getMappingDocument: R2RMLMappingDocument = mappingDocument
 
     override def getUnfolder: MorphBaseUnfolder = unfolder
 
@@ -62,8 +58,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
     override def getQueryTranslator: MorphBaseQueryTranslator = queryTranslator
 
     override def getQueryProcessor: MorphBaseQueryProcessor = queryProcessor
-
-    override def getSparkContext: SparkContext = sparkContext
 
     val logger = Logger.getLogger(this.getClass());
 
@@ -92,15 +86,6 @@ abstract class MorphBaseRunnerFactory extends IMorphFactory {
         materializer
     }
 
-    private def createSparkContext(masterUrl: String): SparkContext = {
-        val conf = new SparkConf().setAppName("Morph-xR2RML").setMaster(masterUrl)
-        //conf.setJars(List("file://C:/Users/fmichel/Documents/Development/eclipse-ws-xr2rml/morph-xr2rml/morph-xr2rml-dist/target/morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar"))
-        //conf.set("spark.driver.memory", "4g")
-        val sc = new SparkContext(conf)
-        sc.getConf.getAll.foreach(println)
-        sc
-    }
-
     /**
      * Optional database-specific steps of the factory creation
      */
@@ -117,6 +102,19 @@ object MorphBaseRunnerFactory {
 
     var mappingDocument: R2RMLMappingDocument = null
 
+    var sparkContext: SparkContext = null
+
+    private def createSparkContext(masterUrl: String): SparkContext = {
+        val conf = new SparkConf().setAppName("Morph-xR2RML").setMaster(masterUrl)
+        //conf.setJars(List("file://C:/Users/fmichel/Documents/Development/eclipse-ws-xr2rml/morph-xr2rml/morph-xr2rml-dist/target/morph-xr2rml-dist-1.0-SNAPSHOT-jar-with-dependencies.jar"))
+        //conf.set("spark.driver.memory", "4g")
+        //conf.set("spark.eventLog.enabled", "true")
+        //conf.set("spark.local.dir", "/C:/Users/fmichel/.spark")
+        val sc = new SparkContext(conf)
+        sc.getConf.getAll.foreach(println)
+        sc
+    }
+
     /**
      * Initialize the factory: create global objects that can be shared by parallel executions
      * of a runner, i.e. properties and mapping document.
@@ -126,6 +124,9 @@ object MorphBaseRunnerFactory {
     def initFactory(props: MorphProperties) = {
         MorphBaseRunnerFactory.properties = props
         MorphBaseRunnerFactory.mappingDocument = R2RMLMappingDocument(properties)
+
+        if (properties.apacheSpark)
+            MorphBaseRunnerFactory.sparkContext = MorphBaseRunnerFactory.createSparkContext(properties.apacheSparkMaster)
     }
 
     /**
@@ -137,9 +138,7 @@ object MorphBaseRunnerFactory {
 
         val factory = Class.forName(properties.runnerFactoryClassName).newInstance().asInstanceOf[MorphBaseRunnerFactory]
 
-        factory.properties = MorphBaseRunnerFactory.properties
-        factory.mappingDocument = MorphBaseRunnerFactory.mappingDocument
-        factory.connection = factory.createConnection
+        factory.connection = factory.createConnection // leave this line first as other objects need it
 
         factory.postCreateFactory // optionally perform any other database-specific step of the creation
 
@@ -149,9 +148,6 @@ object MorphBaseRunnerFactory {
         factory.dataTranslator = factory.createDataTranslator
         factory.queryTranslator = factory.createQueryTranslator
         factory.queryProcessor = factory.createQueryProcessor
-
-        if (properties.apacheSparks)
-            factory.sparkContext = factory.createSparkContext(properties.apacheSparksMaster)
 
         factory
     }

@@ -36,11 +36,11 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
 
         val sqlCnx = this.connection.concreteCnx.asInstanceOf[Connection]
 
-        val metaData = MorphDatabaseMetaData(sqlCnx, this.properties.databaseName, this.properties.databaseType);
+        val metaData = MorphDatabaseMetaData(sqlCnx, this.getProperties.databaseName, this.getProperties.databaseType);
         val optMetaData = if (metaData == null) None else Some(metaData)
 
         // Create new TriplesMaps with a logical source that contains db metadata
-        val rdbTMs: Iterable[RDBR2RMLTriplesMap] = this.mappingDocument.triplesMaps.map { tm =>
+        val rdbTMs: Iterable[RDBR2RMLTriplesMap] = this.getMappingDocument.triplesMaps.map { tm =>
             val rdbLS = tm.getLogicalSource match {
                 case tab: xR2RMLTable => new RDBxR2RMLTable(tab.tableName)
                 case qry: xR2RMLQuery => new RDBxR2RMLQuery(qry.query, qry.refFormulation, qry.docIterator, qry.uniqueRefs)
@@ -52,9 +52,9 @@ class MorphRDBRunnerFactory extends MorphBaseRunnerFactory {
             rdbTM
         }
 
-        val rdbMappingdocument = new RDBR2RMLMappingDocument(rdbTMs, this.mappingDocument.mappingDocumentPath, this.mappingDocument.mappingDocumentPrefixMap)
+        val rdbMappingdocument = new RDBR2RMLMappingDocument(rdbTMs, this.getMappingDocument.mappingDocumentPath, this.getMappingDocument.mappingDocumentPrefixMap)
         rdbMappingdocument.dbMetaData = optMetaData
-        this.mappingDocument = rdbMappingdocument
+        MorphBaseRunnerFactory.mappingDocument = rdbMappingdocument
     }
 
     override def createConnection: GenericConnection = {

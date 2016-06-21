@@ -39,13 +39,18 @@ import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryProjectionArraySlice
 
 class MorphFactoryConcret2 extends MorphBaseRunnerFactory {
 
+    var properties: MorphProperties = null
+    var mappingDocument: R2RMLMappingDocument = null
+
     override def createConnection: GenericConnection = null
     override def createUnfolder: MorphBaseUnfolder = null
     override def createDataSourceReader: MorphBaseDataSourceReader = null
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
     override def createQueryProcessor: MorphBaseQueryProcessor = null
-    
+    override def getProperties = properties
+    override def getMappingDocument = mappingDocument
+
     override def postCreateFactory = {}
 }
 
@@ -379,5 +384,5 @@ class MorphMongoQueryTranslatorTest {
         val op = Algebra.compile(query)
         println(op)
     }
-    
+
 }

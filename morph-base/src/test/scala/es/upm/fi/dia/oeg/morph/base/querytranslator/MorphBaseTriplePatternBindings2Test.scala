@@ -34,12 +34,17 @@ class MorphQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQuery
 
 class MorphFactoryConcret extends MorphBaseRunnerFactory {
 
+    var properties: MorphProperties = null
+    var mappingDocument: R2RMLMappingDocument = null
+
     override def createConnection: GenericConnection = null
     override def createUnfolder: MorphBaseUnfolder = null
     override def createDataSourceReader: MorphBaseDataSourceReader = null
     override def createDataTranslator: MorphBaseDataTranslator = null
     override def createQueryTranslator: MorphBaseQueryTranslator = null
     override def createQueryProcessor: MorphBaseQueryProcessor = null
+    override def getProperties = properties
+    override def getMappingDocument = mappingDocument
 
     override def postCreateFactory = {}
 }
