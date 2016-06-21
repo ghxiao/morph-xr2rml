@@ -1,18 +1,17 @@
 package fr.unice.i3s.morph.xr2rml.server
 
 import org.apache.log4j.Logger
-
-import com.sun.jersey.spi.container.servlet.ServletContainer
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.servlet.ServletContextHandler
+import org.eclipse.jetty.servlet.ServletHolder
+import org.glassfish.jersey.servlet.ServletContainer
 
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import fr.unice.i3s.morph.xr2rml.service.SparqlRestService
-import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.server.Server
 
 /**
  * Servlet container based on Jetty embedded server to run the SPARQL endpoint
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 object SparqlEndpoint {

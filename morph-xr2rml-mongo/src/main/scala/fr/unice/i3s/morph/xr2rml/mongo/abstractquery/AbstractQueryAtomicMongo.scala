@@ -525,111 +525,58 @@ class AbstractQueryAtomicMongo(
             start = System.currentTimeMillis()
 
             var terms: List[MorphBaseResultRdfTerms] = List.empty
-            val properties = dataSourceReader.factory.getProperties
-            if (properties.apacheSpark && mongoRsltSet.size >= properties.apacheSparkThreshold) {
 
-                // ----------------------------------------------------------------
-                // --- Run the generation of triples using Apache Sparks
-                // ----------------------------------------------------------------
+            var i = 0
+            terms = mongoRsltSet.flatMap(document => {
+                try {
+                    i = i + 1;
+                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
 
-                val sc = dataTranslator.factory.getSparkContext
-                val encodeUnsafeCharsInUri = properties.encodeUnsafeCharsInUri
-                val encodeUnsafeCharsInDbValues = properties.encodeUnsafeCharsInDbValues
-
-                val rdd = sc.parallelize(mongoRsltSet)
-                if (logger.isDebugEnabled())
-                    logger.debug("Nb of partitions: " + rdd.getNumPartitions)
-                val rddTerms = rdd.flatMap(document => {
                     //---- Create the subject resource
-                    val subjects = MorphMongoDataTranslator.translateData(sm, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
+                    val subjects = dataTranslator.translateData(sm, document)
+                    if (subjects == null) { throw new Exception("null value in the subject triple") }
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
 
                     //---- Create the list of resources representing subject target graphs
-                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement =>
-                        MorphMongoDataTranslator.translateData(sgmElement, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues))
+                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement => dataTranslator.translateData(sgmElement, document))
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
 
                     // ----- Make a list of resources for the predicate map of the predicate-object map
-                    val predicates = MorphMongoDataTranslator.translateData(pom.predicateMaps.head, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
+                    val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
 
                     // ------ Make a list of resources for the object map of the predicate-object map
                     val objects =
                         if (!pom.objectMaps.isEmpty)
-                            MorphMongoDataTranslator.translateData(pom.objectMaps.head, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues)
+                            dataTranslator.translateData(pom.objectMaps.head, document)
                         else List.empty
+                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
 
                     // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement =>
-                        MorphMongoDataTranslator.translateData(pogmElement, document, encodeUnsafeCharsInUri, encodeUnsafeCharsInDbValues))
+                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => dataTranslator.translateData(pogmElement, document))
+                    if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
 
                     // Compute a list of result triples
-                    val res = subjects.flatMap(subject => {
+                    subjects.flatMap(subject => {
                         predicates.flatMap(predicate => {
                             objects.map(objct => {
                                 new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
                             })
                         })
                     })
-                    res
-                })
-
-                terms = rddTerms.collect().toList
-
-            } else {
-                // ----------------------------------------------------------------
-                // --- Run the generation of triples locally
-                // ----------------------------------------------------------------
-
-                var i = 0
-                terms = mongoRsltSet.flatMap(document => {
-                    try {
-                        i = i + 1;
-                        if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
-
-                        //---- Create the subject resource
-                        val subjects = dataTranslator.translateData(sm, document)
-                        if (subjects == null) { throw new Exception("null value in the subject triple") }
-                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
-
-                        //---- Create the list of resources representing subject target graphs
-                        val subjectGraphs = sm.graphMaps.flatMap(sgmElement => dataTranslator.translateData(sgmElement, document))
-                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
-
-                        // ----- Make a list of resources for the predicate map of the predicate-object map
-                        val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
-                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
-
-                        // ------ Make a list of resources for the object map of the predicate-object map
-                        val objects =
-                            if (!pom.objectMaps.isEmpty)
-                                dataTranslator.translateData(pom.objectMaps.head, document)
-                            else List.empty
-                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
-
-                        // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                        val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => dataTranslator.translateData(pogmElement, document))
-                        if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
-
-                        // Compute a list of result triples
-                        subjects.flatMap(subject => {
-                            predicates.flatMap(predicate => {
-                                objects.map(objct => {
-                                    new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
-                                })
-                            })
-                        })
-                    } catch {
-                        case e: MorphException => {
-                            logger.error("Error while translating data of document " + i + ": " + e.getMessage);
-                            e.printStackTrace()
-                            List() // empty list will be removed by the flat map of results 
-                        }
-                        case e: Exception => {
-                            logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
-                            e.printStackTrace()
-                            List() // empty list will be removed by the flat map of results 
-                        }
+                } catch {
+                    case e: MorphException => {
+                        logger.error("Error while translating data of document " + i + ": " + e.getMessage);
+                        e.printStackTrace()
+                        List() // empty list will be removed by the flat map of results 
                     }
-                })
-            }
+                    case e: Exception => {
+                        logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
+                        e.printStackTrace()
+                        List() // empty list will be removed by the flat map of results 
+                    }
+                }
+            })
 
             end = System.currentTimeMillis()
             logger.info("Atomic query generated " + terms.size + " RDF triples in " + (end - start) + "ms.")

@@ -209,7 +209,7 @@ class MorphProperties extends java.util.Properties {
         this.mapDataTranslationLimits = this.readMapStringString(MorphProperties.DATATRANSLATION_LIMIT, Map.empty);
         this.mapDataTranslationOffsets = this.readMapStringString(MorphProperties.DATATRANSLATION_OFFSET, Map.empty);
 
-        this.apacheSpark = this.readBoolean(Constants.SPARK, false)
+        /* this.apacheSpark = this.readBoolean(Constants.SPARK, false)
         logger.info("Use Apache Spark for parallel processing = " + this.apacheSpark)
 
         this.apacheSparkThreshold = this.readInteger(Constants.SPARK_THRESHOLD, 10000)
@@ -218,7 +218,7 @@ class MorphProperties extends java.util.Properties {
         if (this.apacheSpark) {
             this.apacheSparkMaster = this.readString(Constants.SPARK_MASTER, "local[*]")
             logger.info("Apache Spark master URL = " + this.apacheSparkMaster)
-        }
+        } */
     }
 
     def readMapStringString(property: String, defaultValue: Map[String, String]): Map[String, String] = {

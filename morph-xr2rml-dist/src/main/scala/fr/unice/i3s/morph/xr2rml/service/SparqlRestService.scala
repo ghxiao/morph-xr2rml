@@ -118,11 +118,11 @@ class SparqlRestService {
             // Read the response from the output file and direct it to the HTTP response
             if (output.isDefined) {
                 val file = new FileInputStream(output.get)
-                //val isr = new InputStreamReader(file, "UTF-8")
+                val isr = new InputStreamReader(file, "UTF-8")
                 return Response.status(Status.OK).
                     header(headerAccept, "*").
                     header(HttpHeaders.CONTENT_TYPE, negContentType.get).
-                    entity(file).build
+                    entity(isr).build
             } else
                 return Response.status(Status.INTERNAL_SERVER_ERROR).
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").

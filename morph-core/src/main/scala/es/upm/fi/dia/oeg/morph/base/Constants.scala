@@ -147,9 +147,9 @@ object Constants {
 
     val URI_ENCODE = "uri.encode";
 
-    val SPARK = "apache.spark"
-    val SPARK_MASTER = "apache.spark.master"
-    val SPARK_THRESHOLD = "apache.spark.threshold"
+    //val SPARK = "apache.spark"
+    //val SPARK_MASTER = "apache.spark.master"
+    //val SPARK_THRESHOLD = "apache.spark.threshold"
 
     //aliases
     val URI_AS_ALIAS = "uri_";
