@@ -24,7 +24,7 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 
 /**
  * Execute the database query and produce the XML SPARQL result set
- * 
+ *
  * @author Franck Michel, I3S laboratory
  */
 class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryProcessor(factory) {
@@ -44,15 +44,13 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
      */
     override def process(sparqlQuery: Query, abstractQuery: Option[AbstractQuery], syntax: String): Option[File] = {
 
-        val start = System.currentTimeMillis
-
         if (abstractQuery.isDefined) {
             factory.getDataTranslator.generateRDFTriples(abstractQuery.get)
-            logger.info("Time for database query execution and triples generation = " + (System.currentTimeMillis - start) + "ms.");
         }
 
         // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
         // If abstractQuery is not defined then the model will be empty. Therefore no response will come up.
+        val start = System.currentTimeMillis
         val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
 
         // Decide the output file

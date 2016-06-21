@@ -27,7 +27,7 @@ import javax.ws.rs.core.Response.Status
  * @author Franck Michel, I3S laboratory
  */
 @Path("/sparql")
-class SparqlrestService {
+class SparqlRestService {
 
     val headerAccept = "Access-Control-Allow-Origin"
 
@@ -115,15 +115,14 @@ class SparqlrestService {
 
             // Execute the query against the database and save results to an output file
             val output = runner.runQuery(sparqlQuery, negContentType.get)
-
             // Read the response from the output file and direct it to the HTTP response
             if (output.isDefined) {
                 val file = new FileInputStream(output.get)
-                val isr = new InputStreamReader(file, "UTF-8")
-                Response.status(Status.OK).
+                //val isr = new InputStreamReader(file, "UTF-8")
+                return Response.status(Status.OK).
                     header(headerAccept, "*").
                     header(HttpHeaders.CONTENT_TYPE, negContentType.get).
-                    entity(isr).build
+                    entity(file).build
             } else
                 return Response.status(Status.INTERNAL_SERVER_ERROR).
                     header(HttpHeaders.CONTENT_TYPE, "text/plain").

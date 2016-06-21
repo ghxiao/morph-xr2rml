@@ -107,7 +107,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
 
     private def conclude(startTime: Long) = {
         val endTime = System.currentTimeMillis();
-        logger.warn("SPARQL query processing time = " + (endTime - startTime) + "ms.");
+        logger.warn("Overall SPARQL query processing time = " + (endTime - startTime) + "ms.");
         logger.warn("**********************DONE****************************");
     }
 

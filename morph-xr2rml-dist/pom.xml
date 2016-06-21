@@ -12,8 +12,8 @@
 	</parent>
 
 	<properties>
-		<jettyVersion>9.3.8.v20160314</jettyVersion>
-		<jerseyVersion>2.22.2</jerseyVersion>
+		<jettyVersion>8.1.19.v20160209</jettyVersion>
+		<jerseyVersion>1.9.1</jerseyVersion>
 	</properties>
 
 	<dependencies>
@@ -43,14 +43,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.glassfish.jersey.core</groupId>
-			<artifactId>jersey-server</artifactId>
-			<version>${jerseyVersion}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.glassfish.jersey.containers</groupId>
-			<artifactId>jersey-container-servlet-core</artifactId>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-bundle</artifactId>
 			<version>${jerseyVersion}</version>
 		</dependency>
 
