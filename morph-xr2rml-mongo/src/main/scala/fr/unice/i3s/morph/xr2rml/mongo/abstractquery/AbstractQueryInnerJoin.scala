@@ -182,7 +182,7 @@ class AbstractQueryInnerJoin(
                                 continue = false
                                 if (logger.isDebugEnabled) logger.debug("Self-join eliminated between queries " + i + " and " + j)
                             } else if (logger.isDebugEnabled)
-                                logger.debug("Self-join cannot be eliminated between queries " + i + " and " + j)
+                                logger.debug("No self-join elimination between queries " + i + " and " + j)
                         }
                     }
                 } // end for j

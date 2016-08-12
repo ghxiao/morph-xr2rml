@@ -121,7 +121,7 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
 
                 qexec.close
             }
-            logger.info("Time for late SPARQL query evaluation = " + (System.currentTimeMillis - start) + "ms.");
+            logger.warn("Time for late SPARQL query evaluation = " + (System.currentTimeMillis - start) + "ms.");
         }
 
         output

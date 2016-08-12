@@ -81,6 +81,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
     override def executeQueryAndIterator(query: GenericQuery, logSrcIterator: Option[String], limit: Option[Long]): MorphBaseResultSet = {
 
         // A query is simply and uniquely identified by its concrete string value
+        logger.info("Executing query: " + query.concreteQuery + " with limit " + limit)
         val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, logSrcIterator, limit)
         val start = System.currentTimeMillis
         val queryResult =
@@ -109,11 +110,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
                 queryResult.flatMap(result => jPath.evaluate(result).map(value => value.toString))
             } else queryResult
 
-        if (logger.isInfoEnabled) {
-            logger.info("Executing query: " + query.concreteQuery + " with limit " + limit)
-            logger.info("Query returned " + queryResult.size + " result(s), " + queryResultIter.size + " result(s) after applying the iterator.")
-            logger.info("Query execution time was " + (System.currentTimeMillis - start) + " ms.");
-        }
+        logger.info("Query returned " + queryResult.size + " result(s), " + queryResultIter.size + " result(s) after applying the iterator, in: " + (System.currentTimeMillis - start) + " ms.");
         new MorphMongoResultSet(queryResultIter)
     }
 

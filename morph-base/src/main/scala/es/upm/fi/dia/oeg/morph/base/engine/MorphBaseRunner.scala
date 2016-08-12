@@ -56,7 +56,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
      */
     def runQuery(query: Query, contentType: String): Option[File] = {
         if (logger.isInfoEnabled) {
-            logger.info("=================================================================================================================")
+            logger.info("****************************************************************************************************************")
             logger.info("Running query translation. Content-type: " + contentType)
         }
         val startTime = System.currentTimeMillis()

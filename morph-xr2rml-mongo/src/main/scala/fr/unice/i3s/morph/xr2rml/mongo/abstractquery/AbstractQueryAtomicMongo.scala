@@ -492,7 +492,7 @@ class AbstractQueryAtomicMongo(
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
             val iter: Option[String] = tm.logicalSource.docIterator
-            logger.info("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
+            if (logger.isDebugEnabled()) logger.debug("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
 
             // --- Execute the queries of the tagetQuery of this abstract atomic query
             // We want to produce 'limit' solutions, but we don't know exactly how many documents we must retrieve.
@@ -506,7 +506,7 @@ class AbstractQueryAtomicMongo(
                 val lim = if (limit.isDefined) Some(limit.get - mongoRsltSet.size) else None
                 val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
                 if (executedQueries.contains(queryMapId)) {
-                    logger.info("Returning query results from cache, queryId: " + queryMapId)
+                    if (logger.isDebugEnabled()) logger.debug("Returning query results from cache, queryId: " + queryMapId)
                     mongoRsltSet ++= executedQueries(queryMapId)
                 } else {
                     val res = dataSourceReader.executeQueryAndIterator(query, iter, lim).asInstanceOf[MorphMongoResultSet].resultSet
@@ -516,7 +516,7 @@ class AbstractQueryAtomicMongo(
                 }
             }
             var end = System.currentTimeMillis()
-            logger.info("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
+            if (logger.isDebugEnabled()) logger.debug("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
 
             // ----------------------------------------------------------------
             // --- Main loop: iterate and process each result document of the result set
@@ -579,7 +579,7 @@ class AbstractQueryAtomicMongo(
             })
 
             end = System.currentTimeMillis()
-            logger.info("Atomic query generated " + terms.size + " RDF triples in " + (end - start) + "ms.")
+            logger.info("Atomic query generated " + terms.size + " RDF triples in " + (end - start) + " ms.")
             terms.toSet
         })
         resultTriplesSet

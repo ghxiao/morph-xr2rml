@@ -126,7 +126,10 @@ class AbstractQueryUnion(
                             // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
                             membersV = membersV.slice(0, i) ++ List(opt.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
                             continue = false
-                        }
+                            if (logger.isDebugEnabled) logger.debug("Self-unon eliminated between queries " + i + " and " + j)
+                        } else if (logger.isDebugEnabled)
+                            logger.debug("No self-union elimination between queries " + i + " and " + j)
+
                     }
                 } // end for j
             } // end for i

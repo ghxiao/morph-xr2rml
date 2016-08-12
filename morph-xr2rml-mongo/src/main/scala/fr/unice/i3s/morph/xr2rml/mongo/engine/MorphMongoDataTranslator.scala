@@ -224,7 +224,7 @@ class MorphMongoDataTranslator(val fact: IMorphFactory) extends MorphBaseDataTra
             factory.getMaterializer.materializeQuad(this.createRDFNode(triple.subject), this.createRDFNode(triple.predicate), this.createRDFNode(triple.objct), null)
 
         if (logger.isDebugEnabled) logger.debug("Materialized " + listTriples.size + " triples.")
-        logger.info("Duration of query execution and generation of triples = " + (System.currentTimeMillis - start) + "ms.");
+        logger.warn("Duration of query execution and generation of triples = " + (System.currentTimeMillis - start) + " ms.");
     }
 
     /**

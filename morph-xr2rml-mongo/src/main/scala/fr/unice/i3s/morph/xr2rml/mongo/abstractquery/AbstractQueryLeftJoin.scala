@@ -38,7 +38,7 @@ class AbstractQueryLeftJoin(
 
     override def toString = {
         "[" + left.toString + "\n" +
-            "] LEFt JOIN [\n" +
+            "] LEFT JOIN [\n" +
             right.toString + "\n" +
             "] ON " + getSharedVariables + limitStr
     }
@@ -104,6 +104,8 @@ class AbstractQueryLeftJoin(
                 if (logger.isDebugEnabled)
                     if (rightAtom != right)
                         logger.debug("Propagated condition of from left to right query")
+                    else
+                        logger.debug("No condition propagation from left to right query")
 
                 val res = new AbstractQueryLeftJoin(leftOpt, rightAtom, limit)
                 if (logger.isDebugEnabled) logger.debug("\n------------------ Query optimized into ------------------\n" + res)
@@ -169,7 +171,7 @@ class AbstractQueryLeftJoin(
 
                 for (leftTriple <- leftTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
                     for (rightTriple <- rightTripleX if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
-                    val leftTerm = leftTriple.getTermForVariable(x)
+                        val leftTerm = leftTriple.getTermForVariable(x)
                         val rightTerm = rightTriple.getTermForVariable(x)
                         if (leftTerm.get != rightTerm.get) {
                             // If there is no match, keep only the left MorphBaseResultRdfTerms instances 
