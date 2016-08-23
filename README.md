@@ -10,7 +10,7 @@ Two running modes are available:
 Morph-xR2RML was developed by the [I3S laboratory](http://www.i3s.unice.fr/) as an extension of the [Morph-RDB project](https://github.com/oeg-upm/morph-rdb) which is an implementation of R2RML. It is made available under the Apache 2.0 License.
 
 #### SPARQL-to-SQL
-The SPARQL-to-SQL rewriting is an adaptation of the former Morph-RDB implementation, it supports SELECT queries.
+The SPARQL-to-SQL rewriting is an adaptation of the former Morph-RDB implementation, it supports SPARQL SELECT and DESCRIBE queries.
 
 #### SPARQL-to-MongoDB
 The SPARQL-to-MongoDB rewriting is a fully new component, it supports SELECT, CONSTRUCT and DESCRIBE queries.
@@ -19,17 +19,22 @@ To the best of our knowledge, Morph-xR2RML is the **first tool to support the qu
 
 
 ## Publications
-[1] F. Michel, C. Faron-Zucker, and J. Montagnat. A Generic Mapping-Based Query Translation from SPARQL to Various Target Database Query Languages.
-In Proceedings of the 12th International Confenrence on Web Information Systems and Technologies (WEBIST 2016), Roma, Italy, 2016.
+[1] F. Michel, L. Djimenou, C. Faron-Zucker, and J. Montagnat. Translation of Relational and Non-Relational Databases into RDF with xR2RML.
+In Proceedings of the *11th International Confenrence on Web Information Systems and Technologies (WEBIST 2015)*, Lisbon, Portugal, 2015.
 
-[2] F. Michel, C. Faron-Zucker, and J. Montagnat. Mapping-based SPARQL access to a MongoDB database. Technical report, CNRS, 2016. 
+[2] F. Michel, L. Djimenou, C. Faron-Zucker, and J. Montagnat. xR2RML: Relational and Non-Relational Databases to RDF Mapping Language.
+Research report, CNRS, 2015. https://hal.archives-ouvertes.fr/hal-01066663
+
+[3] C. Callou, F. Michel, C. Faron-Zucker, C. Martin, J. Montagnat. Towards a Shared Reference Thesaurus for Studies on History of Zoology, Archaeozoology and Conservation Biology. In *Semantic Web For Scientific Heritage (SW4SH), Workshops of the ESWC’15 conference*.
+
+[4] F. Michel, C. Faron-Zucker, and J. Montagnat. A Generic Mapping-Based Query Translation from SPARQL to Various Target Database Query Languages.
+In Proceedings of the *12th International Confenrence on Web Information Systems and Technologies (WEBIST 2016)*, Roma, Italy, 2016.
+
+[5] F. Michel, C. Faron-Zucker, and J. Montagnat. Mapping-based SPARQL access to a MongoDB database. Research report, CNRS, 2016. 
 https://hal.archives-ouvertes.fr/hal-01245883.
 
-[3] F. Michel, L. Djimenou, C. Faron-Zucker, and J. Montagnat. Translation of Relational and Non-Relational Databases into RDF with xR2RML.
-In Proceedings of the 11th International Confenrence on Web Information Systems and Technologies (WEBIST 2015), Lisbon, Portugal, 2015.
+[6] F. Michel, C. Faron-Zucker, and J. Montagnat. A Mapping-Based Method to Query MongoDB Documents with SPARQL. In *27th International Conference on Database and Expert Systems Applications (DEXA 2016)*, 2016.
 
-[4] F. Michel, L. Djimenou, C. Faron-Zucker, and J. Montagnat. xR2RML: Relational and Non-Relational Databases to RDF Mapping Language.
-Technical report, CNRS, 2015. https://hal.archives-ouvertes.fr/hal-01066663
 
 ## Limitations
 
@@ -103,6 +108,8 @@ In directories `morph-xr2rml-dist/example_mongo` and `morph-xr2rml-dist/example_
 - `query.sparql` (in directory `example_mongo_rewriting` only) contains a SPARQL query to be executed against the test database.
 
 Edit `morph.properties` and change the database url, name, user and password with appropriate values.
+
+> _**Note about query optimization**_: the xR2RML xrr:uniqueRef notation is of major importance for query optimization as it allows for self-joins elimination. Check example in `morph-xr2rml-dist/example_taxref_rewriting`.
 
 ### Examples for MySQL
 

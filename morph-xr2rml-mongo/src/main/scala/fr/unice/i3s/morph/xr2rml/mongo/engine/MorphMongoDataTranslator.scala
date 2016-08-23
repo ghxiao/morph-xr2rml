@@ -77,6 +77,7 @@ class MorphMongoDataTranslator(val fact: IMorphFactory) extends MorphBaseDataTra
         })
 
         // Main loop: iterate and process each result document of the result set
+        var nbTriples = 0
         var i = 0;
         for (document <- childResultSet) {
             i = i + 1;
@@ -187,7 +188,7 @@ class MorphMongoDataTranslator(val fact: IMorphFactory) extends MorphBaseDataTra
                     val objNodes = objects.map(this.createRDFNode)
                     val refObjNodes = refObjects.map(this.createRDFNode)
                     val graphNodes = (subjectGraphs ++ predicateObjectGraphs).map(this.createRDFNode)
-                    factory.getMaterializer.materializeQuads(subNodes, predNodes, objNodes, refObjNodes, graphNodes)
+                    nbTriples += factory.getMaterializer.materializeQuads(subNodes, predNodes, objNodes, refObjNodes, graphNodes)
                 })
             } catch {
                 case e: MorphException => {
@@ -201,6 +202,7 @@ class MorphMongoDataTranslator(val fact: IMorphFactory) extends MorphBaseDataTra
             }
         }
         if (logger.isDebugEnabled()) logger.debug(i + " instances retrieved.");
+        if (logger.isInfoEnabled()) logger.info(nbTriples + " triples generated.")
     }
 
     /**
