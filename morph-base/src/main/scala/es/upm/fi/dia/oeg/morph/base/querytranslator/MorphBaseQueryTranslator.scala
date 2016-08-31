@@ -72,9 +72,9 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * } </code>
      *
      * 2. SPARQL query simplification: a query like this<br>
-     * <code>SELECT DISTINCT ?p WHERE { ?s ?o ?p } </code><br>
+     * <code>SELECT DISTINCT ?p WHERE { ?s ?p ?o } </code><br>
      * is transformed into the SPARQL 1.1. query:<br>
-     * <code>SELECT DISTINCT ?p WHERE { VALUES ?p { :abc :def ... } } </code><br>
+     * <code>SELECT DISTINCT ?p WHERE { VALUES ?p ( :abc :def ... ) } </code><br>
      * and the abstract query is not executed at all.
      *
      * @param sparqlQuery the SPARQL query to translate
@@ -114,8 +114,10 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
                     listUris.foreach(uri => {
                         val bgp1 = new ElementTriplesBlock()
+                        // <uri> ?p ?x
                         bgp1.addTriple(Triple.create(uri, Var.alloc("p" + idx), Var.alloc("x" + idx)))
                         val bgp2 = new ElementTriplesBlock()
+                        // ?y ?q <uri>
                         bgp2.addTriple(Triple.create(Var.alloc("y" + idx), Var.alloc("q" + idx), uri))
 
                         union.addElement(bgp1)
@@ -133,14 +135,17 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
         // --- Perform the database-specific query translation
         val opQuery = Algebra.compile(sparqlQuery)
+        
+        // Compute the bindings and translate to the Abstract Query Language
         val abstractQuery = this.translate(opQuery)
+        
         if (abstractQuery.isDefined) {
 
             /* Check if the query can be simplified if all projected variables have constant values.
              * A query like:
-             *   SELECT DISTINCT ?p WHERE { ?s ?o ?p }
+             *   SELECT DISTINCT ?p WHERE { ?s ?p ?o }
              * is transformed into:
-             *   SELECT DISTINCT ?p WHERE { VALUES ?p { :abc :def ... } }
+             *   SELECT DISTINCT ?p WHERE { VALUES ?p ( :abc :def ... ) }
              * if ?p is always bound with constant values
              */
             val opMod = allVarsProjectedAsConstantTermMaps(opQuery, abstractQuery.get)
