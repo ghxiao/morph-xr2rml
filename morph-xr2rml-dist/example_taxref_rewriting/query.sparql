@@ -8,24 +8,24 @@ prefix txn: <http://lod.taxonconcept.org/ontology/txn.owl#>
 prefix gn: <http://www.geonames.org/ontology#>
 prefix nt: <http://purl.obolibrary.org/obo/ncbitaxon#>
 prefix dwc: <http://rs.tdwg.org/dwc/terms/>
-prefix taxref: <http://inpn.mnhn.fr/taxref/8.0/>
+prefix taxref: <http://inpn.mnhn.fr/taxref/9.0/>
 prefix taxrefrk: <http://inpn.mnhn.fr/taxref/taxrank#>
 prefix taxrefhab: <http://inpn.mnhn.fr/taxref/habitat#>
 prefix taxrefbgs: <http://inpn.mnhn.fr/taxref/bioGeoStatus#>
 prefix taxrefprop: <http://inpn.mnhn.fr/taxref/properties/>
 
-#DESCRIBE <http://inpn.mnhn.fr/taxref/label/60585>
+#DESCRIBE <http://inpn.mnhn.fr/taxref/9.0/taxon/60585>
 
 SELECT *
 WHERE {
-    #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> ?p ?x .
+    #<http://inpn.mnhn.fr/taxref/9.0/taxon/60585> ?p ?x .
     
-    <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skos:broader ?u .
+    #<http://inpn.mnhn.fr/taxref/9.0/taxon/60585> skos:broader ?u .
 
     #?y skos:broader ?u .
 
-    #<http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:prefLabel ?p .
-    #OPTIONAL { <http://inpn.mnhn.fr/taxref/8.0/taxon/60585> skosxl:altLabel ?a . }
+    #<http://inpn.mnhn.fr/taxref/9.0/taxon/60585> skosxl:prefLabel ?p .
+    #OPTIONAL { <http://inpn.mnhn.fr/taxref/9.0/taxon/60585> skosxl:altLabel ?a . }
 
     ## Very big inner join but with propagation of conditions
     #?t skosxl:prefLabel <http://inpn.mnhn.fr/taxref/label/60585> .
@@ -57,4 +57,16 @@ WHERE {
     #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
     #UNION
     #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
-} LIMIT 1000
+
+    ## Self-Join elimination using unique reference, keep a union
+    { ?t taxrefprop:bioGeoStatusIn ?bgs1 .
+      ?bgs1 dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
+      ?bgs1 dwc:occurrenceStatus taxrefbgs:P .
+    }
+    UNION
+    { ?t taxrefprop:bioGeoStatusIn ?bgs2 .
+      ?bgs2 dwc:occurrenceStatus taxrefbgs:P . 
+      ?bgs2 dct:spatial <http://sws.geonames.org/3017382/> . # Métropole
+    }
+    
+} LIMIT 10

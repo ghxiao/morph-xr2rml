@@ -135,10 +135,10 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
         // --- Perform the database-specific query translation
         val opQuery = Algebra.compile(sparqlQuery)
-        
+
         // Compute the bindings and translate to the Abstract Query Language
         val abstractQuery = this.translate(opQuery)
-        
+
         if (abstractQuery.isDefined) {
 
             /* Check if the query can be simplified if all projected variables have constant values.
@@ -151,9 +151,6 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             val opMod = allVarsProjectedAsConstantTermMaps(opQuery, abstractQuery.get)
             logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
             if (opMod.isDefined) {
-                if (logger.isDebugEnabled)
-                    logger.debug("Abstract query will not be executed. SPARQL query is replaced with query: \n" + opMod.get)
-
                 val queryMod = OpAsQuery.asQuery(opMod.get)
                 if (sparqlQuery.isAskType)
                     queryMod.setQueryAskType
@@ -177,7 +174,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      * Translation of a triple pattern into an abstract query under a set of xR2RML triples maps
      *
      * @param tpBindings a SPARQL triple pattern and the triples maps bound to it
-	 * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
+     * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
@@ -442,6 +439,8 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     }
 
     /**
+     * Optimization "Constant Projection" aka. "Projection Pushing".
+     *
      * Deal with queries prototypical of schema exploration, like:<br>
      * <code>SELECT DISTINCT ?p WHERE { ?s ?o ?p } LIMIT 100</code>
      *
@@ -487,9 +486,6 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                     }
                 }
 
-                if (logger.isInfoEnabled())
-                    logger.info("All projected variables " + opProject.getVars + " are matched with a constant URI => no need to run the query")
-
                 val table = TableFactory.create(opProject.getVars)
                 opProject.getVars.foreach { x =>
                     val absProj = abstractQuery.getProjectionsForVariable(x.toString)
@@ -506,6 +502,11 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
                     val opSlice = sparqlQuery.asInstanceOf[OpSlice]
                     op = new OpSlice(op, opSlice.getStart, opSlice.getLength)
                 }
+                if (logger.isInfoEnabled()) {
+                    logger.info("Constant Projection Optimization (aka Projection Pushing): all projected variables " + opProject.getVars + " are matched with a constant URI")
+                    logger.info("SPARQL query is replaced with query: \n" + op)
+                }
+
                 return Some(op)
             }
         }
