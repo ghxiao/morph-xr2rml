@@ -376,7 +376,32 @@ class AbstractQueryAtomicMongo(
             throw new MorphException(errMsg)
         }
 
+        // --- Execute the queries of the tagetQuery of this abstract atomic query
+        // We want to produce 'limit' solutions, but we don't know exactly how many documents we must retrieve.
+        // We assume that at least one solution is generated from each document (which may not always be true, e.g. if
+        // a SPARQL FILTER filters out some triples), an approximation is to retrieve 'limit' documents 
+        // to produce at least 'limit' triples for each binding, and in turn 'limit' solutions.
+        var start = System.currentTimeMillis()
+        val iter: Option[String] = from.docIterator
+        var mongoRsltSet = List[String]()
+        for (query <- targetQuery) {
+            val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
+            if (executedQueries.contains(queryMapId)) {
+                if (logger.isDebugEnabled()) logger.debug("Returning query results from cache, queryId: " + queryMapId)
+                mongoRsltSet ++= executedQueries(queryMapId)
+            } else {
+                val res = dataSourceReader.executeQueryAndIterator(query, iter, limit).asInstanceOf[MorphMongoResultSet].resultSet
+                executedQueries = executedQueries + (queryMapId -> res)
+                // Make a UNION of all the results
+                mongoRsltSet ++= res
+            }
+        }
+
+        var end = System.currentTimeMillis()
+        if (logger.isDebugEnabled()) logger.debug("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
+
         //--- Loop on all bindings
+        start = System.currentTimeMillis()
         val resultTriplesSet: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
             val tp = tpb.tp
             val subjectAsVariable = if (tp.getSubject.isVariable) Some(tp.getSubject.toString) else None
@@ -386,41 +411,13 @@ class AbstractQueryAtomicMongo(
             val tm = tpb.bound
             val sm = tm.subjectMap;
             val pom = tm.predicateObjectMaps.head
-            val iter: Option[String] = tm.logicalSource.docIterator
             if (logger.isDebugEnabled()) logger.debug("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
-
-            // --- Execute the queries of the tagetQuery of this abstract atomic query
-            // We want to produce 'limit' solutions, but we don't know exactly how many documents we must retrieve.
-            // We assume that at least one solution is generated from each document (which may not always be true, e.g. if
-            // a SPARQL FILTER filters out some triples), an approximation is to retrieve 'limit' documents 
-            // to produce at least 'limit' triples for each binding, and in turn 'limit' solutions.
-            var start = System.currentTimeMillis()
-            var mongoRsltSet = List[String]()
-            var nbDocuments = 0
-            for (query <- targetQuery if (!limit.isDefined || (limit.isDefined && mongoRsltSet.size < limit.get))) {
-                val lim = if (limit.isDefined) Some(limit.get - mongoRsltSet.size) else None
-                val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
-                if (executedQueries.contains(queryMapId)) {
-                    if (logger.isDebugEnabled()) logger.debug("Returning query results from cache, queryId: " + queryMapId)
-                    mongoRsltSet ++= executedQueries(queryMapId)
-                } else {
-                    val res = dataSourceReader.executeQueryAndIterator(query, iter, lim).asInstanceOf[MorphMongoResultSet].resultSet
-                    executedQueries = executedQueries + (queryMapId -> res)
-                    // Make a UNION of all the results
-                    mongoRsltSet ++= res
-                }
-            }
-            var end = System.currentTimeMillis()
-            if (logger.isDebugEnabled()) logger.debug("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
 
             // ----------------------------------------------------------------
             // --- Main loop: iterate and process each result document of the result set
             // ----------------------------------------------------------------
 
-            start = System.currentTimeMillis()
-
             var terms: List[MorphBaseResultRdfTerms] = List.empty
-
             var i = 0
             terms = mongoRsltSet.flatMap(document => {
                 try {
@@ -472,11 +469,13 @@ class AbstractQueryAtomicMongo(
                     }
                 }
             })
-
-            end = System.currentTimeMillis()
-            logger.info("Atomic query generated " + terms.size + " RDF triples in " + (end - start) + " ms.")
+            logger.info("Atomic query generated " + terms.size + " RDF triples for binding " + tpb)
             terms.toSet
         })
+        
+        end = System.currentTimeMillis()
+        logger.info("Atomic query generated " + resultTriplesSet.size + " RDF triples for all binding in " + (end - start) + " ms.")
+        
         resultTriplesSet
     }
 }

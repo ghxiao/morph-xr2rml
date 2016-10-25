@@ -44,7 +44,7 @@ class MorphBaseResultRdfTerms(
         "[" + subject.toString +
             { if (subjectAsVariable.isDefined) " AS " + subjectAsVariable.get else "" } + ",\n " +
             predicate.toString +
-            { if (predicateAsVariable.isDefined) " AS " + predicateAsVariable.get else "" } + ",\n" +
+            { if (predicateAsVariable.isDefined) " AS " + predicateAsVariable.get else "" } + ",\n " +
             objct.toString +
             { if (objectAsVariable.isDefined) " AS " + objectAsVariable.get else "" } + "]"
     }

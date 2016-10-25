@@ -129,6 +129,7 @@ class AbstractQueryLeftJoin(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
+        val start = System.currentTimeMillis
         if (logger.isInfoEnabled) {
             logger.info("===============================================================================");
             logger.info("Generating RDF terms from the left join query:\n" + this.toStringConcrete)
@@ -205,7 +206,7 @@ class AbstractQueryLeftJoin(
                 } else
                     nonJoinedLeft ++ nonJoinedRight
 
-            logger.info("Left join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
+            logger.info("Left join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable, in " + (System.currentTimeMillis - start) + " ms.")
             res ++ resNonJoined
         }
     }

@@ -40,11 +40,11 @@ class AbstractQueryUnion(
     }
 
     override def toString = {
-        "[" + members.mkString("\n] UNION [\n") + "\n]"
+        "[" + members.mkString("\n] UNION [\n") + "\n]" + limitStr
     }
 
     override def toStringConcrete: String = {
-        "[" + members.map(q => q.toStringConcrete).mkString("\n] UNION [\n") + "\n]"
+        "[" + members.map(q => q.toStringConcrete).mkString("\n] UNION [\n") + "\n]" + limitStr
     }
 
     /**
@@ -126,10 +126,9 @@ class AbstractQueryUnion(
                             // (0, 1, 2, 3, 4) =>   0         ,  merged(1,3),  2           ,  4
                             membersV = membersV.slice(0, i) ++ List(opt.get) ++ membersV.slice(i + 1, j) ++ membersV.slice(j + 1, membersV.size)
                             continue = false
-                            if (logger.isDebugEnabled) logger.debug("Self-unon eliminated between queries " + i + " and " + j)
+                            if (logger.isDebugEnabled) logger.debug("Self-union eliminated between queries " + i + " and " + j)
                         } else if (logger.isDebugEnabled)
                             logger.debug("No self-union elimination between queries " + i + " and " + j)
-
                     }
                 } // end for j
             } // end for i
@@ -166,16 +165,24 @@ class AbstractQueryUnion(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
+        val start = System.currentTimeMillis
         if (logger.isInfoEnabled) {
             logger.info("===============================================================================");
-            logger.info("Generating RDF triples from union query below:\n" + this.toStringConcrete);
+            logger.info("Generating RDF triples from union query:\n" + this.toStringConcrete);
         }
 
         var res = Set[MorphBaseResultRdfTerms]()
 
         for (m <- members if (!limit.isDefined || (limit.isDefined && res.size < limit.get))) {
+
+            // If the member is not an atomic query then there are triples of different types in the result. So we cannot just
+            // take a subset of them, as typically a join would no longer return anything. The limit is taken care of when processing that sub-query.
+            // Conversely, if it is an atomic query, then we can limit the number of triples but only if it is bound to only
+            // one triples map. Otherwise, we are back to the previous case: several types of triples so we cannot take a subset.
+            val considerLimit = m.isInstanceOf[AbstractQueryAtomicMongo] && m.tpBindings.size == 1
+            
             val resultsM = m.generateRdfTerms(dataSourceReader, dataTranslator)
-            if (limit.isDefined) {
+            if (considerLimit && limit.isDefined) {
                 if (res.size < limit.get) {
                     val lim = limit.get - res.size
                     res = res ++ resultsM.take(lim.toInt)
@@ -184,7 +191,7 @@ class AbstractQueryUnion(
                 res = res ++ resultsM
         }
 
-        logger.info("Union computed " + res.size + " triples.")
+        logger.info("Union computed " + res.size + " triples, in " + (System.currentTimeMillis - start) + " ms.")
         res
     }
 }

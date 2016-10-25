@@ -234,9 +234,14 @@ class AbstractQueryInnerJoin(
             else members.tail.head
         val leftTriples = members.head.generateRdfTerms(dataSourceReader, dataTranslator)
         val rightTriples = subq.generateRdfTerms(dataSourceReader, dataTranslator)
-        var nonJoinedLeft = leftTriples
-        var nonJoinedRight = rightTriples
 
+        // The limit really works only when we have 2 atomic queries. Otherwise, we cannot limit the triples returned because
+        // we don't know if it will impact the generated triples or not.
+        if (limit.isDefined)
+            if (!(members.head.isInstanceOf[AbstractQueryAtomicMongo] && subq.isInstanceOf[AbstractQueryAtomicMongo]))
+                limit = None
+
+        val start = System.currentTimeMillis
         if (logger.isDebugEnabled)
             logger.debug("Inner joining " + leftTriples.size + " left triples with " + rightTriples.size + " right triples.")
         if (logger.isTraceEnabled) {
@@ -246,19 +251,13 @@ class AbstractQueryInnerJoin(
 
         val sharedVars = AbstractQuery.getSharedVariables(members.head, subq)
         if (sharedVars.isEmpty) {
-            // No filtering if case there is no common variable
-            val res =
-                if (limit.isDefined) {
-                    val lim = limit.get
-                    val fromLeft = leftTriples.take(lim.toInt)
-                    val fromRight = if (fromLeft.size < lim) rightTriples.take(lim.toInt - fromLeft.size) else Set.empty
-                    fromLeft ++ fromRight
-                } else {
-                    leftTriples ++ rightTriples
-                }
+            val res = leftTriples ++ rightTriples
             logger.info("Inner join on empty set of variables computed " + res.size + " triples.")
             res
         } else {
+            var nonJoinedLeft: Set[MorphBaseResultRdfTerms] = Set.empty
+            var nonJoinedRight: Set[MorphBaseResultRdfTerms] = Set.empty
+
             // For each variable x shared by both graph patterns, select the left and right triples
             // in which at least one term is bound to x, then join the documents on these terms.
             for (x <- sharedVars if (!limit.isDefined || (limit.isDefined && joinResult.size < limit.get))) {
@@ -281,24 +280,14 @@ class AbstractQueryInnerJoin(
                 }
 
                 // All left and right triples that do not contain any of the shared variables are kept separately
-                nonJoinedLeft = nonJoinedLeft.filter(!_.hasVariable(x))
-                nonJoinedRight = nonJoinedRight.filter(!_.hasVariable(x))
+                nonJoinedLeft ++= nonJoinedLeft.filter(!_.hasVariable(x))
+                nonJoinedRight ++= nonJoinedRight.filter(!_.hasVariable(x))
             }
 
             val res = joinResult.values.toSet
-            val resNonJoined =
-                if (limit.isDefined) {
-                    if (joinResult.size < limit.get) {
-                        val lim = limit.get - joinResult.size // how many more triples to get
-                        val fromLeft = nonJoinedLeft.take(lim.toInt)
-                        val fromRight = if (fromLeft.size < lim) nonJoinedRight.take(lim.toInt - fromLeft.size) else Set.empty
-                        fromLeft ++ fromRight
-                    } else
-                        Set.empty
-                } else
-                    nonJoinedLeft ++ nonJoinedRight
+            val resNonJoined = nonJoinedLeft ++ nonJoinedRight
 
-            logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable.")
+            logger.info("Inner join computed " + res.size + " triples + " + resNonJoined.size + " triples with no shared variable, in " + (System.currentTimeMillis - start) + " ms.")
             res ++ resNonJoined
         }
     }

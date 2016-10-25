@@ -160,6 +160,7 @@ class AbstractQueryInnerJoinRef(
         dataSourceReader: MorphBaseDataSourceReader,
         dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
 
+        val start = System.currentTimeMillis
         val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
 
         if (logger.isInfoEnabled) {
@@ -324,7 +325,7 @@ class AbstractQueryInnerJoinRef(
             }
             triples.flatten
         })
-        logger.info("Inner join Ref computed " + total.size + " triples.")
+        logger.info("Inner join Ref computed " + total.size + " triples, in " + (System.currentTimeMillis - start) + " ms.")
         total
     }
 }

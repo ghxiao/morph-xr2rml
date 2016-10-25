@@ -1,5 +1,5 @@
-# 150 Triples Maps, 48 for taxonomic rank, 12 for habitat, 75 for biogeographical statuses in 15 territories
-# 80 Triples maps with subject map "http://inpn.mnhn.fr/taxref/9.0/taxon/{$.codeTaxon}".
+# 151 Triples Maps, 48 for taxonomic rank, 12 for habitat, 75 for biogeographical statuses in 15 territories
+# 81 Triples maps with subject map "http://inpn.mnhn.fr/taxref/9.0/taxon/{$.codeTaxon}".
 
 @prefix xrr: <http://i3s.unice.fr/xr2rml#> .
 @prefix rr:  <http://www.w3.org/ns/r2rml#> .
@@ -49,7 +49,15 @@
         rr:objectMap [ rr:constant skos:Concept; rr:termType rr:IRI ]
     ].
 
-<#TM_Taxon_Broader>
+<#TM_Taxon_InScheme>
+    xrr:logicalSource <#LS_Taxon>;
+    rr:subjectMap <#SM_Taxon>;
+    rr:predicateObjectMap [
+        rr:predicate skos:inScheme ;
+        rr:objectMap [ rr:constant taxref:Taxref; rr:termType rr:IRI ]
+    ].
+
+    <#TM_Taxon_Broader>
     xrr:logicalSource <#LS_Taxon>;
     rr:subjectMap <#SM_Taxon>;
     rr:predicateObjectMap [

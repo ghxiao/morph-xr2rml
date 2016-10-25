@@ -138,7 +138,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     } else
                         Some(this.transTPm(tpBindings.get, limit))
                 } else {
-                    // Make an INER JOIN between the first triple pattern and the rest of the triple patterns
+                    // Make an INER JOIN between the first triple pattern and the rest of the graph patterns
                     val tpBindingsLeft = this.getTpBindings(bindings, triples.head)
                     if (!tpBindingsLeft.isDefined) {
                         logger.warn("No binding defined for triple pattern " + triples.head.toString)
@@ -146,12 +146,14 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     } else {
                         // If there is a limit, it applies to the top-level inner join query, but not to its left and right members:
                         // we need all triples of all sub-queries to perform the join
-                        val left = this.transTPm(tpBindingsLeft.get, None)
                         val right = this.translateSparqlQueryToAbstract(bindings, new OpBGP(BasicPattern.wrap(triples.tail)), None)
-                        if (right.isDefined)
+                        if (right.isDefined) {
+                            val left = this.transTPm(tpBindingsLeft.get, None)
                             Some(new AbstractQueryInnerJoin(List(left, right.get), limit))
-                        else
+                        } else {
+                            val left = this.transTPm(tpBindingsLeft.get, limit)
                             Some(left)
+                        }
                     }
                 }
             }

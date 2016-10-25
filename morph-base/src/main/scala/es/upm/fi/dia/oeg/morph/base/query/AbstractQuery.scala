@@ -18,7 +18,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
  * This member is not empty for atomic queries only. Initially each atomic query should have exactly a binding.
  * After the abstract query optimization (e.g. self-join elimination) there may be more than one binding.
  *
- * @param limit the value of the LIMIT keyword in the SPARQL query
+ * @param limit the value of the LIMIT keyword in the SPARQL query: this is a number of solutions, not a number of triples.
  *
  * @author Franck Michel, I3S laboratory
  */
