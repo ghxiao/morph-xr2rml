@@ -82,7 +82,7 @@ class CompareMongoJongo {
         // Warm-up execution
         execMongo(mongoQuery, false)
         execJongo(jongoQuery, false)
-        
+
         // Execution
         val measures = for (iter <- 1 to nbIterations) yield {
             val mongo = execMongo(mongoQuery, true)
@@ -177,7 +177,7 @@ class CompareMongoJongo {
 
         runMeasure(qFilter, qStr, nbIterations)
     }
-    
+
     @Test def testQ5() {
         println("------------- testQ5 - Metropole 128018 results -------------")
         val nbIterations = 10
@@ -207,10 +207,50 @@ class CompareMongoJongo {
         runMeasure(qFilter, qStr, nbIterations)
     }
 
+    @Test def testQ10() {
+        println("------------- testQ10 - Aggregate -------------")
+
+        val start = System.currentTimeMillis
+
+        var results = jongoCtx.getCollection(collecName).aggregate("""
+                {$project: {_id: false, 'diffRefTax': {$ne: ['$codeReference', '$codeTaxon']},codeReference: true, codeTaxon: true, codeParent:true, rang:true, nomComplet:true, nomCompletHtml:true, libelleNom:true, libelleAuteur:true, nomVernaculaire:true, nomVernaculaireAnglais:true, nomValide:true, genre:true, famille:true, ordre:true, classe:true, phylum:true, regne:true, genreVernaculaire:true, familleVernaculaire:true, ordreVernaculaire:true, classeVernaculaire:true, phylumVernaculaire:true, regneVernaculaire:true, url:true, habitat:8, fr:true, gf:true, mar:true, gua:true, sm:true, sb:true, spm:true, may:true, epa:true, reu:true, taaf:true, pf:true, nc:true, wf:true, cli:true}}""")
+            .and("""{$match: {$and: [{diffRefTax: true}, {codeTaxon: {$eq: "60587"}}, {codeReference: {$exists: true, $ne: null}}]}}""")
+            .and("""{$lookup: {"from": "taxrefv9", "localField": "codeReference", "foreignField": "codeReference", as: "joined"}}""")
+            .and("""{$unwind: "$joined"}""")
+            .and("""{$match: {"joined.codeReference": {$exists: true, $ne: null}}}""")
+            .and("""{$project: {"codeTaxonR": "$joined.codeTaxon", "diff": {$ne: ["$codeTaxon", "$joined.codeTaxon"]},
+                codeReference: true, codeTaxon: true, codeParent:true, rang:true, nomComplet:true, nomCompletHtml:true, libelleNom:true, libelleAuteur:true, nomVernaculaire:true, nomVernaculaireAnglais:true, nomValide:true, genre:true, famille:true, ordre:true, classe:true, phylum:true, regne:true, genreVernaculaire:true, familleVernaculaire:true, ordreVernaculaire:true, classeVernaculaire:true, phylumVernaculaire:true, regneVernaculaire:true, url:true, habitat:8, fr:true, gf:true, mar:true, gua:true, sm:true, sb:true, spm:true, may:true, epa:true, reu:true, taaf:true, pf:true, nc:true, wf:true, cli:true
+                }}""")
+            .and("""{$match: {"diff": true}}""")
+            .map[String](jongoHandler)
+
+        println(results.toList)
+
+        val end = System.currentTimeMillis
+        val time = end - start
+        println("Process: " + time + "ms")
+
+    }
+
+    @Test def testQ11() {
+        println("------------- testQ11 -------------")
+        val nbIterations = 3
+
+        // Equivalent queries as string for Jongo and Java filter for Mongo
+        val qStr = "{$where:'this.codeTaxon!=this.codeReference', 'codeTaxon': {$exists: true, $ne: null}, 'codeReference': {$exists: true, $ne: null}}"
+        val qFilter = And(
+            where("this.codeTaxon!=this.codeReference"),
+            exists("codeReference", true), Ne("codeReference", null),
+            exists("codeTaxon", true), Ne("codeTaxon", null)
+        )
+
+        runMeasure(qFilter, qStr, nbIterations)
+    }
+
     /**
      * Polynésie : <http://sws.geonames.org/4030656/> - 38773 results
      * Martinique : 3570311 - 24943 results
      * Guyane : 3381670 - 74114 results
-     * 
+     *
      */
 }
