@@ -884,7 +884,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
         // Find predicate-object maps with that specific predicate
         val pms = cm.getPropertyMappings(predicateURI);
         if (pms == null || pms.size() == 0 && !RDF.`type`.getURI().equalsIgnoreCase(predicateURI)) {
-            val errorMessage = "Candidate selection error. Triples map + " + cm.id + " does not have mappings for predicate " + predicateURI;
+            val errorMessage = "Candidate selection error. Triples map + " + cm.name + " does not have mappings for predicate " + predicateURI;
             logger.error(errorMessage);
             throw new MorphException(errorMessage);
         }

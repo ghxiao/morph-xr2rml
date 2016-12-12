@@ -46,7 +46,7 @@ class R2RMLMappingDocument(
         val cms = this.triplesMaps.toList;
         val resultAux = cms.map(cm => {
             val tm = cm.asInstanceOf[R2RMLTriplesMap];
-            val poms = tm.getPropertyMappings().toList;
+            val poms = tm.predicateObjectMaps.toList;
             val mappedPredicateNames = poms.map(pom => { pom.getMappedPredicateNames().toList });
             val flatMappedPredicateNames = mappedPredicateNames.flatten;
             flatMappedPredicateNames;

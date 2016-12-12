@@ -204,7 +204,7 @@ class MorphRDBAlphaGenerator(md: RDBR2RMLMappingDocument, baseUnfolder: MorphBas
                     alphaResultUnionList = alphaResultUnionList ::: List(alphaTP);
                 }
             } else if (tpPredicate.isVariable()) {
-                val pms = cm.getPropertyMappings();
+                val pms = cm.predicateObjectMaps;
                 val alphaTP = new MorphAlphaResultUnion();
                 for (pm <- pms) {
                     val tpPredicateURI = pm.getMappedPredicateName(0);

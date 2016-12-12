@@ -51,7 +51,7 @@ abstract class MorphBaseDataTranslator(val factory: IMorphFactory) {
         for (tm <- tms) {
             if (logger.isInfoEnabled) {
                 logger.info("===============================================================================");
-                logger.info("Starting data materialization of triples map " + tm.id);
+                logger.info("Starting data materialization of triples map " + tm.name);
             }
             try {
                 this.generateRDFTriples(tm)

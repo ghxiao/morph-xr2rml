@@ -25,7 +25,7 @@ class AbstractConditionOr(
     }
 
     override def hashCode(): Int = {
-        this.getClass.hashCode + this.members.map(_.hashCode).reduceLeft((x, y) => x + y)
+        this.toString.hashCode
     }
 }
 

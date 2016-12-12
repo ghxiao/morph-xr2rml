@@ -13,19 +13,25 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 
 class R2RMLTriplesMap(
-        val resource: Resource, 
+        val resource: Resource,
         val logicalSource: xR2RMLLogicalSource,
         val refFormulation: String,
         val subjectMap: R2RMLSubjectMap,
         val predicateObjectMaps: Set[R2RMLPredicateObjectMap]) {
 
-    val id: String = resource.getLocalName
-
-    val name: String = resource.getLocalName()
+    val name: String = resource.getLocalName
 
     val logger = Logger.getLogger(this.getClass());
 
-    override def toString(): String = { return this.name }
+    override def equals(c: Any): Boolean = {
+        c.isInstanceOf[R2RMLTriplesMap] && this.name == c.asInstanceOf[R2RMLTriplesMap].name
+    }
+
+    override def hashCode(): Int = {
+        (this.getClass.toString + this.name).hashCode
+    }
+
+    override def toString(): String = { this.name }
 
     def getConceptName(): String = {
         var result: String = null;
@@ -51,10 +57,6 @@ class R2RMLTriplesMap(
         })
 
         result;
-    }
-
-    def getPropertyMappings(): Iterable[R2RMLPredicateObjectMap] = {
-        this.predicateObjectMaps
     }
 
     def isPossibleInstance(uri: String): Boolean = {

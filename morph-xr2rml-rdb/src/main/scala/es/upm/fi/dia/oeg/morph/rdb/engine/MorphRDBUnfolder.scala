@@ -367,9 +367,9 @@ class MorphRDBUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(factory
         val triplesMap = cm.asInstanceOf[R2RMLTriplesMap]
         logger.debug("Unfolding triples map " + triplesMap.toString)
         val logicalTable = triplesMap.logicalSource.asInstanceOf[xR2RMLLogicalSource];
-        val resultAux = this.unfoldTriplesMap(triplesMap.id, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
+        val resultAux = this.unfoldTriplesMap(triplesMap.name, logicalTable, triplesMap.subjectMap, triplesMap.predicateObjectMaps);
 
-        logger.info("Query for triples map " + cm.id + ": " + resultAux.print(true).replaceAll("\n", " "))
+        logger.info("Query for triples map " + cm.name + ": " + resultAux.print(true).replaceAll("\n", " "))
 
         new GenericQuery(Constants.DatabaseType.Relational, resultAux, logicalTable.docIterator)
     }

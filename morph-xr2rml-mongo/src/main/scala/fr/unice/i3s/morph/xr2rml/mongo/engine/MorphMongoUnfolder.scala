@@ -47,7 +47,7 @@ class MorphMongoUnfolder(factory: IMorphFactory) extends MorphBaseUnfolder(facto
         }
 
         val mongoQuery = MongoDBQuery.parseQueryString(logicalSrcQuery, false)
-        logger.info("Query for triples map " + triplesMap.id + ": " + mongoQuery.toString)
+        logger.info("Query for triples map " + triplesMap.name + ": " + mongoQuery.toString)
         new GenericQuery(Constants.DatabaseType.MongoDB, mongoQuery, logicalSrc.docIterator)
     }
 
