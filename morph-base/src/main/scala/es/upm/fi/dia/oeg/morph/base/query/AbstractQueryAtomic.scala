@@ -55,7 +55,9 @@ abstract class AbstractQueryAtomic(
     }
 
     override def hashCode(): Int = {
-        this.toString.hashCode
+        this.from.hashCode +
+            this.project.map { x => x.hashCode }.sum +
+            this.where.map { x => x.hashCode }.sum + lim.hashCode
     }
 
     override def toString = {
