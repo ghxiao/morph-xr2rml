@@ -8,6 +8,7 @@ import es.upm.fi.dia.oeg.morph.base.MorphBaseResultRdfTerms
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 
 /**
  * This class is used as a simple encapsulation of an SQL query in the RDB case, because the original SPARQL-to-SQL query
@@ -16,7 +17,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
  * 
  * @author Franck Michel, I3S laboratory
  */
-class AbstractQuerySql extends AbstractQuery(Set.empty, None) {
+class AbstractQuerySql extends AbstractQuery(new TpBindings, None) {
 
     override def toStringConcrete: String = {
         this.targetQuery.toString
@@ -60,7 +61,7 @@ class AbstractQuerySql extends AbstractQuery(Set.empty, None) {
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
         throw new MorphException("Not supported")
     }
 

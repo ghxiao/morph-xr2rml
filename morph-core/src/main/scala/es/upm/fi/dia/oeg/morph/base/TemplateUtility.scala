@@ -16,7 +16,7 @@ import es.upm.fi.dia.oeg.morph.base.path.MixedSyntaxPath
 
 object TemplateUtility {
 
-    val logger = Logger.getLogger(this.getClass().getName())
+    val logger = Logger.getLogger("es.upm.fi.dia.oeg.morph.base.TemplateUtility")
 
     val TemplatePattern = Constants.R2RML_TEMPLATE_PATTERN.r
     val TemplatePatternCapGrp = Constants.R2RML_TEMPLATE_PATTERN_WITH_CAPTURING_GRP.r

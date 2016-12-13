@@ -71,7 +71,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTransTPResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBinding
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TriplePatternPredicateBounder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphMappingInferrer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.engine.MorphQueryRewriter
@@ -120,7 +120,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
      * the query translation method is still the one defined in Morph-RDB, it has not been upgrade
      * to support the abstract query mechanism used in the MongoDB case.
      */
-    override def transTPm(tpBindingds: TPBindings, limit: Option[Long]): AbstractQuery = {
+    override def transTPm(tpBindingds: TpBinding, limit: Option[Long]): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 
@@ -826,7 +826,7 @@ class MorphRDBQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTran
                 val boundedTriplePatterns = tpBounder.expandUnboundedPredicateTriplePattern(tp, triplesMapResource);
                 logger.debug("boundedTriplePatterns = " + boundedTriplePatterns);
 
-                val pms = cm.getPropertyMappings();
+                val pms = cm.predicateObjectMaps;
                 if (boundedTriplePatterns.size() != pms.size()) {
                     logger.debug("boundedTriplePatterns.size() != pms.size()!");
                 }

@@ -13,9 +13,10 @@ import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBinding
 
 /**
  * @author Franck Michel, I3S laboratory
@@ -25,14 +26,14 @@ class AbstractQueryTest {
 
     val res = ResourceFactory.createResource("http://toto#MyTriplesMap")
     val tm = new R2RMLTriplesMap(res, null, null, null, null)
-    
+
     val tp1 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
     val tp1bis = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value"))
     val tp2 = Triple.create(NodeFactory.createVariable("x"), NodeFactory.createURI("http://tutu"), NodeFactory.createLiteral("value2"))
 
-    val tpb1 = Set(new TPBinding(tp1, tm))
-    val tpb1bis = Set(new TPBinding(tp1bis, tm))
-    val tpb2 = Set(new TPBinding(tp2, tm))
+    val tpb1 = TpBindings(tp1, tm)
+    val tpb1bis = TpBindings(tp1bis, tm)
+    val tpb2 = TpBindings(tp2, tm)
 
     val projx1 = new AbstractQueryProjection(Set("ref1"), Some("?x"))
     val projx1bis = new AbstractQueryProjection(Set("ref1"), Some("?x"))
@@ -55,23 +56,12 @@ class AbstractQueryTest {
         val ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set.empty)
         var ls1bis = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set.empty)
 
-        // Same From, same projection of ?x, same Where
+        // Same From, same projection of ?x, same Where, but not unique reference
         q1 = new AbstractQueryAtomicMongo(tpb1, ls1, Set(projx1), Set(cond1), None)
         q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis), Set(cond1bis), None)
 
         q = q1.mergeForInnerJoin(q2)
-        assertTrue(q.isDefined)
-        println(q.get)
-        assertEquals(Set(new AbstractConditionEquals("ref1", "value1")), q.get.where)
-        assertEquals(2, q.get.tpBindings.size)
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
-
-        // Same From with '' and '{}', same projection of ?x, same Where
-        ls1bis = new xR2RMLQuery("db.collection.find({})", "JSONPath", None, Set.empty)
-        q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis), Set(cond1bis), None)
-        q = q1.mergeForInnerJoin(q2)
-        assertTrue(q.isDefined)
+        assertFalse(q.isDefined)
     }
 
     @Test def test_mergeAbstractAtmoicQuery_noUniq2() {
@@ -106,19 +96,6 @@ class AbstractQueryTest {
         val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
         val ls1bis = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
 
-        // Same From, same projection of ?x, same projection of ?y as ?x, same Where
-        q1 = new AbstractQueryAtomicMongo(tpb1, ls1, Set(projx1), Set(cond1), None)
-        q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis, projy1_as_x1), Set(cond1bis), None)
-
-        q = q1.mergeForInnerJoin(q2)
-        assertTrue(q.isDefined)
-        println(q.get)
-        assertEquals("db.collection.find({query1})", q.get.from.asInstanceOf[xR2RMLQuery].query)
-        assertEquals(Set(new AbstractConditionEquals("ref1", "value1")), q.get.where)
-        assertEquals(2, q.get.tpBindings.size)
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
-
         // Same From, same projection of ?x, ?y as other reference, same Where
         q1 = new AbstractQueryAtomicMongo(tpb1, ls1, Set(projx1), Set(cond1), None)
         q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis, projy2), Set(cond1bis), None)
@@ -135,22 +112,34 @@ class AbstractQueryTest {
     @Test def test_mergeAbstractAtmoicQuery_Uniq1() {
         println("------ test_mergeAbstractAtmoicQuery_Uniq1")
 
-        val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
-        val ls1bis = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
+        // Same From with '' and '{}', same projection of ?x, same Where
+        var ls1 = new xR2RMLQuery("db.collection.find()", "JSONPath", None, Set("ref1"))
+        var ls1bis = new xR2RMLQuery("db.collection.find({})", "JSONPath", None, Set("ref1"))
+        q1 = new AbstractQueryAtomicMongo(tpb1, ls1, Set(projx1), Set(cond1), None)
+        q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis), Set(cond1bis), None)
+        q = q1.mergeForInnerJoin(q2)
+        assertTrue(q.isDefined)
 
         // Same From, same projection of ?x, same Where on ?x
+        ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
+        ls1bis = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set("ref1"))
         q1 = new AbstractQueryAtomicMongo(tpb1, ls1, Set(projx1), Set(cond1), None)
         q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis), Set(cond1bis), None)
 
         q = q1.mergeForInnerJoin(q2)
         assertTrue(q.isDefined)
+        println(q1)
+        println(q2)
         println(q.get)
         assertEquals(q.get, q1)
+        println("----------------------------------------------")
 
         // Same From, same projection of ?x, ?y as other reference, same Where on ?x
         q1 = new AbstractQueryAtomicMongo(tpb1, ls1, Set(projx1), Set(cond1), None)
         q2 = new AbstractQueryAtomicMongo(tpb2, ls1bis, Set(projx1bis, projy2), Set(cond1bis, cond3), None)
         q = q1.mergeForInnerJoin(q2)
+        println(q1)
+        println(q2)
         println(q.get)
 
         assertTrue(q.isDefined)
@@ -162,8 +151,8 @@ class AbstractQueryTest {
         assertTrue(q.get.where.contains(new AbstractConditionEquals("ref1", "value1")))
         assertTrue(q.get.where.contains(new AbstractConditionEquals("ref3", "value3")))
         assertEquals(2, q.get.tpBindings.size)
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
+        assertEquals(q.get.tpBindings.get(tp1).get, TpBinding(tp1, tm))
+        assertEquals(q.get.tpBindings.get(tp2).get, TpBinding(tp2, tm))
     }
 
     @Test def test_mergeAbstractAtmoicQuery_Uniq2() {
@@ -187,8 +176,8 @@ class AbstractQueryTest {
         assertTrue(q.get.where.contains(new AbstractConditionEquals("ref1", "value1")))
         assertTrue(q.get.where.contains(new AbstractConditionEquals("ref3", "value3")))
         assertEquals(2, q.get.tpBindings.size)
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp1, tm)))
-        assertTrue(q.get.tpBindings.contains(new TPBinding(tp2, tm)))
+        assertEquals(q.get.tpBindings.get(tp1).get, TpBinding(tp1, tm))
+        assertEquals(q.get.tpBindings.get(tp2).get, TpBinding(tp2, tm))
     }
 
     /**
@@ -289,8 +278,8 @@ class AbstractQueryTest {
         val ls1 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
         var ls2 = new xR2RMLQuery("db.collection.find({query1})", "JSONPath", None, Set.empty)
 
-        var q1 = new AbstractQueryAtomicMongo(Set.empty, ls1, Set.empty, Set.empty, None)
-        var q2 = new AbstractQueryAtomicMongo(Set.empty, ls2, Set.empty, Set.empty, None)
+        var q1 = new AbstractQueryAtomicMongo(new TpBindings, ls1, Set.empty, Set.empty, None)
+        var q2 = new AbstractQueryAtomicMongo(new TpBindings, ls2, Set.empty, Set.empty, None)
 
         var q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
@@ -299,7 +288,7 @@ class AbstractQueryTest {
         // -----------------------------------------
 
         ls2 = new xR2RMLQuery("db.collection.find({query1, query2})", "JSONPath", None, Set.empty)
-        q2 = new AbstractQueryAtomicMongo(Set.empty, ls2, Set.empty, Set.empty, None)
+        q2 = new AbstractQueryAtomicMongo(new TpBindings, ls2, Set.empty, Set.empty, None)
         q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
         assertEquals(q1, q) // no change
@@ -321,8 +310,8 @@ class AbstractQueryTest {
         val cond1 = new AbstractConditionEquals("ref1", "value1")
         val cond2 = new AbstractConditionEquals("ref2", "value2")
 
-        var q1 = new AbstractQueryAtomicMongo(Set.empty, ls1, Set(proj1), Set(cond1), None)
-        var q2 = new AbstractQueryAtomicMongo(Set.empty, ls2, Set(proj2), Set(cond2), None)
+        var q1 = new AbstractQueryAtomicMongo(new TpBindings, ls1, Set(proj1), Set(cond1), None)
+        var q2 = new AbstractQueryAtomicMongo(new TpBindings, ls2, Set(proj2), Set(cond2), None)
 
         var q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
@@ -345,8 +334,8 @@ class AbstractQueryTest {
         val cond2 = new AbstractConditionEquals("ref2", "value2")
         val cond3 = new AbstractConditionNotNull("ref2")
 
-        var q1 = new AbstractQueryAtomicMongo(Set.empty, ls1, Set(proj1), Set(cond1), None)
-        var q2 = new AbstractQueryAtomicMongo(Set.empty, ls2, Set(proj2), Set(cond2), None)
+        var q1 = new AbstractQueryAtomicMongo(new TpBindings, ls1, Set(proj1), Set(cond1), None)
+        var q2 = new AbstractQueryAtomicMongo(new TpBindings, ls2, Set(proj2), Set(cond2), None)
 
         var q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
@@ -357,8 +346,8 @@ class AbstractQueryTest {
 
         // -----------------------------------------
 
-        q1 = new AbstractQueryAtomicMongo(Set.empty, ls1, Set(proj1), Set(cond1), None)
-        q2 = new AbstractQueryAtomicMongo(Set.empty, ls2, Set(proj2), Set(cond3), None)
+        q1 = new AbstractQueryAtomicMongo(new TpBindings, ls1, Set(proj1), Set(cond1), None)
+        q2 = new AbstractQueryAtomicMongo(new TpBindings, ls2, Set(proj2), Set(cond3), None)
         q = q1.propagateConditionFromJoinedQuery(q2)
         println(q)
         assertEquals(ls2, q.from) // change in the From 
@@ -380,9 +369,9 @@ class AbstractQueryTest {
         val proj4 = new AbstractQueryProjection(Set("ref4"), Some("?z"))
         val proj5 = new AbstractQueryProjection(Set("ref5"), Some("?q"))
 
-        var q1 = new AbstractQueryAtomicMongo(Set.empty, null, Set(proj1, proj2), Set.empty, None)
-        var q2 = new AbstractQueryAtomicMongo(Set.empty, null, Set(proj3, proj4), Set.empty, None)
-        var q3 = new AbstractQueryAtomicMongo(Set.empty, null, Set(proj5), Set.empty, None)
+        var q1 = new AbstractQueryAtomicMongo(new TpBindings, null, Set(proj1, proj2), Set.empty, None)
+        var q2 = new AbstractQueryAtomicMongo(new TpBindings, null, Set(proj3, proj4), Set.empty, None)
+        var q3 = new AbstractQueryAtomicMongo(new TpBindings, null, Set(proj5), Set.empty, None)
 
         assertEquals(Set(proj1), q1.getProjectionsForVariable("?x"))
         assertEquals(Set(proj3), q2.getProjectionsForVariable("?x"))

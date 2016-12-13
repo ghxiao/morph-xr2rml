@@ -29,10 +29,10 @@ import es.upm.fi.dia.oeg.morph.base.GeneralUtility
 import es.upm.fi.dia.oeg.morph.base.TemplateUtility
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractCondition
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
@@ -173,14 +173,14 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     /**
      * Translation of a triple pattern into an abstract query under a set of xR2RML triples maps
      *
-     * @param tpBindings a SPARQL triple pattern and the triples maps bound to it
+     * @param tpBinding a SPARQL triple pattern and the triples maps bound to it
      * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
      * @return abstract query. This may be an UNION if there are multiple triples maps,
      * and this may contain INNER JOINs for triples maps that have a referencing object map (parent triples map).
      * If there is only one triples map and no parent triples map, the result is an atomic abstract query.
      * @throws es.upm.fi.dia.oeg.morph.base.exception.MorphException
      */
-    def transTPm(tpBindings: TPBindings, limit: Option[Long]): AbstractQuery
+    def transTPm(tpBinding: TpBinding, limit: Option[Long]): AbstractQuery
 
     /**
      * Generate the set of xR2RML references that are evaluated when generating the triples that match tp.
@@ -199,7 +199,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
         if (tp.getSubject().isVariable())
             refs = refs + new AbstractQueryProjection(tm.subjectMap.getReferences.toSet, Some(tp.getSubject.toString))
 
-        val pom = tm.getPropertyMappings.head
+        val pom = tm.predicateObjectMaps.head
         if (tp.getPredicate().isVariable())
             refs = refs + new AbstractQueryProjection(pom.predicateMaps.head.getReferences.toSet, Some(tp.getPredicate.toString))
 
@@ -230,7 +230,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
         var refs: Set[AbstractQueryProjection] = Set.empty
 
-        val pom = tm.getPropertyMappings.head
+        val pom = tm.predicateObjectMaps.head
         if (!pom.hasRefObjectMap)
             throw new MorphException("Triples map " + tm + " has no parent triples map")
 

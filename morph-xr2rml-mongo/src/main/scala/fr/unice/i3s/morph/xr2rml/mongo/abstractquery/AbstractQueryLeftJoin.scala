@@ -9,6 +9,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 
 /**
  * Representation of the LEFT JOIN abstract query generated from two basic graph patterns.
@@ -25,7 +26,7 @@ class AbstractQueryLeftJoin(
     val right: AbstractQuery,
     lim: Option[Long])
 
-        extends AbstractQuery(Set.empty, lim) {
+        extends AbstractQuery(new TpBindings, lim) {
 
     val logger = Logger.getLogger(this.getClass().getName());
 
@@ -127,7 +128,7 @@ class AbstractQueryLeftJoin(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
         val start = System.currentTimeMillis
         if (logger.isInfoEnabled) {
@@ -155,7 +156,7 @@ class AbstractQueryLeftJoin(
                 if (limit.isDefined) {
                     val lim = limit.get
                     val fromLeft = leftTriples.take(lim.toInt)
-                    val fromRight = if (fromLeft.size < lim.toInt) rightTriples.take(lim.toInt - fromLeft.size) else Set.empty
+                    val fromRight = if (fromLeft.size < lim.toInt) rightTriples.take(lim.toInt - fromLeft.size) else List.empty
                     fromLeft ++ fromRight
                 } else {
                     leftTriples ++ rightTriples
@@ -193,16 +194,16 @@ class AbstractQueryLeftJoin(
                 nonJoinedRight = nonJoinedRight.filter(!_.hasVariable(x))
             }
 
-            val res = joinResult.values.toSet
+            val res = joinResult.values.toList
             val resNonJoined =
                 if (limit.isDefined) {
                     if (joinResult.size < limit.get) {
                         val lim = limit.get - joinResult.size
                         val fromLeft = nonJoinedLeft.take(lim.toInt)
-                        val fromRight = if (fromLeft.size < lim.toInt) nonJoinedRight.take(lim.toInt - fromLeft.size) else Set.empty
+                        val fromRight = if (fromLeft.size < lim.toInt) nonJoinedRight.take(lim.toInt - fromLeft.size) else List.empty
                         fromLeft ++ fromRight
                     } else
-                        Set.empty
+                        List.empty
                 } else
                     nonJoinedLeft ++ nonJoinedRight
 

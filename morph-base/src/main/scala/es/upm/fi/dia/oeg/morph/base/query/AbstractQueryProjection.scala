@@ -39,6 +39,6 @@ class AbstractQueryProjection(
     }
 
     override def hashCode(): Int = {
-        this.getClass.hashCode + this.as.hashCode() + this.references.map(_.hashCode).reduceLeft((x, y) => x + y)
+        this.references.map { x => x.hashCode }.sum + this.as.getOrElse("").hashCode
     }
 }

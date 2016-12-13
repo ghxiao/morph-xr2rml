@@ -15,7 +15,7 @@ import es.upm.fi.dia.oeg.morph.base.query.GenericQuery
 import es.upm.fi.dia.oeg.morph.base.query.IReference
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLQuery
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
@@ -32,17 +32,19 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionOr
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
 import fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoDataTranslator
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBinding
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
- * This specialization implements optimization methods for the case of MongoDB.
+ * This specialization implements translation and optimization methods for the case of MongoDB.
  *
  * @author Franck Michel, I3S laboratory
  */
 class AbstractQueryAtomicMongo(
 
-    tpBindings: Set[TPBinding],
+    tpBindings: TpBindings,
     from: xR2RMLLogicalSource,
     project: Set[AbstractQueryProjection],
     where: Set[AbstractCondition],
@@ -153,22 +155,21 @@ class AbstractQueryAtomicMongo(
 
         if (isJoinOnUniqueRefs) {
             // ----------------------------- Join on a variable bound to a unique reference ---------------------------
-            val mergedBindings = left.tpBindings ++ right.tpBindings
+            val mergedBindings = left.tpBindings merge right.tpBindings
             val mergedProj = left.project ++ right.project
             val mergedWhere = left.where ++ right.where
             val result = Some(new AbstractQueryAtomicMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
             result
         } else {
             if (!MongoDBQuery.sameQueries(left.from, right.from)) {
-                if (logger.isTraceEnabled)
                     logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different From parts.")
-                return None
+                None
             }
 
             if (left.where != right.where) {
                 if (logger.isTraceEnabled)
                     logger.trace("Self-join elimination impossible bewteen \n" + left + "\nand\n" + right + "\nbecause they have different Where parts.")
-                return None
+                None
             }
 
             // If the two queries have no shared variable then this cannot be a self-join
@@ -226,7 +227,7 @@ class AbstractQueryAtomicMongo(
 
         if (isJoinOnUniqueRefs) {
             // ----------------------------- Join on a a unique reference ---------------------------
-            val mergedBindings = child.tpBindings ++ parent.tpBindings
+            val mergedBindings = child.tpBindings merge parent.tpBindings
             val mergedProj = child.project ++ parent.project
             val mergedWhere = child.where ++ parent.where
             val result = Some(new AbstractQueryAtomicMongo(mergedBindings, mostSpec.get, mergedProj, mergedWhere, limit))
@@ -337,7 +338,7 @@ class AbstractQueryAtomicMongo(
         val left = this
 
         if (MongoDBQuery.sameQueries(left.from, right.from)) {
-            val mergedBindings = left.tpBindings ++ right.tpBindings
+            val mergedBindings = left.tpBindings merge right.tpBindings
             val mergedProj = left.project ++ right.project
             val leftOr = if (left.where.size > 1) AbstractConditionAnd.create(left.where) else left.where.head
             val rightOr = if (right.where.size > 1) AbstractConditionAnd.create(right.where) else right.where.head
@@ -348,7 +349,7 @@ class AbstractQueryAtomicMongo(
     }
 
     /**
-     * Execute the query and produce the RDF terms for each of the result documents
+     * Execute the query(ies) and produce the RDF terms for each of the result documents
      * by applying the triples map bound to this query.
      * If targetQuery contains several queries their result is UNIONed.
      *
@@ -359,7 +360,7 @@ class AbstractQueryAtomicMongo(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTrans: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
+        dataTrans: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
         val dataTranslator = dataTrans.asInstanceOf[MorphMongoDataTranslator]
 
@@ -370,7 +371,7 @@ class AbstractQueryAtomicMongo(
 
         if (tpBindings.isEmpty) {
             val errMsg = "Atomic abstract query with no triple pattern binding " +
-                " => this is a child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
+                " => this may be child or parent query of a RefObjectMap. Cannot call the generatedRdfTerms method."
             logger.error(errMsg)
             logger.error("Query: " + this.toString)
             throw new MorphException(errMsg)
@@ -383,99 +384,104 @@ class AbstractQueryAtomicMongo(
         // to produce at least 'limit' triples for each binding, and in turn 'limit' solutions.
         var start = System.currentTimeMillis()
         val iter: Option[String] = from.docIterator
-        var mongoRsltSet = List[String]()
+        var mongoRslts = List[String]()
         for (query <- targetQuery) {
             val queryMapId = MorphMongoDataSourceReader.makeQueryMapId(query, iter, limit)
             if (executedQueries.contains(queryMapId)) {
                 if (logger.isDebugEnabled()) logger.debug("Returning query results from cache, queryId: " + queryMapId)
-                mongoRsltSet ++= executedQueries(queryMapId)
+                mongoRslts ++= executedQueries(queryMapId)
             } else {
                 val res = dataSourceReader.executeQueryAndIterator(query, iter, limit).asInstanceOf[MorphMongoResultSet].resultSet
                 executedQueries = executedQueries + (queryMapId -> res)
                 // Make a UNION of all the results
-                mongoRsltSet ++= res
+                mongoRslts ++= res
             }
         }
 
         var end = System.currentTimeMillis()
-        if (logger.isDebugEnabled()) logger.debug("Atomic query returned " + mongoRsltSet.size + " results in " + (end - start) + "ms.")
+        if (logger.isDebugEnabled()) logger.debug("Atomic query returned " + mongoRslts.size + " results in " + (end - start) + "ms.")
 
         //--- Loop on all bindings
         start = System.currentTimeMillis()
-        val resultTriplesSet: Set[MorphBaseResultRdfTerms] = tpBindings.flatMap(tpb => {
-            val tp = tpb.tp
-            val subjectAsVariable = if (tp.getSubject.isVariable) Some(tp.getSubject.toString) else None
-            val predicateAsVariable = if (tp.getPredicate.isVariable) Some(tp.getPredicate.toString) else None
-            val objectAsVariable = if (tp.getObject.isVariable) Some(tp.getObject.toString) else None
+        val allResultsTriples = tpBindings.getNonEmptyBindings.toList.flatMap(tpb => {
 
-            val tm = tpb.bound
-            val sm = tm.subjectMap;
-            val pom = tm.predicateObjectMaps.head
-            if (logger.isDebugEnabled()) logger.debug("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
+            val tp = tpb.triple
+            val boundTMs = tpb.boundTMs.toList
 
-            // ----------------------------------------------------------------
-            // --- Main loop: iterate and process each result document of the result set
-            // ----------------------------------------------------------------
+            val perTpResultTriples: List[MorphBaseResultRdfTerms] = boundTMs.flatMap(tm => {
 
-            var terms: List[MorphBaseResultRdfTerms] = List.empty
-            var i = 0
-            terms = mongoRsltSet.flatMap(document => {
-                try {
-                    i = i + 1;
-                    if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRsltSet.size + ": " + document)
+                val subjectAsVariable = if (tp.getSubject.isVariable) Some(tp.getSubject.toString) else None
+                val predicateAsVariable = if (tp.getPredicate.isVariable) Some(tp.getPredicate.toString) else None
+                val objectAsVariable = if (tp.getObject.isVariable) Some(tp.getObject.toString) else None
 
-                    //---- Create the subject resource
-                    val subjects = dataTranslator.translateData(sm, document)
-                    if (subjects == null) { throw new Exception("null value in the subject triple") }
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
+                val sm = tm.subjectMap;
+                val pom = tm.predicateObjectMaps.head
+                if (logger.isDebugEnabled()) logger.debug("Generating RDF terms under binding " + tpb + " for atomic query: \n" + this.toStringConcrete);
 
-                    //---- Create the list of resources representing subject target graphs
-                    val subjectGraphs = sm.graphMaps.flatMap(sgmElement => dataTranslator.translateData(sgmElement, document))
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
+                // ----------------------------------------------------------------
+                // --- Main loop: iterate and process each result document of the result set
+                // ----------------------------------------------------------------
 
-                    // ----- Make a list of resources for the predicate map of the predicate-object map
-                    val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
+                var i = 0
+                val perTMResultTriples: List[MorphBaseResultRdfTerms] = mongoRslts.flatMap(document => {
+                    try {
+                        i = i + 1;
+                        if (logger.isTraceEnabled()) logger.trace("Generating RDF terms for document " + i + "/" + mongoRslts.size + ": " + document)
 
-                    // ------ Make a list of resources for the object map of the predicate-object map
-                    val objects =
-                        if (!pom.objectMaps.isEmpty)
-                            dataTranslator.translateData(pom.objectMaps.head, document)
-                        else List.empty
-                    if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
+                        //---- Create the subject resource
+                        val subjects = dataTranslator.translateData(sm, document)
+                        if (subjects == null) { throw new Exception("null value in the subject triple") }
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " subjects: " + subjects)
 
-                    // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
-                    val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => dataTranslator.translateData(pogmElement, document))
-                    if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+                        //---- Create the list of resources representing subject target graphs
+                        val subjectGraphs = sm.graphMaps.flatMap(sgmElement => dataTranslator.translateData(sgmElement, document))
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " subject graphs: " + subjectGraphs)
 
-                    // Compute a list of result triples
-                    subjects.flatMap(subject => {
-                        predicates.flatMap(predicate => {
-                            objects.map(objct => {
-                                new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
+                        // ----- Make a list of resources for the predicate map of the predicate-object map
+                        val predicates = dataTranslator.translateData(pom.predicateMaps.head, document)
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " predicates: " + predicates)
+
+                        // ------ Make a list of resources for the object map of the predicate-object map
+                        val objects =
+                            if (!pom.objectMaps.isEmpty)
+                                dataTranslator.translateData(pom.objectMaps.head, document)
+                            else List.empty
+                        if (logger.isTraceEnabled()) logger.trace("Document " + i + " objects: " + objects)
+
+                        // ----- Create the list of resources representing target graphs mentioned in the predicate-object map
+                        val predicateObjectGraphs = pom.graphMaps.flatMap(pogmElement => dataTranslator.translateData(pogmElement, document))
+                        if (logger.isTraceEnabled()) logger.trace("Document" + i + " predicate-object map graphs: " + predicateObjectGraphs)
+
+                        // Compute a list of result triples
+                        subjects.flatMap(subject => {
+                            predicates.flatMap(predicate => {
+                                objects.map(objct => {
+                                    new MorphBaseResultRdfTerms(subject, subjectAsVariable, predicate, predicateAsVariable, objct, objectAsVariable)
+                                })
                             })
                         })
-                    })
-                } catch {
-                    case e: MorphException => {
-                        logger.error("Error while translating data of document " + i + ": " + e.getMessage);
-                        e.printStackTrace()
-                        List() // empty list will be removed by the flat map of results 
+                    } catch {
+                        case e: MorphException => {
+                            logger.error("Error while translating data of document " + i + ": " + e.getMessage);
+                            e.printStackTrace()
+                            List() // empty list will be removed by the flat map of results 
+                        }
+                        case e: Exception => {
+                            logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
+                            e.printStackTrace()
+                            List() // empty list will be removed by the flat map of results 
+                        }
                     }
-                    case e: Exception => {
-                        logger.error("Unexpected error while translating data of document " + i + ": " + e.getCause() + " - " + e.getMessage);
-                        e.printStackTrace()
-                        List() // empty list will be removed by the flat map of results 
-                    }
-                }
+                })
+                logger.info("Atomic query generated " + perTMResultTriples.size + " RDF triples for binding " + tpb)
+                perTMResultTriples
             })
-            logger.info("Atomic query generated " + terms.size + " RDF triples for binding " + tpb)
-            terms.toSet
+            perTpResultTriples
         })
-        
+
         end = System.currentTimeMillis()
-        logger.info("Atomic query generated " + resultTriplesSet.size + " RDF triples for all binding in " + (end - start) + " ms.")
-        
-        resultTriplesSet
+        logger.info("Atomic query generated " + allResultsTriples.size + " RDF triples for all binding in " + (end - start) + " ms.")
+
+        allResultsTriples
     }
 }

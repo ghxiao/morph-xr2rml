@@ -21,13 +21,12 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
-import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 
 class MorphQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
     override def translate(op: Op): Option[AbstractQuery] = { None }
 
-    override def transTPm(tpBindings: TPBindings, limit: Option[Long]): AbstractQuery = {
+    override def transTPm(tpBindings: TpBinding, limit: Option[Long]): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 }
@@ -83,7 +82,7 @@ class MorphBaseTriplePatternBindings2Test {
         var o2 = NodeFactory.createVariable("z")
         var tp2 = Triple.create(s2, p2, o2)
 
-        val compat = triplePatternBinder.join(tp1, List(TM1), tp2, List(TM2, TM3))
+        val compat = triplePatternBinder.join(tp1, Set(TM1), tp2, Set(TM2, TM3))
         assertTrue(compat.contains((TM1, TM2)))
         assertFalse(compat.contains((TM1, TM3))) // subject template strings are incompatible
     }
@@ -101,7 +100,7 @@ class MorphBaseTriplePatternBindings2Test {
         var o2 = NodeFactory.createVariable("y")
         var tp2 = Triple.create(s2, p2, o2)
 
-        val compat = triplePatternBinder.join(tp1, List(TM1, TM2), tp2, List(TM2, TM3))
+        val compat = triplePatternBinder.join(tp1, Set(TM1, TM2), tp2, Set(TM2, TM3))
         assertTrue(compat.contains((TM1, TM3)))
         assertTrue(compat.contains((TM2, TM2)))
         assertFalse(compat.contains((TM1, TM2))) // datatype in object map of TM2 and not in TM1 
@@ -120,7 +119,7 @@ class MorphBaseTriplePatternBindings2Test {
         var o2 = NodeFactory.createVariable("y")
         var tp2 = Triple.create(s2, p2, o2)
 
-        val compat = triplePatternBinder.join(tp1, List(TM1, TM2), tp2, List(TM2, TM3))
+        val compat = triplePatternBinder.join(tp1, Set(TM1, TM2), tp2, Set(TM2, TM3))
         assertTrue(compat.isEmpty)
     }
 
@@ -138,7 +137,7 @@ class MorphBaseTriplePatternBindings2Test {
         var o2 = NodeFactory.createVariable("z")
         var tp2 = Triple.create(s2, p2, o2)
 
-        val compat = triplePatternBinder.join(tp1, List(TM4), tp2, List(TM2, TM3))
+        val compat = triplePatternBinder.join(tp1, Set(TM4), tp2, Set(TM2, TM3))
         assertTrue(compat.contains((TM4, TM2)))
         assertFalse(compat.contains((TM4, TM3)))
     }
@@ -153,7 +152,7 @@ class MorphBaseTriplePatternBindings2Test {
 
         var sparqlQuery = QueryFactory.create(query, null, null)
         var bindings = triplePatternBinder.bindm(Algebra.compile(sparqlQuery))
-        var res = bindings.values.toList.map(_.bound).flatten
+        var res = bindings.getNonEmptyBindings.map(_.boundTMs).flatten
         assertTrue(res.contains(TM1))
         assertTrue(res.contains(TM2))
         assertTrue(res.contains(TM3))
@@ -169,7 +168,7 @@ class MorphBaseTriplePatternBindings2Test {
 
         var sparqlQuery = QueryFactory.create(query, null, null)
         var bindings = triplePatternBinder.bindm(Algebra.compile(sparqlQuery))
-        var res = bindings.values.toList.map(_.bound).flatten
+        var res = bindings.getNonEmptyBindings.map(_.boundTMs).flatten
         assertTrue(res.contains(TM1))
         assertTrue(res.contains(TM2))
         assertFalse(res.contains(TM3))
@@ -197,13 +196,13 @@ class MorphBaseTriplePatternBindings2Test {
         var o2 = NodeFactory.createVariable("z")
         var tp2 = Triple.create(s2, p2, o2)
 
-        var res = bindings(tp2.toString).bound
+        var res = bindings.getBoundTMs(tp2)
         assertTrue(res.size == 2)
         assertTrue(res.contains(TM1))
         assertTrue(res.contains(TM2))
         assertFalse(res.contains(TM3))
 
-        res = bindings(tp1.toString).bound
+        res = bindings.getBoundTMs(tp1)
         assertTrue(res.contains(TM4))
         assertTrue(res.size == 1)
     }
@@ -219,7 +218,7 @@ class MorphBaseTriplePatternBindings2Test {
 
         val sparqlQuery = QueryFactory.create(query, null, null)
         val bindings = triplePatternBinder.bindm(Algebra.compile(sparqlQuery))
-        assertEquals(6, bindings.values.toList.flatMap(_.bound).size)
+        assertEquals(6, bindings.getNonEmptyBindings.flatMap(_.boundTMs).size)
     }
 
     @Test def test_bindm10() {

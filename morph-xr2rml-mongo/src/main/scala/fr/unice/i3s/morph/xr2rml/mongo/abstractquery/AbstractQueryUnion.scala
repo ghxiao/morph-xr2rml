@@ -10,12 +10,11 @@ import org.apache.log4j.Logger
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 
 /**
  * Representation of the UNION abstract query of several abstract queries
  *
- * @param boundTriplesMap in the query rewriting context, this is a triples map that is bound to the triple pattern
- * from which we have derived this query
  * @param lstMembers the abstract query members of the union, flattened if there are embedded unions
  * @param limit the value of the optional LIMIT keyword in the SPARQL graph pattern
  *
@@ -24,7 +23,7 @@ import es.upm.fi.dia.oeg.morph.base.query.AbstractQueryProjection
 class AbstractQueryUnion(
     lstMembers: List[AbstractQuery],
     lim: Option[Long])
-        extends AbstractQuery(Set.empty, lim) {
+        extends AbstractQuery(new TpBindings, lim) {
 
     val members: List[AbstractQuery] = lstMembers.flatMap { m =>
         if (m.isInstanceOf[AbstractQueryUnion])
@@ -163,7 +162,7 @@ class AbstractQueryUnion(
      */
     override def generateRdfTerms(
         dataSourceReader: MorphBaseDataSourceReader,
-        dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms] = {
+        dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms] = {
 
         val start = System.currentTimeMillis
         if (logger.isInfoEnabled) {
@@ -171,14 +170,15 @@ class AbstractQueryUnion(
             logger.info("Generating RDF triples from union query:\n" + this.toStringConcrete);
         }
 
-        var res = Set[MorphBaseResultRdfTerms]()
+        var res = List[MorphBaseResultRdfTerms]()
 
         for (m <- members if (!limit.isDefined || (limit.isDefined && res.size < limit.get))) {
 
             // If the member is not an atomic query then there are triples of different types in the result. So we cannot just
-            // take a subset of them, as typically a join would no longer return anything. The limit is taken care of when processing that sub-query.
+            // take a subset of 'limit' triples of them, as e.g. if this is a join, a join on the subset of triples may no longer 
+            // return anything. The limit is taken care of when processing that sub-query.
             // Conversely, if it is an atomic query, then we can limit the number of triples but only if it is bound to only
-            // one triples map. Otherwise, we are back to the previous case: several types of triples so we cannot take a subset.
+            // one triples map. Otherwise, we are back to the previous case: several types of triples, so we cannot take a subset.
             val considerLimit = m.isInstanceOf[AbstractQueryAtomicMongo] && m.tpBindings.size == 1
             
             val resultsM = m.generateRdfTerms(dataSourceReader, dataTranslator)

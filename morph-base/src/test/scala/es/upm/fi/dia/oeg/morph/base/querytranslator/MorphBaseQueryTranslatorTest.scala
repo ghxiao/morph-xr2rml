@@ -12,16 +12,16 @@ import com.hp.hpl.jena.sparql.algebra.Op
 import es.upm.fi.dia.oeg.morph.base.MorphProperties
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
-import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionEquals
 import es.upm.fi.dia.oeg.morph.base.query.AbstractConditionNotNull
+import es.upm.fi.dia.oeg.morph.base.query.AbstractQuery
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 
 class MorphBaseQueryTranslatorConcret(factory: IMorphFactory) extends MorphBaseQueryTranslator(factory) {
 
     override def translate(op: Op): Option[AbstractQuery] = { None }
 
-    override def transTPm(tpBindings: TPBindings, limit: Option[Long]): AbstractQuery = {
+    override def transTPm(tpBindings: TpBinding, limit: Option[Long]): AbstractQuery = {
         throw new MorphException("Not supported")
     }
 }

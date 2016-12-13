@@ -42,9 +42,9 @@ class MorphBaseResultRdfTerms(
 
     override def toString = {
         "[" + subject.toString +
-            { if (subjectAsVariable.isDefined) " AS " + subjectAsVariable.get else "" } + ",\n " +
+            { if (subjectAsVariable.isDefined) " AS " + subjectAsVariable.get else "" } + ", " +
             predicate.toString +
-            { if (predicateAsVariable.isDefined) " AS " + predicateAsVariable.get else "" } + ",\n " +
+            { if (predicateAsVariable.isDefined) " AS " + predicateAsVariable.get else "" } + ", " +
             objct.toString +
             { if (objectAsVariable.isDefined) " AS " + objectAsVariable.get else "" } + "]"
     }

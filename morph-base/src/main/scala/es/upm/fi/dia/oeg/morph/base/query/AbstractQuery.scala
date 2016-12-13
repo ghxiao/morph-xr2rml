@@ -6,7 +6,7 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseDataTranslator
 import es.upm.fi.dia.oeg.morph.base.exception.MorphException
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 
 /**
  * Representation of an abstract query as defined in https://hal.archives-ouvertes.fr/hal-01245883.
@@ -23,7 +23,7 @@ import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
  * @author Franck Michel, I3S laboratory
  */
 abstract class AbstractQuery(
-        val tpBindings: Set[TPBinding],
+        val tpBindings: TpBindings,
         var limit: Option[Long]) {
 
     // String version of the limit, to be used in toString() methods
@@ -48,6 +48,10 @@ abstract class AbstractQuery(
     }
 
     override def equals(a: Any): Boolean = {
+        throw new MorphException("Method not implemented")
+    }
+
+    override def hashCode(): Int = {
         throw new MorphException("Method not implemented")
     }
 
@@ -99,7 +103,7 @@ abstract class AbstractQuery(
      * @return a list of MorphBaseResultRdfTerms instances, one for each result document
      * May return an empty result but NOT null.
      */
-    def generateRdfTerms(dataSourceReader: MorphBaseDataSourceReader, dataTranslator: MorphBaseDataTranslator): Set[MorphBaseResultRdfTerms]
+    def generateRdfTerms(dataSourceReader: MorphBaseDataSourceReader, dataTranslator: MorphBaseDataTranslator): List[MorphBaseResultRdfTerms]
 }
 
 object AbstractQuery {

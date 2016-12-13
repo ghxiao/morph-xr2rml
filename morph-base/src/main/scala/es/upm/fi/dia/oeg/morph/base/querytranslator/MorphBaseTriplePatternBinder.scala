@@ -25,41 +25,10 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTermMap
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLTriplesMap
 import es.upm.fi.dia.oeg.morph.base.engine.IMorphFactory
 import com.hp.hpl.jena.sparql.algebra.op.OpGroup
+import com.hp.hpl.jena.reasoner.rulesys.builtins.Bound
 
 /**
- * Representation of the bindings of several triples maps to a triple pattern
- *
- * @author Franck Michel, I3S laboratory
- */
-class TPBindings(
-        val tp: Triple,
-        val bound: List[R2RMLTriplesMap]) {
-
-    override def toString = { "Binding(" + tp + " -> " + bound.mkString(", ") + ")" }
-
-}
-
-object TPBindings {
-    def apply(tp: Triple, bound: List[R2RMLTriplesMap]) = { (tp.toString -> new TPBindings(tp, bound)) }
-}
-
-/**
- * Simple representation of a binding of one triples map to a triple pattern
- */
-class TPBinding(val tp: Triple, val bound: R2RMLTriplesMap) {
-    override def toString = { "Binding(" + tp + " -> " + bound + ")" }
-
-    override def equals(q: Any): Boolean = {
-        q.isInstanceOf[TPBinding] && {
-            val tpb = q.asInstanceOf[TPBinding]
-            this.tp == tpb.tp && this.bound != null && tpb.bound != null && this.bound.toString == tpb.bound.toString
-        }
-    }
-
-}
-
-/**
- * Implementation of the different functions to figure out which triples maps are bound to a triple pattern,
+ * Implementation of the functions that figure out which triples maps are bound to a triple pattern,
  * i.e. those triples maps that are possible candidates to generate RDF triples matching the triple pattern.
  *
  * See full definitions in https://hal.archives-ouvertes.fr/hal-01245883.
@@ -73,11 +42,10 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
     /**
      * Compute the triple pattern bindings for all triple patterns in a graph pattern
      *
-     * @param op SPARQL query or SPARQL query element
-     * @return bindings as a map of triples and associated triples maps.
-     * The map key is the string representation of the triple.
+     * @param op compiled SPARQL query or SPARQL query element
+     * @return bindings as a map of triple patterns and associated triples maps.
      */
-    def bindm(op: Op): Map[String, TPBindings] = {
+    def bindm(op: Op): TpBindings = {
 
         op match {
 
@@ -87,185 +55,165 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 
             case bgp: OpBGP => { // Basic Graph Pattern
                 val triples: List[Triple] = bgp.getPattern.getList.toList
-                if (triples.size == 0)
-                    Map.empty
+                if (triples.size == 0) new TpBindings // quite unexpected, probably result of a bug (?)
                 else {
                     // Compute the bindings of the first triple pattern
                     val tp1 = triples.head
-                    var bindingsTp1 = bindmTP(tp1)
-                    val result = Map(TPBindings(tp1, bindingsTp1))
-                    if (logger.isTraceEnabled()) logger.trace("Binding of single triple pattern: " + result.values.mkString(", "))
+                    val boundTp1 = bindmTP(tp1)
+
+                    var results = new TpBindings
 
                     if (triples.size == 1) {
                         // Only one triple pattern in the BGP, return its bindings straight away
-                        result
+                        results.addOrUpdate(tp1, boundTp1)
+                        if (logger.isTraceEnabled()) logger.trace("Binding of single triple pattern: " + results)
+                        results
                     } else {
                         // Several triple patterns in the BGP 
-                        var results: Map[String, TPBindings] = Map.empty
 
                         // Compute the bindings of the remaining triples
                         val rightTps = new OpBGP(BasicPattern.wrap(triples.tail))
                         val rightBindings = bindm(rightTps)
 
                         // For each of the remaining triples, join its bindings with those of tp1
-                        for (rightBinding <- rightBindings) {
-                            val tp2 = rightBinding._2.tp
-                            val bindingsTp2 = rightBinding._2.bound
+                        for ((tp2str, tpb2) <- rightBindings.bindingsMap) {
+                            val tp2 = tpb2.triple
+                            val boundTp2 = tpb2.boundTMs
 
                             if (haveSharedVariables(tp1, tp2)) {
-                                // There are shared variables between tp1 and tp2
-                                val joined = join(tp1, bindingsTp1, tp2, bindingsTp2)
-                                results = results + TPBindings(tp2, reduceRight(joined)) // reduce the bindings of tp2
-                                bindingsTp1 = reduceLeft(joined) // reduce the bindings of tp1
-                            } else { // There is no shared variable between tp1 and tp2
-                                if (results.contains(tp2.toString))
-                                    results = results - tp2.toString + TPBindings(tp2, bindingsTp2 intersect results(tp2.toString).bound) // keep all the bindings of tp2
+
+                                // There are shared variables between tp1 and tp2: add reduced bindings of tp1 and tp2
+                                val joined = join(tp1, boundTp1, tp2, boundTp2)
+                                if (results.contains(tp1))
+                                    results.addOrUpdate(tp1, takeLeft(joined) intersect results.getBoundTMs(tp1)) // add or update the bindings of tp1
                                 else
-                                    results = results + TPBindings(tp2, bindingsTp2) // keep all the bindings of tp2
+                                    results.addOrUpdate(tp1, takeLeft(joined))
+                                results.addOrUpdate(tp2, takeRight(joined)) // add or update the bindings of tp2: if they already exist, it can only be reduced
+
+                            } else {
+                                // There is no shared variable between tp1 and tp2: simply keep the bindings of both
+                                if (results.contains(tp1))
+                                    // bindings of tp1 may be changed at each loop => keep the intersection with possibly previous bindings
+                                    results.addOrUpdate(tp1, boundTp1 intersect results.getBoundTMs(tp1)) // add or update the bindings of tp1
+                                else
+                                    results.addOrUpdate(tp1, boundTp1)
+
+                                if (!results.contains(tp2))
+                                    results.addOrUpdate(tp2, boundTp2) // add the bindings of tp2 (if already present, there is no change)
                             }
                         }
-                        // Finally add the bindings for tp1
-                        if (results.contains(tp1.toString))
-                            results = results - tp1.toString + TPBindings(tp1, bindingsTp1 intersect results(tp1.toString).bound)
-                        else
-                            results = results + TPBindings(tp1, bindingsTp1)
-                        if (logger.isDebugEnabled()) logger.debug("Binding of BGP: " + results.values.mkString(", "))
+
+                        if (logger.isDebugEnabled()) logger.debug("Binding of BGP:\n   " + results.toString)
                         results
                     }
                 }
             }
 
             case opJoin: OpJoin => { // AND pattern
-                var results: Map[String, TPBindings] = Map.empty
+                val results = new TpBindings
 
                 // Compute the bindings of the two graph patterns
                 val leftBindings = this.bindm(opJoin.getLeft)
                 val rightBindings = this.bindm(opJoin.getRight)
 
-                for (leftBinding <- leftBindings) {
-                    val tp1 = leftBinding._2.tp
-                    val bindingsTp1 = leftBinding._2.bound
+                for ((tp1str, tpb1) <- leftBindings.bindingsMap) {
+                    val tp1 = tpb1.triple
 
-                    for (rightBinding <- rightBindings) {
-                        val tp2 = rightBinding._2.tp
-                        val bindingsTp2 = rightBinding._2.bound
+                    for ((tp2str, tpb2) <- rightBindings.bindingsMap) {
+                        val tp2 = tpb2.triple
 
                         if (haveSharedVariables(tp1, tp2)) {
                             // There are shared variables between tp1 and tp2
-                            val joined =
-                                if (results.contains(tp2.toString)) {
-                                    val restp2 = results(tp2.toString)
-                                    // Intersect the current bindings of tp2 and the right bindings of tp2
-                                    join(tp1, bindingsTp1, tp2, bindingsTp2 intersect restp2.bound)
-                                } else
-                                    join(tp1, bindingsTp1, tp2, bindingsTp2)
+                            val joined = join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs)
 
-                            // Add or update the bindings for tp1 with reduced bindings
-                            if (results.contains(tp1.toString))
-                                results = results - tp1.toString + TPBindings(tp1, (reduceLeft(joined) union results(tp1.toString).bound) distinct)
-                            else
-                                results = results + TPBindings(tp1, reduceLeft(joined))
-
-                            // Add or update the bindings for tp2 with reduced bindings
-                            if (results.contains(tp2.toString))
-                                results = results - tp2.toString + TPBindings(tp2, (reduceRight(joined) union results(tp2.toString).bound) distinct)
-                            else
-                                results = results + TPBindings(tp2, reduceRight(joined))
+                            // Add or update the bindings for tp1 and tp2 with reduced bindings
+                            results.addOrUpdate(tp1, (takeLeft(joined) union results.getBoundTMs(tp1)))
+                            results.addOrUpdate(tp2, (takeRight(joined) union results.getBoundTMs(tp2)))
                         } else {
                             // There is no shared variable between tp1 and tp2: keep all the bindings of tp1 and tp2
-                            if (results.contains(tp1.toString))
-                                results = results - tp1.toString + TPBindings(tp1, (bindingsTp1 union results(tp1.toString).bound) distinct)
-                            else
-                                results = results + TPBindings(tp1, bindingsTp1)
-
-                            if (results.contains(tp2.toString))
-                                results = results - tp2.toString + TPBindings(tp2, (bindingsTp2 union results(tp2.toString).bound) distinct)
-                            else
-                                results = results + TPBindings(tp2, bindingsTp2)
+                            results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
+                            results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
                         }
                     }
                 }
-                if (logger.isDebugEnabled()) logger.debug("Binding of AND graph pattern: " + results.values.mkString(", "))
+                if (logger.isDebugEnabled()) logger.debug("Binding of AND graph pattern:\n   " + results.toString)
                 results
             }
 
             case opLeftJoin: OpLeftJoin => { // OPT pattern
-                var results: Map[String, TPBindings] = Map.empty
+                val results = new TpBindings
 
                 // Compute the bindings of the two graph patterns
                 val leftBindings = this.bindm(opLeftJoin.getLeft)
                 val rightBindings = this.bindm(opLeftJoin.getRight)
 
-                for (leftBinding <- leftBindings) {
-                    val tp1 = leftBinding._2.tp
-                    val bindingsTp1 = leftBinding._2.bound
+                for ((tp1str, tpb1) <- leftBindings.bindingsMap) {
+                    val tp1 = tpb1.triple
 
-                    for (rightBinding <- rightBindings) {
-                        val tp2 = rightBinding._2.tp
-                        val bindingsTp2 = rightBinding._2.bound
+                    for ((tp2str, tpb2) <- rightBindings.bindingsMap) {
+                        val tp2 = tpb2.triple
 
                         if (haveSharedVariables(tp1, tp2)) {
                             // There are shared variables between tp1 and tp2
                             val joined =
-                                if (results.contains(tp2.toString)) {
-                                    val restp2 = results(tp2.toString)
+                                if (results.contains(tp2)) {
+                                    val restp2 = results.getBoundTMs(tp2)
                                     // Intersect the current bindings of tp2 and the right bindings of tp2
-                                    join(tp1, bindingsTp1, tp2, bindingsTp2 intersect restp2.bound)
+                                    join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs intersect restp2)
                                 } else
-                                    join(tp1, bindingsTp1, tp2, bindingsTp2)
+                                    join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs)
 
                             // Add or update the bindings for tp1 with reduced bindings
-                            if (results.contains(tp1.toString))
-                                results = results - tp1.toString + TPBindings(tp1, (reduceLeft(joined) union results(tp1.toString).bound) distinct)
+                            if (results.contains(tp1))
+                                results.addOrUpdate(tp1, (takeLeft(joined) union results.getBoundTMs(tp1)))
                             else
-                                results = results + TPBindings(tp1, reduceLeft(joined))
+                                results.addOrUpdate(tp1, takeLeft(joined))
 
                             // Add or update the bindings for tp2 with reduced bindings
-                            if (results.contains(tp2.toString))
-                                results = results - tp2.toString + TPBindings(tp2, (reduceRight(joined) union results(tp2.toString).bound) distinct)
+                            if (results.contains(tp2))
+                                results.addOrUpdate(tp2, (takeRight(joined) union results.getBoundTMs(tp2)))
                             else
-                                results = results + TPBindings(tp2, reduceRight(joined))
+                                results.addOrUpdate(tp2, takeRight(joined))
                         } else {
                             // There is no shared variable between tp1 and tp2: keep all the bindings of tp1 and tp2
-                            if (results.contains(tp1.toString))
-                                results = results - tp1.toString + TPBindings(tp1, (bindingsTp1 union results(tp1.toString).bound) distinct)
+                            if (results.contains(tp1))
+                                results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
                             else
-                                results = results + TPBindings(tp1, bindingsTp1)
+                                results.addOrUpdate(tp1, tpb1.boundTMs)
 
-                            if (results.contains(tp2.toString))
-                                results = results - tp2.toString + TPBindings(tp2, (bindingsTp2 union results(tp2.toString).bound) distinct)
+                            if (results.contains(tp2))
+                                results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
                             else
-                                results = results + TPBindings(tp2, bindingsTp2)
+                                results.addOrUpdate(tp2, tpb2.boundTMs)
                         }
                     }
                 }
-                if (logger.isDebugEnabled()) logger.debug("Binding of OPTIONAL graph pattern: " + results.values.mkString(", "))
+                if (logger.isDebugEnabled()) logger.debug("Binding of OPTIONAL graph pattern: " + results.toString)
                 results
             }
 
             case opUnion: OpUnion => { // UNION pattern
-                var results: Map[String, TPBindings] = Map.empty
+                var results = new TpBindings
                 val leftBindings = this.bindm(opUnion.getLeft)
                 val rightBindings = this.bindm(opUnion.getRight)
 
-                for (leftBinding <- leftBindings) {
-                    val tp1 = leftBinding._2.tp
-                    val bindingsTp1 = leftBinding._2.bound
-                    if (results.contains(tp1.toString))
-                        results = results - tp1.toString + TPBindings(tp1, (bindingsTp1 union results(tp1.toString).bound) distinct)
-                    else
-                        results = results + TPBindings(tp1, bindingsTp1)
+                for ((tp1str, tpb1) <- leftBindings.bindingsMap) {
+                    val tp1 = tpb1.triple
 
-                    for (rightBinding <- rightBindings) {
-                        val tp2 = rightBinding._2.tp
-                        val bindingsTp2 = rightBinding._2.bound
-                        if (results.contains(tp2.toString))
-                            results = results - tp2.toString + TPBindings(tp2, (bindingsTp2 union results(tp2.toString).bound) distinct)
+                    if (results.contains(tp1))
+                        results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
+                    else
+                        results.addOrUpdate(tp1, tpb1.boundTMs)
+
+                    for ((tp2str, tpb2) <- rightBindings.bindingsMap) {
+                        val tp2 = tpb2.triple
+                        if (results.contains(tp2))
+                            results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
                         else
-                            results = results + TPBindings(tp2, bindingsTp2)
+                            results.addOrUpdate(tp2, tpb2.boundTMs)
                     }
                 }
-                if (logger.isDebugEnabled()) logger.debug("Binding of UNION graph pattern: " + results.values.mkString(", "))
+                if (logger.isDebugEnabled()) logger.debug("Binding of UNION graph pattern:\n   " + results.toString)
                 results
             }
 
@@ -285,41 +233,45 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                 bindm(opGroup.getSubOp)
             }
             case _ => {
-                Map.empty
+                new TpBindings
             }
         }
     }
 
     /**
      * Compute the list of triples maps TM that are bound to triple pattern tp.
-     * TM is bound to tp if and only if:<br>
-     * 		compatible(TM.sub, tp.sub) ^ compatible(TM.pred, tp.pred) ^ compatible(TM.obj, tp.obj)}
+     * TM is bound to tp if and only if it is compatible with to, that is:<br>
+     * 		compatible(TM.sub, tp.sub) AND compatible(TM.pred, tp.pred) AND compatible(TM.obj, tp.obj)}
+     *
+     * @param tp triple pattern
+     * @return set of triples maps bound to tp
      */
-    private def bindmTP(tp: Triple): List[R2RMLTriplesMap] = {
+    private def bindmTP(tp: Triple): Set[R2RMLTriplesMap] = {
 
-        val boundTMs = factory.getMappingDocument.triplesMaps.toList.map(tm => {
+        val boundTMs = factory.getMappingDocument.triplesMaps.map(tm => {
             val pom = tm.predicateObjectMaps.head
 
             if (tm.predicateObjectMaps.size > 1 || pom.predicateMaps.size > 1 ||
                 pom.objectMaps.size > 1 || pom.refObjectMaps.size > 1)
                 throw new MorphException("Error, non-normalized triples map: " + tm)
 
-            var bound: Boolean = compatible(tm.subjectMap, tp.getSubject) &&
-                compatible(pom.predicateMaps.head, tp.getPredicate) &&
-                (if (pom.hasObjectMap)
-                    compatible(pom.objectMaps.head, tp.getObject)
-                else if (pom.hasRefObjectMap)
-                    compatible(pom.refObjectMaps.head, tp.getObject)
-                else {
-                    logger.warn("Unormalized triples map " + tm.toString + ": no object maps nor referencing object maps")
-                    false
-                })
+            var bound: Boolean =
+                compatible(tm.subjectMap, tp.getSubject) &&
+                    compatible(pom.predicateMaps.head, tp.getPredicate) &&
+                    (if (pom.hasObjectMap)
+                        compatible(pom.objectMaps.head, tp.getObject)
+                    else if (pom.hasRefObjectMap)
+                        compatible(pom.refObjectMaps.head, tp.getObject)
+                    else {
+                        logger.warn("Unormalized triples map " + tm.toString + ": no object maps nor referencing object maps")
+                        false
+                    })
 
             if (bound) Some(tm) else None
 
         }).flatten // flatten removes None, keeping possibly an empty list of bound triples maps
 
-        boundTMs
+        boundTMs.toSet
     }
 
     /**
@@ -338,9 +290,9 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
      * @param boundTp1 set of triples maps that are bound to tp1
      * @param tp2 triple pattern 2
      * @param boundTp2 set of triples maps that are bound to tp2
-     * @return list of pairs of triples maps from tp1 and tp2 that are compatible with each other
+     * @return Set of pairs of triples maps from tp1 and tp2 that are compatible with each other
      */
-    def join(tp1: Triple, boundTp1: List[R2RMLTriplesMap], tp2: Triple, boundTp2: List[R2RMLTriplesMap]): List[(R2RMLTriplesMap, R2RMLTriplesMap)] = {
+    def join(tp1: Triple, boundTp1: Set[R2RMLTriplesMap], tp2: Triple, boundTp2: Set[R2RMLTriplesMap]): Set[(R2RMLTriplesMap, R2RMLTriplesMap)] = {
 
         // Compute the set of variables in tp1 (varsTp1) and keep track of their position in (varPosTp1)
         var varPosTp1 = getTpVarsPos(tp1)
@@ -351,7 +303,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
         var varsTp2 = getTpVars(tp2)
 
         // Compute the set of variables shared by tp1 and tp2
-        var result: List[(R2RMLTriplesMap, R2RMLTriplesMap)] = List.empty
+        var result: Set[(R2RMLTriplesMap, R2RMLTriplesMap)] = Set.empty
         val sharedVars = varsTp1.intersect(varsTp2)
         for (x <- sharedVars) {
             if (logger.isTraceEnabled())
@@ -379,20 +331,20 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                             compat = compat && compatibleTermMaps(getTermMapAtPos(tm1, postp1), getTermMapAtPos(tm2, postp2))
                         }
                     if (compat)
-                        result = result :+ (tm1, tm2)
+                        result = result + ((tm1, tm2))
                 }
         }
         if (logger.isDebugEnabled())
-            logger.debug("Joined bindings of [" + tp1 + "] and [" + tp2 + "]:\n" + result)
+            logger.debug("Joined bindings of [" + tp1 + "] and [" + tp2 + "]:\n   " + result)
         result
     }
 
-    private def reduceLeft(joinedTM: List[(R2RMLTriplesMap, R2RMLTriplesMap)]): List[R2RMLTriplesMap] = {
-        joinedTM.map(_._1).distinct
+    private def takeLeft(joinedTM: Set[(R2RMLTriplesMap, R2RMLTriplesMap)]): Set[R2RMLTriplesMap] = {
+        joinedTM.map(_._1)
     }
 
-    private def reduceRight(joinedTM: List[(R2RMLTriplesMap, R2RMLTriplesMap)]): List[R2RMLTriplesMap] = {
-        joinedTM.map(_._2).distinct
+    private def takeRight(joinedTM: Set[(R2RMLTriplesMap, R2RMLTriplesMap)]): Set[R2RMLTriplesMap] = {
+        joinedTM.map(_._2)
     }
 
     /**
@@ -598,6 +550,6 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
      * Check whether two triple patterns have at least one shared variable
      */
     private def haveSharedVariables(tp1: Triple, tp2: Triple): Boolean = {
-        !(getTpVars(tp1).intersect(getTpVars(tp2)).isEmpty)
+        (getTpVars(tp1) intersect getTpVars(tp2)).nonEmpty
     }
 }

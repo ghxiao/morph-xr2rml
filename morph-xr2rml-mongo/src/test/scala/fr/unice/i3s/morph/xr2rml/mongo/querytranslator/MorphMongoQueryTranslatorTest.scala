@@ -22,7 +22,8 @@ import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseRunnerFactory
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryProcessor
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBindings
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBinding
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.R2RMLMappingDocument
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryAtomicMongo
@@ -202,13 +203,13 @@ class MorphMongoQueryTranslatorTest {
 
         try {
             var tm = mappingDocument.getClassMappingsByName("TM_NoPOM")
-            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)), None)
+            var res = queryTranslator.transTPm(TpBinding(tp, tm), None)
             fail()
         } catch { case e: Exception => {} }
 
         try {
             var tm = mappingDocument.getClassMappingsByName("TM_MultiplePOM")
-            var res = queryTranslator.transTPm(new TPBindings(tp, List(tm)), None)
+            var res = queryTranslator.transTPm(TpBinding(tp, tm), None)
             fail()
         } catch { case e: Exception => {} }
     }
@@ -222,7 +223,7 @@ class MorphMongoQueryTranslatorTest {
         val o = NodeFactory.createLiteral("T. Leung")
         val tp = Triple.create(s, p, o)
 
-        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmMovies)), None)
+        val Q = queryTranslator.transTPm(TpBinding(tp, tmMovies), None)
         assertTrue(Q.isInstanceOf[AbstractQueryAtomicMongo])
         val q = Q.asInstanceOf[AbstractQueryAtomicMongo]
         assertEquals(q.from.getValue, "db.movies.find({decade:{$exists:true}})")
@@ -239,7 +240,7 @@ class MorphMongoQueryTranslatorTest {
         val o = NodeFactory.createURI("http://example.org/movie/Manh")
         val tp = Triple.create(s, p, o)
 
-        val Q = queryTranslator.transTPm(new TPBindings(tp, List(tmDirectors)), None)
+        val Q = queryTranslator.transTPm(TpBinding(tp, tmDirectors), None)
         assertTrue(Q.isInstanceOf[AbstractQueryInnerJoinRef])
         val q = Q.asInstanceOf[AbstractQueryInnerJoinRef]
         assertEquals("$.directed.*", q.childRef)

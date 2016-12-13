@@ -3,13 +3,13 @@ package es.upm.fi.dia.oeg.morph.base.query
 import org.apache.log4j.Logger
 
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryOptimizer
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TPBinding
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
 
 /**
  * Representation of the abstract atomic query as defined in https://hal.archives-ouvertes.fr/hal-01245883
  *
- * @param tpBindings a couple (triple pattern, triples map) for which we create this atomic query.
+ * @param tpBindings a set of couples (triple pattern, List[triples map]) for which we create this atomic query.
  * Empty in the case of a child or parent query in a referencing object map, and in this case the binding is
  * in the instance of AbstractQueryInnerJoinRef.
  * tpBindings may contain several bindings after query optimization e.g. self-join elimination i.e. 2 atomic queries are merged
@@ -37,7 +37,7 @@ import es.upm.fi.dia.oeg.morph.r2rml.model.xR2RMLLogicalSource
  */
 abstract class AbstractQueryAtomic(
 
-    tpBindings: Set[TPBinding],
+    tpBindings: TpBindings,
     val from: xR2RMLLogicalSource,
     val project: Set[AbstractQueryProjection],
     val where: Set[AbstractCondition],
@@ -54,24 +54,27 @@ abstract class AbstractQueryAtomic(
         }
     }
 
+    override def hashCode(): Int = {
+        this.toString.hashCode
+    }
+
     override def toString = {
         val fromStr =
             if (from.docIterator.isDefined)
                 from.getValue + ", Iterator: " + from.docIterator
             else
                 from.getValue
+        val bdgs = if (tpBindings.nonEmpty) tpBindings.toString else " "
 
-        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(" ", ", ", "\n  ") else " "
-
-        "{" + bdgs +
-            "from   : " + fromStr + "\n" +
+        "{" + bdgs + "\n" +
+            "  from   : " + fromStr + "\n" +
             "  project: " + project + "\n" +
             "  where  : " + where + " }" + limitStr
     }
 
     override def toStringConcrete = {
-        val bdgs = if (tpBindings.nonEmpty) tpBindings.mkString(", ") + "\n " else ""
-        "{ " + bdgs +
+        val bdgs = if (tpBindings.nonEmpty) tpBindings.toString + "\n " else " "
+        "{" + bdgs +
             targetQuery.map(_.concreteQuery).mkString("\nUNION\n") + " }" + limitStr
     }
 
