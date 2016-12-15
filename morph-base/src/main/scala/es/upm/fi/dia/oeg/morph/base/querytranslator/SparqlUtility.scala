@@ -30,132 +30,69 @@ import es.upm.fi.dia.oeg.morph.base.Constants
  * @author Franck Michel, I3S laboratory
  */
 object SparqlUtility {
-    val logger = Logger.getLogger(this.getClass().getName());
 
-    def groupTriplesBySubject(triples: java.util.List[Triple]): java.util.List[Triple] = {
-        var result: List[Triple] = Nil;
-        if (triples == null || triples.size() == 0) {
-            result = Nil;
-        } else {
-            if (triples.size() == 1) {
-                result = triples.toList;
-            } else {
-                var resultAux: Map[Node, List[Triple]] = Map.empty;
+    val logger = Logger.getLogger(this.getClass().getName())
 
-                var subjectSet: Set[Node] = Set.empty;
+    /**
+     * Reorder the list of triples in the order of their subject's hash
+     */
+    def groupTriplesBySubject(triples: List[Triple]): List[Triple] = {
 
-                for (tp <- triples) {
-                    val tpSubject = tp.getSubject();
+        if (triples == null || triples.size == 0)
+            List.empty
+        else if (triples.size == 1)
+            triples
+        else {
+            var mapByHash: Map[Int, List[Triple]] = Map.empty
 
-                    if (resultAux.contains(tpSubject)) {
-                        var triplesBySubject = resultAux(tpSubject);
-                        triplesBySubject = triplesBySubject ::: List(tp)
-                        resultAux += (tpSubject -> triplesBySubject);
-                    } else {
-                        val triplesBySubject: List[Triple] = List(tp);
-                        resultAux += (tpSubject -> triplesBySubject);
-                    }
-                }
-
-                for (triplesBySubject <- resultAux.values()) {
-                    result = result ::: triplesBySubject;
-                }
+            for (tp <- triples) {
+                val sub = tp.getSubject
+                val subHash = sub.hashCode
+                if (mapByHash.containsKey(subHash))
+                    mapByHash += (subHash -> (mapByHash(subHash) :+ tp))
+                else
+                    mapByHash += (subHash -> List(tp))
             }
+
+            var triplesReordered: List[Triple] = List.empty
+            for (key <- mapByHash.keySet)
+                triplesReordered = triplesReordered ::: mapByHash(key)
+            triplesReordered
         }
-        result;
     }
 
+    /**
+     * Reorder the triples of a basic graph pattern in the order of their subject
+     */
     def groupBGPBySubject(bgp: OpBGP): OpBGP = {
-        try {
-            val basicPattern = bgp.getPattern();
-            var mapTripleHashCode: Map[Integer, List[Triple]] = Map.empty
-
-            for (tp <- basicPattern) {
-                val tpSubject = tp.getSubject();
-
-                val tripleSubjectHashCode = new Integer(tpSubject.hashCode());
-
-                if (mapTripleHashCode.containsKey(tripleSubjectHashCode)) {
-                    var triplesByHashCode = mapTripleHashCode(tripleSubjectHashCode);
-                    triplesByHashCode = triplesByHashCode ::: List(tp);
-                    mapTripleHashCode += (tripleSubjectHashCode -> triplesByHashCode);
-                } else {
-                    val triplesByHashCode: List[Triple] = List(tp);
-                    mapTripleHashCode += (tripleSubjectHashCode -> triplesByHashCode);
-                }
-
-            }
-            var triplesReordered: List[Triple] = Nil;
-            for (key <- mapTripleHashCode.keySet) {
-                val triplesByHashCode = mapTripleHashCode(key);
-                triplesReordered = triplesReordered ::: triplesByHashCode;
-            }
-
-            val basicPattern2 = BasicPattern.wrap(triplesReordered);
-            val bgp2 = new OpBGP(basicPattern2);
-            return bgp2;
-        } catch {
-            case e: Exception => {
-                val errorMessage = "Error while grouping triples, original triples will be returned.";
-                logger.warn(errorMessage);
-                return bgp;
-            }
-        }
+        val triplesReordered = groupTriplesBySubject(bgp.getPattern.getList.toList)
+        new OpBGP(BasicPattern.wrap(triplesReordered))
     }
 
     def getSubjects(triples: List[Triple]): List[Node] = {
-        var result: List[Node] = Nil;
-
-        if (triples != null) {
-            for (triple <- triples) {
-                result = result ::: List(triple.getSubject());
-            }
-        }
-
-        result;
+        var result: List[Node] = List.empty
+        if (triples != null)
+            for (triple <- triples)
+                result = result :+ triple.getSubject
+        result
     }
 
     def getObjects(triples: List[Triple]): List[Node] = {
-        var result: List[Node] = Nil;
-
-        if (triples != null) {
-            for (triple <- triples) {
-                result = result ::: List(triple.getObject());
-            }
-        }
-
-        result;
+        var result: List[Node] = List.empty
+        if (triples != null)
+            for (triple <- triples)
+                result = result :+ triple.getObject
+        result
     }
 
     def isBlankNode(node: Node) = {
-        val result = {
-            if (node.isBlank()) {
-                true
-            } else {
-                if (node.isVariable()) {
-                    val varName = node.getName();
-                    if (varName.startsWith("?")) {
-                        true
-                    } else {
-                        false
-                    }
-                } else {
-                    false
-                }
-            }
-
-        }
-        result;
-    }
-
-    def isNodeInSubjectTriple(node: Node, tp: Triple): Boolean = {
-        tp.getSubject() == node
+        node.isBlank || (node.isVariable && node.getName.startsWith("?"))
     }
 
     def isNodeInSubjectGraph(node: Node, op: Op): Boolean = {
         val found = op match {
             case tp: Triple => {
-                this.isNodeInSubjectTriple(node, tp)
+                tp.getSubject() == node
             }
             case bgp: OpBGP => {
                 this.isNodeInSubjectBGP(node, bgp.getPattern().toList);
@@ -190,8 +127,8 @@ object SparqlUtility {
         found;
     }
 
-    def isNodeInSubjectBGP(node: Node, bgpList: List[Triple]): Boolean = {
-        val isInHead = isNodeInSubjectTriple(node, bgpList.head);
+    private def isNodeInSubjectBGP(node: Node, bgpList: List[Triple]): Boolean = {
+        val isInHead = node == bgpList.head.getSubject
         var found = isInHead;
         if (!found && !bgpList.tail.isEmpty) {
             found = isNodeInSubjectBGP(node, bgpList.tail);
@@ -199,7 +136,7 @@ object SparqlUtility {
         found;
     }
 
-    def isNodeInSubjectGraphs(node: Node, opLeft: Op, opRight: Op): Boolean = {
+    private def isNodeInSubjectGraphs(node: Node, opLeft: Op, opRight: Op): Boolean = {
         val isInLeft = isNodeInSubjectGraph(node, opLeft);
         var found = isInLeft;
         if (!found) {

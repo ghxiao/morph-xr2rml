@@ -38,6 +38,7 @@ class MorphProperties extends java.util.Properties {
     var transSTGSubQueryElimination = true;
     var subQueryAsView = false;
     var cacheQueryResult: Boolean = false
+    var sparqlOptimization: Boolean = true
 
     //batch upgrade
     var literalRemoveStrangeChars: Boolean = true;
@@ -156,6 +157,9 @@ class MorphProperties extends java.util.Properties {
 
         this.jenaMode = this.readString(Constants.JENA_MODE_TYPE, Constants.JENA_MODE_TYPE_MEMORY);
         logger.info("Jena mode = " + jenaMode);
+
+        this.sparqlOptimization = this.readBoolean(Constants.OPTIMIZE_SPARQL, true);
+        logger.info("SPARQL Query Optimization = " + this.sparqlOptimization);
 
         this.selfJoinElimination = this.readBoolean(Constants.OPTIMIZE_TB, true);
         logger.info("Optimization - Self join elimination = " + this.selfJoinElimination);

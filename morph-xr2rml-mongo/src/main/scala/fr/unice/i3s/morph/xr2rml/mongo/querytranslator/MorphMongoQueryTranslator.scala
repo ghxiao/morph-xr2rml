@@ -70,7 +70,6 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      * a list containing a set of concrete queries. May return None if no bindings are found.
      */
     override def translate(op: Op): Option[AbstractQuery] = {
-        if (logger.isDebugEnabled) logger.debug("opSparqlQuery = " + op)
         val start = System.currentTimeMillis()
 
         // Remove triple patterns that pertain to RDF lists or containers, to be able to compute bindings
@@ -85,7 +84,6 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
         logger.info("Triple pattern bindings:\n" + bindings.toString)
 
-        //--- Translate the SPARQL query into an abstract query
         if (bindings.isEmpty) {
             logger.warn("No bindings found for any triple pattern of the query")
             None
@@ -95,6 +93,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                 logger.warn("Could not find bindings for triple patterns:\n" + emptyBindings.mkString(", "))
                 None
             } else {
+                //--- Translate the SPARQL query into an abstract query
                 var abstractQuery = this.translateSparqlQueryToAbstract(bindings, opMod.get, None)
                 if (abstractQuery.isDefined) {
 

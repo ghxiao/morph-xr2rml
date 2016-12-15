@@ -127,12 +127,12 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                             val joined = join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs)
 
                             // Add or update the bindings for tp1 and tp2 with reduced bindings
-                            results.addOrUpdate(tp1, (takeLeft(joined) union results.getBoundTMs(tp1)))
-                            results.addOrUpdate(tp2, (takeRight(joined) union results.getBoundTMs(tp2)))
+                            results.addOrUpdate(tp1, takeLeft(joined) union results.getBoundTMs(tp1))
+                            results.addOrUpdate(tp2, takeRight(joined) union results.getBoundTMs(tp2))
                         } else {
                             // There is no shared variable between tp1 and tp2: keep all the bindings of tp1 and tp2
-                            results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
-                            results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
+                            results.addOrUpdate(tp1, tpb1.boundTMs union results.getBoundTMs(tp1))
+                            results.addOrUpdate(tp2, tpb2.boundTMs union results.getBoundTMs(tp2))
                         }
                     }
                 }
@@ -155,36 +155,15 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 
                         if (haveSharedVariables(tp1, tp2)) {
                             // There are shared variables between tp1 and tp2
-                            val joined =
-                                if (results.contains(tp2)) {
-                                    val restp2 = results.getBoundTMs(tp2)
-                                    // Intersect the current bindings of tp2 and the right bindings of tp2
-                                    join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs intersect restp2)
-                                } else
-                                    join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs)
+                            val joined = join(tp1, tpb1.boundTMs, tp2, tpb2.boundTMs)
 
-                            // Add or update the bindings for tp1 with reduced bindings
-                            if (results.contains(tp1))
-                                results.addOrUpdate(tp1, (takeLeft(joined) union results.getBoundTMs(tp1)))
-                            else
-                                results.addOrUpdate(tp1, takeLeft(joined))
-
-                            // Add or update the bindings for tp2 with reduced bindings
-                            if (results.contains(tp2))
-                                results.addOrUpdate(tp2, (takeRight(joined) union results.getBoundTMs(tp2)))
-                            else
-                                results.addOrUpdate(tp2, takeRight(joined))
+                            // Keep the bindings of tp1 and reduce those of tp2
+                            results.addOrUpdate(tp1, tpb1.boundTMs union results.getBoundTMs(tp1))
+                            results.addOrUpdate(tp2, takeRight(joined) union results.getBoundTMs(tp2))
                         } else {
                             // There is no shared variable between tp1 and tp2: keep all the bindings of tp1 and tp2
-                            if (results.contains(tp1))
-                                results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
-                            else
-                                results.addOrUpdate(tp1, tpb1.boundTMs)
-
-                            if (results.contains(tp2))
-                                results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
-                            else
-                                results.addOrUpdate(tp2, tpb2.boundTMs)
+                            results.addOrUpdate(tp1, tpb1.boundTMs union results.getBoundTMs(tp1))
+                            results.addOrUpdate(tp2, tpb2.boundTMs union results.getBoundTMs(tp2))
                         }
                     }
                 }
@@ -199,18 +178,11 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
 
                 for ((tp1str, tpb1) <- leftBindings.bindingsMap) {
                     val tp1 = tpb1.triple
-
-                    if (results.contains(tp1))
-                        results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
-                    else
-                        results.addOrUpdate(tp1, tpb1.boundTMs)
+                    results.addOrUpdate(tp1, (tpb1.boundTMs union results.getBoundTMs(tp1)))
 
                     for ((tp2str, tpb2) <- rightBindings.bindingsMap) {
                         val tp2 = tpb2.triple
-                        if (results.contains(tp2))
-                            results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
-                        else
-                            results.addOrUpdate(tp2, tpb2.boundTMs)
+                        results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
                     }
                 }
                 if (logger.isDebugEnabled()) logger.debug("Binding of UNION graph pattern:\n   " + results.toString)

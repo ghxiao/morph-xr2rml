@@ -1,7 +1,6 @@
 package es.upm.fi.dia.oeg.morph.base.querytranslator
 
 import scala.collection.JavaConversions.asScalaBuffer
-import scala.collection.JavaConverters.asScalaIteratorConverter
 
 import org.apache.log4j.Logger
 
@@ -9,20 +8,14 @@ import com.hp.hpl.jena.graph.Node
 import com.hp.hpl.jena.graph.NodeFactory
 import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.Query
-import com.hp.hpl.jena.sparql.algebra.Algebra
 import com.hp.hpl.jena.sparql.algebra.Op
 import com.hp.hpl.jena.sparql.algebra.OpAsQuery
 import com.hp.hpl.jena.sparql.algebra.TableFactory
 import com.hp.hpl.jena.sparql.algebra.op.OpDistinct
-import com.hp.hpl.jena.sparql.algebra.op.OpNull
 import com.hp.hpl.jena.sparql.algebra.op.OpProject
 import com.hp.hpl.jena.sparql.algebra.op.OpSlice
 import com.hp.hpl.jena.sparql.algebra.op.OpTable
-import com.hp.hpl.jena.sparql.core.Var
 import com.hp.hpl.jena.sparql.engine.binding.BindingFactory
-import com.hp.hpl.jena.sparql.syntax.ElementGroup
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
-import com.hp.hpl.jena.sparql.syntax.ElementUnion
 
 import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.GeneralUtility
@@ -60,8 +53,6 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
     val logger = Logger.getLogger(this.getClass());
 
-    //Optimize.setFactory(new MorphQueryRewritterFactory());
-
     /**
      * High level entry point to the query translation process.
      *
@@ -90,57 +81,16 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
 
         val start = System.currentTimeMillis()
 
-        if (sparqlQuery.isDescribeType) {
-            /* 
-             * Expand query
-             *   DESCRIBE <uri>
-             * to
-             *   DESCRIBE <uri> WHERE { { <uri> ?p ?x. } UNION { ?y ?q <uri> . } }
-             *   
-             * Remark:
-             * sparqlQuery.getResultURIs: static URIs in the SELECT/DESCRIBE clause
-             * sparqlQuery.getResultVars: variables in the SELECT/DESCRIBE clause (as strings e.g. "x")
-             * sparqlQuery.getProjectVars: variables in the SELECT/DESCRIBE clause (as instances of Var)
-             * sparqlQuery.isQueryResultStar: true if the '*' is in the SELECT/DESCRIBE clause
-            */
-            if (sparqlQuery.getProjectVars.isEmpty && !sparqlQuery.getResultURIs.isEmpty) {
+        // In case of a "DESCRBIE <URI>" expand the query with a graph pattern
+        val sparqlQ = SparqlQueryRewriter.expandDescribe(sparqlQuery)
 
-                val op = Algebra.compile(sparqlQuery)
-                if (op.isInstanceOf[OpTable] || op.isInstanceOf[OpNull]) {
-                    val listUris = sparqlQuery.getResultURIs().iterator.asScala.toList
-
-                    var idx = 1
-                    val union = new ElementUnion
-
-                    listUris.foreach(uri => {
-                        val bgp1 = new ElementTriplesBlock()
-                        // <uri> ?p ?x
-                        bgp1.addTriple(Triple.create(uri, Var.alloc("p" + idx), Var.alloc("x" + idx)))
-                        val bgp2 = new ElementTriplesBlock()
-                        // ?y ?q <uri>
-                        bgp2.addTriple(Triple.create(Var.alloc("y" + idx), Var.alloc("q" + idx), uri))
-
-                        union.addElement(bgp1)
-                        union.addElement(bgp2)
-                        idx += 1
-                    })
-
-                    val body = new ElementGroup()
-                    body.addElement(union);
-                    sparqlQuery.setQueryPattern(body)
-                    logger.info("Expanded query to: \n" + sparqlQuery)
-                }
-            }
-        }
-
-        // --- Perform the database-specific query translation
-        val opQuery = Algebra.compile(sparqlQuery)
+        // Compile and optimize the SPARQL query
+        val opQuery = SparqlQueryRewriter.rewriteOptimize(sparqlQuery, factory.getProperties.sparqlOptimization)
 
         // Compute the bindings and translate to the Abstract Query Language
         val abstractQuery = this.translate(opQuery)
 
         if (abstractQuery.isDefined) {
-
             /* Check if the query can be simplified if all projected variables have constant values.
              * A query like:
              *   SELECT DISTINCT ?p WHERE { ?s ?p ?o }
@@ -152,6 +102,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
             if (opMod.isDefined) {
                 val queryMod = OpAsQuery.asQuery(opMod.get)
+                
                 if (sparqlQuery.isAskType)
                     queryMod.setQueryAskType
                 else if (sparqlQuery.isSelectType)
@@ -459,7 +410,7 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
      */
     private def allVarsProjectedAsConstantTermMaps(sparqlQuery: Op, abstractQuery: AbstractQuery): Option[Op] = {
 
-        var op: Op = null
+        var op: Op = sparqlQuery
 
         if (sparqlQuery.isInstanceOf[OpSlice]) // LIMIT
             op = sparqlQuery.asInstanceOf[OpSlice].getSubOp

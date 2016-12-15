@@ -18,26 +18,34 @@ prefix taxrefprop: <http://inpn.mnhn.fr/taxref/properties/>
 
 SELECT *
 WHERE {
+    ## ------------------------------------------------------------------------------------
+    #?u skos:broader <http://inpn.mnhn.fr/taxref/9.0/taxon/60585> .
+
+    ## ------------------------------------------------------------------------------------
     #<http://inpn.mnhn.fr/taxref/9.0/taxon/60585> ?p ?x .
     
-    #<http://inpn.mnhn.fr/taxref/9.0/taxon/60585> skos:broader ?u .
-
+    ## ------------------------------------------------------------------------------------
+    ## 227223 triples. 80s
     #?y skos:broader ?u .
 
+    ## ------------------------------------------------------------------------------------
     #<http://inpn.mnhn.fr/taxref/9.0/taxon/60585> skosxl:prefLabel ?p .
     #OPTIONAL { <http://inpn.mnhn.fr/taxref/9.0/taxon/60585> skosxl:altLabel ?a . }
 
+    ## ------------------------------------------------------------------------------------
     ## Very big inner join but with propagation of conditions
     #?t skosxl:prefLabel <http://inpn.mnhn.fr/taxref/label/60585> .
     #?t skosxl:altLabel ?a .
     #?t skosxl:altLabel ?b . 
     #FILTER (?a != ?b)
     
+    ## ------------------------------------------------------------------------------------
     ## Big inner join: no self-join elimination nor condition propagation - 67s
     #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
     #?t skosxl:altLabel ?b . 
     #FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
 
+    ## ------------------------------------------------------------------------------------
     ## Optional join - 66s
     #?t skosxl:altLabel <http://inpn.mnhn.fr/taxref/label/60587> .
     #OPTIONAL { 
@@ -45,28 +53,63 @@ WHERE {
     #  FILTER (?b != <http://inpn.mnhn.fr/taxref/label/60587>)
     #}
     
+    ## ------------------------------------------------------------------------------------
     # Big optional Join - no optimization possible
     #?t skosxl:altLabel ?a .
     #OPTIONAL { ?t skosxl:altLabel ?b . FILTER (?a != ?b)
     #}
-
-    ## Self-Join and Self-Union elimination using unique reference
-    #?t skosxl:prefLabel ?p .
-    #?t taxrefprop:bioGeoStatusIn ?bgs . 
-    #?bgs dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
-    #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . } # cryptogenic
-    #UNION
-    #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . } # also P, Q, A and I
-
-    ## Self-Join elimination using unique reference, keep a union
-    { ?t taxrefprop:bioGeoStatusIn ?bgs1 .
-      ?bgs1 dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
-      ?bgs1 dwc:occurrenceStatus taxrefbgs:P .
-    }
-    UNION
-    { ?t taxrefprop:bioGeoStatusIn ?bgs2 .
-      ?bgs2 dwc:occurrenceStatus taxrefbgs:P . 
-      ?bgs2 dct:spatial <http://sws.geonames.org/3017382/> . # Métropole
-    }
     
-} LIMIT 10
+    ## ------------------------------------------------------------------------------------
+    ## Taxa in Saint-Pierre-Et-Miquelon with status cryptogenic or disapperead
+    
+    ## Self-Join AND Self-Union elimination
+    #?t taxrefprop:bioGeoStatusIn ?bgs . 
+    #?bgs dct:spatial <http://sws.geonames.org/3424932/> .
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . } 
+    #UNION
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . }
+    
+    ## Same query with additional variable ?y: makes reduction of tp bindings way less efficient
+    #?t skosxl:prefLabel ?p .
+    #?t skos:note ?name .
+    #?t taxrefprop:bioGeoStatusIn ?bgs .
+    #?bgs dct:spatial <http://sws.geonames.org/3424932/> .
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:C . }
+    #UNION
+    #{ ?bgs dwc:occurrenceStatus taxrefbgs:D . }
+
+    ## Same query as above in a more efficient form because subqueries are more selective
+    #{ ?t skosxl:prefLabel ?p1 .
+    #  ?t skos:note ?name1 .
+    #  ?t taxrefprop:bioGeoStatusIn ?bgs1 . 
+    #  ?bgs1 dct:spatial <http://sws.geonames.org/3424932/> .
+    #  ?bgs1 dwc:occurrenceStatus taxrefbgs:C . }
+    #UNION
+    #{ ?t skosxl:prefLabel ?p2 .
+    #  ?t skos:note ?name2 .
+    #  ?t taxrefprop:bioGeoStatusIn ?bgs2 .
+    #  ?bgs2 dct:spatial <http://sws.geonames.org/3424932/> .
+    #  ?bgs2 dwc:occurrenceStatus taxrefbgs:D . }
+    
+    ## ------------------------------------------------------------------------------------    
+    ## Taxa present either in St-Pierre-et-Miquelon or in Guadeloupe
+    
+    ## Self-Join elimination, keep a union
+    #{ ?t taxrefprop:bioGeoStatusIn ?bgs1 .
+    #  ?bgs1 dct:spatial <http://sws.geonames.org/3424932/> . # Saint-Pierre-Et-Miquelon
+    #  ?bgs1 dwc:occurrenceStatus taxrefbgs:P .
+    #}
+    #UNION
+    #{ ?t taxrefprop:bioGeoStatusIn ?bgs2 .
+    #  ?bgs2 dwc:occurrenceStatus taxrefbgs:P . 
+    #  ?bgs2 dct:spatial <http://sws.geonames.org/3579143/> . # Guadeloupe
+    #}
+    
+    ## Same as previous but much longer to process. We should try to see how to do filter propagation in a union
+    #?t taxrefprop:bioGeoStatusIn ?bgs .
+    #?bgs dwc:occurrenceStatus taxrefbgs:P .
+    #{ ?bgs dct:spatial <http://sws.geonames.org/3424932/> . } # Saint-Pierre-Et-Miquelon
+    #UNION
+    #{ ?bgs dct:spatial <http://sws.geonames.org/3579143/> . } # Guadeloupe
+    
+} # LIMIT 10

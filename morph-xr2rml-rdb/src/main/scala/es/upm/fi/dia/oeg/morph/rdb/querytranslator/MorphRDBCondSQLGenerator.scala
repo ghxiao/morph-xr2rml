@@ -16,7 +16,6 @@ import es.upm.fi.dia.oeg.morph.base.Constants
 import es.upm.fi.dia.oeg.morph.base.engine.MorphBaseUnfolder
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphAlphaResult
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphCondSQLResult
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLConstant
 import es.upm.fi.dia.oeg.morph.base.sql.MorphSQLUtility
@@ -157,21 +156,7 @@ class MorphRDBCondSQLGenerator(md: RDBR2RMLMappingDocument, unfolder: MorphBaseU
             } else { //object.isVariable() // improvement by Freddy
 
                 if (!SparqlUtility.isBlankNode(tpObject)) {
-                    val isSingleTripleFromTripleBlock = {
-                        tp match {
-                            case etp: MorphTriple => {
-                                if (etp.isSingleTripleFromTripleBlock) {
-                                    true;
-                                } else {
-                                    false
-                                }
-                            }
-                            case _ => { false }
-                        }
-                    }
 
-                    //for dealing with unbound() function, we should remove this part
-                    //if(!isSingleTripleFromTripleBlock) {
                     val isNotNullObject = mapVarNotNull.get(tpObject);
                     if (isNotNullObject.isDefined && isNotNullObject.get == true) {
                         for (betaObjectExpression <- betaObjectExpressions) {
@@ -545,7 +530,7 @@ class MorphRDBCondSQLGenerator(md: RDBR2RMLMappingDocument, unfolder: MorphBaseU
         result2;
     }
 
-     def genCondSQLSubjectURI(tpSubject: Node, alphaResult: MorphAlphaResult, tm: RDBR2RMLTriplesMap): ZExpression = {
+    def genCondSQLSubjectURI(tpSubject: Node, alphaResult: MorphAlphaResult, tm: RDBR2RMLTriplesMap): ZExpression = {
         val subjectURI = tpSubject.getURI();
         val subjectURIConstant = new ZConstant(subjectURI, ZConstant.STRING);
         val logicalTableAlias = alphaResult.alphaSubject.getAlias();

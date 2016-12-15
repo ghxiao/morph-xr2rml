@@ -127,9 +127,11 @@ object Constants {
     val OUTPUTFILE_DISPLAY = "output.display";
     val SPLIT_OUTPUT_PER_CONCEPT = "split_output_per_concept";
 
-    val OPTIMIZE_TB = "querytranslator.selfjoinelimination";
-    val OPTIMIZE_SU = "querytranslator.selfunionelimination";
-    val OPTIMIZE_PROPCONDJOIN = "querytranslator.propagateconditionfromjoin";
+    val OPTIMIZE_TB = "querytranslator.abstract.selfjoinelimination";
+    val OPTIMIZE_SU = "querytranslator.abstract.selfunionelimination";
+    val OPTIMIZE_PROPCONDJOIN = "querytranslator.abstract.propagateconditionfromjoin";
+    val OPTIMIZE_SPARQL = "querytranslator.sparql.optimize"
+    
     val REORDER_STG = "querytranslator.reorderstg";
     val SUBQUERY_ELIMINATION = "querytranslator.subqueryelimination";
     val TRANSJOIN_SUBQUERY_ELIMINATION = "querytranslator.transjoin.subqueryelimination";

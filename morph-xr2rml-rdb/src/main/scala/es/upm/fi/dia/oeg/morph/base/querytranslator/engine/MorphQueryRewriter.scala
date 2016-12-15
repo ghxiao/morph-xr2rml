@@ -25,7 +25,6 @@ import com.hp.hpl.jena.sparql.core.BasicPattern
 import com.hp.hpl.jena.vocabulary.RDF
 import com.hp.hpl.jena.vocabulary.RDFS
 
-import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphTriple
 import es.upm.fi.dia.oeg.morph.base.querytranslator.SparqlUtility
 
 /** Utility methods to rewrite SPARQL queries */
@@ -203,7 +202,7 @@ class MorphQueryRewriter(mapNodeLogicalTableSize: Map[Node, Long], reorderSTG: B
                         if (leftChildSubjects.contains(rightTpSubject) //&& !leftChildObjects.contains(rightTpObject)
                         ) {
 
-                            val rightEtp = new MorphTriple(rightTpSubject, rightTpPredicate, rightTpObject, true);
+                            val rightEtp = new Triple(rightTpSubject, rightTpPredicate, rightTpObject);
                             val newLeftChildRewrittenTPList = leftChildRewrittenTPList ::: List(rightEtp);
 
                             val bgpGrouped = SparqlUtility.groupTriplesBySubject(newLeftChildRewrittenTPList);

@@ -69,7 +69,7 @@ class MorphMongoDataSourceReader(factory: IMorphFactory) extends MorphBaseDataSo
     /**
      * Execute a query against the database and apply an rml:iterator on the results.
      *
-     * Results of the query are saved to a cache to avoid doing the same query several times
+     * Results of the query may be saved to a cache (config) to avoid doing the same query several times
      * in case we need it again later (in case of referencing object map).
      * Major drawback: memory consumption, this is not appropriate for very big databases.
      *
