@@ -74,6 +74,7 @@ class MorphBaseRunner(val factory: IMorphFactory) {
                 return None
             } else negCT.get._2
 
+        // Rewrite the SPARQL query and translate it
         val translated = factory.getQueryTranslator.translate(query)
         val rewrittenSparqlQuery = translated._1
         val rewrittenQuery = translated._2
@@ -81,9 +82,9 @@ class MorphBaseRunner(val factory: IMorphFactory) {
         if (rewrittenSparqlQuery.isDefined) {
             // The abstract query can be ignored, only the SPARQL query will be executed
             output = factory.getQueryProcessor.process(rewrittenSparqlQuery.get, None, syntax)
-            
+
         } else {
-            
+
             if (rewrittenQuery.isDefined) {
                 if (logger.isInfoEnabled) {
                     logger.info("SPARQL Query = \n" + query);

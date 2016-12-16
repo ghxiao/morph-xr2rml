@@ -80,12 +80,16 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
     def translate(sparqlQuery: Query): (Option[Query], Option[AbstractQuery]) = {
 
         val start = System.currentTimeMillis()
+        var sparqlQ: Query = sparqlQuery
 
         // In case of a "DESCRBIE <URI>" expand the query with a graph pattern
-        val sparqlQ = SparqlQueryRewriter.expandDescribe(sparqlQuery)
+        sparqlQ = SparqlQueryRewriter.expandDescribe(sparqlQ)
+
+        // In case of an ASK query, add a "LIMIT 1" if there is no limiy
+        sparqlQ = SparqlQueryRewriter.expandAsk(sparqlQ)
 
         // Compile and optimize the SPARQL query
-        val opQuery = SparqlQueryRewriter.rewriteOptimize(sparqlQuery, factory.getProperties.sparqlOptimization)
+        val opQuery = SparqlQueryRewriter.rewriteOptimize(sparqlQ, factory.getProperties.sparqlOptimization)
 
         // Compute the bindings and translate to the Abstract Query Language
         val abstractQuery = this.translate(opQuery)
@@ -102,14 +106,14 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
             logger.info("Query translation time (including bindings) = " + (System.currentTimeMillis() - start) + "ms.");
             if (opMod.isDefined) {
                 val queryMod = OpAsQuery.asQuery(opMod.get)
-                
-                if (sparqlQuery.isAskType)
+
+                if (sparqlQ.isAskType)
                     queryMod.setQueryAskType
-                else if (sparqlQuery.isSelectType)
+                else if (sparqlQ.isSelectType)
                     queryMod.setQuerySelectType
-                else if (sparqlQuery.isDescribeType)
+                else if (sparqlQ.isDescribeType)
                     queryMod.setQueryDescribeType
-                else if (sparqlQuery.isConstructType)
+                else if (sparqlQ.isConstructType)
                     queryMod.setQueryConstructType
 
                 (Some(queryMod), None)

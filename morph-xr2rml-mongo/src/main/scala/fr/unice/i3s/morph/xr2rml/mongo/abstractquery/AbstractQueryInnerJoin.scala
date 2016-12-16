@@ -28,6 +28,7 @@ class AbstractQueryInnerJoin(
 
     val logger = Logger.getLogger(this.getClass().getName())
 
+    // Construction-time optimization: flatten (merge) nested joins into a single one
     val members: List[AbstractQuery] = lstMembers.flatMap { m =>
         if (m.isInstanceOf[AbstractQueryInnerJoin])
             m.asInstanceOf[AbstractQueryInnerJoin].members
@@ -36,10 +37,6 @@ class AbstractQueryInnerJoin(
 
     if (members.size < 2)
         throw new MorphException("Attempt to create an inner join with less than 2 members: " + members)
-
-    val nestedJoins = members.filter(_.isInstanceOf[AbstractQueryInnerJoin])
-    if (nestedJoins.nonEmpty)
-        throw new MorphException("Attempt to create nested inner joins: " + members)
 
     override def equals(a: Any): Boolean = {
         a.isInstanceOf[AbstractQueryInnerJoin] &&
@@ -150,7 +147,7 @@ class AbstractQueryInnerJoin(
                     val left = membersV(i)
                     val right = membersV(j)
 
-                    // Inner-join of 2 atomic queries
+                    // Inner-join of 2 Atomic Queries
                     if (left.isInstanceOf[AbstractQueryAtomicMongo] && right.isInstanceOf[AbstractQueryAtomicMongo]) {
 
                         var leftAtom = left.asInstanceOf[AbstractQueryAtomicMongo]

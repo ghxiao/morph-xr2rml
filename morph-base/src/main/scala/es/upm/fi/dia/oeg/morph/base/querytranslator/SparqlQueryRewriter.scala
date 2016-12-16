@@ -74,7 +74,6 @@ object SparqlQueryRewriter {
                 // Perform Jena optimizations
                 val op2 = rewriter.rewrite(op)
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Compiled SPARQL query:\n" + op)
                     if (op != op2)
                         logger.debug("Jena optimizer rewrote query to: \n" + op2)
                 }
@@ -114,7 +113,10 @@ object SparqlQueryRewriter {
         if (sparqlQuery.isDescribeType) {
             if (sparqlQuery.getProjectVars.isEmpty && !sparqlQuery.getResultURIs.isEmpty) {
                 var op = Algebra.compile(sparqlQuery)
-                if (op.isInstanceOf[OpTable] || op.isInstanceOf[OpNull]) {
+                if (logger.isDebugEnabled()) logger.debug("Original compiled query: \n" + op)
+                
+                if (op.isInstanceOf[OpTable] || // case "DESCRIBE <URI>" 
+                    op.isInstanceOf[OpNull]) { // case "DESCRIBE <URI> WHERE {}"
 
                     val listUris = sparqlQuery.getResultURIs().toList
                     var idx = 1
@@ -136,10 +138,26 @@ object SparqlQueryRewriter {
                     val body = new ElementGroup()
                     body.addElement(union);
                     sparqlQuery.setQueryPattern(body)
-                    if (logger.isDebugEnabled()) logger.debug("Expanded query to: \n" + sparqlQuery)
+                    if (logger.isInfoEnabled()) logger.info("Query expanded to: \n" + sparqlQuery)
                 }
             }
         }
+        sparqlQuery
+    }
+
+    /**
+     * Expand an ASK query by adding a "LIMIT 1" clause if there is no LIMIT clause
+     *
+     * @param sparqlQuery
+     * @return the same query if no change or an updated query with the LIMIT clause
+     */
+    def expandAsk(sparqlQuery: Query): Query = {
+
+        if (sparqlQuery.isAskType)
+            if (sparqlQuery.getLimit == Query.NOLIMIT) {
+                sparqlQuery.setLimit(1)
+                if (logger.isInfoEnabled()) logger.info("ASK query expanded with LIMIT clause: \n" + sparqlQuery)
+            }
         sparqlQuery
     }
 

@@ -473,7 +473,7 @@ class AbstractQueryAtomicMongo(
                         }
                     }
                 })
-                logger.info("Atomic query generated " + perTMResultTriples.size + " RDF triples for binding " + tpb)
+                logger.info("Atomic query generated " + perTMResultTriples.size + " RDF triples for binding\n" + tpb)
                 perTMResultTriples
             })
             perTpResultTriples

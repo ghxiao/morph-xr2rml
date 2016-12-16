@@ -44,12 +44,13 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
      */
     override def process(sparqlQuery: Query, abstractQuery: Option[AbstractQuery], syntax: String): Option[File] = {
 
+        // Execute the query and translate the results into triples
         if (abstractQuery.isDefined) {
             factory.getDataTranslator.generateRDFTriples(abstractQuery.get)
         }
 
         // Late SPARQL evaluation: evaluate the SPARQL query on the result graph
-        // If abstractQuery is not defined then the model will be empty. Therefore no response will come up.
+        // If abstractQuery is not defined, the model will be empty => no response will come up but no error will occur
         val start = System.currentTimeMillis
         val qexec: QueryExecution = QueryExecutionFactory.create(sparqlQuery, factory.getMaterializer.model)
 
@@ -61,30 +62,52 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
 
         if (output.isDefined) {
 
-            if (sparqlQuery.isAskType) {
-                // --- SPARQL ASK
-                logger.error("SPARQL ASK not supported")
-                None
+            if (sparqlQuery.isConstructType) { // --- SPARQL CONSTRUCT
 
-            } else if (sparqlQuery.isConstructType) {
-                // --- SPARQL CONSTRUCT
-                val result: Model = qexec.execConstruct
-                output = factory.getMaterializer.serialize(result, output.get, syntax)
+                val resultModel: Model = qexec.execConstruct
+                output = factory.getMaterializer.serialize(resultModel, output.get, syntax)
                 qexec.close
 
-            } else if (sparqlQuery.isDescribeType) {
-                // --- SPARQL DESCRIBE
+            } else if (sparqlQuery.isDescribeType) { // --- SPARQL DESCRIBE
+
                 val dh: DescribeBNodeClosure = null
-                val result: Model = qexec.execDescribe
-                output = factory.getMaterializer.serialize(result, output.get, syntax)
+                val resultModel: Model = qexec.execDescribe
+                output = factory.getMaterializer.serialize(resultModel, output.get, syntax)
                 qexec.close
 
-            } else if (sparqlQuery.isSelectType) {
-                // --- SPARQL SELECT
+            } else if (sparqlQuery.isAskType) { // --- SPARQL ASK
+
+                var result: Boolean = qexec.execAsk
+
+                if (syntax == Constants.OUTPUT_FORMAT_RESULT_XML) {
+                    val writer = new PrintWriter(output.get, "UTF-8")
+                    writer.write(ResultSetFormatter.asXMLString(result))
+                    writer.close
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_JSON) {
+                    val outputStream = new FileOutputStream(output.get)
+                    ResultSetFormatter.outputAsJSON(outputStream, result)
+                    outputStream.close
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_CSV) {
+                    val outputStream = new FileOutputStream(output.get)
+                    ResultSetFormatter.outputAsCSV(outputStream, result)
+                    outputStream.close
+                } else if (syntax == Constants.OUTPUT_FORMAT_RESULT_TSV) {
+                    val outputStream = new FileOutputStream(output.get)
+                    ResultSetFormatter.outputAsTSV(outputStream, result)
+                    outputStream.close
+                } else {
+                    logger.error("Invalid output result syntax: " + factory.getProperties.outputSyntaxResult)
+                    output = None
+                }
+
+                qexec.close
+
+            } else if (sparqlQuery.isSelectType) { // --- SPARQL SELECT
 
                 var resultSet: ResultSet = qexec.execSelect
                 if (factory.getProperties.outputDisplay)
                     // Create an in-memory result set to display it in tabular format as well as save it to a file
+                    // Note: the file will be displayed too, but the tabular format is much easier to read
                     resultSet = new ResultSetMem(resultSet)
 
                 if (syntax == Constants.OUTPUT_FORMAT_RESULT_XML) {
@@ -118,7 +141,6 @@ class MorphMongoQueryProcessor(factory: IMorphFactory) extends MorphBaseQueryPro
                         }
                     }
                 }
-
                 qexec.close
             }
             logger.warn("Time for late SPARQL query evaluation = " + (System.currentTimeMillis - start) + "ms.");

@@ -13,7 +13,7 @@ Morph-xR2RML was developed by the [I3S laboratory](http://www.i3s.unice.fr/) as 
 The SPARQL-to-SQL rewriting is an adaptation of the former Morph-RDB implementation, it supports SPARQL SELECT and DESCRIBE queries.
 
 #### SPARQL-to-MongoDB
-The SPARQL-to-MongoDB rewriting is a fully new component, it supports SELECT, CONSTRUCT and DESCRIBE queries.
+The SPARQL-to-MongoDB rewriting is a fully new component, it supports SELECT, ASK, CONSTRUCT and DESCRIBE queries.
 
 To the best of our knowledge, Morph-xR2RML is the **first tool to support the querying of arbitrary MongoDB documents using SPARQL**.
 

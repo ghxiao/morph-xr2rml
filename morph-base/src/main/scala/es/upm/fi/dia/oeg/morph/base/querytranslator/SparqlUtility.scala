@@ -146,8 +146,8 @@ object SparqlUtility {
     }
 
     /**
-     * Decide the output format and content type of the SPARQL results, based on the SPARQL query
-     * and the value of the Accept HTTP header.
+     * Decide the output format and content type of the SPARQL results, based on the type of 
+     * SPARQL query and the value of the Accept HTTP header.
      *
      * If the Accept is null or empty, the default RDF syntax or result format is returned depending on the query type.
      *
@@ -155,8 +155,8 @@ object SparqlUtility {
      *
      * @param accept value of the Accept HTTP header. Can be null.
      * @param query the SPARQL query. Cannot be null.
-     * @param defaultRdfSyntax default RDF syntax, should be read from the configuration file. Cannot be null.
-     * @param defaultResultFrmt default format for SPARQL result sets, should be read from the configuration file. Cannot be null.
+     * @param defaultRdfSyntax default RDF syntax, should be read from the configuration file. Must be null.
+     * @param defaultResultFrmt default format for SPARQL result sets, should be read from the configuration file. Must be null.
      *
      * @return a couple (negotiated content-type, corresponding format among Constants.OUTPUT_FORMAT*),
      * or None if the requested format cannot be satisfied.<br>

@@ -25,6 +25,7 @@ class AbstractQueryUnion(
     lim: Option[Long])
         extends AbstractQuery(new TpBindings, lim) {
 
+    // Construction-time optimization: flatten (merge) nested unions into a single one
     val members: List[AbstractQuery] = lstMembers.flatMap { m =>
         if (m.isInstanceOf[AbstractQueryUnion])
             m.asInstanceOf[AbstractQueryUnion].members
@@ -93,7 +94,7 @@ class AbstractQueryUnion(
         if (!optimizer.selfUnionElimination) return this
 
         if (members.size == 1) { // security test but abnormal case, should never happen
-            logger.warn("Unexpected case: inner join with only one member: " + this.toString)
+            logger.warn("Unexpected case: union with only one member: " + this.toString)
             return members.head
         }
 
