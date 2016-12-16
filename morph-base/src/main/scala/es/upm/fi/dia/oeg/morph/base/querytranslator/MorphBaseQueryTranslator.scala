@@ -95,7 +95,8 @@ abstract class MorphBaseQueryTranslator(val factory: IMorphFactory) {
         val abstractQuery = this.translate(opQuery)
 
         if (abstractQuery.isDefined) {
-            /* Check if the query can be simplified if all projected variables have constant values.
+            /* -- CONSTANT PROJECTION OPTIMIZATION --
+             * Check if the query can be simplified if all projected variables have constant values.
              * A query like:
              *   SELECT DISTINCT ?p WHERE { ?s ?p ?o }
              * is transformed into:

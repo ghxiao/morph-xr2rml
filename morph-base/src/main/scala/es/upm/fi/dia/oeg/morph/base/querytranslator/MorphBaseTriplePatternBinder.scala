@@ -40,7 +40,9 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
     val logger = Logger.getLogger(this.getClass());
 
     /**
-     * Compute the triple pattern bindings for all triple patterns in a graph pattern
+     * Compute the triple pattern bindings for all triple patterns in a graph pattern.
+     *
+     * Each triple pattern has an entry even if no triples map can be bound to it.
      *
      * @param op compiled SPARQL query or SPARQL query element
      * @return bindings as a map of triple patterns and associated triples maps.
@@ -66,7 +68,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                     if (triples.size == 1) {
                         // Only one triple pattern in the BGP, return its bindings straight away
                         results.addOrUpdate(tp1, boundTp1)
-                        if (logger.isTraceEnabled()) logger.trace("Binding of single triple pattern: " + results)
+                        if (logger.isTraceEnabled()) logger.trace("Binding of single triple pattern:\n  " + results)
                         results
                     } else {
                         // Several triple patterns in the BGP 
@@ -185,7 +187,7 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
                         results.addOrUpdate(tp2, (tpb2.boundTMs union results.getBoundTMs(tp2)))
                     }
                 }
-                if (logger.isDebugEnabled()) logger.debug("Binding of UNION graph pattern:\n   " + results.toString)
+                if (logger.isDebugEnabled()) logger.debug("Binding of UNION graph pattern:\n  " + results.toString)
                 results
             }
 
@@ -523,5 +525,73 @@ class MorphBaseTriplePatternBinder(factory: IMorphFactory) {
      */
     private def haveSharedVariables(tp1: Triple, tp2: Triple): Boolean = {
         (getTpVars(tp1) intersect getTpVars(tp2)).nonEmpty
+    }
+
+    /**
+     * Check whether we can "live without a given triple pattern tp", that is, if we can still evaluate
+     * the query although this triple pattern cannot be evaluated.
+     * 
+     * This happens when tp is either beneath a UNION or in the right part of a left join (optional): 
+     * we can compute the rest of the query and we may still get some results.
+     * 
+     * On the contrary, if the query is a join, e.g. a simple BGP, and at least one joined triple pattern
+     * of the BGP has no bindings, then for sure we can't evaluate the query.
+     *
+     * @param tp the triple pattern we look for
+     * @param op compiled SPARQL query
+     * @return true or false
+     */
+    def canLiveWithoutTp(tp: Triple, op: Op): Boolean = {
+
+        op match {
+            case bgp: OpBGP => false
+            case opJoin: OpJoin => // AND pattern
+                this.canLiveWithoutTp(tp, opJoin.getLeft) || this.canLiveWithoutTp(tp, opJoin.getRight)
+
+            case opLeftJoin: OpLeftJoin => // OPT pattern
+                this.canLiveWithoutTp(tp, opLeftJoin.getLeft) || this.canLiveWithoutTp(tp, opLeftJoin.getRight)
+
+            case opUnion: OpUnion => // UNION pattern
+                this.containsTp(tp, opUnion.getLeft) || this.containsTp(tp, opUnion.getRight)
+
+            case opProject: OpProject => this.canLiveWithoutTp(tp, opProject.getSubOp())
+            case opFilter: OpFilter => this.canLiveWithoutTp(tp, opFilter.getSubOp)
+            case opSlice: OpSlice => this.canLiveWithoutTp(tp, opSlice.getSubOp)
+            case opDistinct: OpDistinct => this.canLiveWithoutTp(tp, opDistinct.getSubOp)
+            case opOrder: OpOrder => this.canLiveWithoutTp(tp, opOrder.getSubOp)
+            case opGroup: OpGroup => this.canLiveWithoutTp(tp, opGroup.getSubOp)
+            case _ => false
+        }
+    }
+
+    /**
+     * Check whether a graph pattern contains a given triple pattern
+     *
+     * @param tp the triple pattern we look for
+     * @param op compiled SPARQL query
+     * @return true or false
+     */
+    private def containsTp(tp: Triple, op: Op): Boolean = {
+        op match {
+            case bgp: OpBGP => // Basic Graph Pattern
+                bgp.getPattern.getList.toList.contains(tp)
+
+            case opJoin: OpJoin => // AND pattern
+                this.containsTp(tp, opJoin.getLeft) || this.containsTp(tp, opJoin.getRight)
+
+            case opLeftJoin: OpLeftJoin => // OPT pattern
+                this.containsTp(tp, opLeftJoin.getLeft) || this.containsTp(tp, opLeftJoin.getRight)
+
+            case opUnion: OpUnion => // UNION pattern
+                this.containsTp(tp, opUnion.getLeft) || this.containsTp(tp, opUnion.getRight)
+
+            case opProject: OpProject => this.containsTp(tp, opProject.getSubOp())
+            case opFilter: OpFilter => this.containsTp(tp, opFilter.getSubOp)
+            case opSlice: OpSlice => this.containsTp(tp, opSlice.getSubOp)
+            case opDistinct: OpDistinct => this.containsTp(tp, opDistinct.getSubOp)
+            case opOrder: OpOrder => this.containsTp(tp, opOrder.getSubOp)
+            case opGroup: OpGroup => this.containsTp(tp, opGroup.getSubOp)
+            case _ => false
+        }
     }
 }

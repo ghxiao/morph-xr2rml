@@ -314,10 +314,8 @@ class MorphMongoDataTranslator(val fact: IMorphFactory) extends MorphBaseDataTra
                     valuesRaw.filter(_ != null).map(v => MorphBaseDataTranslator.encodeResvdCharsIfUri(v, memberTermType, encodeUnsafeCharsInDbValues))
                 }
 
-                val replacements: List[List[Object]] = listReplace.toList
-                if (logger.isTraceEnabled()) logger.trace("Template replacements: " + replacements)
-
                 // Check if at least one of the replacements is not null.
+                val replacements: List[List[Object]] = listReplace.toList
                 var isEmptyReplacements: Boolean = true
                 for (repl <- listReplace) {
                     if (!repl.isEmpty)

@@ -31,7 +31,8 @@ class TpBinding(
     override def toString = {
         " Binding(" + triple + " -> " +
             (
-                if (boundTMs.size == 1) boundTMs.head + ")"
+                if (boundTMs.size == 0) ")"
+                else if (boundTMs.size == 1) boundTMs.head + ")"
                 else boundTMs.mkString("\n      ", ",\n      ", ")")
             )
     }
@@ -88,8 +89,8 @@ class TpBindings {
     }
 
     /** Return triple patterns with empty bindings, i.e. with no bound triples map */
-    def getEmptyBindings: List[String] = {
-        this.bindingsMap.values.filter(b => b.isEmpty).map(f => f.triple.toString).toList
+    def getTriplesWithEmptyBindings: List[Triple] = {
+        this.bindingsMap.values.filter(b => b.isEmpty).map(f => f.triple).toList
     }
 
     /** Return bindings for triple patterns with at least one bound triples map */

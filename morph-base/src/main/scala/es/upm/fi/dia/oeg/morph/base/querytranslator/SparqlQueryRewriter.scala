@@ -32,6 +32,7 @@ import com.hp.hpl.jena.sparql.syntax.ElementGroup
 import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock
 import com.hp.hpl.jena.sparql.syntax.ElementUnion
 import com.hp.hpl.jena.sparql.util.Context
+import com.hp.hpl.jena.graph.NodeFactory
 
 /**
  * Apply various rewriting and optimization on the SPARQL query, either Jena std optimizations
@@ -127,11 +128,13 @@ object SparqlQueryRewriter {
                     val union = new ElementUnion
 
                     listUris.foreach(uri => {
-                        val bgp1 = new ElementTriplesBlock()
+                        
                         // <uri> ?p ?x
+                        val bgp1 = new ElementTriplesBlock()
                         bgp1.addTriple(Triple.create(uri, Var.alloc("p" + idx), Var.alloc("x" + idx)))
-                        val bgp2 = new ElementTriplesBlock()
+
                         // ?y ?q <uri>
+                        val bgp2 = new ElementTriplesBlock()
                         bgp2.addTriple(Triple.create(Var.alloc("y" + idx), Var.alloc("q" + idx), uri))
 
                         union.addElement(bgp1)

@@ -82,37 +82,45 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
         //--- Calculate the Triple Pattern Bindings
         val bindings = triplePatternBinder.bindm(opMod.get)
         logger.info("Triple pattern bindings computation time = " + (System.currentTimeMillis() - start) + "ms.")
-        logger.info("Triple pattern bindings:\n" + bindings.toString)
-
+        logger.info("Triple pattern bindings:\n  " + bindings.toString)
         if (bindings.isEmpty) {
             logger.warn("No bindings found for any triple pattern of the query")
-            None
-        } else {
-            val emptyBindings = bindings.getEmptyBindings
-            if (!emptyBindings.isEmpty) {
-                logger.warn("Could not find bindings for triple patterns:\n" + emptyBindings.mkString(", "))
-                None
-            } else {
-                //--- Translate the SPARQL query into an abstract query
-                var abstractQuery = this.translateSparqlQueryToAbstract(bindings, opMod.get, None)
-                if (abstractQuery.isDefined) {
+            return None
+        }
 
-                    // Optimize the abstract query
-                    val optQ = abstractQuery.get.optimizeQuery(optimizer)
-                    if (logger.isInfoEnabled && optQ != abstractQuery.get) {
-                        logger.info("\n-------------------------------------------------------------------------\n" +
-                            "------------------ Abstract query BEFORE optimization: ------------------\n" + abstractQuery.get)
-                        logger.info("\n------------------ Abstract query AFTER optimization: -------------------\n" + optQ +
-                            "\n-------------------------------------------------------------------------")
-                    }
-
-                    //--- Translate the atomic abstract queries into concrete MongoDB queries
-                    optQ.translateAbstactQueriesToConcrete(this)
-                    Some(optQ)
-                } else
-                    throw new MorphException("Error: cannot translate SPARQL query to an abstract query")
+        //--- Check if some Triple Patterns have non bindings
+        val unboundTps = bindings.getTriplesWithEmptyBindings
+        if (!unboundTps.isEmpty) {
+            logger.warn("Could not find bindings for triple pattern(s):\n   " + unboundTps.mkString(", "))
+            val canLiveWithoutTps = unboundTps.map { tp => triplePatternBinder.canLiveWithoutTp(tp, opMod.get) }.reduce(_ && _)
+            if (canLiveWithoutTps)
+                // Those tps are beneath a Union or on the right part of an left join (optional),
+                // thus we still produce some RDF triples with other parts of the SPARQL query
+                logger.warn("Continuing anyway, query results will be partial.")
+            else {
+                logger.warn("Stopping translation process.")
+                return None
             }
         }
+
+        //--- Translate the SPARQL query into an abstract query
+        var abstractQuery = this.translateSparqlQueryToAbstract(bindings, opMod.get, None)
+        if (abstractQuery.isDefined) {
+
+            // Optimize the abstract query
+            val optQ = abstractQuery.get.optimizeQuery(optimizer)
+            if (logger.isInfoEnabled && optQ != abstractQuery.get) {
+                logger.info("\n-------------------------------------------------------------------------\n" +
+                    "------------------ Abstract query BEFORE optimization: ------------------\n" + abstractQuery.get)
+                logger.info("\n------------------ Abstract query AFTER optimization: -------------------\n" + optQ +
+                    "\n-------------------------------------------------------------------------")
+            }
+
+            //--- Translate the atomic abstract queries into concrete MongoDB queries
+            optQ.translateAbstactQueriesToConcrete(this)
+            return Some(optQ)
+        } else
+            throw new MorphException("Error: cannot translate SPARQL query to an abstract query")
     }
 
     /**
