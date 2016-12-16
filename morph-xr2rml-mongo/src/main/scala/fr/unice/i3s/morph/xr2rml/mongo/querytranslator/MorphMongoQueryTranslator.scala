@@ -29,6 +29,7 @@ import es.upm.fi.dia.oeg.morph.base.query.ConditionType
 import es.upm.fi.dia.oeg.morph.base.query.IReference
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseQueryTranslator
 import es.upm.fi.dia.oeg.morph.base.querytranslator.MorphBaseTriplePatternBinder
+import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBinding
 import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBindings
 import fr.unice.i3s.morph.xr2rml.mongo.MongoDBQuery
 import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryAtomicMongo
@@ -39,7 +40,6 @@ import fr.unice.i3s.morph.xr2rml.mongo.abstractquery.AbstractQueryUnion
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNode
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeAnd
 import fr.unice.i3s.morph.xr2rml.mongo.query.MongoQueryNodeUnion
-import es.upm.fi.dia.oeg.morph.base.querytranslator.TpBinding
 
 /**
  * Translation of a SPARQL query into a set of MongoDB queries.
@@ -125,11 +125,11 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
      */
     private def translateSparqlQueryToAbstract(bindings: TpBindings, op: Op, limit: Option[Long]): Option[AbstractQuery] = {
         op match {
-            
+
             case opProject: OpProject => { // SELECT clause
                 this.translateSparqlQueryToAbstract(bindings, opProject.getSubOp, limit)
             }
-            
+
             case bgp: OpBGP => { // Basic Graph Pattern
                 val triples: List[Triple] = bgp.getPattern.getList.toList
                 if (triples.size == 0)
@@ -161,7 +161,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     }
                 }
             }
-            
+
             case opJoin: OpJoin => { // AND pattern
                 val left = translateSparqlQueryToAbstract(bindings, opJoin.getLeft, None)
                 val right = translateSparqlQueryToAbstract(bindings, opJoin.getRight, None)
@@ -173,7 +173,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     right
                 else None
             }
-            
+
             case opLeftJoin: OpLeftJoin => { // OPT pattern
                 val left = translateSparqlQueryToAbstract(bindings, opLeftJoin.getLeft, None)
                 val right = translateSparqlQueryToAbstract(bindings, opLeftJoin.getRight, None)
@@ -185,7 +185,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     right
                 else None
             }
-            
+
             case opUnion: OpUnion => { // UNION pattern
                 val left = translateSparqlQueryToAbstract(bindings, opUnion.getLeft, limit)
                 val right = translateSparqlQueryToAbstract(bindings, opUnion.getRight, limit)
@@ -198,7 +198,7 @@ class MorphMongoQueryTranslator(factory: IMorphFactory) extends MorphBaseQueryTr
                     right
                 else None
             }
-            
+
             case opFilter: OpFilter => { // FILTER pattern
                 logger.warn("SPARQL Filter ignored in query translation.")
                 this.translateSparqlQueryToAbstract(bindings, opFilter.getSubOp, limit)
