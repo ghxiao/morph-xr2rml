@@ -93,9 +93,9 @@ http://localhost:8080/sparql
 ```
 Property `query.file.path` is ignored and queries can be submitted using either HTTP GET or POST methods as described in the [SPARQL protocol](https://www.w3.org/TR/rdf-sparql-protocol/) recommendation.
 
-For SPARQL SELECT queries, the XML, JSON, CSV and TSV serializations are supported.
+For SPARQL SELECT and ASK queries, the XML, JSON, CSV and TSV serializations are supported.
 
-For SPARQL DESCRIBE and CONSTRUCT queries, the supported serializations are RDF/XML, RDF/XML-ABBREV, N-TRIPLE, N-QUAD, TURTLE and N3.
+For SPARQL DESCRIBE and CONSTRUCT queries, the supported serializations are RDF/XML, N-TRIPLE, N-QUAD, TURTLE, N3 and JSON-LD.
 
 ### Examples for MongoDB
 
@@ -127,22 +127,22 @@ Edit `morph.properties` and change the database url, name, user and password wit
 
 # Configuration file reference
 ```
-# xR2RML mapping file (Mandatory):
-# path relative to the configuration directory given in parameter --configuDir
+# -- xR2RML mapping file (Mandatory):
+# path relative to the configuration directory given in parameter --configDir
 mappingdocument.file.path=mapping.ttl
 
-# Server mode: true|false. Default: false
+# -- Server mode: true|false. Default: false
 # false: stand-alone application that performs either graph materialization or query rewriting
 # true:  SPARQL endpoint with query rewriting
 server.active=false
 
-# Server port number, ignored when "server.active=false" . Default: 8080
+# -- Server port number, ignored when "server.active=false". Default: 8080
 server.port=8080
 
-# Processing result output file, relative to --configDir. Default: result.txt
+# -- Processing result output file, relative to --configDir. Default: result.txt
 output.file.path=result.txt
 
-# Output RDF syntax: RDF/XML|RDF/XML-ABBREV|N-TRIPLE|TURTLE|N3. Default: TURTLE
+# -- Output RDF syntax: RDF/XML|N-TRIPLE|TURTLE|N3|JSON-LD. Default: TURTLE
 # Applies to the graph materialization and the rewriting of SPARQL CONSTRUCT and DESCRIBE queries
 output.syntax.rdf=TURTLE
 
@@ -150,14 +150,14 @@ output.syntax.rdf=TURTLE
 # When "server.active = true", this may be overridden by the Accept HTTP header of the request
 output.syntax.result=XML
 
-# Display the result on the std output after the processing: true|false. Default: true
+# -- Display the result on the std output after the processing: true|false. Default: true
 output.display=false
 
-# File containing the SPARQL query to process, relative to --configDir. Default: none. 
+# -- File containing the SPARQL query to process, relative to --configDir. Default: none. 
 # Ignored when "server.active = true"
 query.file.path=query.sparql
 
-# Database connection type and configuration
+# -- Database connection type and configuration
 no_of_database=1
 database.type[0]=MongoDB
 database.driver[0]=
@@ -166,31 +166,39 @@ database.name[0]=test
 database.user[0]=user
 database.pwd[0]=user
 
-# Reference formulation: Column|JSONPath|XPath. Default: Column
+
+# -- Reference formulation: Column|JSONPath|XPath. Default: Column
 database.reference_formulation[0]=JSONPath
 
-# Runner factory. The class to start depending on the type of database.
+# -- Runner factory. Mandatory.
 # For MongoDB: fr.unice.i3s.morph.xr2rml.mongo.engine.MorphJsondocRunnerFactory
 # For RDBs:    es.upm.fi.dia.oeg.morph.rdb.engine.MorphRDBRunnerFactory
 runner_factory.class.name=fr.unice.i3s.morph.xr2rml.mongo.engine.MorphMongoRunnerFactory
 
-# Cache the result of previously executed queries for MongoDB. Default: false
+
+# -- URL-encode reserved chars in database values. Default: true
+# uricolumn.encode_unsafe_chars_dbvalues=true
+
+# -- URL-encode reserved chars IRI template string. Default: true 
+Z# uricolumn.encode_uri=true
+
+
+# -- Cache the result of previously executed queries for MongoDB. Default: false
 # Caution: high memory consumption, to be used for RefObjectMaps only
 querytranslator.cachequeryresult=false
 
-# Query optimization: self join elimination. Default: true
-querytranslator.selfjoinelimination=true
 
-# Query optimization: self union elimination. Default: true
-querytranslator.selfunionelimination=true
+# -- Primary SPARQL query optimization. Default: true
+querytranslator.sparql.optimize=true
 
-# Query optimization: propagation of conditions in a inner/left join. Default: true
-querytranslator.propagateconditionfromjoin=true
+# -- Abstract query optimization: self join elimination. Default: true
+querytranslator.abstract.selfjoinelimination=true
 
-# URL-encode reserved chars in database values. Default: true
-uricolumn.encode_unsafe_chars_dbvalues=true
+# -- Abstract query optimization: self union elimination. Default: true
+querytranslator.abstract.selfunionelimination=true
 
-# URL-encode reserved chars IRI template string. Default: true 
-uricolumn.encode_uri=true
+# -- Abstract query optimization: propagation of conditions in a inner/left join. Default: true
+querytranslator.abstract.propagateconditionfromjoin=true
+
 ```
 

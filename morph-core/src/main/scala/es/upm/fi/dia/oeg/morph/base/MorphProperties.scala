@@ -135,10 +135,10 @@ class MorphProperties extends java.util.Properties {
 
         this.outputSyntaxRdf = this.readString(Constants.OUTPUT_SYNTAX_RDF, Constants.DEFAULT_OUTPUT_FORMAT);
         if (outputSyntaxRdf != Constants.OUTPUT_FORMAT_RDFXML &&
-            outputSyntaxRdf != Constants.OUTPUT_FORMAT_RDFXML_ABBREV &&
             outputSyntaxRdf != Constants.OUTPUT_FORMAT_NTRIPLE &&
             outputSyntaxRdf != Constants.OUTPUT_FORMAT_TURTLE &&
-            outputSyntaxRdf != Constants.OUTPUT_FORMAT_N3) {
+            outputSyntaxRdf != Constants.OUTPUT_FORMAT_N3 &&
+            outputSyntaxRdf != Constants.OUTPUT_FORMAT_JSONLD) {
             throw new MorphException("Invalid value \"" + outputSyntaxRdf + "\" for property " + Constants.OUTPUT_SYNTAX_RDF)
         }
         logger.info("Output RDF syntax = " + this.outputSyntaxRdf);

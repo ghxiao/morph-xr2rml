@@ -98,6 +98,7 @@ object Constants {
     val OUTPUT_FORMAT_NQUAD = "N-QUAD";
     val OUTPUT_FORMAT_TURTLE = "TURTLE";
     val OUTPUT_FORMAT_N3 = "N3";
+    val OUTPUT_FORMAT_JSONLD = "JSON-LD";
     val DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMAT_TURTLE
 
     // ------------------------------------------------------
