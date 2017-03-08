@@ -63,7 +63,7 @@ See a detailed [description of the project code and architecture](README_code_ar
 
 Pre-requisite: have **Java SDK8** installed
 
-You can download the last snapshot published in [this repository](https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AAAGpp6oKyZ8pKMxsb6Fgmgja/snapshot/fr/unice/i3s/morph-xr2rml-dist?dl=0).
+You can download the last snapshot published in [this repository](https://www.dropbox.com/sh/1xcnvpc7pv6um2i/AABewNiypMWJRIYcLjpeYIvxa/snapshot/fr/unice/i3s/morph-xr2rml-dist/1.0-SNAPSHOT?dl=0).
 
 Alternatively, you can build the application using [Maven](http://maven.apache.org/) 2 or 3: in a shell, CD to the root directory morph-xr2rml, then run the command: ```mvn clean package```. A jar with all dependencies is generated in morph-xr2rml-dist/target.
 
