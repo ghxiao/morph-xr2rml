@@ -1,0 +1,28 @@
+# Create a test user used by xR2RML to read in the MongoDB instance
+use test
+db.createUser( { user: "user", pwd: "user", 
+      roles: [ { role: "readWrite", db: "test" } ]
+    }
+)
+
+# Add documents
+db.directors2.remove({})
+db.directors2.insert([
+    {"name": "Woody Allen", "directed": ["Manhattan", "Annie Hall"]},
+    {"name": "Wong Kar-wai", "directed": ["2046", "In the Mood for Love"]}
+])
+db.directors2.find()
+
+# Collection movies
+db.movies2.remove({})
+db.movies2.insert([
+    {"name": "2046", "code": "m2046", "actors": ["T. Leung", "G. Li"]},
+    {"name": "In the Mood for Love", "code": "Mood", "actors": ["M. Cheung"]},
+    {"name": "Manhattan", "code": "Manh",  "actors": ["Woody Allen", "Diane Keaton"]},
+    {"name": "Interiors", "code": "Int01", "actors": ["D. Keaton", "G. Page"]}
+])
+db.movies2.find()
+
+db.movies2.find({actors: {$size: 2, $elemMatch:{$eq: "T. Leung"}}})
+
+db.movies2.find({a: {$gt: 12, $lt: 20}})

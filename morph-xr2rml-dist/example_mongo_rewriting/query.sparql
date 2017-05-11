@@ -12,7 +12,7 @@ WHERE {
     ?y ex:starringList ?z .
     ?z a rdf:Seq .
     ?z rdf:_1 ?actor1 .
-    optional { ?z rdf:_2 ?actor2 . }
+    # optional { ?z rdf:_2 ?actor2 . }
 
     #-- Test of rewriting with an iterator
     #?y ex:starringIter ?z .
