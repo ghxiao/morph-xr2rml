@@ -1,0 +1,593 @@
+<?xml version="1.0"?>
+<sparql xmlns="http://www.w3.org/2005/sparql-results#">
+  <head>
+    <variable name="reviewer"/>
+    <variable name="reviewername"/>
+    <variable name="reviewercountry"/>
+  </head>
+  <results>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer33082</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Denossis</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:FR</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer8884</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Ludka</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer266411</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Trinh-Rei</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer470890</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Kakuzo-Kersten</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:JP</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer450850</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Doroteya</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:CN</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer18479</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Cavin-Jarini</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:GB</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer405570</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Iliane-Jatara</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:DE</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer169382</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Apieli-Saeed</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:JP</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer8118</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Cristine-Ericka</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:AT</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer163069</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Kasi-Blathaon</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer455419</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Nicolette-Ravi</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer130641</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Tiberia-Christa</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer498118</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Vaughan-Chasity</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:FR</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer18812</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Arata-Absalom</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:RU</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer88360</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Takako-Hasnaa</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:AT</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer221669</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Briona-Sancia</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:GB</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer90950</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Polazhitsa-Alcnaeon</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:CN</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer408445</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Cali-Lukasz</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:CN</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer110048</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Emmy-Carsandra</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer439002</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Ony-Omelfa</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:FR</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer322540</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Oriel-Kasia</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:ES</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer122756</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Fedra</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:AT</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer337176</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Ochiyo-Yoshino</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer119021</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Claire-Chayne</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:GB</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer201525</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Kichibei-Octave</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:CN</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer118509</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Mikitina-Irmentraud</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer353751</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Sojuro-Maura</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:FR</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer173150</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Emilio-Bara</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:ES</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer435451</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Rahil-Chevy</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer149739</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Manzo-Simonne</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:GB</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer390607</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Shauna-Bertl</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer127113</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Dukine-Darrien</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:RU</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer385087</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Inka-Isaam</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer94791</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Yoshihiro-Lvovicha</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:GB</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer493982</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Zakia-Ulyaa</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:FR</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer52019</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Johna-Nicanor</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:JP</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer475372</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Lucile-Bhoomika</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:AT</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer328878</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Ran-Candis</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer162792</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Anechka-Circe</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer503826</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Medus-Evfroseniia</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:ES</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer117729</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Melanthius</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer334271</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Chinara-Mandara</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:CN</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer461752</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Bertune-Sanjay</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer459509</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Qaasim-Mahadevs</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:JP</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer373062</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Zenya-Hademar</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer359857</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Orland-Khristen</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer363799</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Haakima-Settan</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer250662</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Waliyya-Bindia</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer209708</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Enrique-Joachim</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer488345</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Albert</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:GB</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer331868</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Miles-Bia</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:FR</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer189571</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Leandro-Apakelahime</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+    <result>
+      <binding name="reviewer">
+        <uri>bsbm-inst:dataFromRatingSite/Reviewer50730</uri>
+      </binding>
+      <binding name="reviewername">
+        <literal>Vratislava</literal>
+      </binding>
+      <binding name="reviewercountry">
+        <uri>iso3166:US</uri>
+      </binding>
+    </result>
+  </results>
+</sparql>

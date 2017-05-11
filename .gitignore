@@ -3,6 +3,8 @@ target/
 log/
 rdf_result.ttl
 morph-example/
+*.iml
+.idea
 
 # Eclipse:
 .cache
