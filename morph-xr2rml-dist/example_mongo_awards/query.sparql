@@ -14,18 +14,23 @@ WHERE {
 
 #?p a :Person .
 #?p :hasFirstName ?fn .
+#?p :hasLastName ?fn .
+#?p :bornInYear ?ny .
+#?p :bornInMonth ?bm .
+#?p :bornOnDay ?bd .
+#?p :bornIn ?bi .
+#?p :diedOnDay ?dd .
+#?p :diedInMonth ?dm .
+#?p :diedInYear ?dy .
 #?p :hasOccupation ?o .
-#?p :hasReceived ?rc .
-?p :diedOnDay ?dd .
+?p :hasReceived ?rc .
 
 #?f a :Female .
 
 #?m a :Male .
 
 #?a a :Award .
-#
 #?a :receivedIn ?r .
-
 #?a :hasTitle ?t .
 }
 

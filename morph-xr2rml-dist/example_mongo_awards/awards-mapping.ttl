@@ -145,7 +145,7 @@ rr:predicateObjectMap [
 ].
 
 #"target": "ex:person/{_id}/award/{awards.#} a :Award ; :receivedIn {awards.#.year}^^xsd:integer ; :hasTitle {awards.#.award}^^xsd:string . "
-:source_awards xrr:query "db.awards.find({})"; rml:iterator "$.awards[*]"  .
+:source_awards xrr:query "db.awards.find({})"; rml:iterator "$.awards.*"  .
 
 <#Award_Award>
 xrr:logicalSource :source_awards ;
@@ -171,5 +171,5 @@ rr:predicateObjectMap [
  	rr:subjectMap [ rr:template  "ex:person/award/{$.id}"];
 	rr:predicateObjectMap [
   		rr:predicate :hasTitle;
-	rr:objectMap [ xrr:reference "$..award" ]
+	rr:objectMap [ xrr:reference "$.award" ]
 ]. 
