@@ -1,0 +1,809 @@
+<?xml version="1.0"?>
+<sparql xmlns="http://www.w3.org/2005/sparql-results#">
+  <head>
+    <variable name="p"/>
+    <variable name="dd"/>
+  </head>
+  <results>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11483</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">6</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2750</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">23</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8743</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">18</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q4605</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">26</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q15156</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">30</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q855</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">5</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q13407</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">2</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1242</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">30</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1511</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">13</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1245</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">1</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2767</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">6</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5685</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">2</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7726</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">28</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q17142</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">18</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11869</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">4</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q21901</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">3</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12608</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">31</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8750</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">25</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q502</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">23</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q997</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">14</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2628</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">1</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q19425</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">22</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8814</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">23</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7197</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">14</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q23</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">14</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11065</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">15</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7273</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">30</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11996</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">3</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2607</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">29</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q10633</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">30</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5333</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">22</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q853</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">29</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11992</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">12</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q20015</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">21</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q9434</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">25</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q22662</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">4</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q9685</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">31</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1276</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">7</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q18417</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">4</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q13894</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">8</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q14997</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">10</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12113</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">20</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5878</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">17</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7335</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">11</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q632</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">8</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12974</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">17</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q18832</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">15</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q892</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">2</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q16498</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">15</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q14278</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">11</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q4137</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">16</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2551</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">27</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11941</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">25</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q862</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">28</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1646</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">24</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1463</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">28</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5721</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">23</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5879</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">22</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11613</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">26</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7226</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">30</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11641</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">1</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7306</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">11</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1631</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">10</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5679</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">19</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12304</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">26</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q9399</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">25</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5593</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">8</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11924</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">24</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7721</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">9</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8867</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">1</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8644</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">11</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q20875</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">6</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11957</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">28</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7771</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">26</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q4291</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">26</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q1480</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">1</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q935</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">31</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8948</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">10</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q449</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">29</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q18363</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">28</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q5152</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">10</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q15208</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">6</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7346</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">17</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12998</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">20</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12906</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">15</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q11960</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">29</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q6711</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">5</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q13374</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">27</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2569</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">30</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12060</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">15</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q7440</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">5</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12950</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">9</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q8440</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">5</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q13888</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">17</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2643</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">29</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2185</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">2</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q15193</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">19</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q2998</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">5</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q12320</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">16</literal>
+      </binding>
+    </result>
+    <result>
+      <binding name="p">
+        <uri>ex:person/Q4030</uri>
+      </binding>
+      <binding name="dd">
+        <literal datatype="http://www.w3.org/2001/XMLSchema#integer">24</literal>
+      </binding>
+    </result>
+  </results>
+</sparql>
