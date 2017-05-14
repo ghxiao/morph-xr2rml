@@ -15,7 +15,7 @@
 
 # "target": ":authors/{_id} a :Author ; a foaf:Agent ; foaf:name {name}^^xsd:string ; foaf:homepage {homepage}^^xsd:string ; :hasCoauthor :authors/{coauthors.#._id} .
 
-:source_author xrr:query "db.authors.find({})"; rml:iterator "$" .
+:source_author xrr:query "db.authors.find({})"; rml:iterator "$" ; xrr:uniqueRef "_id".
 
 <#Author_Author>
     xrr:logicalSource :source_author ;
@@ -91,7 +91,7 @@
 
 # :journals/{_id} a swrc:Journal ; a :JournalArticle ; a :Publication ; dc:title {title}^^xsd:string ; dcterms:issued {year}^^xsd:integer ; swrc:pages {pages}^^xsd:string ; :appearsIn {in}^^xsd:string ; foaf:homepage {url}^^xsd:string . "
 
-:source_journal xrr:query """db.publications.find({'type' : 'article'})"""; rml:iterator "$" .
+:source_journal xrr:query """db.publications.find({'type' : 'article'})"""; rml:iterator "$" ; xrr:uniqueRef "_id".
 
 <#Article_swrc_Journal>
     xrr:logicalSource :source_journal ;
@@ -161,7 +161,7 @@
 
 # ":inproceedings/{_id} a swrc:Conference ; a :ConferencePaper ; a :Publication ; dc:title {title}^^xsd:string ; dcterms:issued {year}^^xsd:integer ; swrc:pages {pages}^^xsd:string ; foaf:homepage {url}^^xsd:string ; dcterms:partOf :proceedings/{proceedings} . :proceedings/{proceedings} a :Proceedings ; dc:title {booktitle}^^xsd:string . "
 
-:source_inproceedings xrr:query """db.publications.find({'type' : 'inproceedings'})"""; rml:iterator "$" .
+:source_inproceedings xrr:query """db.publications.find({'type' : 'inproceedings'})"""; rml:iterator "$" ; xrr:uniqueRef "_id".
 
 <#inproceedings_swrc_Conference>
     xrr:logicalSource :source_inproceedings ;
@@ -247,7 +247,7 @@
 
 # ":collections/{_id} a swrc:Collection ; a :BookChapter ; a :Publication ; dc:title {title}^^xsd:string ; dcterms:issued {year}^^xsd:integer ; swrc:pages {pages}^^xsd:string ; foaf:homepage {url}^^xsd:string ; dcterms:partOf :books/{proceedings} ; :chapterIn :books/{proceedings} . :books/{proceedings} a :Book ; dc:title {booktitle}^^xsd:string . "    
 
-:source_incollection xrr:query """db.publications.find({'type' : 'incollection'})"""; rml:iterator "$" .
+:source_incollection xrr:query """db.publications.find({'type' : 'incollection'})"""; rml:iterator "$" ; xrr:uniqueRef "_id".
 
 <#collections_swrc_Conference>
     xrr:logicalSource :source_incollection ;

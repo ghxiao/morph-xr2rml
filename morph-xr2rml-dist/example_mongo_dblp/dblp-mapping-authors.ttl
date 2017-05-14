@@ -15,7 +15,7 @@
 
 # "target": ":authors/{_id} a :Author ; a foaf:Agent ; foaf:name {name}^^xsd:string ; foaf:homepage {homepage}^^xsd:string ; :hasCoauthor :authors/{coauthors.#._id} .
 
-:source_author xrr:query "db.publications.find({})"; rml:iterator "$.authors.*" .
+:source_author xrr:query "db.authors.find({})"; rml:iterator "$" ; xrr:uniqueRef "_id" .
 
 <#Author_Author>
     xrr:logicalSource :source_author ;
@@ -95,7 +95,7 @@
         rr:objectMap [ rr:template ":authors/{_id}"; rr:termType rr:IRI]
     ].
     
-:source_journal xrr:query "db.authors.find({})"; rml:iterator "$.publications.article.*" .
+:source_journal xrr:query "db.authors.find({})"; rml:iterator "$.publications.article.*" ; xrr:uniqueRef "dblp_key".
 
 <#Journal_titler>
     xrr:logicalSource :source_journal ;
@@ -172,7 +172,7 @@
         rr:objectMap [ rr:template ":authors/{_id}"; rr:termType rr:IRI]
     ].
     
-:source_inproceedings xrr:query "db.authors.find({})"; rml:iterator "$.publications.inproceedings.*" .
+:source_inproceedings xrr:query "db.authors.find({})"; rml:iterator "$.publications.inproceedings.*" ; xrr:uniqueRef "dblp_key".
 
 <#Conference_titler>
     xrr:logicalSource :source_inproceedings ;
@@ -272,7 +272,7 @@
         rr:objectMap [ rr:template ":authors/{_id}"; rr:termType rr:IRI]
     ].
     
-:source_incollection xrr:query "db.authors.find({})"; rml:iterator "$.publications.incollection.*" .
+:source_incollection xrr:query "db.authors.find({})"; rml:iterator "$.publications.incollection.*" ; xrr:uniqueRef "dblp_key".
 
 <#collection_titler>
     xrr:logicalSource :source_incollection ;
